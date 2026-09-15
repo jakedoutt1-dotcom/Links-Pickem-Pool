@@ -12,6 +12,3 @@
   Cache-Control: no-cache
 /
   Cache-Control: no-cache
-
-/links-sw.js
-  Cache-Control: no-cache, no-store, must-revalidate
