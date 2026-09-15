@@ -32,3 +32,4 @@ sw=Path('public/links-sw.js')
 if sw.exists():
  t=sw.read_text(encoding='utf-8').replace('links-pickem-v204','links-pickem-v205')
  sw.write_text(t,encoding='utf-8')
+# trigger: v205 approved for production build
