@@ -1471,7 +1471,7 @@ table{max-width:100%}
     <button data-demo-tab="demoPicks" class="active"><img class="links-nav-art-v174" src="./nav-v174/picks.png" alt="">Picks</button>
     <button data-demo-tab="demoCompare"><img class="links-nav-art-v174" src="./nav-v174/compare.png" alt="">Compare Picks</button>
     <button data-demo-tab="demoScores"><img class="links-nav-art-v174" src="./nav-v174/scores.png" alt="">Live Scores</button>
-    <button data-demo-tab="demoStandings"><img class="links-nav-art-v174" src="./nav-v174/standings.png?v=200" alt="">Standings</button>
+    <button data-demo-tab="demoStandings"><img class="links-nav-art-v174" src="./nav-v174/standings.png?v=200a" alt="">Standings</button>
     <button data-demo-tab="demoProjected"><img class="links-nav-art-v174" src="./nav-v174/projected.png" alt="">Projected</button>
     <button data-demo-tab="demoPaid"><img class="links-nav-art-v174" src="./nav-v174/access.png" alt="">Player Access</button>
   </div>
@@ -1735,7 +1735,7 @@ table{max-width:100%}
     <button data-special-tab="picks" class="active"><img class="links-nav-art-v174" src="./nav-v174/picks.png" alt="">PICKS</button>
     <button data-special-tab="compare"><img class="links-nav-art-v174" src="./nav-v174/compare.png" alt="">COMPARE PICKS</button>
     <button data-special-tab="scores"><img class="links-nav-art-v174" src="./nav-v174/scores.png" alt="">SCORES</button>
-    <button data-special-tab="standings"><img class="links-nav-art-v174" src="./nav-v174/standings.png?v=200" alt="">STANDINGS</button>
+    <button data-special-tab="standings"><img class="links-nav-art-v174" src="./nav-v174/standings.png?v=200a" alt="">STANDINGS</button>
     <button data-special-tab="projected"><img class="links-nav-art-v174" src="./nav-v174/projected.png" alt="">PROJECTED</button>
     <button data-special-tab="access"><img class="links-nav-art-v174" src="./nav-v174/access.png" alt="">PLAYER ACCESS</button>
     <button data-special-tab="rules"><img class="links-nav-art-v174" src="./nav-v174/rules.png" alt="">RULES</button>
@@ -1896,7 +1896,7 @@ table{max-width:100%}
     <button data-tab="picks" class="active player-tab"><img class="links-nav-art-v174" src="./nav-v174/picks.png" alt="">Picks</button>
     <button data-tab="compare" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/compare.png" alt="">Compare Picks</button>
     <button data-tab="scores" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/scores.png" alt="">Live Scores</button>
-    <button data-tab="standings" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/standings.png?v=200" alt="">Standings</button>
+    <button data-tab="standings" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/standings.png?v=200a" alt="">Standings</button>
     <button data-tab="projected" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/projected.png" alt="">Projected</button>
     <button data-tab="paid" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/access.png" alt="">Player Access</button>
     <button data-tab="rules" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/rules.png" alt="">Rules</button>
@@ -4519,7 +4519,7 @@ $("#chooseSquares").onclick=()=>enterSquares();
  document.addEventListener('input',e=>{if(/tie/i.test((e.target.id||'')+' '+(e.target.name||'')+' '+(e.target.closest('div')?.textContent||''))){clearTimeout(deb);deb=setTimeout(save,650)}},true);
  function tick(){compare();let b=btn();if(b){badge();b.style.display='none'}}
  new MutationObserver(tick).observe(document.body,{childList:true,subtree:true});setInterval(compare,1000);setTimeout(tick,500);
- if('serviceWorker'in navigator){let reload=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!reload){reload=true;location.reload()}});const reg=()=>navigator.serviceWorker.register('/links-sw.js?v=200',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{});window.addEventListener('load',reg);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg()})}
+ if('serviceWorker'in navigator){const reg=()=>navigator.serviceWorker.register('/links-sw.js?v=200a',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{});window.addEventListener('load',reg);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg()})}
 })();
 </script>
 
@@ -4560,7 +4560,7 @@ $("#chooseSquares").onclick=()=>enterSquares();
   border-color:#ff7a2f!important;color:#fff!important;
   box-shadow:0 0 0 2px #ff6a1a,0 0 17px rgba(255,106,26,.55)!important
 }
-.tabs [data-tab="standings"]:not(.active) img.links-nav-art-v174{filter:grayscale(1) brightness(.68) contrast(1.08)!important;opacity:.86!important}
+.tabs [data-tab="standings"] img.links-nav-art-v174{filter:none!important;opacity:1!important}
 .tabs [data-tab="standings"].active img.links-nav-art-v174{filter:none!important;opacity:1!important}
 .pool-game-check-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;margin-top:8px!important}
 .pool-game-check{position:relative!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;min-width:0!important;min-height:132px!important;height:auto!important;overflow:hidden!important;padding:12px 10px 10px!important;gap:7px!important;border:1px solid #365064!important;border-radius:14px!important;background:linear-gradient(180deg,#111c25,#0b141b)!important;color:#fff!important;text-align:center!important;box-sizing:border-box!important}
@@ -4614,7 +4614,7 @@ $("#chooseSquares").onclick=()=>enterSquares();
   mix-blend-mode:normal!important;
 }
 .tabs [data-tab="standings"] img.links-nav-art-v174{
-  content:url("./nav-v174/standings.png?v=200")!important;
+  content:url("./nav-v174/standings.png?v=200a")!important;
 }
 .tabs [data-tab="standings"].active{
   border:2px solid #4db8ff!important;
