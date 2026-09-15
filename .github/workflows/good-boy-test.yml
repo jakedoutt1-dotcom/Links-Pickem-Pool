@@ -1,71 +1,52 @@
-name: LINKS v200 safe home build
-
+name: LINKS v201 packages page
 on:
   push:
     branches: [main]
   workflow_dispatch:
-
 permissions:
   contents: write
-
 jobs:
-  build-home:
+  build-v201:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build safe v200 Home design
+      - name: Build v201 packages page
         shell: python
         run: |
           from pathlib import Path
           import re
-          p=Path('public/index.html')
-          s=p.read_text(encoding='utf-8')
-          # Styling only: do not touch v199 startup/session/service-worker/timer JavaScript.
-          css=r'''<style id="links-home-v200-safe">
-          #home{--wood:#241309;--wood2:#100905;--orange:#ff6a1a;--steel:#aab3ba}
-          #home .links-sales-hero-v193,#home .links-games-categories-v193{border:2px solid #68727a!important;background:radial-gradient(circle at 50% 0,#172737 0,#080d11 43%,#080503 100%)!important;box-shadow:inset 0 0 0 3px #171b1e,0 12px 30px #000b!important}
-          #home .links-sales-hero-v193{background:linear-gradient(#08080899,#08080899),repeating-linear-gradient(90deg,#1c0e06 0 22px,#28140a 22px 44px,#160b05 44px 66px)!important}
-          #home .links-benefits-v193>div{position:relative;min-height:128px;padding:20px 12px!important;border:2px solid #7d858a!important;border-radius:13px!important;background:linear-gradient(145deg,#32190b,#140a05 60%,#251207)!important;box-shadow:inset 0 0 0 3px #111,0 6px 14px #0009!important;display:flex;flex-direction:column;justify-content:center}
-          #home .links-benefits-v193>div:before{content:'LINKS';position:absolute;top:6px;left:50%;transform:translateX(-50%);font-size:9px;letter-spacing:2px;color:#d8b28d;border:1px solid #66503c;padding:1px 7px;background:#160b06}
-          #home .links-benefits-v193 b{font-size:17px;text-shadow:0 2px 2px #000}#home .links-benefits-v193 span{color:#eee!important}
-          #home .links-no-busywork-v193{margin:18px -26px -26px!important;padding:20px!important;background:repeating-linear-gradient(90deg,#1c0e06 0 30px,#2b160b 30px 60px)!important;border-top:2px solid #5f3b23;color:#fff!important;font-size:clamp(17px,3vw,28px);font-style:italic;text-shadow:0 2px #000}
-          #home .links-games-categories-v193 .kicker{color:#ffd1ad;text-align:center;letter-spacing:2px}#home .links-games-categories-v193 h2{font-size:clamp(27px,5vw,48px)!important;text-shadow:0 3px #000}#home .links-games-categories-v193 h2:after{content:' MULTIPLE WAYS TO PLAY.';display:block;color:var(--orange);font-style:italic;font-size:.68em;margin-top:4px}#home .links-games-categories-v193 h2{font-size:0!important}#home .links-games-categories-v193 h2:before{content:'ONE LINKS PLATFORM.';font-size:clamp(27px,5vw,48px);display:block;color:#fff}
-          #home .links-category-list-v193{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px!important}
-          #home .links-category-v193{border:2px solid #858b90!important;border-radius:15px!important;background:linear-gradient(180deg,#18222a 0 42%,#32180a 43%,#130a05 100%)!important;box-shadow:inset 0 0 0 3px #101214,0 7px 16px #000b!important}
-          #home .links-category-v193 summary{min-height:126px;grid-template-columns:74px 1fr 42px!important;padding:16px!important;background:radial-gradient(circle at 50% 0,#2d4354 0,#101820 48%,transparent 49%)!important}
-          #home .links-cat-icon-v193{width:62px;height:62px;display:grid;place-items:center;font-size:42px!important;border-radius:50%;background:#10161b;border:2px solid #6d777e;box-shadow:0 0 14px #000}
-          #home .links-category-v193 summary b{font-size:clamp(18px,2.5vw,28px)!important;text-shadow:0 3px 2px #000}#home .links-category-v193 summary small{text-transform:uppercase;color:#e5e5e5!important;letter-spacing:1px}
-          #home .links-category-v193 summary em{font-size:0!important;width:38px;height:38px;border:2px solid #a44b18;border-radius:9px;background:#1a0d07;box-shadow:0 0 10px #ff6a1a44;display:grid;place-items:center}#home .links-category-v193 summary em:after{content:'›'!important;color:var(--orange);font-size:38px;line-height:30px;font-style:normal}#home .links-category-v193[open] summary em:after{transform:rotate(90deg)}
-          #home .links-category-games-v193{grid-template-columns:1fr!important;background:#090d10;padding:10px!important}#home .links-category-games-v193>div{background:#111820!important}
-          #home .links-home-footer-v200{margin:22px 0 8px;padding:22px 18px 12px;border-top:2px solid #70401f;border-bottom:2px solid #352316;background:radial-gradient(circle at 50% 0,#34200f 0,#170b05 45%,#080604 100%);box-shadow:inset 0 10px 30px #0008;text-align:center}
-          #home .links-home-footer-row-v200{display:grid;grid-template-columns:1fr auto 1fr;gap:20px;align-items:center}.links-home-footer-slogan-v200{font-size:clamp(16px,2.5vw,25px);font-weight:950;font-style:italic;color:#f4f4f4;text-shadow:0 2px #000}.links-home-footer-logo-v200{padding:11px 28px;border:3px solid #8a7c6d;border-radius:9px;background:linear-gradient(#472510,#1b0e07);box-shadow:inset 0 0 0 3px #160b05,0 5px 15px #000;font-size:clamp(24px,4vw,42px);font-weight:1000;letter-spacing:2px;color:#f3e4d0;text-shadow:0 3px 2px #000}.links-home-footer-logo-v200 small{display:block;font-size:.38em;letter-spacing:4px}.links-home-footer-paw-v200{color:var(--orange);font-size:26px}.links-build-footer{margin-top:0!important}
-          @media(max-width:700px){#home .links-category-list-v193{grid-template-columns:1fr!important}#home .links-benefits-v193{grid-template-columns:1fr 1fr!important}#home .links-category-v193 summary{grid-template-columns:58px 1fr 38px!important;min-height:105px}#home .links-cat-icon-v193{width:50px;height:50px;font-size:33px!important}#home .links-no-busywork-v193{margin:17px -12px -18px!important}.links-home-footer-row-v200{grid-template-columns:1fr;gap:12px}.links-home-footer-logo-v200{order:-1}}
+          p=Path('public/index.html'); s=p.read_text(encoding='utf-8')
+          # Preserve all v199 behavior. This patch changes Home/page markup + CSS only.
+          start=s.find('<section class="links-package-section-v150 links-package-section-v193" id="linksPackages">')
+          end=s.find('<div id="poolLoginModalV150"',start)
+          if start<0 or end<0: raise SystemExit('Package section boundaries not found')
+          package=s[start:end]
+          home_cta='''<section class="links-plans-cta-v201"><div class="kicker">COMMISSIONER PLANS</div><h2>NEED MORE THAN ONE POOL?</h2><p>Start free for life, then add more pool slots only when you need them.</p><button id="openPlansV201" type="button">VIEW PLANS &amp; PACKAGES ›</button></section>\n\n  '''
+          s=s[:start]+home_cta+s[end:]
+          home_end=s.find('\n</div>',s.find('<div id="home"'))
+          if home_end<0: raise SystemExit('Home end not found')
+          plans='''\n<div id="plansPageV201" class="hide links-plans-page-v201">
+            <div class="links-plans-head-v201"><button id="plansBackV201" type="button">← HOME</button><div><div class="kicker">LINKS PICK’EM POOLS</div><h1>PLANS &amp; PACKAGES</h1><p>Players are always free. Start with one game-pool slot free for life.</p></div></div>
+            '''+package+'''<section class="links-home-footer-v200" aria-label="Links Pickem Pools"><div class="links-home-footer-row-v200"><div class="links-home-footer-slogan-v200">YOU PICK.<br>WE TRACK. YOU WIN.</div><div><div class="links-home-footer-paw-v200">🐾</div><div class="links-home-footer-logo-v200">LINKS<small>PICK’EM POOLS</small></div></div><div class="links-home-footer-slogan-v200">BRINGING PEOPLE<br>TOGETHER <span class="links-home-footer-paw-v200">🐾</span></div></div></section>
+          </div>\n'''
+          s=s[:home_end+7]+plans+s[home_end+7:]
+          css='''<style id="links-v201-plans-style">
+          #home .links-plans-cta-v201{margin:18px 0;padding:24px;text-align:center;border:2px solid #777;border-radius:17px;background:repeating-linear-gradient(90deg,#1a0d06 0 28px,#2b160b 28px 56px);box-shadow:inset 0 0 0 3px #111,0 9px 24px #000a}#home .links-plans-cta-v201 h2{margin:6px 0;font-size:clamp(24px,4vw,38px)}#home .links-plans-cta-v201 p{color:#ddd}#home #openPlansV201{width:auto;min-width:260px;background:#ff6a1a;border-color:#ff9b61;font-weight:950}
+          .links-plans-page-v201{max-width:1180px;margin:auto;padding:18px}.links-plans-head-v201{padding:24px;border:2px solid #777;border-radius:18px;background:radial-gradient(circle at 50% 0,#203448,#080d11 48%,#160b05);text-align:center;box-shadow:inset 0 0 0 3px #111,0 10px 25px #000b}.links-plans-head-v201 #plansBackV201{display:block;width:auto;margin:0 0 12px;background:#251208;border:1px solid #a44b18;color:#fff}.links-plans-head-v201 h1{font-size:clamp(32px,6vw,58px);margin:5px 0;color:#fff;text-shadow:0 3px #000}.links-plans-page-v201 .links-package-section-v150{margin-top:16px;background:repeating-linear-gradient(90deg,#120a06 0 30px,#201006 30px 60px)!important;border:2px solid #737b80!important;box-shadow:inset 0 0 0 3px #111,0 10px 28px #000a}.links-plans-page-v201 .links-package-card-v150{border:2px solid #69747c!important;background:linear-gradient(145deg,#171d22,#0c1115 62%,#241207)!important;box-shadow:inset 0 0 0 2px #111,0 8px 18px #0009!important}.links-plans-page-v201 .links-package-card-v150.featured{border-color:#ff6a1a!important;box-shadow:inset 0 0 0 2px #111,0 0 16px #ff6a1a55!important}.links-plans-page-v201 .links-package-card-v150 button{font-weight:950}.links-plans-page-v201 .links-home-footer-v200{margin-top:20px}
           </style>'''
-          if 'id="links-home-v200-safe"' not in s:
-              s=s.replace('</head>',css+'\n</head>',1)
-          footer='''<section class="links-home-footer-v200" aria-label="Links Pickem Pools">
-            <div class="links-home-footer-row-v200">
-              <div class="links-home-footer-slogan-v200">YOU PICK.<br>WE TRACK. YOU WIN.</div>
-              <div><div class="links-home-footer-paw-v200">🐾</div><div class="links-home-footer-logo-v200">LINKS<small>PICK’EM POOLS</small></div></div>
-              <div class="links-home-footer-slogan-v200">BRINGING PEOPLE<br>TOGETHER <span class="links-home-footer-paw-v200">🐾</span></div>
-            </div>
-          </section>'''
-          marker='<footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v199</footer>'
-          if 'links-home-footer-v200' not in s[s.find('<body'):]:
-              if marker not in s: raise SystemExit('Home footer marker missing')
-              s=s.replace(marker,footer+'\n\n  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v200</footer>',1)
-          else:
-              s=s.replace('LINKS PICK’EM POOLS — v199','LINKS PICK’EM POOLS — v200',1)
+          s=s.replace('</head>',css+'\n</head>',1)
+          js='''<script id="links-v201-plans-nav">document.addEventListener('click',function(e){const open=e.target.closest('#openPlansV201');const back=e.target.closest('#plansBackV201');if(open){const h=document.getElementById('home'),p=document.getElementById('plansPageV201');if(h&&p){h.classList.add('hide');p.classList.remove('hide');window.scrollTo(0,0)}}if(back){const h=document.getElementById('home'),p=document.getElementById('plansPageV201');if(h&&p){p.classList.add('hide');h.classList.remove('hide');window.scrollTo(0,0)}}});</script>'''
+          s=s.replace('</body>',js+'\n</body>',1)
+          s=s.replace('LINKS PICK’EM POOLS — v200','LINKS PICK’EM POOLS — v201')
           p.write_text(s,encoding='utf-8')
       - name: Validate and commit
         run: |
-          grep -q 'links-home-v200-safe' public/index.html
-          grep -q 'links-home-footer-v200' public/index.html
-          grep -q 'LINKS PICK’EM POOLS — v200' public/index.html
+          grep -q 'id="plansPageV201"' public/index.html
+          grep -q 'id="openPlansV201"' public/index.html
+          grep -q 'LINKS PICK’EM POOLS — v201' public/index.html
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/index.html
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m "LINKS v200: safe Home redesign from v199"
+          git commit -m "LINKS v201: themed packages page and cleaner Home"
           git push
