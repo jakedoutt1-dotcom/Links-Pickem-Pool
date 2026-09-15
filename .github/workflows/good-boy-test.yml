@@ -1,4 +1,4 @@
-name: LINKS v199 build
+name: LINKS v200 build
 
 on:
   push:
@@ -9,79 +9,121 @@ permissions:
   contents: write
 
 jobs:
-  build-v199:
+  build-v200:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Apply v199 pick countdown update
+      - name: Apply v200 updates
         shell: python
         run: |
           from pathlib import Path
+          import re
+
           p = Path('public/index.html')
           s = p.read_text(encoding='utf-8')
 
-          # Put the live countdown directly below the Week / pick-count card.
-          old = '<div class="card row"><b id="weekTitle"></b><b id="pickCount"></b></div>\n    <div id="games"></div>'
-          new = '<div class="card row"><b id="weekTitle"></b><b id="pickCount"></b></div>\n    <div id="topPicksDeadline" class="pick-deadline-v191"></div>\n    <div id="games"></div>'
-          if 'id="topPicksDeadline"' not in s:
-              if old not in s:
-                  raise SystemExit('Could not find Week/pick-count card; refusing unsafe edit.')
-              s = s.replace(old, new, 1)
+          # v200 version bump and permanent cache-bust for the existing full-color Standings artwork.
+          s = s.replace('LINKS PICK’EM POOLS — v199','LINKS PICK’EM POOLS — v200')
+          s = s.replace('standings.png?v=199','standings.png?v=200')
+          s = s.replace('standings.png?v=198','standings.png?v=200')
+          s = s.replace('standings.png?v=197','standings.png?v=200')
+          s = s.replace('standings.png?v=196','standings.png?v=200')
+          # Catch unversioned references without touching another nav image.
+          s = re.sub(r'(nav-v174/standings\.png)(?!\?v=\d+)', r'\1?v=200', s)
 
-          # Make the existing one-second lock countdown paint both top and bottom deadline boxes.
-          start = s.find('function updatePickLockCountdownV198(lockAt,locked){')
-          end = s.find('\n\nfunction renderPicks(){', start)
-          if start < 0 or end < 0:
-              raise SystemExit('Could not find lock countdown function; refusing unsafe edit.')
-          fn = '''function updatePickLockCountdownV198(lockAt,locked){
-            const els=[$("#topPicksDeadline"),$("#savePicksDeadline")].filter(Boolean);if(!els.length)return;
-            if(pickLockCountdownTimerV198){clearInterval(pickLockCountdownTimerV198);pickLockCountdownTimerV198=null}
-            const paint=()=>{
-              if(!lockAt){for(const el of els){el.classList.remove("urgent-v198","locked-v198");el.innerHTML=`<strong>⏰ PICK DEADLINE:</strong> Loading…`}return}
-              const ms=Date.parse(lockAt)-Date.now();
-              if(locked||ms<=0){
-                for(const el of els){el.classList.remove("urgent-v198");el.classList.add("locked-v198");el.innerHTML=`<span class="lock-title-v198">🔒 PICKS ARE LOCKED</span><span class="lock-sub-v198">Deadline: ${fmtKickoff(lockAt)}</span>`}
-                if(pickLockCountdownTimerV198){clearInterval(pickLockCountdownTimerV198);pickLockCountdownTimerV198=null}
-                return;
-              }
-              const total=Math.max(0,Math.floor(ms/1000)),days=Math.floor(total/86400),hrs=Math.floor((total%86400)/3600),mins=Math.floor((total%3600)/60),secs=total%60;
-              const countdown=`${days?days+"D ":""}${String(hrs).padStart(2,"0")}H ${String(mins).padStart(2,"0")}M ${String(secs).padStart(2,"0")}S`;
-              for(const el of els){el.classList.toggle("urgent-v198",ms<=6*60*60*1000);el.classList.remove("locked-v198");el.innerHTML=`<span class="lock-title-v198">⏰ PICKS LOCK IN</span><span class="lock-countdown-v198">${countdown}</span><span class="lock-sub-v198">${fmtKickoff(lockAt)}</span>`}
-            };
-            paint();if(!locked&&lockAt)pickLockCountdownTimerV198=setInterval(paint,1000);
-          }'''
-          s = s[:start] + fn + s[end:]
-
-          # Give the new top timer the exact same visual states as the existing bottom timer.
-          replacements = {
-            '#savePicksDeadline.pick-deadline-v191{':'#savePicksDeadline.pick-deadline-v191,#topPicksDeadline.pick-deadline-v191{',
-            '#savePicksDeadline .lock-title-v198{':'#savePicksDeadline .lock-title-v198,#topPicksDeadline .lock-title-v198{',
-            '#savePicksDeadline .lock-countdown-v198{':'#savePicksDeadline .lock-countdown-v198,#topPicksDeadline .lock-countdown-v198{',
-            '#savePicksDeadline .lock-sub-v198{':'#savePicksDeadline .lock-sub-v198,#topPicksDeadline .lock-sub-v198{',
-            '#savePicksDeadline.urgent-v198{':'#savePicksDeadline.urgent-v198,#topPicksDeadline.urgent-v198{',
-            '#savePicksDeadline.urgent-v198 .lock-title-v198,#savePicksDeadline.locked-v198 .lock-title-v198{':'#savePicksDeadline.urgent-v198 .lock-title-v198,#topPicksDeadline.urgent-v198 .lock-title-v198,#savePicksDeadline.locked-v198 .lock-title-v198,#topPicksDeadline.locked-v198 .lock-title-v198{',
-            '#savePicksDeadline.locked-v198{':'#savePicksDeadline.locked-v198,#topPicksDeadline.locked-v198{'
+          # Installed-app/PWA freshness: register a versioned SW with updateViaCache none,
+          # check for a new worker on launch/foreground, and reload once when it takes control.
+          refresh = r'''
+<script id="links-pwa-refresh-v200">
+(()=>{
+  if(!('serviceWorker' in navigator)) return;
+  let reloading=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(reloading) return;
+    reloading=true;
+    location.reload();
+  });
+  const register=()=>navigator.serviceWorker.register('/links-sw.js?v=200',{updateViaCache:'none'})
+    .then(reg=>{
+      reg.update().catch(()=>{});
+      if(reg.waiting) reg.waiting.postMessage({type:'SKIP_WAITING'});
+      reg.addEventListener('updatefound',()=>{
+        const w=reg.installing;
+        if(!w) return;
+        w.addEventListener('statechange',()=>{
+          if(w.state==='installed' && navigator.serviceWorker.controller){
+            w.postMessage({type:'SKIP_WAITING'});
           }
-          for a,b in replacements.items():
-              if b not in s:
-                  if a not in s:
-                      raise SystemExit(f'Could not find expected CSS selector: {a}')
-                  s = s.replace(a,b,1)
+        });
+      });
+      return reg;
+    }).catch(()=>null);
+  window.addEventListener('load',register,{once:true});
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') register(); });
+})();
+</script>
+'''
+          if 'id="links-pwa-refresh-v200"' not in s:
+              if '</body>' not in s:
+                  raise SystemExit('No </body> found; refusing unsafe PWA injection.')
+              s = s.replace('</body>', refresh + '\n</body>', 1)
 
-          # Real build version replaces the temporary deployment-test label.
-          s = s.replace('LINKS PICK’EM POOLS — v198 • GOOD BOY','LINKS PICK’EM POOLS — v199',1)
-          s = s.replace('LINKS PICK’EM POOLS — v198','LINKS PICK’EM POOLS — v199',1)
-          s = s.replace('standings.png?v=198','standings.png?v=199')
-          s = s.replace('<style id="links-v198-picks-standings">','<style id="links-v199-picks-standings">')
-          s = s.replace('/* v198 — unmistakable selected pick + live lock warning. Existing team/nav artwork only. */','/* v199 — top + bottom live pick-lock countdown. Existing team/nav artwork only. */')
           p.write_text(s, encoding='utf-8')
-      - name: Validate and commit v199
+
+          # Network-first service worker: navigation/HTML always tries the live site first.
+          # Static assets may be cached, while versioned URLs force new artwork immediately.
+          sw = Path('public/links-sw.js')
+          sw.write_text(r'''const CACHE='links-pickem-v200';
+const CORE=['/','/index.html','/manifest.webmanifest'];
+self.addEventListener('install',event=>{
+  self.skipWaiting();
+  event.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).catch(()=>{}));
+});
+self.addEventListener('activate',event=>{
+  event.waitUntil((async()=>{
+    const keys=await caches.keys();
+    await Promise.all(keys.filter(k=>k.startsWith('links-pickem-')&&k!==CACHE).map(k=>caches.delete(k)));
+    await self.clients.claim();
+  })());
+});
+self.addEventListener('message',event=>{
+  if(event.data&&event.data.type==='SKIP_WAITING') self.skipWaiting();
+});
+self.addEventListener('fetch',event=>{
+  const req=event.request;
+  if(req.method!=='GET') return;
+  const url=new URL(req.url);
+  if(url.origin!==location.origin) return;
+  if(req.mode==='navigate'||url.pathname==='/'||url.pathname.endsWith('/index.html')){
+    event.respondWith(fetch(req,{cache:'no-store'}).then(res=>{
+      const copy=res.clone(); caches.open(CACHE).then(c=>c.put('/index.html',copy)).catch(()=>{});
+      return res;
+    }).catch(()=>caches.match('/index.html')));
+    return;
+  }
+  event.respondWith(fetch(req).then(res=>{
+    if(res.ok){const copy=res.clone();caches.open(CACHE).then(c=>c.put(req,copy)).catch(()=>{});}
+    return res;
+  }).catch(()=>caches.match(req)));
+});
+''',encoding='utf-8')
+
+          # Ensure Cloudflare/browser never holds the service worker itself.
+          hp=Path('public/_headers')
+          h=hp.read_text(encoding='utf-8')
+          if '/links-sw.js' not in h:
+              h += '\n/links-sw.js\n  Cache-Control: no-cache, no-store, must-revalidate\n'
+          hp.write_text(h,encoding='utf-8')
+
+      - name: Validate and commit v200
         run: |
-          grep -q 'id="topPicksDeadline"' public/index.html
-          grep -q 'LINKS PICK’EM POOLS — v199' public/index.html
+          grep -q 'LINKS PICK’EM POOLS — v200' public/index.html
+          grep -q 'links-pwa-refresh-v200' public/index.html
+          grep -q 'links-pickem-v200' public/links-sw.js
+          grep -q 'standings.png?v=200' public/index.html
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/index.html
-          git commit -m "LINKS v199: top pick-lock countdown"
+          git add public/index.html public/links-sw.js public/_headers
+          git commit -m "LINKS v200: fix Standings nav and PWA refresh"
           git push
