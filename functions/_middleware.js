@@ -1,35 +1,24 @@
-// LINKS v207 — Pick Your Games home entry. Existing app/game logic stays intact.
+// LINKS v208 — real Pick Your Games page + reliable Home graphic entry.
 export async function onRequest(context){
+ const url=new URL(context.request.url);
+ if(context.request.method!=="GET")return context.next();
+ if(url.pathname==="/pick-your-games"){
+  const page=`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pick Your Games — LINKS</title><style>*{box-sizing:border-box}body{margin:0;background:#03070a;color:#fff;font-family:Arial,sans-serif}.page{max-width:900px;margin:auto;padding:14px}.back{display:inline-block;color:#fff;text-decoration:none;border:1px solid #59636b;background:#111b23;border-radius:10px;padding:10px 14px;font-weight:900;margin-bottom:12px}.hero{width:100%;display:block;border:2px solid #70787d;border-radius:14px;background:#080d12;box-shadow:0 12px 30px #000}.intro{text-align:center;padding:18px 6px 8px}.intro .k{color:#f2c6a4;letter-spacing:4px;font-weight:900;font-size:13px}.intro h1{font-size:34px;margin:7px 0}.intro p{color:#d8e0e5;font-size:16px;margin:0 auto 18px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.cat{position:relative;min-height:180px;padding:22px;border:3px solid #747d82;border-radius:16px;background:linear-gradient(180deg,#17354a 0 57%,#32180c 57%);box-shadow:inset 0 0 0 2px #0a0f13,0 7px 18px #0009;text-decoration:none;color:#fff;overflow:hidden}.cat .icon{font-size:46px}.cat h2{font-size:25px;line-height:1;margin:12px 58px 5px 0}.cat small{letter-spacing:2px;color:#eee}.arrow{position:absolute;right:16px;bottom:18px;width:46px;height:46px;border:2px solid #ff6418;border-radius:10px;display:grid;place-items:center;color:#ff6418;font-size:30px;font-weight:1000;background:#170b06}.foot{text-align:center;color:#87929a;font-size:11px;letter-spacing:2px;padding:24px 0}@media(max-width:600px){.page{padding:8px}.hero{border-radius:9px}.intro h1{font-size:28px}.grid{grid-template-columns:1fr}.cat{min-height:150px}.cat h2{font-size:23px}}</style></head><body><main class="page"><a class="back" href="/">‹ BACK TO HOME</a><img class="hero" src="/pick-your-games-v207.svg?v=208" alt="Pick Your Games"><section class="intro"><div class="k">CHOOSE WHAT YOU WANT TO RUN</div><h1>ONE LINKS PLATFORM.</h1><p>Start with a category. Open only the games you want to see.</p></section><section class="grid"><a class="cat" href="/?linksCategory=nfl#linksGameCategoriesV208"><div class="icon">🏈</div><h2>NFL POOLS</h2><small>6 POOL STYLES</small><span class="arrow">›</span></a><a class="cat" href="/?linksCategory=college#linksGameCategoriesV208"><div class="icon">🏆</div><h2>COLLEGE &amp; TOURNAMENTS</h2><small>3 POOL STYLES</small><span class="arrow">›</span></a><a class="cat" href="/?linksCategory=other#linksGameCategoriesV208"><div class="icon">⛳ 🏁</div><h2>OTHER SPORTS</h2><small>GOLF &amp; RACING</small><span class="arrow">›</span></a><a class="cat" href="/?linksCategory=fantasy#linksGameCategoriesV208"><div class="icon">🏈 👥</div><h2>REDRAFT &amp; DYNASTY</h2><small>BUILD YOUR TEAM</small><span class="arrow">›</span></a></section><div class="foot">LINKS PICK’EM POOLS — v208</div></main></body></html>`;
+  return new Response(page,{headers:{"content-type":"text/html; charset=utf-8","cache-control":"no-cache, no-store, must-revalidate","x-links-build":"v208"}});
+ }
  const response=await context.next();
- if(context.request.method!=="GET")return response;
- const url=new URL(context.request.url),ct=response.headers.get("content-type")||"";
+ const ct=response.headers.get("content-type")||"";
  if(!ct.includes("text/html")||!(url.pathname==="/"||url.pathname==="/index.html"))return response;
  let html=await response.text();
- const css=`<style id="links-v207">
-:root{--o:#ff6418;--ohi:#ff8a35}
-body{background:#03070a!important;background-image:radial-gradient(ellipse at 50% 0,rgba(65,103,132,.18),transparent 34%),linear-gradient(#071018,#03070a 48%,#020405)!important}
-.links-pick-games-home-v207{display:block;width:min(1100px,100%);margin:18px auto 24px;padding:0;border:0;background:transparent;text-decoration:none;cursor:pointer}
-.links-pick-games-home-v207 img{display:block;width:100%;height:auto;border-radius:16px;border:2px solid #6f7477;box-shadow:0 14px 34px #000b,0 0 0 2px #111 inset}
-.links-pick-games-home-v207:focus-visible{outline:3px solid #ff6418;outline-offset:5px;border-radius:16px}
-.links-pick-games-note-v207{text-align:center;margin-top:7px;color:#c7d0d7;font-size:11px;font-weight:850;letter-spacing:.5px}
-button.blue,#home button.blue,#savePicks{background:linear-gradient(var(--ohi),#ff5909)!important;border:2px solid #ff9a5c!important;color:#fff!important;font-weight:950!important}
-.tabs{background:linear-gradient(#09131b,#04080b)!important}.tabs button.active{border-color:#ff6a1c!important}
-#picks>.card.row:first-of-type{background:linear-gradient(#173c58,#0a2031)!important;border:3px solid #798187!important}#picks>.card.row:first-of-type::before{content:'PICKS';color:#ff7624;font-weight:950;letter-spacing:1.6px}
-#standingsBody tr.links-my-rank-v207 td{background:#ff641821!important;border-top:2px solid var(--o)!important;border-bottom:2px solid var(--o)!important}.links-my-rank-label-v207{display:inline-block;margin-left:6px;padding:2px 6px;border-radius:99px;background:var(--o);color:#fff;font-size:9px;font-weight:950}
-.links-build-footer{color:#9ca5aa!important;letter-spacing:1.5px!important}
-@media(max-width:560px){.links-pick-games-home-v207{margin:12px auto 17px}.links-pick-games-home-v207 img{border-radius:10px}.links-pick-games-note-v207{font-size:10px}}
-</style>`;
+ const css=`<style id="links-v208">:root{--o:#ff6418;--ohi:#ff8a35}.links-pick-games-home-v208{display:block;width:min(1100px,100%);margin:18px auto 24px;padding:0;border:0;background:#080d12;text-decoration:none;cursor:pointer;border-radius:16px;overflow:hidden;border:2px solid #6f7477;box-shadow:0 14px 34px #000b}.links-pick-games-home-v208 img{display:block;width:100%;height:auto}.links-pick-games-note-v208{text-align:center;padding:8px;color:#dbe2e7;background:#071018;font-size:11px;font-weight:900;letter-spacing:1px}.links-old-category-v208{display:none!important}button.blue,#home button.blue,#savePicks{background:linear-gradient(var(--ohi),#ff5909)!important;border:2px solid #ff9a5c!important;color:#fff!important;font-weight:950!important}.tabs button.active{border-color:#ff6a1c!important}.links-build-footer{color:#9ca5aa!important;letter-spacing:1.5px!important}@media(max-width:560px){.links-pick-games-home-v208{margin:12px auto 17px;border-radius:10px}.links-pick-games-note-v208{font-size:10px}}</style>`;
  html=html.replace("</head>",css+"\n</head>");
- const categoryMarker='<div class="kicker">CHOOSE WHAT YOU WANT TO RUN</div>';
- const homeEntry=`<a class="links-pick-games-home-v207" href="#linksGameCategoriesV207" aria-label="Pick your games"><img src="/pick-your-games-v207.svg?v=207" alt="Pick Your Games — one Links platform, multiple ways to play"><div class="links-pick-games-note-v207">TAP TO PICK YOUR GAMES</div></a><div id="linksGameCategoriesV207"></div>`;
- if(html.includes(categoryMarker))html=html.replace(categoryMarker,homeEntry+categoryMarker);
- const rowsSource='(d.rows||[]).map((r,i)=>{';
- const rowsReplacement=`(()=>{const allRows=d.rows||[];const visibleRows=allRows.slice(0,10).map((r,i)=>({...r,__v207Rank:i+1,__v207Mine:false}));const meName=String($("#currentUser")?.textContent||"").trim();const meIndex=allRows.findIndex(r=>String(r.player||"").trim()===meName);if(meIndex>=10)visibleRows.push({...allRows[meIndex],__v207Rank:meIndex+1,__v207Mine:true});else if(meIndex>=0&&visibleRows[meIndex])visibleRows[meIndex].__v207Mine=true;return visibleRows})().map((r,i)=>{`;
- html=html.replace(rowsSource,rowsReplacement);
- const rs='return `<tr class="${won?"winner":""}"><td>${i+1}</td><td>${r.player}${won?" 🏆 WINNER":""}</td>';
- const rr='return `<tr class="${won?"winner":""}${r.__v207Mine?" links-my-rank-v207":""}"><td>${r.__v207Rank||i+1}</td><td>${r.player}${r.__v207Mine?" <span class=\\"links-my-rank-label-v207\\">YOU</span>":""}${won?" 🏆 WINNER":""}</td>';
- html=html.replace(rs,rr);
- for(const v of ["v202","v203","v204","v205","v206"]){html=html.replace(`LINKS PICK’EM POOLS — ${v}`,"LINKS PICK’EM POOLS — v207");html=html.replace(`LINKS PICK'EM POOLS — ${v}`,"LINKS PICK'EM POOLS — v207")}
- const headers=new Headers(response.headers);headers.delete("content-length");headers.set("cache-control","no-cache, no-store, must-revalidate");headers.set("x-links-build","v207");
- return new Response(html,{status:response.status,statusText:response.statusText,headers});
+ const marker='<div class="kicker">CHOOSE WHAT YOU WANT TO RUN</div>';
+ const oldEntryStart='<a class="links-pick-games-home-v207"';
+ if(html.includes(oldEntryStart)){html=html.replace(/<a class="links-pick-games-home-v207"[\s\S]*?<div id="linksGameCategoriesV207"><\/div>/,'');}
+ const entry=`<a class="links-pick-games-home-v208" href="/pick-your-games" aria-label="Open Pick Your Games page"><img src="/pick-your-games-v207.svg?v=208" alt="Pick Your Games"><div class="links-pick-games-note-v208">TAP TO PICK YOUR GAMES</div></a><div id="linksGameCategoriesV208"></div>`;
+ if(html.includes(marker))html=html.replace(marker,entry+'<div class="links-old-category-v208">'+marker);
+ const closeNeedle='NEED MORE THAN ONE POOL?';
+ if(html.includes('links-old-category-v208')&&html.includes(closeNeedle)){const pos=html.indexOf(closeNeedle);const open=html.lastIndexOf('<',pos);if(open>0)html=html.slice(0,open)+'</div>'+html.slice(open);}
+ for(const v of ["v202","v203","v204","v205","v206","v207"]){html=html.replaceAll(`LINKS PICK’EM POOLS — ${v}`,"LINKS PICK’EM POOLS — v208");html=html.replaceAll(`LINKS PICK'EM POOLS — ${v}`,"LINKS PICK'EM POOLS — v208")}
+ const headers=new Headers(response.headers);headers.delete("content-length");headers.set("cache-control","no-cache, no-store, must-revalidate");headers.set("x-links-build","v208");return new Response(html,{status:response.status,statusText:response.statusText,headers});
 }
