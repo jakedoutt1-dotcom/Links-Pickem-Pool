@@ -1,0 +1,47 @@
+name: LINKS Good Boy deployment test
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-home-footer:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add GOOD BOY beside current home version
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+          p = Path('public/index.html')
+          s = p.read_text(encoding='utf-8')
+          if 'GOOD BOY' in s:
+              print('GOOD BOY already present; no change needed.')
+              raise SystemExit(0)
+          patterns = [
+              r'(LINKS PICK(?:’|\'|&apos;)?EM POOLS\s*[—-]\s*v198)',
+              r'(LINKS PICK(?:’|\'|&apos;)?EM POOLS[^<\n]{0,80}v198)',
+              r'(v198)(?=\s*</[^>]+>)'
+          ]
+          for pat in patterns:
+              s2, n = re.subn(pat, r'\1 • GOOD BOY', s, count=1, flags=re.I)
+              if n:
+                  p.write_text(s2, encoding='utf-8')
+                  print('Updated home footer.')
+                  break
+          else:
+              raise SystemExit('Could not locate the v198 home footer; refusing to change another location.')
+      - name: Commit test change
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/index.html
+          git commit -m "Test automatic deploy: add GOOD BOY to home footer"
+          git push
