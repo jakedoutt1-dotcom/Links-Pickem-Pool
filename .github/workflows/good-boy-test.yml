@@ -1,4 +1,4 @@
-name: LINKS Good Boy deployment test
+name: LINKS v199 build
 
 on:
   push:
@@ -9,39 +9,79 @@ permissions:
   contents: write
 
 jobs:
-  update-home-footer:
+  build-v199:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Add GOOD BOY beside current home version
+      - name: Apply v199 pick countdown update
         shell: python
         run: |
           from pathlib import Path
-          import re
           p = Path('public/index.html')
           s = p.read_text(encoding='utf-8')
-          if 'GOOD BOY' in s:
-              print('GOOD BOY already present; no change needed.')
-              raise SystemExit(0)
-          patterns = [
-              r'(LINKS PICK(?:’|\'|&apos;)?EM POOLS\s*[—-]\s*v198)',
-              r'(LINKS PICK(?:’|\'|&apos;)?EM POOLS[^<\n]{0,80}v198)',
-              r'(v198)(?=\s*</[^>]+>)'
-          ]
-          for pat in patterns:
-              s2, n = re.subn(pat, r'\1 • GOOD BOY', s, count=1, flags=re.I)
-              if n:
-                  p.write_text(s2, encoding='utf-8')
-                  print('Updated home footer.')
-                  break
-          else:
-              raise SystemExit('Could not locate the v198 home footer; refusing to change another location.')
-      - name: Commit test change
+
+          # Put the live countdown directly below the Week / pick-count card.
+          old = '<div class="card row"><b id="weekTitle"></b><b id="pickCount"></b></div>\n    <div id="games"></div>'
+          new = '<div class="card row"><b id="weekTitle"></b><b id="pickCount"></b></div>\n    <div id="topPicksDeadline" class="pick-deadline-v191"></div>\n    <div id="games"></div>'
+          if 'id="topPicksDeadline"' not in s:
+              if old not in s:
+                  raise SystemExit('Could not find Week/pick-count card; refusing unsafe edit.')
+              s = s.replace(old, new, 1)
+
+          # Make the existing one-second lock countdown paint both top and bottom deadline boxes.
+          start = s.find('function updatePickLockCountdownV198(lockAt,locked){')
+          end = s.find('\n\nfunction renderPicks(){', start)
+          if start < 0 or end < 0:
+              raise SystemExit('Could not find lock countdown function; refusing unsafe edit.')
+          fn = '''function updatePickLockCountdownV198(lockAt,locked){
+            const els=[$("#topPicksDeadline"),$("#savePicksDeadline")].filter(Boolean);if(!els.length)return;
+            if(pickLockCountdownTimerV198){clearInterval(pickLockCountdownTimerV198);pickLockCountdownTimerV198=null}
+            const paint=()=>{
+              if(!lockAt){for(const el of els){el.classList.remove("urgent-v198","locked-v198");el.innerHTML=`<strong>⏰ PICK DEADLINE:</strong> Loading…`}return}
+              const ms=Date.parse(lockAt)-Date.now();
+              if(locked||ms<=0){
+                for(const el of els){el.classList.remove("urgent-v198");el.classList.add("locked-v198");el.innerHTML=`<span class="lock-title-v198">🔒 PICKS ARE LOCKED</span><span class="lock-sub-v198">Deadline: ${fmtKickoff(lockAt)}</span>`}
+                if(pickLockCountdownTimerV198){clearInterval(pickLockCountdownTimerV198);pickLockCountdownTimerV198=null}
+                return;
+              }
+              const total=Math.max(0,Math.floor(ms/1000)),days=Math.floor(total/86400),hrs=Math.floor((total%86400)/3600),mins=Math.floor((total%3600)/60),secs=total%60;
+              const countdown=`${days?days+"D ":""}${String(hrs).padStart(2,"0")}H ${String(mins).padStart(2,"0")}M ${String(secs).padStart(2,"0")}S`;
+              for(const el of els){el.classList.toggle("urgent-v198",ms<=6*60*60*1000);el.classList.remove("locked-v198");el.innerHTML=`<span class="lock-title-v198">⏰ PICKS LOCK IN</span><span class="lock-countdown-v198">${countdown}</span><span class="lock-sub-v198">${fmtKickoff(lockAt)}</span>`}
+            };
+            paint();if(!locked&&lockAt)pickLockCountdownTimerV198=setInterval(paint,1000);
+          }'''
+          s = s[:start] + fn + s[end:]
+
+          # Give the new top timer the exact same visual states as the existing bottom timer.
+          replacements = {
+            '#savePicksDeadline.pick-deadline-v191{':'#savePicksDeadline.pick-deadline-v191,#topPicksDeadline.pick-deadline-v191{',
+            '#savePicksDeadline .lock-title-v198{':'#savePicksDeadline .lock-title-v198,#topPicksDeadline .lock-title-v198{',
+            '#savePicksDeadline .lock-countdown-v198{':'#savePicksDeadline .lock-countdown-v198,#topPicksDeadline .lock-countdown-v198{',
+            '#savePicksDeadline .lock-sub-v198{':'#savePicksDeadline .lock-sub-v198,#topPicksDeadline .lock-sub-v198{',
+            '#savePicksDeadline.urgent-v198{':'#savePicksDeadline.urgent-v198,#topPicksDeadline.urgent-v198{',
+            '#savePicksDeadline.urgent-v198 .lock-title-v198,#savePicksDeadline.locked-v198 .lock-title-v198{':'#savePicksDeadline.urgent-v198 .lock-title-v198,#topPicksDeadline.urgent-v198 .lock-title-v198,#savePicksDeadline.locked-v198 .lock-title-v198,#topPicksDeadline.locked-v198 .lock-title-v198{',
+            '#savePicksDeadline.locked-v198{':'#savePicksDeadline.locked-v198,#topPicksDeadline.locked-v198{'
+          }
+          for a,b in replacements.items():
+              if b not in s:
+                  if a not in s:
+                      raise SystemExit(f'Could not find expected CSS selector: {a}')
+                  s = s.replace(a,b,1)
+
+          # Real build version replaces the temporary deployment-test label.
+          s = s.replace('LINKS PICK’EM POOLS — v198 • GOOD BOY','LINKS PICK’EM POOLS — v199',1)
+          s = s.replace('LINKS PICK’EM POOLS — v198','LINKS PICK’EM POOLS — v199',1)
+          s = s.replace('standings.png?v=198','standings.png?v=199')
+          s = s.replace('<style id="links-v198-picks-standings">','<style id="links-v199-picks-standings">')
+          s = s.replace('/* v198 — unmistakable selected pick + live lock warning. Existing team/nav artwork only. */','/* v199 — top + bottom live pick-lock countdown. Existing team/nav artwork only. */')
+          p.write_text(s, encoding='utf-8')
+      - name: Validate and commit v199
         run: |
-          if git diff --quiet; then exit 0; fi
+          grep -q 'id="topPicksDeadline"' public/index.html
+          grep -q 'LINKS PICK’EM POOLS — v199' public/index.html
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/index.html
-          git commit -m "Test automatic deploy: add GOOD BOY to home footer"
+          git commit -m "LINKS v199: top pick-lock countdown"
           git push
