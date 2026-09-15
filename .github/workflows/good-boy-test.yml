@@ -1,4 +1,4 @@
-name: LINKS v201 packages page
+name: LINKS v202 reference style
 on:
   push:
     branches: [main]
@@ -6,47 +6,40 @@ on:
 permissions:
   contents: write
 jobs:
-  build-v201:
+  build-v202:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build v201 packages page
+      - name: Build reference-style website cards
         shell: python
         run: |
           from pathlib import Path
           import re
           p=Path('public/index.html'); s=p.read_text(encoding='utf-8')
-          # Preserve all v199 behavior. This patch changes Home/page markup + CSS only.
-          start=s.find('<section class="links-package-section-v150 links-package-section-v193" id="linksPackages">')
-          end=s.find('<div id="poolLoginModalV150"',start)
-          if start<0 or end<0: raise SystemExit('Package section boundaries not found')
-          package=s[start:end]
-          home_cta='''<section class="links-plans-cta-v201"><div class="kicker">COMMISSIONER PLANS</div><h2>NEED MORE THAN ONE POOL?</h2><p>Start free for life, then add more pool slots only when you need them.</p><button id="openPlansV201" type="button">VIEW PLANS &amp; PACKAGES ›</button></section>\n\n  '''
-          s=s[:start]+home_cta+s[end:]
-          home_end=s.find('\n</div>',s.find('<div id="home"'))
-          if home_end<0: raise SystemExit('Home end not found')
-          plans='''\n<div id="plansPageV201" class="hide links-plans-page-v201">
-            <div class="links-plans-head-v201"><button id="plansBackV201" type="button">← HOME</button><div><div class="kicker">LINKS PICK’EM POOLS</div><h1>PLANS &amp; PACKAGES</h1><p>Players are always free. Start with one game-pool slot free for life.</p></div></div>
-            '''+package+'''<section class="links-home-footer-v200" aria-label="Links Pickem Pools"><div class="links-home-footer-row-v200"><div class="links-home-footer-slogan-v200">YOU PICK.<br>WE TRACK. YOU WIN.</div><div><div class="links-home-footer-paw-v200">🐾</div><div class="links-home-footer-logo-v200">LINKS<small>PICK’EM POOLS</small></div></div><div class="links-home-footer-slogan-v200">BRINGING PEOPLE<br>TOGETHER <span class="links-home-footer-paw-v200">🐾</span></div></div></section>
-          </div>\n'''
-          s=s[:home_end+7]+plans+s[home_end+7:]
-          css='''<style id="links-v201-plans-style">
-          #home .links-plans-cta-v201{margin:18px 0;padding:24px;text-align:center;border:2px solid #777;border-radius:17px;background:repeating-linear-gradient(90deg,#1a0d06 0 28px,#2b160b 28px 56px);box-shadow:inset 0 0 0 3px #111,0 9px 24px #000a}#home .links-plans-cta-v201 h2{margin:6px 0;font-size:clamp(24px,4vw,38px)}#home .links-plans-cta-v201 p{color:#ddd}#home #openPlansV201{width:auto;min-width:260px;background:#ff6a1a;border-color:#ff9b61;font-weight:950}
-          .links-plans-page-v201{max-width:1180px;margin:auto;padding:18px}.links-plans-head-v201{padding:24px;border:2px solid #777;border-radius:18px;background:radial-gradient(circle at 50% 0,#203448,#080d11 48%,#160b05);text-align:center;box-shadow:inset 0 0 0 3px #111,0 10px 25px #000b}.links-plans-head-v201 #plansBackV201{display:block;width:auto;margin:0 0 12px;background:#251208;border:1px solid #a44b18;color:#fff}.links-plans-head-v201 h1{font-size:clamp(32px,6vw,58px);margin:5px 0;color:#fff;text-shadow:0 3px #000}.links-plans-page-v201 .links-package-section-v150{margin-top:16px;background:repeating-linear-gradient(90deg,#120a06 0 30px,#201006 30px 60px)!important;border:2px solid #737b80!important;box-shadow:inset 0 0 0 3px #111,0 10px 28px #000a}.links-plans-page-v201 .links-package-card-v150{border:2px solid #69747c!important;background:linear-gradient(145deg,#171d22,#0c1115 62%,#241207)!important;box-shadow:inset 0 0 0 2px #111,0 8px 18px #0009!important}.links-plans-page-v201 .links-package-card-v150.featured{border-color:#ff6a1a!important;box-shadow:inset 0 0 0 2px #111,0 0 16px #ff6a1a55!important}.links-plans-page-v201 .links-package-card-v150 button{font-weight:950}.links-plans-page-v201 .links-home-footer-v200{margin-top:20px}
+          # Visual-only enhancement. Do not alter stable v199 startup/session/refresh behavior.
+          css='''<style id="links-v202-reference-cards">
+          #home .links-benefits-v193>div{overflow:hidden;min-height:190px!important;padding:84px 12px 18px!important;background:linear-gradient(#130a05cc,#130a05cc),repeating-linear-gradient(90deg,#1c0d05 0 12px,#2b1509 12px 25px)!important;border:3px solid #7d858a!important;box-shadow:inset 0 0 0 3px #151515,0 8px 18px #000c!important}
+          #home .links-benefits-v193>div:after{position:absolute;top:27px;left:50%;transform:translateX(-50%);font-size:47px;line-height:1;filter:drop-shadow(0 4px 3px #000);z-index:2}
+          #home .links-benefits-v193>div:nth-child(1):after{content:'🏆'}#home .links-benefits-v193>div:nth-child(2):after{content:'📊'}#home .links-benefits-v193>div:nth-child(3):after{content:'🗓️'}#home .links-benefits-v193>div:nth-child(4):after{content:'👥'}
+          #home .links-benefits-v193>div:before{z-index:3;top:8px!important}.links-benefits-v193 b{font-size:clamp(16px,2.2vw,25px)!important;text-transform:uppercase}.links-benefits-v193 span{font-size:15px}
+          #home .links-games-categories-v193{position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 10%,#28455d 0,#0b151d 30%,#050709 65%)!important}#home .links-games-categories-v193:before,#home .links-games-categories-v193:after{content:'';position:absolute;top:8px;width:150px;height:70px;background:radial-gradient(ellipse at center,#fff 0 3%,#cde8ff 4% 7%,transparent 35%);opacity:.8;pointer-events:none}#home .links-games-categories-v193:before{left:-25px;transform:rotate(-18deg)}#home .links-games-categories-v193:after{right:-25px;transform:rotate(18deg)}
+          #home .links-category-v193{overflow:hidden!important;background:linear-gradient(180deg,#162532 0 53%,#32170a 54%,#160a05 100%)!important}#home .links-category-v193 summary{position:relative;min-height:160px!important;padding-top:74px!important;background:none!important}#home .links-category-v193 summary:before{content:'';position:absolute;inset:0 0 48% 0;background:radial-gradient(ellipse at 50% 100%,#31506a 0,#162936 45%,#081017 100%);border-bottom:1px solid #72401e;z-index:0}#home .links-category-v193 summary>*{position:relative;z-index:2}
+          #home .links-cat-icon-v193{position:absolute!important;left:18px!important;top:18px!important;width:68px!important;height:68px!important;font-size:43px!important;background:radial-gradient(circle,#263743,#080d11)!important;border:3px solid #77838b!important;box-shadow:0 4px 12px #000!important}
+          #home .links-category-v193 summary b{font-size:clamp(21px,3vw,31px)!important;text-transform:uppercase;color:#fff!important}#home .links-category-v193 summary small{font-size:14px!important}#home .links-category-v193 summary em{position:absolute!important;right:17px!important;bottom:18px!important}
+          #home .links-category-v193:nth-child(1) summary:after{content:'🏈';position:absolute;right:70px;top:17px;font-size:65px;transform:rotate(-18deg);filter:drop-shadow(0 5px 4px #000);z-index:1}#home .links-category-v193:nth-child(2) summary:after{content:'🏟️  🏈';position:absolute;right:58px;top:22px;font-size:48px;filter:drop-shadow(0 5px 4px #000);z-index:1}#home .links-category-v193:nth-child(3) summary:after{content:'⛳  🏁';position:absolute;right:60px;top:20px;font-size:49px;filter:drop-shadow(0 5px 4px #000);z-index:1}#home .links-category-v193:nth-child(4) summary:after{content:'DRAFT  🏈';position:absolute;right:54px;top:25px;font-size:28px;font-weight:1000;color:#d7c0a6;text-shadow:0 3px #000;z-index:1}
+          #home .links-home-footer-v200{position:relative;overflow:hidden;padding-top:34px!important;background:radial-gradient(ellipse at 50% 0,#51301a 0,#241208 36%,#090604 80%)!important;border:2px solid #57402f!important}#home .links-home-footer-v200:before{content:'✦     ✦     ✦     ✦     ✦';position:absolute;top:2px;left:0;right:0;color:#ffc17c;font-size:22px;letter-spacing:22px;text-shadow:0 0 9px #ff8a2b,0 0 18px #fff;text-align:center}.links-home-footer-logo-v200{border-color:#9a8d7d!important;background:repeating-linear-gradient(90deg,#3b1d0d 0 18px,#542b14 18px 36px)!important;font-family:Impact,Arial Black,sans-serif!important}.links-home-footer-logo-v200:before{content:'🐾';display:block;margin:-34px auto 2px;color:#ff6a1a;font-size:27px}.links-home-footer-slogan-v200{font-family:Arial Black,sans-serif!important;transform:skew(-5deg)}
+          @media(max-width:700px){#home .links-benefits-v193>div{min-height:170px!important;padding-top:76px!important}#home .links-benefits-v193>div:after{font-size:39px}#home .links-category-v193 summary{min-height:145px!important;padding-top:69px!important}#home .links-category-v193:nth-child(n) summary:after{right:50px;transform:scale(.82);transform-origin:right top}.links-home-footer-v200:before{font-size:16px;letter-spacing:10px}}
           </style>'''
-          s=s.replace('</head>',css+'\n</head>',1)
-          js='''<script id="links-v201-plans-nav">document.addEventListener('click',function(e){const open=e.target.closest('#openPlansV201');const back=e.target.closest('#plansBackV201');if(open){const h=document.getElementById('home'),p=document.getElementById('plansPageV201');if(h&&p){h.classList.add('hide');p.classList.remove('hide');window.scrollTo(0,0)}}if(back){const h=document.getElementById('home'),p=document.getElementById('plansPageV201');if(h&&p){p.classList.add('hide');h.classList.remove('hide');window.scrollTo(0,0)}}});</script>'''
-          s=s.replace('</body>',js+'\n</body>',1)
-          s=s.replace('LINKS PICK’EM POOLS — v200','LINKS PICK’EM POOLS — v201')
+          if 'id="links-v202-reference-cards"' not in s:s=s.replace('</head>',css+'\n</head>',1)
+          s=s.replace('LINKS PICK’EM POOLS — v201','LINKS PICK’EM POOLS — v202')
           p.write_text(s,encoding='utf-8')
       - name: Validate and commit
         run: |
-          grep -q 'id="plansPageV201"' public/index.html
-          grep -q 'id="openPlansV201"' public/index.html
-          grep -q 'LINKS PICK’EM POOLS — v201' public/index.html
+          grep -q 'links-v202-reference-cards' public/index.html
+          grep -q 'LINKS PICK’EM POOLS — v202' public/index.html
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/index.html
-          git commit -m "LINKS v201: themed packages page and cleaner Home"
+          git commit -m "LINKS v202: reference-style Home cards and footer"
           git push
