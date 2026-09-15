@@ -1440,7 +1440,7 @@ table{max-width:100%}
     <button id="showLinksAdmin" class="portal-commissioner-btn-v2" style="display:block;margin:0 auto;border-color:#ff6a1a!important;max-width:360px">🔧 LINKS ADMIN</button>
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v198 • GOOD BOY</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v199</footer>
 
 </div>
 
@@ -1471,7 +1471,7 @@ table{max-width:100%}
     <button data-demo-tab="demoPicks" class="active"><img class="links-nav-art-v174" src="./nav-v174/picks.png" alt="">Picks</button>
     <button data-demo-tab="demoCompare"><img class="links-nav-art-v174" src="./nav-v174/compare.png" alt="">Compare Picks</button>
     <button data-demo-tab="demoScores"><img class="links-nav-art-v174" src="./nav-v174/scores.png" alt="">Live Scores</button>
-    <button data-demo-tab="demoStandings"><img class="links-nav-art-v174" src="./nav-v174/standings.png?v=198" alt="">Standings</button>
+    <button data-demo-tab="demoStandings"><img class="links-nav-art-v174" src="./nav-v174/standings.png?v=199" alt="">Standings</button>
     <button data-demo-tab="demoProjected"><img class="links-nav-art-v174" src="./nav-v174/projected.png" alt="">Projected</button>
     <button data-demo-tab="demoPaid"><img class="links-nav-art-v174" src="./nav-v174/access.png" alt="">Player Access</button>
   </div>
@@ -1735,7 +1735,7 @@ table{max-width:100%}
     <button data-special-tab="picks" class="active"><img class="links-nav-art-v174" src="./nav-v174/picks.png" alt="">PICKS</button>
     <button data-special-tab="compare"><img class="links-nav-art-v174" src="./nav-v174/compare.png" alt="">COMPARE PICKS</button>
     <button data-special-tab="scores"><img class="links-nav-art-v174" src="./nav-v174/scores.png" alt="">SCORES</button>
-    <button data-special-tab="standings"><img class="links-nav-art-v174" src="./nav-v174/standings.png?v=198" alt="">STANDINGS</button>
+    <button data-special-tab="standings"><img class="links-nav-art-v174" src="./nav-v174/standings.png?v=199" alt="">STANDINGS</button>
     <button data-special-tab="projected"><img class="links-nav-art-v174" src="./nav-v174/projected.png" alt="">PROJECTED</button>
     <button data-special-tab="access"><img class="links-nav-art-v174" src="./nav-v174/access.png" alt="">PLAYER ACCESS</button>
     <button data-special-tab="rules"><img class="links-nav-art-v174" src="./nav-v174/rules.png" alt="">RULES</button>
@@ -1896,7 +1896,7 @@ table{max-width:100%}
     <button data-tab="picks" class="active player-tab"><img class="links-nav-art-v174" src="./nav-v174/picks.png" alt="">Picks</button>
     <button data-tab="compare" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/compare.png" alt="">Compare Picks</button>
     <button data-tab="scores" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/scores.png" alt="">Live Scores</button>
-    <button data-tab="standings" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/standings.png?v=198" alt="">Standings</button>
+    <button data-tab="standings" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/standings.png?v=199" alt="">Standings</button>
     <button data-tab="projected" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/projected.png" alt="">Projected</button>
     <button data-tab="paid" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/access.png" alt="">Player Access</button>
     <button data-tab="rules" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/rules.png" alt="">Rules</button>
@@ -1911,6 +1911,7 @@ table{max-width:100%}
       <button id="refreshPaymentStatus" style="width:100%;margin-top:8px">Refresh Player Access</button>
     </div>
     <div class="card row"><b id="weekTitle"></b><b id="pickCount"></b></div>
+    <div id="topPicksDeadline" class="pick-deadline-v191"></div>
     <div id="games"></div>
     <div class="card"><b>Tiebreaker</b><div class="small">Combined score of the final selected game • Locks with your picks</div><input id="tieInput" type="number" min="0" placeholder="Example: 43" style="width:100%;margin-top:6px"></div>
     <div id="savePicksDeadline" class="pick-deadline-v191"></div><button id="savePicks" class="blue" style="width:100%;font-size:17px">Save My Picks</button>
@@ -3008,21 +3009,19 @@ function normalizedPicksForGames(saved,games){
   return out;
 }
 function updatePickLockCountdownV198(lockAt,locked){
-  const el=$("#savePicksDeadline");if(!el)return;
+  const els=[$("#topPicksDeadline"),$("#savePicksDeadline")].filter(Boolean);if(!els.length)return;
   if(pickLockCountdownTimerV198){clearInterval(pickLockCountdownTimerV198);pickLockCountdownTimerV198=null}
   const paint=()=>{
-    if(!lockAt){el.classList.remove("urgent-v198","locked-v198");el.innerHTML=`<strong>⏰ PICK DEADLINE:</strong> Loading…`;return}
+    if(!lockAt){for(const el of els){el.classList.remove("urgent-v198","locked-v198");el.innerHTML=`<strong>⏰ PICK DEADLINE:</strong> Loading…`}return}
     const ms=Date.parse(lockAt)-Date.now();
     if(locked||ms<=0){
-      el.classList.remove("urgent-v198");el.classList.add("locked-v198");
-      el.innerHTML=`<span class="lock-title-v198">🔒 PICKS ARE LOCKED</span><span class="lock-sub-v198">Deadline: ${fmtKickoff(lockAt)}</span>`;
+      for(const el of els){el.classList.remove("urgent-v198");el.classList.add("locked-v198");el.innerHTML=`<span class="lock-title-v198">🔒 PICKS ARE LOCKED</span><span class="lock-sub-v198">Deadline: ${fmtKickoff(lockAt)}</span>`}
       if(pickLockCountdownTimerV198){clearInterval(pickLockCountdownTimerV198);pickLockCountdownTimerV198=null}
       return;
     }
     const total=Math.max(0,Math.floor(ms/1000)),days=Math.floor(total/86400),hrs=Math.floor((total%86400)/3600),mins=Math.floor((total%3600)/60),secs=total%60;
     const countdown=`${days?days+"D ":""}${String(hrs).padStart(2,"0")}H ${String(mins).padStart(2,"0")}M ${String(secs).padStart(2,"0")}S`;
-    el.classList.toggle("urgent-v198",ms<=6*60*60*1000);el.classList.remove("locked-v198");
-    el.innerHTML=`<span class="lock-title-v198">⏰ PICKS LOCK IN</span><span class="lock-countdown-v198">${countdown}</span><span class="lock-sub-v198">${fmtKickoff(lockAt)}</span>`;
+    for(const el of els){el.classList.toggle("urgent-v198",ms<=6*60*60*1000);el.classList.remove("locked-v198");el.innerHTML=`<span class="lock-title-v198">⏰ PICKS LOCK IN</span><span class="lock-countdown-v198">${countdown}</span><span class="lock-sub-v198">${fmtKickoff(lockAt)}</span>`}
   };
   paint();if(!locked&&lockAt)pickLockCountdownTimerV198=setInterval(paint,1000);
 }
@@ -4596,7 +4595,7 @@ $("#chooseSquares").onclick=()=>enterSquares();
   mix-blend-mode:normal!important;
 }
 .tabs [data-tab="standings"] img.links-nav-art-v174{
-  content:url("./nav-v174/standings.png?v=198")!important;
+  content:url("./nav-v174/standings.png?v=199")!important;
 }
 .tabs [data-tab="standings"].active{
   border:2px solid #4db8ff!important;
@@ -4604,15 +4603,15 @@ $("#chooseSquares").onclick=()=>enterSquares();
 }
 </style>
 
-<style id="links-v198-picks-standings">
-/* v198 — unmistakable selected pick + live lock warning. Existing team/nav artwork only. */
-#savePicksDeadline.pick-deadline-v191{display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:3px;margin:12px 0 9px!important;padding:14px 10px!important;border:2px solid #ff9b39!important;border-radius:14px!important;background:linear-gradient(180deg,#24170c,#120e0a)!important;text-align:center!important;box-shadow:0 0 18px rgba(255,139,39,.18)!important}
-#savePicksDeadline .lock-title-v198{font-size:17px;font-weight:950;color:#ffb25e;letter-spacing:.5px}
-#savePicksDeadline .lock-countdown-v198{font-size:25px;font-weight:1000;color:#fff;letter-spacing:1px;line-height:1.1}
-#savePicksDeadline .lock-sub-v198{font-size:12px;font-weight:800;color:#cbd5df}
-#savePicksDeadline.urgent-v198{border-color:#ff5b5b!important;box-shadow:0 0 22px rgba(255,65,65,.35)!important}
-#savePicksDeadline.urgent-v198 .lock-title-v198,#savePicksDeadline.locked-v198 .lock-title-v198{color:#ff7373!important}
-#savePicksDeadline.locked-v198{border-color:#ff5b5b!important;background:linear-gradient(180deg,#2a1012,#130b0c)!important}
+<style id="links-v199-picks-standings">
+/* v199 — top + bottom live pick-lock countdown. Existing team/nav artwork only. */
+#savePicksDeadline.pick-deadline-v191,#topPicksDeadline.pick-deadline-v191{display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:3px;margin:12px 0 9px!important;padding:14px 10px!important;border:2px solid #ff9b39!important;border-radius:14px!important;background:linear-gradient(180deg,#24170c,#120e0a)!important;text-align:center!important;box-shadow:0 0 18px rgba(255,139,39,.18)!important}
+#savePicksDeadline .lock-title-v198,#topPicksDeadline .lock-title-v198{font-size:17px;font-weight:950;color:#ffb25e;letter-spacing:.5px}
+#savePicksDeadline .lock-countdown-v198,#topPicksDeadline .lock-countdown-v198{font-size:25px;font-weight:1000;color:#fff;letter-spacing:1px;line-height:1.1}
+#savePicksDeadline .lock-sub-v198,#topPicksDeadline .lock-sub-v198{font-size:12px;font-weight:800;color:#cbd5df}
+#savePicksDeadline.urgent-v198,#topPicksDeadline.urgent-v198{border-color:#ff5b5b!important;box-shadow:0 0 22px rgba(255,65,65,.35)!important}
+#savePicksDeadline.urgent-v198 .lock-title-v198,#topPicksDeadline.urgent-v198 .lock-title-v198,#savePicksDeadline.locked-v198 .lock-title-v198,#topPicksDeadline.locked-v198 .lock-title-v198{color:#ff7373!important}
+#savePicksDeadline.locked-v198,#topPicksDeadline.locked-v198{border-color:#ff5b5b!important;background:linear-gradient(180deg,#2a1012,#130b0c)!important}
 .team.sel:not(.pick-final-loser):not(.pick-final-winner){outline:5px solid #38f58a!important;outline-offset:-5px!important;box-shadow:0 0 22px rgba(56,245,138,.62),inset 0 0 0 2px rgba(255,255,255,.85)!important;transform:scale(.99)!important}
 .team.sel .pickmark,.team[data-picked="1"] .pickmark{display:block!important;font-size:13px!important;font-weight:1000!important;padding:7px 11px!important;top:7px!important;right:7px!important;background:#35e77d!important;color:#07150c!important;border:2px solid #fff!important;box-shadow:0 3px 12px rgba(0,0,0,.45)!important}
 .team.pick-final-winner .pickmark,.team.pick-final-loser .pickmark{font-size:12px!important}
