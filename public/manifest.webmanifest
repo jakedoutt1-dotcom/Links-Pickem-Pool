@@ -1,0 +1,15 @@
+{
+  "name": "Links Pickem Pools",
+  "short_name": "Links Pickem",
+  "description": "You Pick • We Track • You Win",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#090d12",
+  "theme_color": "#090d12",
+  "orientation": "any",
+  "icons": [
+    {"src":"/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ]
+}
