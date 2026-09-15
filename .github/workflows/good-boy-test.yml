@@ -19,111 +19,98 @@ jobs:
         run: |
           from pathlib import Path
           import re
+          p=Path('public/index.html')
+          s=p.read_text(encoding='utf-8')
 
-          p = Path('public/index.html')
-          s = p.read_text(encoding='utf-8')
+          # Version + existing full-color Standings artwork cache bust.
+          s=s.replace('LINKS PICK’EM POOLS — v199','LINKS PICK’EM POOLS — v200')
+          s=s.replace('LINKS PICK’EM POOLS — v198 • GOOD BOY','LINKS PICK’EM POOLS — v200')
+          s=re.sub(r'nav-v174/standings\.png(?:\?v=\d+)?','nav-v174/standings.png?v=200',s)
 
-          # v200 version bump and permanent cache-bust for the existing full-color Standings artwork.
-          s = s.replace('LINKS PICK’EM POOLS — v199','LINKS PICK’EM POOLS — v200')
-          s = s.replace('standings.png?v=199','standings.png?v=200')
-          s = s.replace('standings.png?v=198','standings.png?v=200')
-          s = s.replace('standings.png?v=197','standings.png?v=200')
-          s = s.replace('standings.png?v=196','standings.png?v=200')
-          # Catch unversioned references without touching another nav image.
-          s = re.sub(r'(nav-v174/standings\.png)(?!\?v=\d+)', r'\1?v=200', s)
-
-          # Installed-app/PWA freshness: register a versioned SW with updateViaCache none,
-          # check for a new worker on launch/foreground, and reload once when it takes control.
-          refresh = r'''
-<script id="links-pwa-refresh-v200">
+          # Compare Picks: replace the plain open message with a live reveal countdown.
+          compare_js=r'''
+<script id="links-compare-countdown-v200">
 (()=>{
-  if(!('serviceWorker' in navigator)) return;
-  let reloading=false;
-  navigator.serviceWorker.addEventListener('controllerchange',()=>{
-    if(reloading) return;
-    reloading=true;
-    location.reload();
-  });
-  const register=()=>navigator.serviceWorker.register('/links-sw.js?v=200',{updateViaCache:'none'})
-    .then(reg=>{
-      reg.update().catch(()=>{});
-      if(reg.waiting) reg.waiting.postMessage({type:'SKIP_WAITING'});
-      reg.addEventListener('updatefound',()=>{
-        const w=reg.installing;
-        if(!w) return;
-        w.addEventListener('statechange',()=>{
-          if(w.state==='installed' && navigator.serviceWorker.controller){
-            w.postMessage({type:'SKIP_WAITING'});
-          }
-        });
-      });
-      return reg;
-    }).catch(()=>null);
-  window.addEventListener('load',register,{once:true});
-  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') register(); });
+ let timer=null;
+ function fmt(ms){const t=Math.max(0,Math.floor(ms/1000)),d=Math.floor(t/86400),h=Math.floor(t%86400/3600),m=Math.floor(t%3600/60),sec=t%60;return `${d?d+'D ':''}${String(h).padStart(2,'0')}H ${String(m).padStart(2,'0')}M ${String(sec).padStart(2,'0')}S`;}
+ function findLock(){try{const w=window.boot&&window.boot.locks;const wk=window.week||window.officialWeek;return w&&(w[wk]||w[String(wk)]);}catch(e){return null}}
+ function paint(){
+   const boxes=[...document.querySelectorAll('*')].filter(el=>el.children.length===0&&el.textContent.trim()==='Picks are still open.');
+   if(!boxes.length)return;
+   const lock=findLock(); if(!lock)return;
+   const ms=Date.parse(lock)-Date.now();
+   for(const el of boxes){
+     el.classList.add('compare-reveal-v200');
+     if(ms<=0){el.innerHTML='<strong>🔓 PICKS ARE LOCKED — EVERYONE’S PICKS ARE AVAILABLE</strong>';setTimeout(()=>location.reload(),1200);}
+     else {el.innerHTML=`<strong>⏰ EVERYONE’S PICKS REVEAL IN</strong><span>${fmt(ms)}</span><small>${typeof fmtKickoff==='function'?fmtKickoff(lock):new Date(lock).toLocaleString()}</small>`;el.classList.toggle('urgent-v200',ms<=21600000);}
+   }
+ }
+ function start(){paint();if(timer)clearInterval(timer);timer=setInterval(paint,1000)}
+ new MutationObserver(start).observe(document.body,{childList:true,subtree:true});
+ document.addEventListener('DOMContentLoaded',start);
+ setTimeout(start,500);
 })();
 </script>
+<style id="links-compare-countdown-style-v200">
+.compare-reveal-v200{display:flex!important;flex-direction:column;gap:6px;align-items:center;justify-content:center;padding:18px!important;border:2px solid #ff9d2e!important;border-radius:16px;background:linear-gradient(180deg,#2b1b0d,#17120e)!important;text-align:center}.compare-reveal-v200 strong{font-size:18px;color:#ffb55a}.compare-reveal-v200 span{font-size:30px;font-weight:900;color:#fff;letter-spacing:1px}.compare-reveal-v200 small{font-size:14px;color:#d6d6d6}.compare-reveal-v200.urgent-v200{border-color:#ff3b30!important;box-shadow:0 0 18px rgba(255,59,48,.4)!important}.compare-reveal-v200.urgent-v200 strong{color:#ff6259}
+</style>
 '''
-          if 'id="links-pwa-refresh-v200"' not in s:
-              if '</body>' not in s:
-                  raise SystemExit('No </body> found; refusing unsafe PWA injection.')
-              s = s.replace('</body>', refresh + '\n</body>', 1)
+          if 'links-compare-countdown-v200' not in s:
+            s=s.replace('</body>',compare_js+'\n</body>',1)
 
-          p.write_text(s, encoding='utf-8')
+          # Auto-save: use the existing Save My Picks handler as the single source of truth.
+          # Team taps save immediately; tiebreaker changes debounce briefly. Hide the manual button
+          # only when it can be found, and show a small save-state badge.
+          autosave=r'''
+<script id="links-autosave-v200">
+(()=>{
+ let q=Promise.resolve(),deb=null;
+ function saveButton(){return [...document.querySelectorAll('button')].find(b=>/SAVE MY PICKS/i.test(b.textContent||''));}
+ function badge(){let el=document.getElementById('autoSaveStatusV200');if(!el){el=document.createElement('div');el.id='autoSaveStatusV200';el.className='autosave-status-v200';const b=saveButton();if(b)b.insertAdjacentElement('afterend',el);}return el}
+ function state(t,kind=''){const el=badge();if(!el)return;el.textContent=t;el.className='autosave-status-v200 '+kind;}
+ function doSave(){const b=saveButton();if(!b||b.disabled)return Promise.resolve();state('SAVING…','saving');b.click();return new Promise(r=>setTimeout(()=>{state('✓ PICKS SAVED','saved');r()},700));}
+ function queueSave(){q=q.then(doSave).catch(()=>state('⚠ SAVE FAILED — TRY AGAIN','error'));}
+ document.addEventListener('click',e=>{const card=e.target.closest('[data-team],.team-card,.pick-team,.team-option');if(!card)return;setTimeout(queueSave,0)},true);
+ document.addEventListener('input',e=>{if(!/tie/i.test((e.target.id||'')+' '+(e.target.name||'')+' '+(e.target.closest('.card')?.textContent||'')))return;clearTimeout(deb);deb=setTimeout(queueSave,650)},true);
+ function hideManual(){const b=saveButton();if(b){b.style.display='none';badge();state('✓ PICKS AUTO-SAVE','saved')}}
+ new MutationObserver(hideManual).observe(document.body,{childList:true,subtree:true});
+ document.addEventListener('DOMContentLoaded',hideManual);setTimeout(hideManual,600);
+})();
+</script>
+<style id="links-autosave-style-v200">.autosave-status-v200{margin:12px 0;padding:12px 14px;border-radius:12px;text-align:center;font-weight:900;background:#12351f;border:1px solid #31d77a;color:#8dffb7}.autosave-status-v200.saving{background:#2d250d;border-color:#ffb02e;color:#ffd37a}.autosave-status-v200.error{background:#401515;border-color:#ff4d4d;color:#ff9b9b}</style>
+'''
+          if 'links-autosave-v200' not in s:
+            s=s.replace('</body>',autosave+'\n</body>',1)
 
-          # Network-first service worker: navigation/HTML always tries the live site first.
-          # Static assets may be cached, while versioned URLs force new artwork immediately.
-          sw = Path('public/links-sw.js')
-          sw.write_text(r'''const CACHE='links-pickem-v200';
-const CORE=['/','/index.html','/manifest.webmanifest'];
-self.addEventListener('install',event=>{
-  self.skipWaiting();
-  event.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).catch(()=>{}));
-});
-self.addEventListener('activate',event=>{
-  event.waitUntil((async()=>{
-    const keys=await caches.keys();
-    await Promise.all(keys.filter(k=>k.startsWith('links-pickem-')&&k!==CACHE).map(k=>caches.delete(k)));
-    await self.clients.claim();
-  })());
-});
-self.addEventListener('message',event=>{
-  if(event.data&&event.data.type==='SKIP_WAITING') self.skipWaiting();
-});
-self.addEventListener('fetch',event=>{
-  const req=event.request;
-  if(req.method!=='GET') return;
-  const url=new URL(req.url);
-  if(url.origin!==location.origin) return;
-  if(req.mode==='navigate'||url.pathname==='/'||url.pathname.endsWith('/index.html')){
-    event.respondWith(fetch(req,{cache:'no-store'}).then(res=>{
-      const copy=res.clone(); caches.open(CACHE).then(c=>c.put('/index.html',copy)).catch(()=>{});
-      return res;
-    }).catch(()=>caches.match('/index.html')));
-    return;
-  }
-  event.respondWith(fetch(req).then(res=>{
-    if(res.ok){const copy=res.clone();caches.open(CACHE).then(c=>c.put(req,copy)).catch(()=>{});}
-    return res;
-  }).catch(()=>caches.match(req)));
-});
-''',encoding='utf-8')
+          # Installed app refresh: network-first SW and foreground update checks.
+          pwa=r'''
+<script id="links-pwa-refresh-v200">
+(()=>{if(!('serviceWorker'in navigator))return;let reloading=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!reloading){reloading=true;location.reload()}});const go=()=>navigator.serviceWorker.register('/links-sw.js?v=200',{updateViaCache:'none'}).then(r=>{r.update().catch(()=>{});if(r.waiting)r.waiting.postMessage({type:'SKIP_WAITING'});return r}).catch(()=>null);window.addEventListener('load',go,{once:true});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')go()})})();
+</script>
+'''
+          if 'links-pwa-refresh-v200' not in s:s=s.replace('</body>',pwa+'\n</body>',1)
+          p.write_text(s,encoding='utf-8')
 
-          # Ensure Cloudflare/browser never holds the service worker itself.
-          hp=Path('public/_headers')
-          h=hp.read_text(encoding='utf-8')
-          if '/links-sw.js' not in h:
-              h += '\n/links-sw.js\n  Cache-Control: no-cache, no-store, must-revalidate\n'
+          sw=Path('public/links-sw.js')
+          sw.write_text("""const CACHE='links-pickem-v200';
+self.addEventListener('install',e=>{self.skipWaiting()});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k.startsWith('links-pickem-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
+self.addEventListener('message',e=>{if(e.data&&e.data.type==='SKIP_WAITING')self.skipWaiting()});
+self.addEventListener('fetch',e=>{const r=e.request;if(r.method!=='GET')return;const u=new URL(r.url);if(u.origin!==location.origin)return;if(r.mode==='navigate'||u.pathname==='/'||u.pathname.endsWith('/index.html')){e.respondWith(fetch(r,{cache:'no-store'}).catch(()=>caches.match('/index.html')));return}e.respondWith(fetch(r).then(res=>{if(res.ok){const c=res.clone();caches.open(CACHE).then(x=>x.put(r,c)).catch(()=>{})}return res}).catch(()=>caches.match(r))) });
+""",encoding='utf-8')
+
+          hp=Path('public/_headers');h=hp.read_text(encoding='utf-8')
+          if '/links-sw.js' not in h:h+='\n/links-sw.js\n  Cache-Control: no-cache, no-store, must-revalidate\n'
           hp.write_text(h,encoding='utf-8')
-
       - name: Validate and commit v200
         run: |
           grep -q 'LINKS PICK’EM POOLS — v200' public/index.html
+          grep -q 'links-compare-countdown-v200' public/index.html
+          grep -q 'links-autosave-v200' public/index.html
           grep -q 'links-pwa-refresh-v200' public/index.html
           grep -q 'links-pickem-v200' public/links-sw.js
-          grep -q 'standings.png?v=200' public/index.html
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/index.html public/links-sw.js public/_headers
-          git commit -m "LINKS v200: fix Standings nav and PWA refresh"
+          git commit -m "LINKS v200: standings, PWA refresh, auto-save, compare countdown"
           git push
