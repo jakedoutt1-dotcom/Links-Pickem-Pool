@@ -1320,6 +1320,13 @@ table{max-width:100%}
 #app .tabs button[data-tab="admin"].active{border-color:#ff7a2d!important;background:linear-gradient(135deg,#28140a,#101316 60%,#301407)!important;box-shadow:0 0 0 2px rgba(255,106,26,.5),0 0 16px rgba(255,106,26,.55)!important}
 @media(max-width:600px){#app .tabs button[data-tab="admin"]{min-height:68px!important;font-size:15px!important}#app .tabs button[data-tab="admin"]:before{font-size:8px;margin-right:6px}}
 </style>
+<style id="links-nav-v204">
+#app .tabs button[data-tab="admin"]{min-height:0!important;height:auto!important;padding:0!important;border-radius:10px!important;border:1px solid #5b4739!important;background:linear-gradient(135deg,#17120f,#090d10 62%,#1c110b)!important;color:#fff!important;font-size:16px!important;font-weight:950!important;letter-spacing:.5px!important;text-shadow:0 2px 3px #000!important;box-shadow:inset 0 0 0 1px rgba(255,132,60,.08)!important;position:relative;overflow:hidden}
+#app .tabs button[data-tab="admin"]:before{content:none!important;display:none!important}
+#app .tabs button[data-tab="admin"]:after{content:none!important;display:none!important}
+#app .tabs button[data-tab="admin"]:not(.active){box-shadow:inset 0 0 0 1px rgba(255,132,60,.08)!important}
+#app .tabs button[data-tab="admin"].active{border-color:#ff7a2d!important;background:linear-gradient(135deg,#28140a,#101316 60%,#301407)!important;box-shadow:0 0 0 2px rgba(255,106,26,.5),0 0 16px rgba(255,106,26,.55)!important}
+</style>
 </head>
 
 <body><div id="top"></div><div class="wrap">
@@ -1489,7 +1496,7 @@ table{max-width:100%}
     <button id="showLinksAdmin" class="portal-commissioner-btn-v2" style="display:block;margin:0 auto;border-color:#ff6a1a!important;max-width:360px">🔧 LINKS ADMIN</button>
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v203</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v204</footer>
 
 </div>
 
@@ -1520,7 +1527,7 @@ table{max-width:100%}
     <button data-demo-tab="demoPicks" class="active"><img class="links-nav-art-v174" src="./nav-v174/picks.png" alt="">Picks</button>
     <button data-demo-tab="demoCompare"><img class="links-nav-art-v174" src="./nav-v174/compare.png" alt="">Compare Picks</button>
     <button data-demo-tab="demoScores"><img class="links-nav-art-v174" src="./nav-v174/scores.png" alt="">Live Scores</button>
-    <button data-demo-tab="demoStandings"><img class="links-nav-art-v174" src="./nav-v174/standings.png?v=203" alt="">Standings</button>
+    <button data-demo-tab="demoStandings"><img class="links-nav-art-v174" src="./nav-v174/standings.png?v=204" alt="">Standings</button>
     <button data-demo-tab="demoProjected"><img class="links-nav-art-v174" src="./nav-v174/projected.png" alt="">Projected</button>
     <button data-demo-tab="demoPaid"><img class="links-nav-art-v174" src="./nav-v174/access.png" alt="">Player Access</button>
   </div>
@@ -1784,7 +1791,7 @@ table{max-width:100%}
     <button data-special-tab="picks" class="active"><img class="links-nav-art-v174" src="./nav-v174/picks.png" alt="">PICKS</button>
     <button data-special-tab="compare"><img class="links-nav-art-v174" src="./nav-v174/compare.png" alt="">COMPARE PICKS</button>
     <button data-special-tab="scores"><img class="links-nav-art-v174" src="./nav-v174/scores.png" alt="">SCORES</button>
-    <button data-special-tab="standings"><img class="links-nav-art-v174" src="./nav-v174/standings.png?v=203" alt="">STANDINGS</button>
+    <button data-special-tab="standings"><img class="links-nav-art-v174" src="./nav-v174/standings.png?v=204" alt="">STANDINGS</button>
     <button data-special-tab="projected"><img class="links-nav-art-v174" src="./nav-v174/projected.png" alt="">PROJECTED</button>
     <button data-special-tab="access"><img class="links-nav-art-v174" src="./nav-v174/access.png" alt="">PLAYER ACCESS</button>
     <button data-special-tab="rules"><img class="links-nav-art-v174" src="./nav-v174/rules.png" alt="">RULES</button>
@@ -1945,7 +1952,7 @@ table{max-width:100%}
     <button data-tab="picks" class="active player-tab"><img class="links-nav-art-v174" src="./nav-v174/picks.png" alt="">Picks</button>
     <button data-tab="compare" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/compare.png" alt="">Compare Picks</button>
     <button data-tab="scores" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/scores.png" alt="">Live Scores</button>
-    <button data-tab="standings" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/standings.png?v=203" alt="">Standings</button>
+    <button data-tab="standings" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/standings.png?v=204" alt="">Standings</button>
     <button data-tab="projected" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/projected.png" alt="">Projected</button>
     <button data-tab="paid" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/access.png" alt="">Player Access</button>
     <button data-tab="rules" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/rules.png" alt="">Rules</button>
@@ -4581,7 +4588,7 @@ $("#chooseSquares").onclick=()=>enterSquares();
  document.addEventListener('input',e=>{if(/tie/i.test((e.target.id||'')+' '+(e.target.name||'')+' '+(e.target.closest('div')?.textContent||''))){clearTimeout(deb);deb=setTimeout(save,650)}},true);
  function tick(){compare();let b=btn();if(b){badge();b.style.display='none'}}
  setInterval(compare,1000);setTimeout(tick,500);
- if('serviceWorker'in navigator){const reg=()=>navigator.serviceWorker.register('/links-sw.js?v=203',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{});window.addEventListener('load',reg);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg()})}
+ if('serviceWorker'in navigator){const reg=()=>navigator.serviceWorker.register('/links-sw.js?v=204',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{});window.addEventListener('load',reg);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg()})}
 })();
 </script>
 
@@ -4676,7 +4683,7 @@ $("#chooseSquares").onclick=()=>enterSquares();
   mix-blend-mode:normal!important;
 }
 .tabs [data-tab="standings"] img.links-nav-art-v174{
-  content:url("./nav-v174/standings.png?v=203")!important;
+  content:url("./nav-v174/standings.png?v=204")!important;
 }
 .tabs [data-tab="standings"].active{
   border:2px solid #4db8ff!important;
