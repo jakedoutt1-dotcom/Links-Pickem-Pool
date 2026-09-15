@@ -1516,7 +1516,7 @@ table{max-width:100%}
     <button id="showLinksAdmin" class="portal-commissioner-btn-v2" style="display:block;margin:0 auto;border-color:#ff6a1a!important;max-width:360px">🔧 LINKS ADMIN</button>
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v205</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v206</footer>
 
 </div>
 
@@ -1547,7 +1547,7 @@ table{max-width:100%}
     <button data-demo-tab="demoPicks" class="active"><img class="links-nav-art-v174" src="./nav-v174/picks.png" alt="">Picks</button>
     <button data-demo-tab="demoCompare"><img class="links-nav-art-v174" src="./nav-v174/compare.png" alt="">Compare Picks</button>
     <button data-demo-tab="demoScores"><img class="links-nav-art-v174" src="./nav-v174/scores.png" alt="">Live Scores</button>
-    <button data-demo-tab="demoStandings"><img class="links-nav-art-v174" src="./nav-v174/standings.png?v=205" alt="">Standings</button>
+    <button data-demo-tab="demoStandings"><img class="links-nav-art-v174" src="./nav-v174/standings.png?v=206" alt="">Standings</button>
     <button data-demo-tab="demoProjected"><img class="links-nav-art-v174" src="./nav-v174/projected.png" alt="">Projected</button>
     <button data-demo-tab="demoPaid"><img class="links-nav-art-v174" src="./nav-v174/access.png" alt="">Player Access</button>
   </div>
@@ -1811,7 +1811,7 @@ table{max-width:100%}
     <button data-special-tab="picks" class="active"><img class="links-nav-art-v174" src="./nav-v174/picks.png" alt="">PICKS</button>
     <button data-special-tab="compare"><img class="links-nav-art-v174" src="./nav-v174/compare.png" alt="">COMPARE PICKS</button>
     <button data-special-tab="scores"><img class="links-nav-art-v174" src="./nav-v174/scores.png" alt="">SCORES</button>
-    <button data-special-tab="standings"><img class="links-nav-art-v174" src="./nav-v174/standings.png?v=205" alt="">STANDINGS</button>
+    <button data-special-tab="standings"><img class="links-nav-art-v174" src="./nav-v174/standings.png?v=206" alt="">STANDINGS</button>
     <button data-special-tab="projected"><img class="links-nav-art-v174" src="./nav-v174/projected.png" alt="">PROJECTED</button>
     <button data-special-tab="access"><img class="links-nav-art-v174" src="./nav-v174/access.png" alt="">PLAYER ACCESS</button>
     <button data-special-tab="rules"><img class="links-nav-art-v174" src="./nav-v174/rules.png" alt="">RULES</button>
@@ -1972,7 +1972,7 @@ table{max-width:100%}
     <button data-tab="picks" class="active player-tab"><img class="links-nav-art-v174" src="./nav-v174/picks.png" alt="">Picks</button>
     <button data-tab="compare" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/compare.png" alt="">Compare Picks</button>
     <button data-tab="scores" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/scores.png" alt="">Live Scores</button>
-    <button data-tab="standings" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/standings.png?v=205" alt="">Standings</button>
+    <button data-tab="standings" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/standings.png?v=206" alt="">Standings</button>
     <button data-tab="projected" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/projected.png" alt="">Projected</button>
     <button data-tab="paid" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/access.png" alt="">Player Access</button>
     <button data-tab="rules" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/rules.png" alt="">Rules</button>
@@ -4296,7 +4296,7 @@ installIphoneBtn?.addEventListener("click",openIphoneHelp);$("#closeIphoneInstal
 updateInstallUI();
 if("serviceWorker" in navigator){
   let linksReloadedForUpdate=false;
-  navigator.serviceWorker.addEventListener("controllerchange",()=>{if(linksReloadedForUpdate)return;linksReloadedForUpdate=true;location.reload();});
+  
   window.addEventListener("load",async()=>{
     try{
       const reg=await navigator.serviceWorker.register("/service-worker.js",{scope:"/",updateViaCache:"none"});
@@ -4608,7 +4608,7 @@ $("#chooseSquares").onclick=()=>enterSquares();
  document.addEventListener('input',e=>{if(/tie/i.test((e.target.id||'')+' '+(e.target.name||'')+' '+(e.target.closest('div')?.textContent||''))){clearTimeout(deb);deb=setTimeout(save,650)}},true);
  function tick(){compare();let b=btn();if(b){badge();b.style.display='none'}}
  setInterval(compare,1000);setTimeout(tick,500);
- if('serviceWorker'in navigator){const reg=()=>navigator.serviceWorker.register('/links-sw.js?v=205',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{});window.addEventListener('load',reg);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg()})}
+ if('serviceWorker'in navigator){const reg=()=>navigator.serviceWorker.register('/links-sw.js?v=206',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{});window.addEventListener('load',reg);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg()})}
 })();
 </script>
 
@@ -4703,7 +4703,7 @@ $("#chooseSquares").onclick=()=>enterSquares();
   mix-blend-mode:normal!important;
 }
 .tabs [data-tab="standings"] img.links-nav-art-v174{
-  content:url("./nav-v174/standings.png?v=205")!important;
+  content:url("./nav-v174/standings.png?v=206")!important;
 }
 .tabs [data-tab="standings"].active{
   border:2px solid #4db8ff!important;
