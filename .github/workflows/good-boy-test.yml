@@ -1,4 +1,4 @@
-name: LINKS v199 build
+name: LINKS v200 safe home build
 
 on:
   push:
@@ -9,79 +9,63 @@ permissions:
   contents: write
 
 jobs:
-  build-v199:
+  build-home:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Apply v199 pick countdown update
+      - name: Build safe v200 Home design
         shell: python
         run: |
           from pathlib import Path
-          p = Path('public/index.html')
-          s = p.read_text(encoding='utf-8')
-
-          # Put the live countdown directly below the Week / pick-count card.
-          old = '<div class="card row"><b id="weekTitle"></b><b id="pickCount"></b></div>\n    <div id="games"></div>'
-          new = '<div class="card row"><b id="weekTitle"></b><b id="pickCount"></b></div>\n    <div id="topPicksDeadline" class="pick-deadline-v191"></div>\n    <div id="games"></div>'
-          if 'id="topPicksDeadline"' not in s:
-              if old not in s:
-                  raise SystemExit('Could not find Week/pick-count card; refusing unsafe edit.')
-              s = s.replace(old, new, 1)
-
-          # Make the existing one-second lock countdown paint both top and bottom deadline boxes.
-          start = s.find('function updatePickLockCountdownV198(lockAt,locked){')
-          end = s.find('\n\nfunction renderPicks(){', start)
-          if start < 0 or end < 0:
-              raise SystemExit('Could not find lock countdown function; refusing unsafe edit.')
-          fn = '''function updatePickLockCountdownV198(lockAt,locked){
-            const els=[$("#topPicksDeadline"),$("#savePicksDeadline")].filter(Boolean);if(!els.length)return;
-            if(pickLockCountdownTimerV198){clearInterval(pickLockCountdownTimerV198);pickLockCountdownTimerV198=null}
-            const paint=()=>{
-              if(!lockAt){for(const el of els){el.classList.remove("urgent-v198","locked-v198");el.innerHTML=`<strong>⏰ PICK DEADLINE:</strong> Loading…`}return}
-              const ms=Date.parse(lockAt)-Date.now();
-              if(locked||ms<=0){
-                for(const el of els){el.classList.remove("urgent-v198");el.classList.add("locked-v198");el.innerHTML=`<span class="lock-title-v198">🔒 PICKS ARE LOCKED</span><span class="lock-sub-v198">Deadline: ${fmtKickoff(lockAt)}</span>`}
-                if(pickLockCountdownTimerV198){clearInterval(pickLockCountdownTimerV198);pickLockCountdownTimerV198=null}
-                return;
-              }
-              const total=Math.max(0,Math.floor(ms/1000)),days=Math.floor(total/86400),hrs=Math.floor((total%86400)/3600),mins=Math.floor((total%3600)/60),secs=total%60;
-              const countdown=`${days?days+"D ":""}${String(hrs).padStart(2,"0")}H ${String(mins).padStart(2,"0")}M ${String(secs).padStart(2,"0")}S`;
-              for(const el of els){el.classList.toggle("urgent-v198",ms<=6*60*60*1000);el.classList.remove("locked-v198");el.innerHTML=`<span class="lock-title-v198">⏰ PICKS LOCK IN</span><span class="lock-countdown-v198">${countdown}</span><span class="lock-sub-v198">${fmtKickoff(lockAt)}</span>`}
-            };
-            paint();if(!locked&&lockAt)pickLockCountdownTimerV198=setInterval(paint,1000);
-          }'''
-          s = s[:start] + fn + s[end:]
-
-          # Give the new top timer the exact same visual states as the existing bottom timer.
-          replacements = {
-            '#savePicksDeadline.pick-deadline-v191{':'#savePicksDeadline.pick-deadline-v191,#topPicksDeadline.pick-deadline-v191{',
-            '#savePicksDeadline .lock-title-v198{':'#savePicksDeadline .lock-title-v198,#topPicksDeadline .lock-title-v198{',
-            '#savePicksDeadline .lock-countdown-v198{':'#savePicksDeadline .lock-countdown-v198,#topPicksDeadline .lock-countdown-v198{',
-            '#savePicksDeadline .lock-sub-v198{':'#savePicksDeadline .lock-sub-v198,#topPicksDeadline .lock-sub-v198{',
-            '#savePicksDeadline.urgent-v198{':'#savePicksDeadline.urgent-v198,#topPicksDeadline.urgent-v198{',
-            '#savePicksDeadline.urgent-v198 .lock-title-v198,#savePicksDeadline.locked-v198 .lock-title-v198{':'#savePicksDeadline.urgent-v198 .lock-title-v198,#topPicksDeadline.urgent-v198 .lock-title-v198,#savePicksDeadline.locked-v198 .lock-title-v198,#topPicksDeadline.locked-v198 .lock-title-v198{',
-            '#savePicksDeadline.locked-v198{':'#savePicksDeadline.locked-v198,#topPicksDeadline.locked-v198{'
-          }
-          for a,b in replacements.items():
-              if b not in s:
-                  if a not in s:
-                      raise SystemExit(f'Could not find expected CSS selector: {a}')
-                  s = s.replace(a,b,1)
-
-          # Real build version replaces the temporary deployment-test label.
-          s = s.replace('LINKS PICK’EM POOLS — v198 • GOOD BOY','LINKS PICK’EM POOLS — v199',1)
-          s = s.replace('LINKS PICK’EM POOLS — v198','LINKS PICK’EM POOLS — v199',1)
-          s = s.replace('standings.png?v=198','standings.png?v=199')
-          s = s.replace('<style id="links-v198-picks-standings">','<style id="links-v199-picks-standings">')
-          s = s.replace('/* v198 — unmistakable selected pick + live lock warning. Existing team/nav artwork only. */','/* v199 — top + bottom live pick-lock countdown. Existing team/nav artwork only. */')
-          p.write_text(s, encoding='utf-8')
-      - name: Validate and commit v199
+          import re
+          p=Path('public/index.html')
+          s=p.read_text(encoding='utf-8')
+          # Styling only: do not touch v199 startup/session/service-worker/timer JavaScript.
+          css=r'''<style id="links-home-v200-safe">
+          #home{--wood:#241309;--wood2:#100905;--orange:#ff6a1a;--steel:#aab3ba}
+          #home .links-sales-hero-v193,#home .links-games-categories-v193{border:2px solid #68727a!important;background:radial-gradient(circle at 50% 0,#172737 0,#080d11 43%,#080503 100%)!important;box-shadow:inset 0 0 0 3px #171b1e,0 12px 30px #000b!important}
+          #home .links-sales-hero-v193{background:linear-gradient(#08080899,#08080899),repeating-linear-gradient(90deg,#1c0e06 0 22px,#28140a 22px 44px,#160b05 44px 66px)!important}
+          #home .links-benefits-v193>div{position:relative;min-height:128px;padding:20px 12px!important;border:2px solid #7d858a!important;border-radius:13px!important;background:linear-gradient(145deg,#32190b,#140a05 60%,#251207)!important;box-shadow:inset 0 0 0 3px #111,0 6px 14px #0009!important;display:flex;flex-direction:column;justify-content:center}
+          #home .links-benefits-v193>div:before{content:'LINKS';position:absolute;top:6px;left:50%;transform:translateX(-50%);font-size:9px;letter-spacing:2px;color:#d8b28d;border:1px solid #66503c;padding:1px 7px;background:#160b06}
+          #home .links-benefits-v193 b{font-size:17px;text-shadow:0 2px 2px #000}#home .links-benefits-v193 span{color:#eee!important}
+          #home .links-no-busywork-v193{margin:18px -26px -26px!important;padding:20px!important;background:repeating-linear-gradient(90deg,#1c0e06 0 30px,#2b160b 30px 60px)!important;border-top:2px solid #5f3b23;color:#fff!important;font-size:clamp(17px,3vw,28px);font-style:italic;text-shadow:0 2px #000}
+          #home .links-games-categories-v193 .kicker{color:#ffd1ad;text-align:center;letter-spacing:2px}#home .links-games-categories-v193 h2{font-size:clamp(27px,5vw,48px)!important;text-shadow:0 3px #000}#home .links-games-categories-v193 h2:after{content:' MULTIPLE WAYS TO PLAY.';display:block;color:var(--orange);font-style:italic;font-size:.68em;margin-top:4px}#home .links-games-categories-v193 h2{font-size:0!important}#home .links-games-categories-v193 h2:before{content:'ONE LINKS PLATFORM.';font-size:clamp(27px,5vw,48px);display:block;color:#fff}
+          #home .links-category-list-v193{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px!important}
+          #home .links-category-v193{border:2px solid #858b90!important;border-radius:15px!important;background:linear-gradient(180deg,#18222a 0 42%,#32180a 43%,#130a05 100%)!important;box-shadow:inset 0 0 0 3px #101214,0 7px 16px #000b!important}
+          #home .links-category-v193 summary{min-height:126px;grid-template-columns:74px 1fr 42px!important;padding:16px!important;background:radial-gradient(circle at 50% 0,#2d4354 0,#101820 48%,transparent 49%)!important}
+          #home .links-cat-icon-v193{width:62px;height:62px;display:grid;place-items:center;font-size:42px!important;border-radius:50%;background:#10161b;border:2px solid #6d777e;box-shadow:0 0 14px #000}
+          #home .links-category-v193 summary b{font-size:clamp(18px,2.5vw,28px)!important;text-shadow:0 3px 2px #000}#home .links-category-v193 summary small{text-transform:uppercase;color:#e5e5e5!important;letter-spacing:1px}
+          #home .links-category-v193 summary em{font-size:0!important;width:38px;height:38px;border:2px solid #a44b18;border-radius:9px;background:#1a0d07;box-shadow:0 0 10px #ff6a1a44;display:grid;place-items:center}#home .links-category-v193 summary em:after{content:'›'!important;color:var(--orange);font-size:38px;line-height:30px;font-style:normal}#home .links-category-v193[open] summary em:after{transform:rotate(90deg)}
+          #home .links-category-games-v193{grid-template-columns:1fr!important;background:#090d10;padding:10px!important}#home .links-category-games-v193>div{background:#111820!important}
+          #home .links-home-footer-v200{margin:22px 0 8px;padding:22px 18px 12px;border-top:2px solid #70401f;border-bottom:2px solid #352316;background:radial-gradient(circle at 50% 0,#34200f 0,#170b05 45%,#080604 100%);box-shadow:inset 0 10px 30px #0008;text-align:center}
+          #home .links-home-footer-row-v200{display:grid;grid-template-columns:1fr auto 1fr;gap:20px;align-items:center}.links-home-footer-slogan-v200{font-size:clamp(16px,2.5vw,25px);font-weight:950;font-style:italic;color:#f4f4f4;text-shadow:0 2px #000}.links-home-footer-logo-v200{padding:11px 28px;border:3px solid #8a7c6d;border-radius:9px;background:linear-gradient(#472510,#1b0e07);box-shadow:inset 0 0 0 3px #160b05,0 5px 15px #000;font-size:clamp(24px,4vw,42px);font-weight:1000;letter-spacing:2px;color:#f3e4d0;text-shadow:0 3px 2px #000}.links-home-footer-logo-v200 small{display:block;font-size:.38em;letter-spacing:4px}.links-home-footer-paw-v200{color:var(--orange);font-size:26px}.links-build-footer{margin-top:0!important}
+          @media(max-width:700px){#home .links-category-list-v193{grid-template-columns:1fr!important}#home .links-benefits-v193{grid-template-columns:1fr 1fr!important}#home .links-category-v193 summary{grid-template-columns:58px 1fr 38px!important;min-height:105px}#home .links-cat-icon-v193{width:50px;height:50px;font-size:33px!important}#home .links-no-busywork-v193{margin:17px -12px -18px!important}.links-home-footer-row-v200{grid-template-columns:1fr;gap:12px}.links-home-footer-logo-v200{order:-1}}
+          </style>'''
+          if 'id="links-home-v200-safe"' not in s:
+              s=s.replace('</head>',css+'\n</head>',1)
+          footer='''<section class="links-home-footer-v200" aria-label="Links Pickem Pools">
+            <div class="links-home-footer-row-v200">
+              <div class="links-home-footer-slogan-v200">YOU PICK.<br>WE TRACK. YOU WIN.</div>
+              <div><div class="links-home-footer-paw-v200">🐾</div><div class="links-home-footer-logo-v200">LINKS<small>PICK’EM POOLS</small></div></div>
+              <div class="links-home-footer-slogan-v200">BRINGING PEOPLE<br>TOGETHER <span class="links-home-footer-paw-v200">🐾</span></div>
+            </div>
+          </section>'''
+          marker='<footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v199</footer>'
+          if 'links-home-footer-v200' not in s[s.find('<body'):]:
+              if marker not in s: raise SystemExit('Home footer marker missing')
+              s=s.replace(marker,footer+'\n\n  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v200</footer>',1)
+          else:
+              s=s.replace('LINKS PICK’EM POOLS — v199','LINKS PICK’EM POOLS — v200',1)
+          p.write_text(s,encoding='utf-8')
+      - name: Validate and commit
         run: |
-          grep -q 'id="topPicksDeadline"' public/index.html
-          grep -q 'LINKS PICK’EM POOLS — v199' public/index.html
+          grep -q 'links-home-v200-safe' public/index.html
+          grep -q 'links-home-footer-v200' public/index.html
+          grep -q 'LINKS PICK’EM POOLS — v200' public/index.html
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/index.html
-          git commit -m "LINKS v199: top pick-lock countdown"
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "LINKS v200: safe Home redesign from v199"
           git push
