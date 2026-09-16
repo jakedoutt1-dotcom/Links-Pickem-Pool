@@ -1,0 +1,19 @@
+LINKS PICK’EM POOLS — CURRENT PRODUCTION BUILD
+Build: v275
+Baseline preserved from: v274
+Cleanup backup branch: backup-v274-before-cleanup
+
+CURRENT ADD-ON FILES
+- player-access-current.js
+- player-access-row-labels-current.js
+- nfl-records-current.js
+- standings-current.js
+- standings-nav-current.js
+
+CURRENT NAVIGATION ARTWORK
+- nav-v174/
+
+CURRENT SITE ICON
+- app-logo.png
+
+Cleanup rule: old superseded copies are removed from main only after the current replacement is confirmed. The backup branch retains the complete pre-cleanup v274 tree for rollback.
