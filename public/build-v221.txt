@@ -1,0 +1,1 @@
+LINKS v221 uses verified JPEG artwork assets for the Home feature cards, busywork strip, Pick Your Games banner, and footer. No generated CSS imitation artwork.
