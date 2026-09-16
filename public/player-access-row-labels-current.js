@@ -1,0 +1,6 @@
+(()=>{
+'use strict';
+function paint(){const body=document.getElementById('paidBody');if(!body)return;body.querySelectorAll('.pay-status').forEach(row=>{const name=row.querySelector('b');if(!name)return;let wrap=row.querySelector('.links-access-picks-v256');if(!wrap)return;const kids=[...wrap.children];const access=kids.find(x=>!x.classList.contains('links-picks-status-v256'));const picks=wrap.querySelector('.links-picks-status-v256');if(access&&!access.classList.contains('links-access-status-row-current')){access.classList.add('links-access-status-row-current');if(!access.querySelector('.links-status-row-label-current'))access.insertAdjacentHTML('afterbegin','<span class="links-status-row-label-current">PLAYER ACCESS:</span> ')}if(picks&&!picks.classList.contains('links-pick-status-row-current')){picks.classList.add('links-pick-status-row-current');if(!picks.querySelector('.links-status-row-label-current'))picks.insertAdjacentHTML('afterbegin','<span class="links-status-row-label-current">PICK STATUS:</span> ')}})}
+const start=()=>{paint();new MutationObserver(()=>requestAnimationFrame(paint)).observe(document.body,{childList:true,subtree:true,characterData:true});setInterval(paint,1000)};
+document.readyState==='loading'?document.addEventListener('DOMContentLoaded',start,{once:true}):start();
+})();
