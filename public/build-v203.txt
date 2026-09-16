@@ -1,3 +1,0 @@
-LINKS PICK’EM POOLS — v203
-Build promoted from the working v202 baseline after GitHub write access was verified on 2026-09-15.
-Preserve the v202 Home reference-style cards/footer and existing working game logic.
