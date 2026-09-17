@@ -139,6 +139,14 @@ async function ensureV2(DB){
  role TEXT NOT NULL,
  expires_at TEXT NOT NULL
 )`,
+`CREATE TABLE IF NOT EXISTS pool_login_activity (
+ pool_id INTEGER NOT NULL,
+ player_name TEXT NOT NULL,
+ login_count INTEGER NOT NULL DEFAULT 0,
+ first_login_at TEXT NOT NULL,
+ last_login_at TEXT NOT NULL,
+ PRIMARY KEY(pool_id,player_name)
+)`,
 `CREATE TABLE IF NOT EXISTS pool_settings (
  pool_id INTEGER NOT NULL,
  key TEXT NOT NULL,
@@ -1950,6 +1958,17 @@ export async function onRequest(context){
       }
       return json({pools:rows});
     }
+    if(path==="links-admin/activity"&&method==="GET"){
+      if(!await linksMasterAuth(request,DB))return json({error:"Links admin session expired. Sign in again."},401);
+      const rows=(await DB.prepare(`
+        SELECT a.pool_id,p.name AS pool_name,p.code AS pool_code,a.player_name,a.login_count,a.first_login_at,a.last_login_at
+        FROM pool_login_activity a
+        JOIN pools p ON p.id=a.pool_id
+        ORDER BY datetime(a.last_login_at) DESC
+        LIMIT 200
+      `).all()).results||[];
+      return json({activity:rows});
+    }
     if(path==="links-admin/email-status"&&method==="GET"){
       if(!await linksMasterAuth(request,DB))return json({error:"Links admin session expired. Sign in again."},401);
       return json({configured:linksEmailConfig(env).configured,fromEmail:linksEmailConfig(env).fromEmail||""});
@@ -1997,7 +2016,7 @@ export async function onRequest(context){
       const tables=[
         "pool_sessions","pool_settings","pool_picks","pool_ties","pool_payments","pool_results",
         "pool_week_meta","pool_games","pool_market_odds","payment_orders","pool_33_entries",
-        "pool_33_assignments","pool_33_state","pool_33_week_meta","pool_player_setup_invites","pool_players","pool_service"
+        "pool_33_assignments","pool_33_state","pool_33_week_meta","pool_player_setup_invites","pool_login_activity","pool_players","pool_service"
       ];
       for(const t of tables){await DB.prepare(`DELETE FROM ${t} WHERE pool_id=?`).bind(pid).run()}
       await DB.prepare("UPDATE service_purchases SET pool_id=NULL WHERE pool_id=?").bind(pid).run();
@@ -2193,6 +2212,9 @@ export async function onRequest(context){
       const p=await DB.prepare("SELECT * FROM pool_players WHERE pool_id=? AND name=?").bind(pool.id,body.name).first();
       if(!p||await hashPassword(body.password||"",p.salt)!==p.password_hash)return json({error:"Incorrect name or password."},401);
       const commissionerPlayer=await getCommissionerPlayerName(DB,pool.id),isCommissioner=!!commissionerPlayer&&commissionerPlayer.toLowerCase()===String(p.name).toLowerCase();
+      const loginAt=new Date().toISOString();
+      await DB.prepare("INSERT INTO pool_login_activity(pool_id,player_name,login_count,first_login_at,last_login_at) VALUES(?,?,1,?,?) ON CONFLICT(pool_id,player_name) DO UPDATE SET login_count=pool_login_activity.login_count+1,last_login_at=excluded.last_login_at")
+        .bind(pool.id,p.name,loginAt,loginAt).run();
       return json({token:await makeSession(DB,pool.id,p.name,isCommissioner?"admin":"player"),name:p.name,isCommissioner,poolCode:pool.code,poolName:pool.name,gameType:await getPoolGameType(DB,pool.id,pool.code),games:await getPoolGameTypes(DB,pool.id,pool.code),access:await poolAccessFor(DB,pool.id)});
     }
     if(path==="admin-login"&&method==="POST"){
