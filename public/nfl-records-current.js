@@ -9,26 +9,3 @@ function paint(){if(painting)return;const picks=document.getElementById('picks')
 function start(){paint();loadRecords();new MutationObserver(()=>requestAnimationFrame(paint)).observe(document.body,{childList:true,subtree:true});setInterval(()=>{paint();loadRecords()},3000)}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
-
-/* LINKS v291 — one Save/Lock button. Existing save handler remains the source of truth. */
-(()=>{
-'use strict';
-const ID='linksMyLockedPicksV291';
-let arming=false;
-function p(){return document.getElementById('picks')}
-function btn(root){return [...(root?.querySelectorAll('button')||[])].find(b=>/SAVE MY PICKS/i.test(b.textContent||'')||b.dataset.linksLockButton==='1')}
-function key(){return 'links-soft-lock-v291:'+location.pathname+':'+location.search}
-function get(){try{return JSON.parse(localStorage.getItem(key())||'null')}catch(e){return null}}
-function put(v){try{localStorage.setItem(key(),JSON.stringify(v))}catch(e){}}
-function del(){try{localStorage.removeItem(key())}catch(e){}}
-function hard(root){const t=(document.getElementById('pickLockCard')?.textContent||'')+' '+(root?.textContent||'');return /deadline locked|picks (?:are )?locked|no longer (?:be )?changed/i.test(t)}
-function selected(root){return [...root.querySelectorAll('.team')].filter(x=>x.classList.contains('sel')||x.dataset.picked==='1'||/YOUR PICK/i.test(x.textContent||'')).map((x,i)=>({game:i+1,team:(x.querySelector('.nm')?.textContent||x.dataset.team||'Team').replace(/✓ WINNER|✕ LOSS/gi,'').trim()}))}
-function tie(root){const h=[...root.querySelectorAll('*')].find(e=>/^Tiebreaker$/i.test((e.textContent||'').trim()));return (h?.closest('.card')?.querySelector('input')?.value||'').trim()}
-function esc(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]))}
-function css(){if(document.getElementById('linksSoftLockCssV291'))return;const s=document.createElement('style');s.id='linksSoftLockCssV291';s.textContent=`button[data-links-lock-button="1"]{background:#168b50!important;border:2px solid #55e894!important;color:#fff!important;font-weight:950!important}#${ID}{position:sticky;top:104px;z-index:19;margin:8px 0 12px;padding:13px;border:2px solid #d6aa31;border-radius:14px;background:#111923;box-shadow:0 8px 24px rgba(0,0,0,.42)}#${ID} .lh{text-align:center;color:#ffd45d;font-size:18px;font-weight:950}#${ID} .ls{text-align:center;color:#cbd6e1;font-size:12px;margin:5px 0 10px}#${ID} .lg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}#${ID} .lp{display:flex;justify-content:space-between;gap:8px;background:#18222d;border-radius:8px;padding:7px 8px;font-size:12px}#${ID} .lp b{text-align:right}#${ID} .lt{margin:9px 0;padding-top:8px;border-top:1px solid #34404d}#${ID} button{width:100%;min-height:48px;font-weight:950}.links-softlocked-v291 .game,.links-softlocked-v291 .card:has(input){pointer-events:none!important;opacity:.55}@media(max-width:430px){#${ID}{top:98px}#${ID} .lg{grid-template-columns:1fr}}`;document.head.appendChild(s)}
-function overlay(root,d){let o=document.getElementById(ID);if(!o){o=document.createElement('div');o.id=ID;root.insertAdjacentElement('afterbegin',o)}o.innerHTML=`<div class="lh">🔒 MY PICKS ARE LOCKED IN</div><div class="ls">Your picks stay locked until you unlock them or the weekly deadline expires.</div><div class="lg">${(d.picks||[]).map(x=>`<div class="lp"><span>Game ${x.game}</span><b>${esc(x.team)}</b></div>`).join('')}</div>${d.tie?`<div class="lt"><b>Tiebreaker:</b> ${esc(d.tie)}</div>`:''}<button type="button" id="linksUnlockV291">🔓 UNLOCK MY PICKS</button>`;root.classList.add('links-softlocked-v291');const b=btn(root);if(b)b.style.display='none';document.getElementById('linksUnlockV291').onclick=()=>{del();o.remove();root.classList.remove('links-softlocked-v291');sync()}}
-function wire(root){const b=btn(root);if(!b||b.dataset.linksLockWired==='1')return;b.dataset.linksLockWired='1';b.dataset.linksLockButton='1';b.textContent='🔒 LOCK IN MY PICKS';b.addEventListener('click',()=>{if(arming||hard(root))return;arming=true;setTimeout(()=>{try{const picks=selected(root);if(picks.length){const d={picks,tie:tie(root),lockedAt:Date.now()};put(d);overlay(root,d)}}finally{arming=false}},900)},false)}
-function sync(){const root=p();if(!root||root.classList.contains('hide'))return;css();if(hard(root)){del();document.getElementById(ID)?.remove();root.classList.remove('links-softlocked-v291');return}const d=get();if(d?.picks?.length)overlay(root,d);else{document.getElementById(ID)?.remove();root.classList.remove('links-softlocked-v291');const b=btn(root);if(b)b.style.display='';wire(root)}}
-function boot(){sync();document.addEventListener('click',()=>setTimeout(sync,200));window.addEventListener('pageshow',sync);document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()})}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
-})();
