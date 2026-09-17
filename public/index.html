@@ -1660,6 +1660,11 @@ table{max-width:100%}
       <div id="linksAdminEmailStatus" class="links-admin-email-status"><b>EMAIL INVITES</b><div class="small">Checking email setup…</div></div>
       <div id="linksAdminPools"></div>
     </div>
+    <div class="card">
+      <div class="row"><h3 style="margin:0">👥 PLAYER ACTIVITY</h3><span class="badge">SUCCESSFUL LOGINS</span></div>
+      <div class="small" style="margin:7px 0 12px">See who is actually signing in to LINKS. Passwords are never recorded.</div>
+      <div id="linksAdminActivity"><div class="small">Loading player activity…</div></div>
+    </div>
     <button id="linksAdminLogout" class="red" style="width:100%">Sign Out of Links Admin</button>
   </div>
   <div class="links-fixed-ad login-ad-v119" aria-label="Advertisement" style="display:none"><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-7448106987869261" data-ad-slot="9269292379" data-ad-format="auto" data-full-width-responsive="true"></ins></div>
@@ -3721,12 +3726,26 @@ $("#linksAdminLoginBtn").onclick=async()=>{
 
 async function loadLinksAdminPools(){
   try{
-    const [d,email]=await Promise.all([
+    const [d,email,activity]=await Promise.all([
       linksMasterApi("/api/links-admin/pools"),
-      linksMasterApi("/api/links-admin/email-status").catch(()=>({configured:false}))
+      linksMasterApi("/api/links-admin/email-status").catch(()=>({configured:false})),
+      linksMasterApi("/api/links-admin/activity").catch(()=>({activity:[]}))
     ]);
     const emailBox=$("#linksAdminEmailStatus");
     if(emailBox)emailBox.innerHTML=`<b>EMAIL INVITES</b><div class="${email.configured?"links-admin-email-ok":"links-admin-email-off"}" style="margin-top:5px">${email.configured?"✓ READY TO SEND":"⚠ NOT CONFIGURED YET"}</div><div class="small" style="margin-top:5px">${email.configured?`Sending from ${email.fromEmail||"your verified Links email"}.`:`We will finish the Resend + Cloudflare setup so commissioner invites send automatically.`}</div>`;
+    const activityBox=$("#linksAdminActivity"),activityRows=activity.activity||[];
+    if(activityBox){
+      const totalLogins=activityRows.reduce((n,r)=>n+Number(r.login_count||0),0);
+      activityBox.innerHTML=(activityRows.length?`<div class="small" style="margin-bottom:9px"><b>${activityRows.length}</b> player${activityRows.length===1?"":"s"} have signed in • <b>${totalLogins}</b> successful login${totalLogins===1?"":"s"}</div>`:"")+
+        (activityRows.map(r=>{
+          const last=r.last_login_at?new Date(r.last_login_at):null,minutes=last?Math.floor((Date.now()-last.getTime())/60000):999999,recent=minutes>=0&&minutes<=15;
+          return `<div style="border:1px solid #31414c;border-radius:11px;background:#0e171e;padding:10px;margin:7px 0">
+            <div class="row"><b>${escapeHtml(r.player_name||"Unknown player")}</b><span class="badge">${recent?"🟢 RECENT":"SIGNED IN"}</span></div>
+            <div class="small" style="margin-top:5px">${escapeHtml(r.pool_name||"Pool")} • ${escapeHtml(r.pool_code||"")}</div>
+            <div class="small" style="margin-top:4px">Last sign-in: <b>${last&&!Number.isNaN(last.getTime())?last.toLocaleString():"—"}</b> • Logins: <b>${Number(r.login_count||0)}</b></div>
+          </div>`;
+        }).join("")||'<div class="small">No player logins recorded yet. Activity will appear here after the next successful sign-in.</div>');
+    }
     $("#linksAdminPools").innerHTML=(d.pools||[]).map(p=>`
       <div class="links-admin-pool">
         <div class="links-admin-head">
