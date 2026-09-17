@@ -1,6 +1,8 @@
 (()=>{
 'use strict';
-const PANEL='linksPlayerLockPanelV297',TOP='linksPlayerLockTopV300',MODAL='linksLockedPicksModalV297',STORE='links-player-soft-lock-v294:'+location.pathname+':'+location.search;
+const PANEL='linksPlayerLockPanelV297',TOP='linksPlayerLockTopV300',MODAL='linksLockedPicksModalV297';
+const poolKey=String(sessionStorage.getItem('poolCode')||sessionStorage.getItem('poolName')||location.pathname),playerKey=String(sessionStorage.getItem('poolUser')||'player');
+const STORE='links-player-soft-lock-v303:'+poolKey+':'+playerKey+':'+location.search;
 const root=()=>document.getElementById('picks');
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
 function read(){try{return JSON.parse(localStorage.getItem(STORE)||'null')}catch(e){return null}}function write(v){try{localStorage.setItem(STORE,JSON.stringify(v))}catch(e){}}function clear(){try{localStorage.removeItem(STORE)}catch(e){}}
