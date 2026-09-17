@@ -27,6 +27,13 @@ async function ensureTables(DB){
     locked_at TEXT NOT NULL,
     PRIMARY KEY(pool_id,sport,player_name,week)
   )`).run();
+  await DB.prepare(`CREATE TABLE IF NOT EXISTS links_data_migrations (migration_key TEXT PRIMARY KEY, applied_at TEXT NOT NULL)`).run();
+  const migrated=await DB.prepare("SELECT migration_key FROM links_data_migrations WHERE migration_key='v308_soft_locks'").first();
+  if(!migrated){
+    await DB.prepare(`INSERT OR IGNORE INTO pool_player_soft_locks(pool_id,sport,player_name,week,locked_at)
+      SELECT pool_id,sport,player_name,week,MAX(saved_at) FROM pool_pick_save_history GROUP BY pool_id,sport,player_name,week`).run();
+    await DB.prepare("INSERT OR IGNORE INTO links_data_migrations(migration_key,applied_at) VALUES('v308_soft_locks',?)").bind(new Date().toISOString()).run();
+  }
 }
 export async function onRequestGet(context){
   const DB=context.env.DB;if(!DB)return json({error:"Database unavailable."},500);
@@ -63,7 +70,7 @@ export async function onRequestDelete(context){
   const s=await auth(context.request,DB);if(!s)return json({error:"Please sign in."},401);
   const url=new URL(context.request.url),sport=sportOf(url.searchParams.get("sport")),week=Math.max(1,Number(url.searchParams.get("week"))||1);
   await ensureTables(DB);
-  // Unlock changes only the current soft-lock state. Save history, pool_picks and pool_ties remain untouched.
+  // Unlock changes only current soft-lock state. History and live picks/tiebreaker remain untouched.
   await DB.prepare("DELETE FROM pool_player_soft_locks WHERE pool_id=? AND sport=? AND player_name=? COLLATE NOCASE AND week=?").bind(s.pool_id,sport,s.player_name,week).run();
   return json({ok:true,unlocked:true,myLocked:false,sport,week});
 }
