@@ -1,4 +1,4 @@
-// LINKS v305 — verified pick-save history + pool-scoped lock status. Never changes live picks.
+// LINKS v307 — verified pick-save history + pool-scoped lock status + safe unlock. Never changes live picks.
 function json(data,status=200){return new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json;charset=UTF-8","cache-control":"no-store"}})}
 function sportOf(x){const v=String(x||"nfl").toLowerCase();return v==="college"?"college":(v==="33"?"33":(v==="march"?"march":"nfl"))}
 async function auth(request,DB){
@@ -37,12 +37,21 @@ export async function onRequestPost(context){
   const keys=Object.keys(submitted).filter(k=>submitted[k]!=null&&submitted[k]!=="").sort((a,b)=>Number(a)-Number(b));
   const savedKeys=Object.keys(saved).sort((a,b)=>Number(a)-Number(b));
   const same=keys.length===savedKeys.length&&keys.every(k=>String(submitted[k])===saved[k]);
-  if(!same)return json({ok:false,verified:false,error:"Saved picks could not be verified. Your screen has NOT been marked locked."},409);
+  if(!same)return json({ok:false,verified:false,error:"Saved picks could not be verified. Your picks were not marked locked."},409);
   const tieRow=await DB.prepare("SELECT guess FROM pool_ties WHERE pool_id=? AND sport=? AND player_name=? COLLATE NOCASE AND week=?").bind(s.pool_id,sport,s.player_name,week).first();
   const submittedTie=body.tie===""||body.tie==null?null:Number(body.tie),savedTie=tieRow?.guess==null?null:Number(tieRow.guess);
-  if(submittedTie!==savedTie)return json({ok:false,verified:false,error:"Tiebreaker could not be verified. Your screen has NOT been marked locked."},409);
+  if(submittedTie!==savedTie)return json({ok:false,verified:false,error:"Tiebreaker could not be verified. Your picks were not marked locked."},409);
   await ensureHistory(DB);
   const savedAt=new Date().toISOString();
   await DB.prepare("INSERT INTO pool_pick_save_history(pool_id,sport,player_name,week,picks_json,tie_guess,saved_at) VALUES(?,?,?,?,?,?,?)").bind(s.pool_id,sport,s.player_name,week,JSON.stringify(saved),savedTie,savedAt).run();
   return json({ok:true,verified:true,count:savedKeys.length,savedAt});
+}
+export async function onRequestDelete(context){
+  const DB=context.env.DB;if(!DB)return json({error:"Database unavailable."},500);
+  const s=await auth(context.request,DB);if(!s)return json({error:"Please sign in."},401);
+  const url=new URL(context.request.url),sport=sportOf(url.searchParams.get("sport")),week=Math.max(1,Number(url.searchParams.get("week"))||1);
+  await ensureHistory(DB);
+  // Unlock only removes the lock/history marker for this player/week. It never deletes pool_picks or pool_ties.
+  await DB.prepare("DELETE FROM pool_pick_save_history WHERE pool_id=? AND sport=? AND player_name=? COLLATE NOCASE AND week=?").bind(s.pool_id,sport,s.player_name,week).run();
+  return json({ok:true,unlocked:true,sport,week});
 }
