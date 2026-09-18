@@ -1,4 +1,4 @@
-const CACHE_NAME = "links-pickem-pwa-v198";
+const CACHE_NAME = "links-pickem-pwa-v360";
 const OFFLINE_ASSETS = [
   "/manifest.webmanifest",
   "/icon-192.png",
