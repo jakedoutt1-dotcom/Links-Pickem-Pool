@@ -1416,7 +1416,7 @@ table{max-width:100%}
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v357</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v358</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -1883,8 +1883,8 @@ table{max-width:100%}
     </div>
     <div class="app-head-right">
       <b id="currentUser"></b><br>
-      <button id="changeSport" class="hide" style="margin-top:5px;padding:7px 9px">🎮 Change Game</button>
       <button id="signOut" class="red" style="margin-top:5px;padding:7px 9px">Sign Out</button>
+      <button id="changeSport" class="hide" style="margin-top:5px;padding:7px 9px">🎮 Change Game</button>
     </div>
   </div>
   <div class="v180-pool-game-tabs-wrap"><div class="v180-pool-game-tabs-label">Pool tabs</div><div id="mainGameInstanceTabs" class="game-instance-tabs-v180"></div></div>
@@ -2388,7 +2388,10 @@ function savePoolGames(list,fallback="nfl"){
 }
 function updateChangeGameButtons(){
   const many=normalizePoolGames(poolGames,sport||"nfl").length>1;
-  ["#changeSport","#specialChangeGame","#squaresChangeGame","#marchChangeGame","#adminChangeGame"].forEach(sel=>{
+  // Commissioner always gets CHANGE GAME on the player-facing game page.
+  // Players only see it when the pool actually has multiple active games.
+  const main=$("#changeSport");if(main)main.classList.toggle("hide",isCommissioner?false:!many);
+  ["#specialChangeGame","#squaresChangeGame","#marchChangeGame","#adminChangeGame"].forEach(sel=>{
     const el=$(sel);if(el)el.classList.toggle("hide",!many);
   });
 }
@@ -3830,8 +3833,24 @@ clickOnEnter("#inviteJoinPassword","#inviteJoinBtn");
 clickOnEnter("#playerSetupPassword2","#playerSetupBtn");
 clickOnEnter("#createPoolPass","#createPoolBtn");
 $("#chooseNFL").onclick=()=>enterApp("nfl");$("#chooseCollege").onclick=()=>enterApp("college");$("#choose33").onclick=()=>enterApp("33");
-$("#changeSport").onclick=()=>enterSportChoice();
-$("#adminChangeGame").onclick=()=>enterSportChoice();
+async function commissionerChangeGameV358(){
+  if(!isCommissioner)return enterSportChoice();
+  try{
+    const d=await api("/api/commissioner/dashboard");
+    const owner=String(d.email||$("#commissionerEmailInput")?.value||sessionStorage.getItem("linksCommissionerEmail")||"").trim().toLowerCase()===LINKS_OWNER_EMAIL_V357;
+    const plan=String(d.plan||"free").toLowerCase();
+    const limit=Number(d.limit||1);
+    const hasMoreAccess=owner||plan!=="free"||limit>1;
+    if(hasMoreAccess)return enterSportChoice();
+  }catch(e){
+    const owner=String($("#commissionerEmailInput")?.value||sessionStorage.getItem("linksCommissionerEmail")||"").trim().toLowerCase()===LINKS_OWNER_EMAIL_V357;
+    if(owner)return enterSportChoice();
+  }
+  showOnly("home");
+  setTimeout(()=>$("#linksPackages")?.scrollIntoView({behavior:"smooth",block:"start"}),60);
+}
+$("#changeSport").onclick=commissionerChangeGameV358;
+$("#adminChangeGame").onclick=commissionerChangeGameV358;
 async function signOut(){
   try{await api("/api/logout",{method:"POST"})}catch(e){}
   ["poolToken","poolRole","poolUser","poolSport","poolGames","poolIsCommissioner","linksPoolAdFree"].forEach(k=>sessionStorage.removeItem(k));token=role=currentUser=sport="";isCommissioner=false;poolGames=[];applyPoolAdMode(false);await loadPoolMenu(poolCode);showOnly("home");
