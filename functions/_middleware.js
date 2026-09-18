@@ -1,4 +1,4 @@
-// LINKS v338 — v337 baseline + uploaded IMG_6018.jpeg above gear; old Home benefit icon/word grid removed. Existing NFL/pool data untouched.
+// LINKS v342 — v337 baseline + uploaded IMG_6018.jpeg above gear; old Home benefit icon/word grid removed. Existing NFL/pool data untouched.
 export async function onRequest(context){
  const url=new URL(context.request.url);if(context.request.method!=="GET")return context.next();const response=await context.next();const ct=response.headers.get("content-type")||"";if(!ct.includes("text/html"))return response;let html=await response.text();
  const isHome=url.pathname==="/"||url.pathname==="/index.html";
@@ -17,9 +17,9 @@ export async function onRequest(context){
 </style>`;
   html=html.replace("</head>",home332+"\\n</head>");
   // v341: removed malformed linksGear regex replacement that broke Cloudflare Functions compilation.
-  html=html.replace(/<div class="portal-checklist-v2" style="text-align:center;margin-bottom:10px">[\\s\\S]*?<\\/div>\\s*(<button id="showLinksAdmin")/,'$1');
-  html=html.replace(/<section class="links-home-footer-v200" aria-label="Links Pickem Pools">[\\s\\S]*?<\\/section>\\s*(<footer class="links-build-footer")/,'$1');
-  html=html.replace(/(<section class="links-owner-tools-v118"[\\s\\S]*?<\\/section>)/,'$1<section class="links-home-lower-image-v336" style="width:min(100%,760px);margin:16px auto"><img src="/IMG_5865.jpeg?v=338" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px"></section>');
+  html=html.replace(/<div class="portal-checklist-v2" style="text-align:center;margin-bottom:10px">[\s\S]*?<\\/div>\\s*(<button id="showLinksAdmin")/,'$1');
+  html=html.replace(/<section class="links-home-footer-v200" aria-label="Links Pickem Pools">[\s\S]*?<\\/section>\\s*(<footer class="links-build-footer")/,'$1');
+  html=html.replace(/(<section class="links-owner-tools-v118"[\s\S]*?<\\/section>)/,'$1<section class="links-home-lower-image-v336" style="width:min(100%,760px);margin:16px auto"><img src="/IMG_5865.jpeg?v=338" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px"></section>');
   html=html.replace('<div class="links-top-login-v150"><button id="openPoolLoginV150" type="button">🔐 LOGIN / SELECT POOL</button></div>','<div class="links-top-login-v150"><button id="openPoolLoginV150" type="button">🔐 POOL LOGIN</button><button id="linksHomeCreateV332" class="links-home-create-v332" type="button">＋ CREATE A POOL</button></div><section class="links-home-showcase-v332" aria-label="Links games"><img src="/IMG_5803.jpeg?v=338" alt="Links Pick’em Pools games"><button id="linksNflInfoV335" class="links-nfl-info-v335" type="button">INFO</button><div class="links-home-status-v332"><b>NFL PICK’EM — AVAILABLE NOW</b><br>MORE LINKS GAMES — COMING SOON</div></section>');
  }
 
