@@ -16,7 +16,7 @@ export async function onRequest(context){
 @media(max-width:520px){#home .links-top-login-v150 button{font-size:15px!important;padding:14px 10px!important}.links-home-showcase-v332{margin-top:8px}}
 </style>`;
   html=html.replace("</head>",home332+"\\n</head>");
-  html=html.replace(/<section id="linksGear"[\\s\\S]*?<\\/section>\\s*<!-- LINKS MANUAL AD ZONE:[\\s\\S]*?<section class="benefit-strip-v2">[\\s\\S]*?<\\/section>/,'<section class="links-home-lower-image-v334" style="width:min(100%,760px);margin:16px auto"><img src="/IMG_5865.jpeg?v=338" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px"></section>');
+  // v341: removed malformed linksGear regex replacement that broke Cloudflare Functions compilation.
   html=html.replace(/<div class="portal-checklist-v2" style="text-align:center;margin-bottom:10px">[\\s\\S]*?<\\/div>\\s*(<button id="showLinksAdmin")/,'$1');
   html=html.replace(/<section class="links-home-footer-v200" aria-label="Links Pickem Pools">[\\s\\S]*?<\\/section>\\s*(<footer class="links-build-footer")/,'$1');
   html=html.replace(/(<section class="links-owner-tools-v118"[\\s\\S]*?<\\/section>)/,'$1<section class="links-home-lower-image-v336" style="width:min(100%,760px);margin:16px auto"><img src="/IMG_5865.jpeg?v=338" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px"></section>');
