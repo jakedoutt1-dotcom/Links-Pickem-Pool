@@ -1416,7 +1416,7 @@ table{max-width:100%}
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v356</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v357</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -3693,6 +3693,8 @@ async function loadLinksAdminPools(){
           </div>`;
         }).join("")||'<div class="small">No player logins recorded yet. Activity will appear here after the next successful sign-in.</div>');
     }
+    // Owner game entitlement is email-driven in v357, not managed from LINKS Admin.
+    $("#linksAdminDashboard")?.querySelectorAll('[data-master-access],[data-master-all-access],[data-owner-access]').forEach(x=>x.remove());
     $("#linksAdminPools").innerHTML=(d.pools||[]).map(p=>`
       <div class="links-admin-pool">
         <div class="links-admin-head">
@@ -3749,6 +3751,22 @@ document.addEventListener("click",e=>{if(!e.target.closest(".portal-main-v2"))$(
 // v154 commissioner packages: free entitlement stays tied to commissioner email; commissioner page shows only the current pool.
 $("#createPoolPlan").value=sessionStorage.getItem("linksCommissionerPurchasePlan")||"free";
 const rememberedCommissionerEmail=sessionStorage.getItem("linksCommissionerEmail")||"";if(rememberedCommissionerEmail){if($("#createPoolEmail"))$("#createPoolEmail").value=rememberedCommissionerEmail;if($("#pricingCommissionerEmail"))$("#pricingCommissionerEmail").value=rememberedCommissionerEmail;}
+// v357 — owner access is automatic by commissioner email; no LINKS Admin entitlement step.
+const LINKS_OWNER_EMAIL_V357="jakedoutt@yahoo.com";
+function applyOwnerGameAccessV357(){
+  const email=String($("#createPoolEmail")?.value||"").trim().toLowerCase();
+  const owner=email===LINKS_OWNER_EMAIL_V357;
+  if(!owner)return false;
+  $('#createPoolGames input[type="checkbox"]').forEach(x=>x.checked=true);
+  if($("#createPoolPlan"))$("#createPoolPlan").value="all_access";
+  sessionStorage.setItem("linksCommissionerEmail",email);
+  sessionStorage.setItem("linksCommissionerPurchasePlan","all_access");
+  const st=$("#createPlanStatus");if(st)st.innerHTML='<b>LINKS OWNER ACCESS</b> • ALL GAMES AVAILABLE AUTOMATICALLY';
+  return true;
+}
+$("#createPoolEmail")?.addEventListener("input",()=>{if(!applyOwnerGameAccessV357()&&$("#createPoolPlan")?.value==="all_access"&&sessionStorage.getItem("linksCommissionerEmail")===LINKS_OWNER_EMAIL_V357){$("#createPoolPlan").value="free"}});
+$("#createPoolEmail")?.addEventListener("change",applyOwnerGameAccessV357);
+setTimeout(applyOwnerGameAccessV357,0);
 $("#createPoolGames")?.addEventListener("change",()=>{const st=$("#createPlanStatus"),games=$$('#createPoolGames input[type="checkbox"]:checked').length,copies=Number($("#createPoolCopies")?.value||1);if(st&&($("#createPoolPlan")?.value||"free")==="free"&&(games>1||copies>1))st.innerHTML='<b>PACKAGE CHECK</b> • Your commissioner email will be checked when you create. Paid packages can use multiple game-pool slots; free-for-life includes 1 game pool.';});
 $("#createPoolCopies")?.addEventListener("change",()=>$("#createPoolGames input[type=checkbox]")?.dispatchEvent(new Event("change",{bubbles:true})));
 
@@ -3775,6 +3793,7 @@ $("#showCreatePool").onclick=()=>showOnly("createPoolPage");
 $("#createPoolBtn").onclick=async()=>{
   $("#homeErr").textContent="";
   try{
+    applyOwnerGameAccessV357();
     const d=await api("/api/pool/create",{method:"POST",body:JSON.stringify({name:$("#createPoolName").value,email:$("#createPoolEmail").value,playerName:$("#createPoolPlayerName").value,password:$("#createPoolPass").value,gameTypes:$$(`#createPoolGames input[type="checkbox"]:checked`).map(x=>x.value),copies:Number($("#createPoolCopies")?.value||1),plan:$("#createPoolPlan")?.value||"free"})});
     sessionStorage.removeItem("linksWelcomeSeen");
     token=d.token; role="player"; isCommissioner=true; currentUser=d.playerName; poolName=d.name; poolCode=d.code;applyPoolAdMode(!!d.service?.adFree);
