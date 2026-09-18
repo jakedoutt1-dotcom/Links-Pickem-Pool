@@ -1416,7 +1416,7 @@ table{max-width:100%}
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v355</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v356</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2310,15 +2310,18 @@ function applyRoleNavigation(){
   if(adminBtn)adminBtn.classList.toggle("hide",!isCommissioner);
   if(tabs)tabs.classList.remove("hide-for-commissioner");
   $$(".player-tab").forEach(b=>b.classList.remove("hide"));
+  const g33=$("#game33");
   if(sport==="33"){
     if(tabs)tabs.classList.add("hide");
     const indicator=$("#pageSportIndicator");if(indicator){indicator.className="sport-page-indicator college";indicator.textContent="3️⃣3️⃣ THE 33 GAME"}
     ["picks","compare","scores","standings","projected","paid","rules","admin"].forEach(id=>{const el=$("#"+id);if(el)el.classList.add("hide")});
-    const g=$("#game33");if(g)g.classList.remove("hide");
+    if(g33)g33.classList.remove("hide");
     const wp=$("#weekPickerCard");if(wp)wp.classList.add("hide");
     const lc=$("#pickLockCard");if(lc)lc.classList.add("hide");
     return;
   }
+  // Game 33 must never leak into NFL/College pick pages.
+  if(g33)g33.classList.add("hide");
   if(tabs)tabs.classList.remove("hide");
   const wp=$("#weekPickerCard");if(wp)wp.classList.add("hide");
   const lc=$("#pickLockCard");if(lc)lc.classList.remove("hide");
@@ -3935,6 +3938,14 @@ async function render33(){
   $("#g33WeekSelect").onchange=async()=>{week=Number($("#g33WeekSelect").value);await render33()};
   $("#g33WeekTitle").textContent=`NFL Week ${week}`;
   $("#g33CarryBadge").textContent=d.carryWeeks?`${d.carryWeeks} rollover week${d.carryWeeks===1?"":"s"}`:"No rollover";
+
+  const g33Cards=$("#game33 > .card");
+  // Player Game 33 is a status page, not a picks page. Commissioner retains the full setup/control view.
+  if(!isCommissioner){
+    g33Cards.forEach((card,i)=>card.classList.toggle("hide",i===1 || i===2 || i===4));
+  }else{
+    g33Cards.forEach(card=>card.classList.remove("hide"));
+  }
 
   if(role==="player"){
     $("#g33PlayerPayment").classList.remove("hide");
