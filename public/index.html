@@ -1535,7 +1535,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v446</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v447</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -1546,7 +1546,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <div class="links-package-lead-v150"><b>Players never pay LINKS.</b> Your first game-pool slot is free for life. Upgrade for more simultaneous pool slots, repeat game types and an ad-free experience.</div>
     <div class="links-package-email-v150"><label class="small" for="pricingCommissionerEmail">COMMISSIONER EMAIL FOR PAID PACKAGES</label><input id="pricingCommissionerEmail" type="email" placeholder="you@example.com"><div class="small" style="margin-top:5px">Use the same commissioner email you use for your LINKS pools.</div></div>
     <div class="links-package-grid-v150">
-      <div class="links-package-card-v150"><h3>FREE FOR LIFE</h3><div class="links-package-price-v150">$0</div><p><b>1 active game-pool slot</b></p><ul><li>Choose any 1 game type</li><li>Unlimited players</li><li>Full basic commissioner tools</li><li>Ad supported</li></ul><button id="createFreePoolPricing" type="button">CREATE FREE POOL</button></div>
+      <div class="links-package-card-v150"><h3>FREE FOR LIFE</h3><div class="links-package-price-v150">$0</div><p><b>1 active game-pool slot</b></p><ul><li>Choose any 1 game type</li><li>Unlimited players</li><li>Full basic commissioner tools</li><li>Ad supported</li></ul><button id="createFreePoolPricing" type="button">FINISH &amp; CREATE MY POOL</button></div>
       <div class="links-package-card-v150 featured"><h3>LINKS PLUS</h3><div class="links-package-price-v150">$19.99 <span style="font-size:.44em;font-weight:850;white-space:nowrap">/ YEAR</span></div><p><b>3 game-pool slots</b></p><ul><li>Unlimited players</li><li>Mix &amp; match games</li><li>Repeat the same game</li><li><b>NO ADS</b></li></ul><button class="green" type="button" data-links-plan="plus">GET PLUS</button></div>
       <div class="links-package-card-v150"><h3>NFL PACKAGE</h3><div class="links-package-price-v150">$29.99 <span style="font-size:.44em;font-weight:850;white-space:nowrap">/ YEAR</span></div><p><b>6 NFL game-pool slots</b></p><ul><li>Unlimited players</li><li>Repeat included NFL games</li><li>Pick'em, Survivor, Confidence, Squares, Props &amp; Playoffs</li><li>Fantasy Football</li><li><b>NO ADS</b></li></ul><button class="green" type="button" data-links-plan="nfl_package">GET NFL PACKAGE</button></div>
       <div class="links-package-card-v150"><h3>ALL ACCESS</h3><div class="links-package-price-v150">$49.99 <span style="font-size:.44em;font-weight:850;white-space:nowrap">/ YEAR</span></div><p><b>10 game-pool slots</b></p><ul><li>Unlimited players</li><li>Every current LINKS game</li><li>Mix duplicate and different games</li><li>Future game types during active term</li><li><b>NO ADS</b></li></ul><button class="green" type="button" data-links-plan="all_access">GET ALL ACCESS</button></div>
@@ -4106,7 +4106,7 @@ if(showCreatePoolBtnV432)showCreatePoolBtnV432.onclick=()=>{
 $("#createPoolBtn").onclick=async()=>{
   $("#homeErr").textContent="";
   const createBtn=$("#createPoolBtn"),oldLabel=createBtn?.textContent||"CREATE FREE POOL";
-  if(createBtn){createBtn.disabled=true;createBtn.textContent="CREATING POOL…"}
+  if(createBtn){createBtn.disabled=true;createBtn.textContent="CREATING YOUR POOL…"}
   try{
     applyOwnerGameAccessV357();
     const d=await api("/api/pool/create",{method:"POST",body:JSON.stringify({name:$("#createPoolName").value,email:$("#createPoolEmail").value,playerName:$("#createPoolPlayerName").value,password:$("#createPoolPass").value,gameTypes:(window.linksCreatePoolSelectedGamesV441?window.linksCreatePoolSelectedGamesV441():$(`#createPoolGames input[type="checkbox"]:checked`).map(x=>x.value)),copies:Number($("#createPoolCopies")?.value||1),plan:$("#createPoolPlan")?.value||"free"})});
