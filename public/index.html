@@ -1555,7 +1555,7 @@ button:active::after{
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v474</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v475</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2264,18 +2264,19 @@ function gameInstanceKey(gt){return normalizePoolGameType(gt||sport||"nfl")}
 function gameInstanceDefaultLabel(gt,n=1){const b={nfl:"NFL Pick’em",college:"College Pick’em",march:"March Madness","33":"Game 33",squares:"Football Squares",survivor:"NFL Survivor",confidence:"Confidence Pool",props:"Super Bowl Props",playoff:"NFL Playoff Challenge",masters:"Masters Golf",nascar:"NASCAR",fantasy:"Fantasy",dynasty:"Dynasty"}[gt]||"Game";return n>1?`${b} ${n}`:b}
 async function fetchGameInstances(gt){
   gt=gameInstanceKey(gt);
+  // v475: discovery may temporarily suppress the current instance header, but
+  // it must NEVER leave global instance state at 0 if the request fails.
+  const savedId=activeGameInstanceId;
   try{
-    // v461: game-instance discovery must not inherit an instance id from a
-    // previously opened pool. The v399 save-point queried this endpoint before
-    // the new pool's instance was selected.
-    const savedId=activeGameInstanceId;
     activeGameInstanceId=0;
     const d=await api(`/api/game-instances?gameType=${encodeURIComponent(gt)}`);
-    activeGameInstanceId=savedId;
     gameInstanceCache[gt]=d.instances||[];
     return gameInstanceCache[gt];
   }catch(e){
+    console.warn("Game instance discovery failed",gt,e);
     return gameInstanceCache[gt]||[];
+  }finally{
+    activeGameInstanceId=savedId;
   }
 }
 function currentGameInstance(gt){const a=gameInstanceCache[gameInstanceKey(gt)]||[];return a.find(x=>Number(x.id)===Number(activeGameInstanceId))||a[0]||null}
@@ -2863,7 +2864,10 @@ async function enterApp(selected){
     activeGameInstanceId=savedInstanceId;
   }
   showTab("picks");
-  renderGameInstanceUI(sport).catch(e=>console.warn("Game tabs load failed",e));
+  // v475: tabs stay non-blocking, but once their instance metadata arrives we
+  // deliberately repaint the already-loaded Picks payload instead of fetching
+  // Picks again. This prevents tab discovery from becoming a data prerequisite.
+  renderGameInstanceUI(sport).then(()=>renderPicks()).catch(e=>console.warn("Game tabs load failed",e));
 }
 const SPECIAL_GAME_DATA={
   survivor:{title:"NFL SURVIVOR",logo:"./nfl-survivor-logo-v102.jpg",lead:"Pick one NFL team each week. Win and survive; lose and you are out.",rules:"Pick one NFL team to win each week. A team cannot be used twice. Picks lock at kickoff. Commissioner rules control lives, buy-backs and tie situations."},
