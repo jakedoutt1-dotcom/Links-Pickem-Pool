@@ -1784,7 +1784,18 @@ async function squaresState(DB,pid,viewer,role){
       q3:squareWinner(claims,awayNums,homeNums,live.q3Away,live.q3Home),
       final:squareWinner(claims,awayNums,homeNums,live.finalAway,live.finalHome)
     }:{q1:null,half:null,q3:null,final:null};
-    out.push({...b,price:Number(b.price||0),payout_q1:Number(b.payout_q1||0),payout_half:Number(b.payout_half||0),payout_q3:Number(b.payout_q3||0),payout_final:Number(b.payout_final||0),awayNums,homeNums,claims,live,winners});
+    if(live){
+      await DB.prepare("INSERT INTO squares_results(board_id,q1_away,q1_home,half_away,half_home,q3_away,q3_home,final_away,final_home,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(board_id) DO UPDATE SET q1_away=COALESCE(excluded.q1_away,q1_away),q1_home=COALESCE(excluded.q1_home,q1_home),half_away=COALESCE(excluded.half_away,half_away),half_home=COALESCE(excluded.half_home,half_home),q3_away=COALESCE(excluded.q3_away,q3_away),q3_home=COALESCE(excluded.q3_home,q3_home),final_away=CASE WHEN ? THEN excluded.final_away ELSE final_away END,final_home=CASE WHEN ? THEN excluded.final_home ELSE final_home END,updated_at=excluded.updated_at")
+        .bind(b.id,live.q1Away,live.q1Home,live.halfAway,live.halfHome,live.q3Away,live.q3Home,live.completed?live.finalAway:null,live.completed?live.finalHome:null,new Date().toISOString(),live.completed?1:0,live.completed?1:0).run();
+      if(live.completed&&String(b.status)!=="FINAL")await DB.prepare("UPDATE squares_boards SET status='FINAL' WHERE id=? AND pool_id=?").bind(b.id,pid).run();
+    }
+    const snap=await DB.prepare("SELECT * FROM squares_results WHERE board_id=?").bind(b.id).first();
+    if(snap){
+      const stable={q1Away:snap.q1_away,q1Home:snap.q1_home,halfAway:snap.half_away,halfHome:snap.half_home,q3Away:snap.q3_away,q3Home:snap.q3_home,finalAway:snap.final_away,finalHome:snap.final_home,completed:String(b.status)==="FINAL"||!!live?.completed,status:live?.status||((String(b.status)==="FINAL")?"FINAL":"")};
+      live={...(live||{}),...Object.fromEntries(Object.entries(stable).filter(([,v])=>v!==null&&v!==undefined))};
+      winners={q1:squareWinner(claims,awayNums,homeNums,live.q1Away,live.q1Home),half:squareWinner(claims,awayNums,homeNums,live.halfAway,live.halfHome),q3:squareWinner(claims,awayNums,homeNums,live.q3Away,live.q3Home),final:squareWinner(claims,awayNums,homeNums,live.finalAway,live.finalHome)};
+    }
+    out.push({...b,status:live?.completed?"FINAL":b.status,price:Number(b.price||0),payout_q1:Number(b.payout_q1||0),payout_half:Number(b.payout_half||0),payout_q3:Number(b.payout_q3||0),payout_final:Number(b.payout_final||0),awayNums,homeNums,claims,live,winners});
   }
   return {boards:out,players,viewer,role};
 }
