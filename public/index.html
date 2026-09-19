@@ -1416,7 +1416,7 @@ table{max-width:100%}
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v363</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v364</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -1600,7 +1600,8 @@ table{max-width:100%}
   <div id="linksAdminDashboard" class="hide">
     <div class="card">
       <div class="row"><h3 style="margin:0">All Links Pools</h3><button id="linksAdminRefresh">Refresh</button></div>
-      <div class="small" style="margin:7px 0 12px">Owner controls for commissioner access. You can reset a commissioner password here if someone gets locked out.</div>
+      <div class="small" style="margin:7px 0 12px">Owner controls for commissioner access, package status and pool details.</div>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-bottom:10px"><input id="linksAdminPoolSearchV364" placeholder="Search pool, code, name or email"><select id="linksAdminPackageFilterV364"><option value="">ALL PACKAGES</option><option value="free">FREE</option><option value="plus">LINKS PLUS</option><option value="nfl_package">NFL PACKAGE</option><option value="all_access">ALL ACCESS</option></select></div>
       <div id="linksAdminEmailStatus" class="links-admin-email-status"><b>EMAIL INVITES</b><div class="small">Checking email setup…</div></div>
       <div id="linksAdminPools"></div>
     </div>
@@ -1879,6 +1880,7 @@ table{max-width:100%}
   <div class="app-head">
     <div>
       <div id="appPoolName" style="font-weight:950;font-size:18px"></div>
+      <div id="poolPackageBadgeV364" class="small" style="margin-top:4px;font-weight:900;color:#ff9b58">POOL PACKAGE: CHECKING…</div>
       <div><span id="sportBadge" class="pool-code-badge hide"></span> <span id="feeLine" class="small"></span></div>
     </div>
     <div class="app-head-right">
@@ -1890,7 +1892,6 @@ table{max-width:100%}
   <div class="v180-pool-game-tabs-wrap"><div class="v180-pool-game-tabs-label">Pool tabs</div><div id="mainGameInstanceTabs" class="game-instance-tabs-v180"></div></div>
 <div id="message" class="msg hide"></div>
   <div id="pageSportIndicator" class="sport-page-indicator"></div>
-  <div id="weekPickerCard" class="card row"><b>Select Week</b><select id="weekSelect"></select></div>
   <div id="pickLockCard" class="card lock"><b style="color:#ffd45d;font-size:17px">⏰ GET YOUR PICKS IN BEFORE</b><div id="lockDeadline" style="font-size:20px;font-weight:900;margin-top:5px"></div><div class="small" id="lockText" style="margin-top:4px"></div></div>
 
   <div class="tabs">
@@ -1903,6 +1904,8 @@ table{max-width:100%}
     <button data-tab="rules" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/rules.png" alt="">Rules</button>
     <button data-tab="admin" class="admin-tab commissioner-admin-tab-v118 hide">⚙️ ADMIN</button>
   </div>
+
+  <div id="weekPickerCard" class="card row"><b>SELECT WEEK</b><select id="weekSelect"></select></div>
 
   <section id="picks" class="links-interactive-zone">
     <div id="paymentGate" class="payment-gate hide">
@@ -2085,6 +2088,9 @@ let poolGames=[];try{poolGames=JSON.parse(sessionStorage.getItem("poolGames")||"
 let week=1,officialWeek=1,adminWeek=1,standingsWeek=1,boot=null,me=null,collegeCandidates=[],scoreTimer=null,liveRefreshBusy=false,lastScoreHasLive=false,venmoStarted=false,poolDisplayTimezone="auto";
 let pickLockCountdownTimerV198=null,standingsManualSelectionV198=false;
 let linksPaidPackageV363=sessionStorage.getItem("linksPaidPackageV363")==="1";
+let linksPackageNameV364=sessionStorage.getItem("linksPackageNameV364")||"free";
+function packageLabelV364(p){return ({free:"FREE FOR LIFE",plus:"LINKS PLUS",nfl_package:"NFL PACKAGE",all_access:"ALL ACCESS"})[String(p||"free").toLowerCase()]||String(p||"FREE").replaceAll("_"," ").toUpperCase()}
+function paintPackageBadgeV364(){const el=$("#poolPackageBadgeV364");if(el)el.textContent="POOL PACKAGE: "+packageLabelV364(linksPackageNameV364)}
 
 // Stable, human-readable routes make LINKS screens addressable by AdSense and the browser.
 const LINKS_ROUTES={
@@ -2396,25 +2402,19 @@ function updateChangeGameButtons(){
   });
 }
 async function refreshPackageAccessV363(){
-  let paid=false;
+  let paid=false,plan="free";
   try{
-    // Commissioner gets authoritative package data from the dashboard.
-    if(isCommissioner){
-      const d=await api("/api/commissioner/dashboard");
-      const plan=String(d?.plan||"free").toLowerCase(),limit=Number(d?.limit||1);
-      const owner=String(d?.email||sessionStorage.getItem("linksCommissionerEmail")||"").trim().toLowerCase()===LINKS_OWNER_EMAIL_V357;
-      paid=owner||plan!=="free"||limit>1;
-    }else{
-      // Player sessions use the pool access returned by the session/pool APIs when present.
-      const d=await api("/api/session");
-      const plan=String(d?.plan||d?.access?.plan||d?.poolPlan||"free").toLowerCase();
-      const limit=Number(d?.limit||d?.access?.limit||d?.poolLimit||1);
-      paid=!!(d?.access?.multiGame||d?.access?.paidPackage||d?.access?.allAccess)||plan!=="free"||limit>1;
-    }
+    const d=isCommissioner?await api("/api/commissioner/dashboard"):await api("/api/session");
+    plan=String(d?.plan||d?.access?.plan||d?.poolPlan||"free").toLowerCase();
+    const limit=Number(d?.limit||d?.access?.limit||d?.poolLimit||1);
+    const owner=isCommissioner&&String(d?.email||sessionStorage.getItem("linksCommissionerEmail")||"").trim().toLowerCase()===LINKS_OWNER_EMAIL_V357;
+    paid=owner||!!(d?.access?.multiGame||d?.access?.paidPackage||d?.access?.allAccess)||plan!=="free"||limit>1;
+    if(owner)plan="all_access";
   }catch(e){}
-  linksPaidPackageV363=paid;
+  linksPaidPackageV363=paid;linksPackageNameV364=plan;
   sessionStorage.setItem("linksPaidPackageV363",paid?"1":"0");
-  updateChangeGameButtons();
+  sessionStorage.setItem("linksPackageNameV364",plan);
+  paintPackageBadgeV364();updateChangeGameButtons();
   return paid;
 }
 async function enterSportChoice(){
@@ -2549,7 +2549,7 @@ async function enterApp(selected){
   $("#appPoolName").textContent=poolName;
   $("#sportBadge").textContent=sport==="nfl"?"🏈 NFL":(sport==="college"?"🎓 COLLEGE":"3️⃣3️⃣ 33");
   $("#currentUser").textContent=currentUser;
-  updateChangeGameButtons();
+  updateChangeGameButtons();paintPackageBadgeV364();
   refreshPackageAccessV363().catch(()=>{});
   if(isCommissioner)setTimeout(()=>{try{renderPoolGamesManagers()}catch(e){}},0);
   // Do not block the first paint on commissioner extras or league-tab metadata. Load them after the game page is usable.
@@ -3730,23 +3730,28 @@ async function loadLinksAdminPools(){
     }
     // Owner game entitlement is email-driven in v357, not managed from LINKS Admin.
     $("#linksAdminDashboard")?.querySelectorAll('[data-master-access],[data-master-all-access],[data-owner-access]').forEach(x=>x.remove());
-    $("#linksAdminPools").innerHTML=(d.pools||[]).map(p=>`
+    const poolsV364=d.pools||[];
+    const renderAdminPoolsV364=()=>{
+      const term=String($("#linksAdminPoolSearchV364")?.value||"").trim().toLowerCase(),filter=$("#linksAdminPackageFilterV364")?.value||"";
+      const rows=poolsV364.filter(p=>{const plan=String(p.plan||p.package||"free").toLowerCase();const hay=[p.name,p.code,p.commissioner_name,p.commissioner_email].join(" ").toLowerCase();return (!term||hay.includes(term))&&(!filter||plan===filter)});
+      $("#linksAdminPools").innerHTML=rows.map(p=>{const plan=String(p.plan||p.package||"free").toLowerCase();return `
       <div class="links-admin-pool">
-        <div class="links-admin-head">
-          <div>
-            <div class="links-admin-title">${p.name} <span class="pool-code-badge">${p.code}</span></div>
-            <div class="links-admin-meta">${p.player_count} players • Created ${p.created_at?new Date(p.created_at).toLocaleDateString():"—"}<br>Commissioner: ${p.commissioner_email||"No email saved"}<br>Active games: ${(p.games||[]).map(poolGameLabel).join(" • ")||"—"}<br>Welcome email: ${p.commissioner_welcome_last_status==="SENT"?`✅ SENT${p.commissioner_welcome_last_at?` ${new Date(p.commissioner_welcome_last_at).toLocaleString()}`:""}${p.commissioner_welcome_last_id?` • ID ${p.commissioner_welcome_last_id}`:""}`:p.commissioner_welcome_last_status==="FAILED"?`⚠ FAILED${p.commissioner_welcome_last_at?` ${new Date(p.commissioner_welcome_last_at).toLocaleString()}`:""}${p.commissioner_welcome_last_error?` • ${p.commissioner_welcome_last_error}`:""}`:"Not sent/confirmed yet"}</div>
-          </div>
-          <span class="badge">FREE</span>
-        </div>
+        <div class="links-admin-head"><div><div class="links-admin-title">${escapeHtml(p.name||"Pool")} <span class="pool-code-badge">${escapeHtml(p.code||"")}</span></div>
+        <div class="links-admin-meta">${Number(p.player_count||0)} players • Created ${p.created_at?new Date(p.created_at).toLocaleDateString():"—"}<br>Commissioner name: ${escapeHtml(p.commissioner_name||p.commissioner||"—")}<br>Commissioner email: ${escapeHtml(p.commissioner_email||"No email saved")}<br>Active games: ${(p.games||[]).map(poolGameLabel).join(" • ")||"—"}</div></div>
+        <span class="badge">${escapeHtml(packageLabelV364(plan))}</span></div>
         <div class="links-admin-actions" style="grid-template-columns:1fr auto">
-          <button data-master-welcome="${p.code}" class="green" style="grid-column:1/-1" ${p.commissioner_email?"":"disabled"}>✉ RESEND COMMISSIONER WELCOME</button>
-          <div class="small" data-master-welcome-status="${p.code}" style="grid-column:1/-1"></div>
-          <input data-master-pass="${p.code}" type="password" placeholder="New commissioner password">
-          <button data-master-reset="${p.code}" class="blue">RESET COMMISSIONER PASSWORD</button>
-          <button class="links-admin-danger" data-master-delete="${p.code}" data-name="${p.name}" style="grid-column:1/-1">DELETE POOL</button>
-        </div>
-      </div>`).join("")||`<div class="small">No pools found.</div>`;
+          <select data-master-plan="${escapeHtml(p.code||"")}" style="grid-column:1/-1"><option value="free" ${plan==="free"?"selected":""}>FREE FOR LIFE</option><option value="plus" ${plan==="plus"?"selected":""}>LINKS PLUS</option><option value="nfl_package" ${plan==="nfl_package"?"selected":""}>NFL PACKAGE</option><option value="all_access" ${plan==="all_access"?"selected":""}>ALL ACCESS</option></select>
+          <button data-master-save-plan="${escapeHtml(p.code||"")}" class="blue" style="grid-column:1/-1">SAVE PACKAGE</button>
+          <button data-master-welcome="${escapeHtml(p.code||"")}" class="green" style="grid-column:1/-1" ${p.commissioner_email?"":"disabled"}>✉ RESEND COMMISSIONER WELCOME</button>
+          <div class="small" data-master-welcome-status="${escapeHtml(p.code||"")}" style="grid-column:1/-1"></div>
+          <input data-master-pass="${escapeHtml(p.code||"")}" type="password" placeholder="New commissioner password"><button data-master-reset="${escapeHtml(p.code||"")}" class="blue">RESET COMMISSIONER PASSWORD</button>
+          <button class="links-admin-danger" data-master-delete="${escapeHtml(p.code||"")}" data-name="${escapeHtml(p.name||"Pool")}" style="grid-column:1/-1">DELETE POOL</button>
+        </div></div>`}).join("")||'<div class="small">No matching pools found.</div>';
+      $$('[data-master-save-plan]').forEach(b=>b.onclick=async()=>{const code=b.dataset.masterSavePlan,sel=$(`[data-master-plan="${CSS.escape(code)}"]`);b.disabled=true;try{await linksMasterApi("/api/links-admin/package",{method:"POST",body:JSON.stringify({code,plan:sel.value})});await loadLinksAdminPools()}catch(e){alert(e.message||"Could not save package.")}finally{b.disabled=false}});
+    };
+    renderAdminPoolsV364();
+    $("#linksAdminPoolSearchV364")?.addEventListener("input",renderAdminPoolsV364);
+    $("#linksAdminPackageFilterV364")?.addEventListener("change",renderAdminPoolsV364);
 
     $$('[data-master-welcome]').forEach(b=>b.onclick=async()=>{
       const code=b.dataset.masterWelcome,status=$(`[data-master-welcome-status="${CSS.escape(code)}"]`);
@@ -3874,7 +3879,7 @@ $("#changeSport").onclick=commissionerChangeGameV358;
 $("#adminChangeGame").onclick=commissionerChangeGameV358;
 async function signOut(){
   try{await api("/api/logout",{method:"POST"})}catch(e){}
-  ["poolToken","poolRole","poolUser","poolSport","poolGames","poolIsCommissioner","linksPoolAdFree","linksPaidPackageV363"].forEach(k=>sessionStorage.removeItem(k));token=role=currentUser=sport="";isCommissioner=false;poolGames=[];applyPoolAdMode(false);await loadPoolMenu(poolCode);showOnly("home");
+  ["poolToken","poolRole","poolUser","poolSport","poolGames","poolIsCommissioner","linksPoolAdFree","linksPaidPackageV363","linksPackageNameV364"].forEach(k=>sessionStorage.removeItem(k));token=role=currentUser=sport="";isCommissioner=false;poolGames=[];applyPoolAdMode(false);await loadPoolMenu(poolCode);showOnly("home");
 }
 $("#signOut").onclick=signOut;$("#sportSignOut").onclick=signOut;$("#squaresSignOut").onclick=signOut;
 $("#weekSelect").onchange=async()=>{
