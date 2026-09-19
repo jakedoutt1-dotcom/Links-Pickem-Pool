@@ -1539,7 +1539,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v460</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v461</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2246,7 +2246,22 @@ let activeGameInstanceId=Number(sessionStorage.getItem("linksGameInstanceId")||0
 const gameInstanceCache={};
 function gameInstanceKey(gt){return normalizePoolGameType(gt||sport||"nfl")}
 function gameInstanceDefaultLabel(gt,n=1){const b={nfl:"NFL Pick’em",college:"College Pick’em",march:"March Madness","33":"Game 33",squares:"Football Squares",survivor:"NFL Survivor",confidence:"Confidence Pool",props:"Super Bowl Props",playoff:"NFL Playoff Challenge",masters:"Masters Golf",nascar:"NASCAR",fantasy:"Fantasy",dynasty:"Dynasty"}[gt]||"Game";return n>1?`${b} ${n}`:b}
-async function fetchGameInstances(gt){gt=gameInstanceKey(gt);try{const d=await api(`/api/game-instances?gameType=${encodeURIComponent(gt)}`);gameInstanceCache[gt]=d.instances||[];return gameInstanceCache[gt]}catch(e){return gameInstanceCache[gt]||[]}}
+async function fetchGameInstances(gt){
+  gt=gameInstanceKey(gt);
+  try{
+    // v461: game-instance discovery must not inherit an instance id from a
+    // previously opened pool. The v399 save-point queried this endpoint before
+    // the new pool's instance was selected.
+    const savedId=activeGameInstanceId;
+    activeGameInstanceId=0;
+    const d=await api(`/api/game-instances?gameType=${encodeURIComponent(gt)}`);
+    activeGameInstanceId=savedId;
+    gameInstanceCache[gt]=d.instances||[];
+    return gameInstanceCache[gt];
+  }catch(e){
+    return gameInstanceCache[gt]||[];
+  }
+}
 function currentGameInstance(gt){const a=gameInstanceCache[gameInstanceKey(gt)]||[];return a.find(x=>Number(x.id)===Number(activeGameInstanceId))||a[0]||null}
 async function selectGameInstance(gt,id){gt=gameInstanceKey(gt);const rows=gameInstanceCache[gt]||await fetchGameInstances(gt),x=rows.find(r=>Number(r.id)===Number(id));if(!x)return;activeGameInstanceId=Number(x.id);activeGameInstanceName=x.name||"";sessionStorage.setItem("linksGameInstanceId",String(activeGameInstanceId));sessionStorage.setItem("linksGameInstanceName",activeGameInstanceName);await renderGameInstanceUI(gt);if(gt==="nfl"||gt==="college"||gt==="33"){try{await refreshWeek()}catch(e){}}else if(gt==="squares"){try{await renderSquares()}catch(e){}}else if(gt==="march"){try{await loadMarch()}catch(e){}}else{try{await enterSpecialGame(gt)}catch(e){}}}
 async function addGameInstance(gt){if(!isCommissioner)return;gt=gameInstanceKey(gt);const rows=gameInstanceCache[gt]||await fetchGameInstances(gt),name=prompt(`Name the new ${gameInstanceDefaultLabel(gt)} tab:`,gameInstanceDefaultLabel(gt,rows.length+1));if(name===null)return;try{const d=await api("/api/admin/game-instance",{method:"POST",body:JSON.stringify({action:"create",gameType:gt,name:name.trim()})});gameInstanceCache[gt]=d.instances||[];const newest=gameInstanceCache[gt][gameInstanceCache[gt].length-1];if(newest){activeGameInstanceId=Number(newest.id);activeGameInstanceName=newest.name||"";sessionStorage.setItem("linksGameInstanceId",String(activeGameInstanceId));sessionStorage.setItem("linksGameInstanceName",activeGameInstanceName)}await renderGameInstanceUI(gt)}catch(e){msg(e.message||"Could not add another game tab.",false)}}
@@ -4507,7 +4522,7 @@ async function openInviteJoin(inviteToken){
 $("#inviteJoinBtn").onclick=async()=>{
   $("#inviteJoinErr").textContent="";
   try{const d=await api("/api/invite/join",{method:"POST",body:JSON.stringify({token:activeInviteToken,name:$("#inviteJoinName").value,password:$("#inviteJoinPassword").value,dynastyTeamName:$("#inviteDynastyTeam")?.value||""})});
-    token=d.token;role="player";currentUser=d.name;poolName=d.poolName;poolCode=d.poolCode;activeGameInstanceId=0;activeGameInstanceName="";sessionStorage.removeItem("linksGameInstanceId");sessionStorage.removeItem("linksGameInstanceName");Object.entries({poolToken:token,poolRole:role,poolUser:currentUser,poolName,poolCode}).forEach(([k,v])=>sessionStorage.setItem(k,v));history.replaceState({},document.title,location.pathname);await enterPoolGames(d.games,d.gameType);
+    token=d.token;role="player";currentUser=d.name;poolName=d.poolName;poolCode=d.poolCode;activeGameInstanceId=0;activeGameInstanceName="";Object.keys(gameInstanceCache).forEach(k=>delete gameInstanceCache[k]);sessionStorage.removeItem("linksGameInstanceId");sessionStorage.removeItem("linksGameInstanceName");Object.entries({poolToken:token,poolRole:role,poolUser:currentUser,poolName,poolCode}).forEach(([k,v])=>sessionStorage.setItem(k,v));history.replaceState({},document.title,location.pathname);await enterPoolGames(d.games,d.gameType);
   }catch(e){$("#inviteJoinErr").textContent=e.message}
 };
 $("#inviteJoinHome").onclick=()=>{history.replaceState({},document.title,location.pathname);showOnly("home")};
@@ -4518,7 +4533,7 @@ async function openPlayerSetup(setupToken){
   try{const d=await api(`/api/player-setup?token=${encodeURIComponent(activePlayerSetupToken)}`);$("#playerSetupInfo").innerHTML=`<b>${escapeHtml(d.playerName)}</b><br><span class="small">${escapeHtml(d.poolName)} • Pool Code: ${escapeHtml(d.poolCode)}${d.email?` • ${escapeHtml(d.email)}`:" • Text setup link"}</span>`}
   catch(e){$("#playerSetupInfo").textContent="This password setup link could not be opened.";$("#playerSetupErr").textContent=e.message}
 }
-$("#playerSetupBtn").onclick=async()=>{const p1=$("#playerSetupPassword").value,p2=$("#playerSetupPassword2").value;$("#playerSetupErr").textContent="";if(p1!==p2){$("#playerSetupErr").textContent="Passwords do not match.";return}try{const d=await api("/api/player-setup/complete",{method:"POST",body:JSON.stringify({token:activePlayerSetupToken,password:p1})});token=d.token;role="player";currentUser=d.name;poolName=d.poolName;poolCode=d.poolCode;activeGameInstanceId=0;activeGameInstanceName="";sessionStorage.removeItem("linksGameInstanceId");sessionStorage.removeItem("linksGameInstanceName");Object.entries({poolToken:token,poolRole:role,poolUser:currentUser,poolName,poolCode}).forEach(([k,v])=>sessionStorage.setItem(k,v));history.replaceState({},document.title,"/");await enterPoolGames(d.games,d.gameType)}catch(e){$("#playerSetupErr").textContent=e.message}};
+$("#playerSetupBtn").onclick=async()=>{const p1=$("#playerSetupPassword").value,p2=$("#playerSetupPassword2").value;$("#playerSetupErr").textContent="";if(p1!==p2){$("#playerSetupErr").textContent="Passwords do not match.";return}try{const d=await api("/api/player-setup/complete",{method:"POST",body:JSON.stringify({token:activePlayerSetupToken,password:p1})});token=d.token;role="player";currentUser=d.name;poolName=d.poolName;poolCode=d.poolCode;activeGameInstanceId=0;activeGameInstanceName="";Object.keys(gameInstanceCache).forEach(k=>delete gameInstanceCache[k]);sessionStorage.removeItem("linksGameInstanceId");sessionStorage.removeItem("linksGameInstanceName");Object.entries({poolToken:token,poolRole:role,poolUser:currentUser,poolName,poolCode}).forEach(([k,v])=>sessionStorage.setItem(k,v));history.replaceState({},document.title,"/");await enterPoolGames(d.games,d.gameType)}catch(e){$("#playerSetupErr").textContent=e.message}};
 $("#playerSetupHome").onclick=()=>{history.replaceState({},document.title,"/");showOnly("home")};
 
 $("#sendPlayerInvites").onclick=async()=>{
