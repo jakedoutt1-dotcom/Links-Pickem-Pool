@@ -1539,7 +1539,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v466</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v467</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2835,7 +2835,10 @@ async function enterApp(selected){
   }
   officialWeek=week;adminWeek=week;standingsWeek=week;
   $("#weekSelect").value=week;showOnly("app");applyRoleNavigation();await refreshWeek();showTab("picks");
-  // v466: preserve the proven legacy NFL data path; tabs render only after Picks is fully loaded.
+  // v467: the manual Refresh Player Access button proved this second access/status
+  // round-trip wakes legacy pools on iOS. Do it automatically after first paint.
+  checkPaymentStatus({silent:true}).catch(()=>{});
+  // Tabs are presentation only and load after the proven legacy NFL path.
   renderGameInstanceUI(sport).catch(e=>console.warn("Game tabs load failed",e));
 }
 const SPECIAL_GAME_DATA={
@@ -3448,12 +3451,18 @@ async function startSquareCheckout(){
     if(b){b.disabled=false;b.textContent=`💳 Pay $${Number(boot.fee).toFixed(2)} with Square`}
   }
 }
-async function checkPaymentStatus(){
+async function checkPaymentStatus({silent=false}={}){
   try{
     const d=await api(q("/api/payment/status"));
-    if(d.paid){await refreshWeek();msg("✅ Player access confirmed. Your picks are unlocked.",true)}
-    else msg("Player access is still pending. If the commissioner just activated you, wait a few seconds and try again.");
-  }catch(e){msg(e.message)}
+    // v467: refreshing access must also refresh the complete legacy Picks payload.
+    // This is the same action that proved to wake up Barnes Family on iPhone.
+    await refreshWeek();
+    if(!silent){
+      if(d.paid)msg("✅ Player access confirmed. Your picks are unlocked.",true);
+      else msg("Player access is still pending. Picks and games have been refreshed.",true);
+    }
+    return !!d.paid;
+  }catch(e){if(!silent)msg(e.message);return false}
 }
 async function renderCompare(){
   let d;
