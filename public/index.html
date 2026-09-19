@@ -1539,7 +1539,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v452</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v453</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2596,9 +2596,9 @@ async function enterSportChoice(){
   });
   showOnly("sportChoice");
 }
-async function enterPoolGames(gameTypes,gameType){
+async function enterPoolGames(gameTypes,gameType,forceGameSelect=false){
   const games=savePoolGames(gameTypes,gameType||"nfl");
-  if(games.length>1)return enterSportChoice();
+  if(forceGameSelect||games.length>1)return enterSportChoice();
   const assigned=games[0];
   if(assigned==="march")return enterMarch();
   if(assigned==="squares")return enterSquares();
@@ -4117,7 +4117,7 @@ $("#createPoolBtn").onclick=async()=>{
     sessionStorage.removeItem("linksWelcomeSeen");
     token=d.token; role="player"; isCommissioner=true; currentUser=d.playerName; poolName=d.name; poolCode=d.code;applyPoolAdMode(!!d.service?.adFree);
     Object.entries({poolToken:token,poolRole:role,poolUser:currentUser,poolName,poolCode,poolIsCommissioner:"1"}).forEach(([k,v])=>sessionStorage.setItem(k,v));
-    await enterPoolGames(d.games,d.gameType);
+    await enterPoolGames(d.games,d.gameType,true);
     const created=Array.isArray(d.createdPools)?d.createdPools:[];const emailNote=d.commissionerWelcomeEmailSent?` Welcome email${created.length>1?"s":""} sent to <b>${escapeHtml($("#createPoolEmail").value)}</b>.`:` <span style="color:#ffd166">Welcome email was NOT sent${d.commissionerWelcomeEmailError?`: ${escapeHtml(d.commissionerWelcomeEmailError)}`:""}.</span>`;
     const copiesNote=created.length>1?` Created <b>${created.length} separate game pools</b>: ${created.map(x=>`<b>${escapeHtml(x.name)}</b> — ${escapeHtml(x.code)}`).join(" • ")}. You are signed into the first one.`:` Pool code: <b>${escapeHtml(poolCode)}</b>.`;
     msg(`✅ ${created.length>1?"Pools":"Pool"} created. You have commissioner ADMIN access.${copiesNote}${emailNote}`,true);
