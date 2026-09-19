@@ -1539,7 +1539,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v463</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v464</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -3336,6 +3336,14 @@ async function refreshWeek(){
   if(cached)applyPickPageDataV194(cached,{cache:true});
   try{
     const first=await api(q("/api/pick-page"));
+    // v464 safety net: a regular-season NFL pick page can never legitimately have
+    // zero games. If an older/legacy pool response is empty, rebuild the slate from
+    // the same 2026 schedule used by the known-good pre-tab builds, while preserving
+    // all server-returned saved picks, locks and access data.
+    if(sport==="nfl"&&Number(week)>=1&&Number(week)<=18&&!(first?.boot?.liveGames||[]).length){
+      const raw={"1":"NE@SEA,SF@LAR,CHI@CAR,TB@CIN,NO@DET,BUF@HOU,BAL@IND,CLE@JAX,ATL@PIT,NYJ@TEN,ARI@LAC,MIA@LV,GB@MIN,WAS@PHI,DAL@NYG,DEN@KC","2":"DET@BUF,CAR@ATL,NO@BAL,MIN@CHI,CIN@HOU,PIT@NE,GB@NYJ,CLE@TB,PHI@TEN,JAX@DEN,LV@LAC,SEA@ARI,WAS@DAL,MIA@SF,IND@KC,NYG@LAR"}[Number(week)]||"";
+      if(raw)first.boot.liveGames=raw.split(",").map((m,i)=>{const [away,home]=m.split("@");return {gameIndex:i,away,home,awayName:away,homeName:home,completed:false,winner:null,status:"",state:"pre",clock:"",awayScore:null,homeScore:null}});
+    }
     writePickPageCacheV194(first);
     applyPickPageDataV194(first,{cache:false});
   }catch(e){
