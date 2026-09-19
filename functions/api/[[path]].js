@@ -2459,6 +2459,20 @@ export async function onRequest(context){
       const rows=(await DB.prepare("SELECT player_name,entry_json FROM special_game_entries WHERE pool_id=? AND game_type='props'").bind(pid).all()).results||[],pts=Math.max(0,Number(settings.pointsPerQuestion||1)),now=new Date().toISOString();
       for(const r of rows){let e={};try{e=JSON.parse(r.entry_json||"{}")||{}}catch(x){}const picks=Array.isArray(e.answers)?e.answers:String(e.answers||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean);let correct=0;answers.forEach((a,i)=>{if(String(picks[i]||"").trim().toLowerCase()===a.toLowerCase())correct++});const score=correct*pts;await DB.prepare("INSERT INTO special_game_scores(pool_id,game_type,player_name,score,status,detail_json,updated_at) VALUES(?,'props',? ,?,'FINAL',?,?) ON CONFLICT(pool_id,game_type,player_name) DO UPDATE SET score=excluded.score,status='FINAL',detail_json=excluded.detail_json,updated_at=excluded.updated_at").bind(pid,r.player_name,score,JSON.stringify({correct,total:answers.length,pointsPerQuestion:pts}),now).run()}
     }
+    async function fetchNascarResultsV388(settings){
+      const id=String(settings.eventId||"").trim(),year=Number(settings.eventYear||new Date().getUTCFullYear());if(!id)return {event:null,results:[]};
+      const events=await fetchNascarPoolEvents(year),base=events.find(x=>String(x.id)===id)||null;
+      const j=await getJSON(`https://site.api.espn.com/apis/site/v2/sports/racing/nascar-premier/summary?event=${encodeURIComponent(id)}&_=${Date.now()}`);
+      const c=j?.header?.competitions?.[0]||j?.event?.competitions?.[0]||null,raw=c?.competitors||j?.competitors||[];
+      const results=(raw||[]).map((x,i)=>({id:String(x?.athlete?.id||x?.id||""),name:String(x?.athlete?.displayName||x?.athlete?.fullName||x?.displayName||x?.name||""),position:Number(x?.order||x?.place||x?.position||x?.status?.position?.id||i+1),points:Number(x?.statistics?.find?.(z=>/points/i.test(String(z.name||z.label||"")))?.value),winner:!!x?.winner})).filter(x=>x.name).sort((a,b)=>a.position-b.position);
+      return {event:base,results};
+    }
+    async function autoScoreNascarV388(settings){
+      if(String(settings.autoScore||"false")!=="true")return;
+      const d=await fetchNascarResultsV388(settings);if(!d.results.length)return;
+      const map=new Map(d.results.map(x=>[x.name.toLowerCase(),x])),rows=(await DB.prepare("SELECT player_name,entry_json FROM special_game_entries WHERE pool_id=? AND game_type='nascar'").bind(pid).all()).results||[],method=String(settings.scoringMethod||"finish"),now=new Date().toISOString(),final=/final|complete/i.test(String(d.event?.status||""));
+      for(const r of rows){let e={};try{e=JSON.parse(r.entry_json||"{}")||{}}catch(x){}const chosen=(e.drivers||[]).map(n=>map.get(String(n).toLowerCase())).filter(Boolean);const score=chosen.reduce((t,x)=>t+(method==="points"&&Number.isFinite(x.points)?x.points:x.position),0);await DB.prepare("INSERT INTO special_game_scores(pool_id,game_type,player_name,score,status,detail_json,updated_at) VALUES(?,'nascar',?,?,?,?,?) ON CONFLICT(pool_id,game_type,player_name) DO UPDATE SET score=excluded.score,status=excluded.status,detail_json=excluded.detail_json,updated_at=excluded.updated_at").bind(pid,r.player_name,score,final?"FINAL":"OPEN",JSON.stringify({method,drivers:chosen}),now).run()}
+    }
     async function fetchMastersLeaderboardV387(settings){
       const id=String(settings.eventId||"").trim();if(!id)return [];
       const j=await getJSON(`https://site.api.espn.com/apis/site/v2/sports/golf/pga/leaderboard?tournamentId=${encodeURIComponent(id)}&_=${Date.now()}`);
@@ -2484,6 +2498,7 @@ export async function onRequest(context){
       if(["survivor","confidence","playoff"].includes(gt)){try{await autoScoreSpecialNFLV385(gt)}catch(e){}}
       if(gt==="props"){try{await autoScorePropsV386(settings)}catch(e){}}
       if(gt==="masters"){try{await autoScoreMastersV387(settings)}catch(e){}}
+      if(gt==="nascar"){try{await autoScoreNascarV388(settings)}catch(e){}}
       const entries=(await DB.prepare("SELECT player_name,entry_json,submitted_at FROM special_game_entries WHERE pool_id=? AND game_type=? ORDER BY player_name").bind(pid,gt).all()).results||[];
       const scores=(await DB.prepare("SELECT player_name,score,status,detail_json,updated_at FROM special_game_scores WHERE pool_id=? AND game_type=? ORDER BY score DESC,player_name").bind(pid,gt).all()).results||[];
       const mine=entries.find(x=>String(x.player_name).toLowerCase()===String(s.player_name||"").toLowerCase());
@@ -2520,6 +2535,10 @@ export async function onRequest(context){
       const raw=await getPoolSetting(DB,pid,`game_settings_${gt}`,"{}");
       let settings={};try{settings=JSON.parse(raw||"{}")||{}}catch(e){settings={}}
       return json({gameType:gt,settings});
+    }
+    if(path==="nascar/results"&&method==="GET"){
+      const raw=await getPoolSetting(DB,pid,"game_settings_nascar","{}");let settings={};try{settings=JSON.parse(raw||"{}")||{}}catch(e){}
+      return json(await fetchNascarResultsV388(settings));
     }
     if(path==="nascar/events"&&method==="GET"){
       const year=Number(url.searchParams.get("year")||new Date().getUTCFullYear());
