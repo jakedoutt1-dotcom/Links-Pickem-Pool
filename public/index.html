@@ -1494,7 +1494,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v405</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v406</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -4903,18 +4903,24 @@ $("#chooseSquares").onclick=()=>enterSquares();
           if(typeof poolGames!=="undefined")poolGames=Array.isArray(d.games)&&d.games.length?d.games:[d.gameType||"nfl"];
         }catch(e){}
         var games=Array.isArray(d.games)&&d.games.length?d.games:[d.gameType||"nfl"];
+        // Hand the authenticated session back to the complete app initializer.
+        // Do not manually expose #app: doing so bypasses enterApp/refreshWeek and
+        // leaves the NFL page empty with the generic app-logo artwork.
         try{
           if(typeof enterAfterPlayerLoginV382==="function"){
-            Promise.resolve(enterAfterPlayerLoginV382(games,d.gameType||games[0]||"nfl")).catch(function(){
-              if(typeof enterPoolGames==="function")enterPoolGames(games,d.gameType||games[0]||"nfl");
+            Promise.resolve(enterAfterPlayerLoginV382(games,d.gameType||games[0]||"nfl")).catch(function(routeErr){
+              console.warn("Post-login route failed",routeErr);
+              if(err)err.textContent="Signed in, but the pool page could not finish loading. Tap SIGN IN once more.";
             });
           }else if(typeof enterPoolGames==="function"){
-            enterPoolGames(games,d.gameType||games[0]||"nfl");
+            Promise.resolve(enterPoolGames(games,d.gameType||games[0]||"nfl")).catch(function(routeErr){
+              if(err)err.textContent="Signed in, but the pool page could not finish loading. Tap SIGN IN once more.";
+            });
           }else{
-            var app=byId("app"),login=byId("login");if(login)login.classList.add("hide");if(app){app.classList.remove("hide");app.style.display="block";}
+            throw new Error("Pool page initializer is not ready.");
           }
         }catch(routeErr){
-          var app=byId("app"),login=byId("login");if(login)login.classList.add("hide");if(app){app.classList.remove("hide");app.style.display="block";}
+          if(err)err.textContent=routeErr.message||"Signed in, but the pool page could not finish loading.";
         }
         if(btn){btn.disabled=false;btn.textContent=old}
       })
