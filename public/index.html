@@ -1399,7 +1399,30 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
 .links-game33-active-v373 #adminControls{display:none!important}
 .links-game33-active-v373 #g33Pane{display:block!important}
 </style>
-</head>
+<style id="links-v444-create-pool-redesign">
+#createPoolPage .pool-logo{max-height:150px!important;object-fit:contain!important}
+#createPoolPage .pool-name-banner{max-width:700px;margin:0 auto 10px!important;border-radius:12px!important}
+#createPoolPage>.card{max-width:700px!important;padding:14px!important;background:linear-gradient(180deg,#111a22,#0b1218)!important;border:1px solid #344958!important;border-radius:16px!important}
+#createPoolPage .commissioner-create-warning-v118{margin:0 0 14px!important;padding:12px!important;border-radius:12px!important;font-size:13px!important;line-height:1.45!important}
+#createPoolPage .field-label{display:block;margin:15px 0 6px!important;font-size:13px!important;letter-spacing:1px!important}
+#createPoolPage input:not([type=checkbox]),#createPoolPage select{min-height:50px!important;border-radius:12px!important;font-size:16px!important;padding:10px 12px!important}
+#createPoolGames.create-game-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;margin-top:7px!important}
+#createPoolGames.create-game-grid label{display:grid!important;grid-template-columns:86px minmax(0,1fr) 34px!important;align-items:center!important;gap:10px!important;min-height:88px!important;padding:8px!important;border:1px solid #344b5c!important;border-radius:13px!important;background:#0d171f!important;overflow:hidden!important}
+#createPoolGames .game-selector-logo{grid-column:1!important;width:86px!important;height:68px!important;max-width:86px!important;object-fit:contain!important;object-position:center!important;background:#080d11!important;border:0!important;border-radius:8px!important}
+#createPoolGames .game-selector-name{grid-column:2!important;text-align:left!important;font-size:14px!important;line-height:1.12!important;font-weight:900!important}
+#createPoolGames .links-create-check-v441{grid-column:3!important;position:static!important;width:32px!important;height:32px!important;border-radius:9px!important;font-size:22px!important;justify-self:end!important}
+#createPoolGames label.links-create-game-selected-v441{border-color:#ff6a1a!important;box-shadow:inset 0 0 0 2px #ff6a1a!important;background:#20150f!important}
+#createPoolPage .create-upgrade-row-v150{display:none!important}
+#createPoolPage #createPlanStatus{margin-top:12px!important;border-radius:10px!important}
+#createPoolPage #createPoolBtn{min-height:56px!important;border-radius:12px!important;font-size:18px!important}
+@media(max-width:560px){
+ #createPoolPage>.card{padding:11px!important}
+ #createPoolGames.create-game-grid{grid-template-columns:1fr!important;gap:8px!important}
+ #createPoolGames.create-game-grid label{grid-template-columns:104px minmax(0,1fr) 36px!important;min-height:82px!important}
+ #createPoolGames .game-selector-logo{width:104px!important;max-width:104px!important;height:66px!important}
+ #createPoolGames .game-selector-name{font-size:15px!important}
+}
+</style></head>
 
 <body><div id="top"></div><div class="wrap">
 
@@ -1507,7 +1530,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v443</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v444</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -1638,14 +1661,14 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
   <div class="pool-name-banner">CREATE A NEW POOL — COMMISSIONER SETUP</div>
   <div class="card" style="max-width:620px;margin-left:auto;margin-right:auto">
     <div class="commissioner-create-warning-v118"><b>THIS STARTS A BRAND-NEW POOL.</b><br>This page is for the person running the pool. Creating a pool makes you the commissioner and also a player in it.<br><br><b>Trying to play in someone else’s pool?</b> You must join from that commissioner’s private invitation.</div>
-    <label class="field-label" for="createPoolName">POOL NAME</label><input id="createPoolName" placeholder="Example: Barnes Family" style="width:100%">
+    <label class="field-label" for="createPoolName">1. POOL DETAILS — POOL NAME</label><input id="createPoolName" placeholder="Example: Barnes Family" style="width:100%">
     <div style="margin-top:10px;padding:11px 12px;border:1px solid #33434f;border-radius:9px;background:#101820;color:#c8d3da;font-size:13px;line-height:1.45">
       <b style="color:#fff">Pool Code:</b> Links will automatically create a unique code for this pool. Pool names can be the same — the code keeps every pool separate.
     </div>
     <label class="field-label" for="createPoolEmail">YOUR EMAIL</label><input id="createPoolEmail" type="email" placeholder="you@example.com" style="width:100%"><div class="small" style="margin-top:5px">This becomes the commissioner contact email for the pool.</div>
     <label class="field-label" for="createPoolPlayerName">YOUR PLAYER NAME</label><input id="createPoolPlayerName" placeholder="Example: Jake" style="width:100%"><div class="small" style="margin-top:5px">You will use this same player name to make picks. Your account will also have the ADMIN button.</div>
     <label class="field-label" for="createPoolPass">YOUR PASSWORD</label><input id="createPoolPass" type="password" placeholder="Create your player password" style="width:100%">
-    <label class="field-label">GAMES FOR THIS POOL</label>
+    <label class="field-label">2. CHOOSE YOUR GAMES</label><div class="small" style="margin-bottom:6px">Tap any game to add it. Selected games turn orange with a checkmark.</div>
     <div class="create-game-grid" id="createPoolGames">
       <label><input type="checkbox" value="nfl" checked><img class="game-selector-logo" src="./nfl-pickem-logo.png" alt=""><span class="game-selector-name">NFL Pick’em</span></label>
       <label><input type="checkbox" value="college"><img class="game-selector-logo" src="./college-pickem-logo.png" alt=""><span class="game-selector-name">College Pick’em</span></label>
@@ -1662,7 +1685,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
       <label><input type="checkbox" value="dynasty"><img class="game-selector-logo" src="./dynasty-fantasy-football-logo-v157.png" alt=""><span class="game-selector-name">Dynasty Fantasy Football</span></label>
     </div>
     <div class="small" style="margin-top:7px;line-height:1.45">Your first pool is <b>FREE FOR LIFE</b> and includes one game. Paid packages let you run additional separate game pools — including 2, 3, 4 or more copies of the <b>same</b> game — and remove ads.</div>
-    <label class="field-label" for="createPoolCopies">HOW MANY SEPARATE COPIES OF THIS POOL?</label><select id="createPoolCopies" style="width:100%"><option value="1">1 pool</option><option value="2">2 separate pools</option><option value="3">3 separate pools</option><option value="4">4 separate pools</option><option value="5">5 separate pools</option><option value="6">6 separate pools</option><option value="7">7 separate pools</option><option value="8">8 separate pools</option><option value="9">9 separate pools</option><option value="10">10 separate pools</option></select><div class="small" style="margin-top:5px;line-height:1.45">Copies are independent. Example: choose NFL Pick’em and 3 copies to create NFL Pick’em #1, #2 and #3, each with its own pool code, players, picks and standings.</div>
+    <label class="field-label" for="createPoolCopies">3. NUMBER OF SEPARATE POOLS</label><select id="createPoolCopies" style="width:100%"><option value="1">1 pool</option><option value="2">2 separate pools</option><option value="3">3 separate pools</option><option value="4">4 separate pools</option><option value="5">5 separate pools</option><option value="6">6 separate pools</option><option value="7">7 separate pools</option><option value="8">8 separate pools</option><option value="9">9 separate pools</option><option value="10">10 separate pools</option></select><div class="small" style="margin-top:5px;line-height:1.45">Copies are independent. Example: choose NFL Pick’em and 3 copies to create NFL Pick’em #1, #2 and #3, each with its own pool code, players, picks and standings.</div>
     <div id="createPlanStatus" class="create-plan-status-v150"><b>FREE FOR LIFE</b> • 1 game pool • ad supported</div>
     <div class="create-upgrade-row-v150"><button type="button" data-links-plan="plus">PLUS $19.99 / YEAR</button><button type="button" data-links-plan="nfl_package">NFL $29.99 / YEAR</button><button type="button" data-links-plan="all_access">ALL ACCESS $49.99 / YEAR</button></div>
     <input id="createPoolPlan" type="hidden" value="free">
