@@ -2453,6 +2453,12 @@ export async function onRequest(context){
         }
       }
     }
+    async function autoScorePropsV386(settings){
+      const answers=String(settings.officialAnswers||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+      if(!answers.length)return;
+      const rows=(await DB.prepare("SELECT player_name,entry_json FROM special_game_entries WHERE pool_id=? AND game_type='props'").bind(pid).all()).results||[],pts=Math.max(0,Number(settings.pointsPerQuestion||1)),now=new Date().toISOString();
+      for(const r of rows){let e={};try{e=JSON.parse(r.entry_json||"{}")||{}}catch(x){}const picks=Array.isArray(e.answers)?e.answers:String(e.answers||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean);let correct=0;answers.forEach((a,i)=>{if(String(picks[i]||"").trim().toLowerCase()===a.toLowerCase())correct++});const score=correct*pts;await DB.prepare("INSERT INTO special_game_scores(pool_id,game_type,player_name,score,status,detail_json,updated_at) VALUES(?,'props',? ,?,'FINAL',?,?) ON CONFLICT(pool_id,game_type,player_name) DO UPDATE SET score=excluded.score,status='FINAL',detail_json=excluded.detail_json,updated_at=excluded.updated_at").bind(pid,r.player_name,score,JSON.stringify({correct,total:answers.length,pointsPerQuestion:pts}),now).run()}
+    }
     if(path==="special/nfl-week"&&method==="GET"){
       const gt=String(url.searchParams.get("gameType")||"").trim().toLowerCase(),sw=Math.max(1,Math.min(22,Number(url.searchParams.get("week")||1)));
       if(!["survivor","confidence","playoff"].includes(gt))return json({error:"This game does not use the NFL weekly slate."},400);
@@ -2464,6 +2470,7 @@ export async function onRequest(context){
       if(!["survivor","confidence","props","playoff","masters","nascar"].includes(gt))return json({error:"Choose a supported game."},400);
       const raw=await getPoolSetting(DB,pid,`game_settings_${gt}`,"{}");let settings={};try{settings=JSON.parse(raw||"{}")||{}}catch(e){}
       if(["survivor","confidence","playoff"].includes(gt)){try{await autoScoreSpecialNFLV385(gt)}catch(e){}}
+      if(gt==="props"){try{await autoScorePropsV386(settings)}catch(e){}}
       const entries=(await DB.prepare("SELECT player_name,entry_json,submitted_at FROM special_game_entries WHERE pool_id=? AND game_type=? ORDER BY player_name").bind(pid,gt).all()).results||[];
       const scores=(await DB.prepare("SELECT player_name,score,status,detail_json,updated_at FROM special_game_scores WHERE pool_id=? AND game_type=? ORDER BY score DESC,player_name").bind(pid,gt).all()).results||[];
       const mine=entries.find(x=>String(x.player_name).toLowerCase()===String(s.player_name||"").toLowerCase());
@@ -2479,6 +2486,7 @@ export async function onRequest(context){
       const rawSettings=await getPoolSetting(DB,pid,`game_settings_${gt}`,"{}");let gameSettings={};try{gameSettings=JSON.parse(rawSettings||"{}")||{}}catch(e){}
       const lockRaw=String(gameSettings.lockTime||gameSettings.deadline||gameSettings.eventDate||"").trim();
       if(lockRaw&&Number.isFinite(Date.parse(lockRaw))&&Date.parse(lockRaw)<=Date.now())return json({error:"Entries are locked for this game."},409);
+      if(gt==="props"){const questions=String(gameSettings.propQuestions||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean),a=Array.isArray(entry.answers)?entry.answers:[];if(questions.length&&a.length!==questions.length)return json({error:"Answer every prop question before saving."},400)}
       if(gt==="masters"){const max=Math.max(1,Number(gameSettings.lineupSize||6)),a=Array.isArray(entry.golfers)?entry.golfers:[];if(a.length!==max)return json({error:`Choose exactly ${max} golfers.`},400)}
       if(gt==="nascar"){const max=Math.max(1,Number(gameSettings.driversPerPlayer||1)),a=Array.isArray(entry.drivers)?entry.drivers:[];if(a.length!==max)return json({error:`Choose exactly ${max} drivers.`},400)}
       const payload=JSON.stringify(entry);if(payload.length>50000)return json({error:"Entry is too large."},400);
