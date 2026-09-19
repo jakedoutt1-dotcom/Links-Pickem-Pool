@@ -2462,21 +2462,24 @@ export async function onRequest(context){
       const m=await DB.prepare("SELECT id FROM fantasy_matchups WHERE pool_id=? AND id=?").bind(pid,id).first();if(!m)return json({error:"Fantasy matchup not found."},404);await DB.prepare("UPDATE fantasy_matchups SET home_score=?,away_score=?,status=? WHERE pool_id=? AND id=?").bind(Number.isFinite(hs)?hs:0,Number.isFinite(as)?as:0,status,pid,id).run();return json({ok:true});
     }
 
-    async function autoScoreSpecialNFLV385(gt){
+    async function autoScoreSpecialNFLV394(gt,settings={}){
       if(!["survivor","confidence","playoff"].includes(gt))return;
-      const rows=(await DB.prepare("SELECT player_name,entry_json FROM special_game_entries WHERE pool_id=? AND game_type=?").bind(pid,gt).all()).results||[];
+      const rows=(await DB.prepare("SELECT player_name,period_key,entry_json FROM special_game_period_entries WHERE pool_id=? AND game_type=? ORDER BY CAST(period_key AS INTEGER),player_name").bind(pid,gt).all()).results||[];
       if(!rows.length)return;
-      const byWeek=new Map();
-      for(const r of rows){let e={};try{e=JSON.parse(r.entry_json||"{}")||{}}catch(x){}const wk=Math.max(1,Math.min(22,Number(e.week||1)));if(!byWeek.has(wk))byWeek.set(wk,[]);byWeek.get(wk).push({player:r.player_name,entry:e})}
-      const now=new Date().toISOString();
-      for(const [wk,players] of byWeek){
-        const games=await fetchNFLWeek(wk),finals=games.filter(g=>g.completed&&g.winner),finalBy=new Map(finals.map((g,i)=>[Number(g.gameIndex??i),g.winner]));
-        for(const p of players){
-          let score=0,status="OPEN",detail={week:wk,finalGames:finals.length,totalGames:games.length};
-          if(gt==="survivor"){const team=String(p.entry.team||"");const game=games.find(g=>g.away===team||g.home===team);if(game?.completed){score=game.winner===team?1:0;status=score?"ALIVE":"ELIMINATED";detail.team=team;detail.winner=game.winner}}
-          else{const picks=Array.isArray(p.entry.picks)?p.entry.picks:[];let graded=0;for(const x of picks){const win=finalBy.get(Number(x.gameIndex));if(!win)continue;graded++;if(String(x.team)===String(win))score+=gt==="confidence"?Math.max(0,Number(x.confidence||0)):1}status=picks.length&&graded>=picks.length?"FINAL":"OPEN";detail.graded=graded;detail.picks=picks.length}
-          await DB.prepare("INSERT INTO special_game_scores(pool_id,game_type,player_name,score,status,detail_json,updated_at) VALUES(?,?,?,?,?,?,?) ON CONFLICT(pool_id,game_type,player_name) DO UPDATE SET score=excluded.score,status=excluded.status,detail_json=excluded.detail_json,updated_at=excluded.updated_at").bind(pid,gt,p.player,score,status,JSON.stringify(detail),now).run();
+      const byPlayer=new Map(),weeks=[...new Set(rows.map(r=>Math.max(1,Math.min(22,Number(r.period_key||1)))))],feeds=new Map();
+      for(const w of weeks)feeds.set(w,await fetchNFLWeek(w));
+      for(const r of rows){let e={};try{e=JSON.parse(r.entry_json||"{}")||{}}catch(x){}if(!byPlayer.has(r.player_name))byPlayer.set(r.player_name,[]);byPlayer.get(r.player_name).push({week:Number(r.period_key),entry:e})}
+      const now=new Date().toISOString(),lives=Math.max(1,Number(settings.lives||1));
+      for(const [player,periods] of byPlayer){
+        let score=0,status="OPEN",losses=0,graded=0,total=0,detail={periods:[]};
+        for(const p of periods){const games=feeds.get(p.week)||[],finals=games.filter(g=>g.completed&&g.winner),byId=new Map(finals.map((g,i)=>[String(g.eventId||g.id||g.gameIndex??i),g.winner])),byIndex=new Map(finals.map((g,i)=>[Number(g.gameIndex??i),g.winner]));
+          if(gt==="survivor"){const team=String(p.entry.team||""),game=games.find(g=>g.away===team||g.home===team);let result="PENDING";if(game?.completed){graded++;if(game.winner===team){score++;result="WIN"}else{losses++;result="LOSS"}}detail.periods.push({week:p.week,team,result})}
+          else{const picks=Array.isArray(p.entry.picks)?p.entry.picks:[];let periodScore=0,periodGraded=0;total+=picks.length;for(const x of picks){const win=byId.get(String(x.eventId||""))||byIndex.get(Number(x.gameIndex));if(!win)continue;periodGraded++;graded++;if(String(x.team)===String(win))periodScore+=gt==="confidence"?Math.max(0,Number(x.confidence||0)):Math.max(1,Number(settings[p.week===19?"wildCardPoints":p.week===20?"divisionalPoints":p.week===21?"conferencePoints":"superBowlPoints"]||1))}score+=periodScore;detail.periods.push({week:p.week,score:periodScore,graded:periodGraded,picks:picks.length})}
         }
+        if(gt==="survivor"){status=losses>=lives?"ELIMINATED":"ALIVE";detail.losses=losses;detail.lives=lives}
+        else status=total>0&&graded>=total?"FINAL":"OPEN";
+        const ex=await DB.prepare("SELECT detail_json FROM special_game_scores WHERE pool_id=? AND game_type=? AND player_name=?").bind(pid,gt,player).first();let ed={};try{ed=JSON.parse(ex?.detail_json||"{}")||{}}catch(e){}if(ed.manualOverride)continue;
+        await DB.prepare("INSERT INTO special_game_scores(pool_id,game_type,player_name,score,status,detail_json,updated_at) VALUES(?,?,?,?,?,?,?) ON CONFLICT(pool_id,game_type,player_name) DO UPDATE SET score=excluded.score,status=excluded.status,detail_json=excluded.detail_json,updated_at=excluded.updated_at").bind(pid,gt,player,score,status,JSON.stringify(detail),now).run();
       }
     }
     async function autoScorePropsV386(settings){
@@ -2521,7 +2524,7 @@ export async function onRequest(context){
       const gt=String(url.searchParams.get("gameType")||"").trim().toLowerCase();
       if(!["survivor","confidence","props","playoff","masters","nascar"].includes(gt))return json({error:"Choose a supported game."},400);
       const raw=await getPoolSetting(DB,pid,`game_settings_${gt}`,"{}");let settings={};try{settings=JSON.parse(raw||"{}")||{}}catch(e){}
-      if(["survivor","confidence","playoff"].includes(gt)){try{await autoScoreSpecialNFLV385(gt)}catch(e){}}
+      if(["survivor","confidence","playoff"].includes(gt)){try{await autoScoreSpecialNFLV394(gt,settings)}catch(e){}}
       if(gt==="props"){try{await autoScorePropsV386(settings)}catch(e){}}
       if(gt==="masters"){try{await autoScoreMastersV387(settings)}catch(e){}}
       if(gt==="nascar"){try{await autoScoreNascarV388(settings)}catch(e){}}
@@ -2566,7 +2569,7 @@ export async function onRequest(context){
       if(s.role!=="admin")return json({error:"Commissioner only."},403);
       const gt=String(body.gameType||"").trim().toLowerCase(),player=String(body.playerName||"").trim(),score=Number(body.score||0),status=String(body.status||"FINAL").toUpperCase();
       if(!["survivor","confidence","props","playoff","masters","nascar"].includes(gt)||!player||!Number.isFinite(score))return json({error:"Game, player and score are required."},400);
-      await DB.prepare("INSERT INTO special_game_scores(pool_id,game_type,player_name,score,status,detail_json,updated_at) VALUES(?,?,?,?,?,'{}',?) ON CONFLICT(pool_id,game_type,player_name) DO UPDATE SET score=excluded.score,status=excluded.status,updated_at=excluded.updated_at").bind(pid,gt,player,score,status,new Date().toISOString()).run();
+      await DB.prepare("INSERT INTO special_game_scores(pool_id,game_type,player_name,score,status,detail_json,updated_at) VALUES(?,?,?,?,?,?,?) ON CONFLICT(pool_id,game_type,player_name) DO UPDATE SET score=excluded.score,status=excluded.status,detail_json=excluded.detail_json,updated_at=excluded.updated_at").bind(pid,gt,player,score,status,JSON.stringify({manualOverride:true}),new Date().toISOString()).run();
       return json({ok:true});
     }
 
