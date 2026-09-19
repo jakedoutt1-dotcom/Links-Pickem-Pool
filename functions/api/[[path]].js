@@ -508,6 +508,8 @@ async function ensureV2(DB){
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   )`,
+`CREATE TABLE IF NOT EXISTS special_game_entries (pool_id INTEGER NOT NULL, game_type TEXT NOT NULL, player_name TEXT NOT NULL, entry_json TEXT NOT NULL DEFAULT '{}', submitted_at TEXT NOT NULL, PRIMARY KEY(pool_id,game_type,player_name))`,
+`CREATE TABLE IF NOT EXISTS special_game_scores (pool_id INTEGER NOT NULL, game_type TEXT NOT NULL, player_name TEXT NOT NULL, score REAL NOT NULL DEFAULT 0, status TEXT NOT NULL DEFAULT 'OPEN', detail_json TEXT NOT NULL DEFAULT '{}', updated_at TEXT NOT NULL, PRIMARY KEY(pool_id,game_type,player_name))`,
 `CREATE INDEX IF NOT EXISTS idx_game_instances_pool_game ON game_instances(pool_id,game_type,active,sort_order,id)`
   ];
   for(const s of sqls) await DB.prepare(s).run();
@@ -2432,6 +2434,34 @@ export async function onRequest(context){
     if(path==="fantasy/matchup"&&method==="POST"){
       if(s.role!=="admin")return json({error:"Commissioner only."},403);const id=Number(body.id||0),hs=Number(body.homeScore||0),as=Number(body.awayScore||0),status=String(body.status||"FINAL").toUpperCase()==="FINAL"?"FINAL":"OPEN";
       const m=await DB.prepare("SELECT id FROM fantasy_matchups WHERE pool_id=? AND id=?").bind(pid,id).first();if(!m)return json({error:"Fantasy matchup not found."},404);await DB.prepare("UPDATE fantasy_matchups SET home_score=?,away_score=?,status=? WHERE pool_id=? AND id=?").bind(Number.isFinite(hs)?hs:0,Number.isFinite(as)?as:0,status,pid,id).run();return json({ok:true});
+    }
+
+    if(path==="special/state"&&method==="GET"){
+      const gt=String(url.searchParams.get("gameType")||"").trim().toLowerCase();
+      if(!["survivor","confidence","props","playoff","masters","nascar"].includes(gt))return json({error:"Choose a supported game."},400);
+      const raw=await getPoolSetting(DB,pid,`game_settings_${gt}`,"{}");let settings={};try{settings=JSON.parse(raw||"{}")||{}}catch(e){}
+      const entries=(await DB.prepare("SELECT player_name,entry_json,submitted_at FROM special_game_entries WHERE pool_id=? AND game_type=? ORDER BY player_name").bind(pid,gt).all()).results||[];
+      const scores=(await DB.prepare("SELECT player_name,score,status,detail_json,updated_at FROM special_game_scores WHERE pool_id=? AND game_type=? ORDER BY score DESC,player_name").bind(pid,gt).all()).results||[];
+      const mine=entries.find(x=>String(x.player_name).toLowerCase()===String(s.player_name||"").toLowerCase());
+      let myEntry={};try{myEntry=JSON.parse(mine?.entry_json||"{}")||{}}catch(e){}
+      const publicEntries=entries.map(x=>{let entry={};try{entry=JSON.parse(x.entry_json||"{}")||{}}catch(e){}return {playerName:x.player_name,entry,submittedAt:x.submitted_at}});
+      return json({gameType:gt,settings,myEntry,mySubmittedAt:mine?.submitted_at||null,entries:s.role==="admin"||String(settings.revealPicks||"").toLowerCase()==="true"?publicEntries:[],entryCount:entries.length,scores:scores.map(x=>({playerName:x.player_name,score:Number(x.score||0),status:x.status,updatedAt:x.updated_at}))});
+    }
+    if(path==="special/entry"&&method==="POST"){
+      const gt=String(body.gameType||"").trim().toLowerCase();
+      if(!["survivor","confidence","props","playoff","masters","nascar"].includes(gt))return json({error:"Choose a supported game."},400);
+      if(!sessionCanPlay(s))return json({error:"A player account is required to submit an entry."},403);
+      const entry=body.entry&&typeof body.entry==="object"&&!Array.isArray(body.entry)?body.entry:{};
+      const payload=JSON.stringify(entry);if(payload.length>50000)return json({error:"Entry is too large."},400);
+      await DB.prepare("INSERT INTO special_game_entries(pool_id,game_type,player_name,entry_json,submitted_at) VALUES(?,?,?,?,?) ON CONFLICT(pool_id,game_type,player_name) DO UPDATE SET entry_json=excluded.entry_json,submitted_at=excluded.submitted_at").bind(pid,gt,s.player_name,payload,new Date().toISOString()).run();
+      return json({ok:true});
+    }
+    if(path==="admin/special-score"&&method==="POST"){
+      if(s.role!=="admin")return json({error:"Commissioner only."},403);
+      const gt=String(body.gameType||"").trim().toLowerCase(),player=String(body.playerName||"").trim(),score=Number(body.score||0),status=String(body.status||"FINAL").toUpperCase();
+      if(!["survivor","confidence","props","playoff","masters","nascar"].includes(gt)||!player||!Number.isFinite(score))return json({error:"Game, player and score are required."},400);
+      await DB.prepare("INSERT INTO special_game_scores(pool_id,game_type,player_name,score,status,detail_json,updated_at) VALUES(?,?,?,?,?,'{}',?) ON CONFLICT(pool_id,game_type,player_name) DO UPDATE SET score=excluded.score,status=excluded.status,updated_at=excluded.updated_at").bind(pid,gt,player,score,status,new Date().toISOString()).run();
+      return json({ok:true});
     }
 
     if(path==="game-settings"&&method==="GET"){
