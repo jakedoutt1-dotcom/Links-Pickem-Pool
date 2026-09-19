@@ -1416,7 +1416,7 @@ table{max-width:100%}
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v372</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v373</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2537,10 +2537,12 @@ function setSportHero(){
 
 async function enterApp(selected){
   sport=selected;sessionStorage.setItem("poolSport",sport);
+  document.body.classList.toggle("links-game33-active-v373",sport==="33");
   setSportHero();
   $("#appPoolName").textContent=poolName;
   $("#sportBadge").textContent=sport==="nfl"?"🏈 NFL":(sport==="college"?"🎓 COLLEGE":"3️⃣3️⃣ 33");
   $("#currentUser").textContent=currentUser;
+  $("section,div").filter(el=>/^THE 33 GAME$/i.test(el.querySelector?.("h1,h2,h3")?.textContent?.trim()||"")).forEach(el=>el.classList.toggle("hide",sport!=="33"));
   if(linksPackageNameV364!=="free")linksPaidPackageV363=true;
   updateChangeGameButtons();paintPackageBadgeV364();
   refreshPackageAccessV363().catch(()=>{});
@@ -3209,9 +3211,10 @@ async function changeAdminWeekInPlace(nextWeek){
 }
 async function changeStandingsWeekInPlace(nextWeek){
   const total=sport==="nfl"?22:15;
-  standingsManualSelectionV198=true;
-  standingsWeek=Math.max(1,Math.min(total,Number(nextWeek)||1));
-  await keepScroll(()=>renderStandings());
+  week=Math.max(1,Math.min(total,Number(nextWeek)||1));
+  officialWeek=week;adminWeek=week;standingsWeek=week;standingsManualSelectionV198=true;
+  const master=$("#weekSelect");if(master)master.value=String(week);
+  await refreshWeek();await keepScroll(()=>renderStandings());
 }
 async function refreshOfficialWeekNumber(){
   const max=sport==="nfl"?22:15;
@@ -3224,34 +3227,19 @@ async function refreshOfficialWeekNumber(){
   }catch(e){return officialWeek||week||1}
 }
 async function renderStandings(){
-  // v198: while the current NFL week is still open for picks, keep the default
-  // standings view on the previous completed week. At lock, switch to current.
-  if(sport==="nfl"&&!standingsManualSelectionV198){
-    const ow=Number(officialWeek||week||1);
-    let currentLocked=false;
-    try{const ls=await api(qForWeek(`/api/lock-status?_=${Date.now()}`,ow));currentLocked=!!ls?.locked}catch(e){
-      const lt=boot?.locks?.[ow];currentLocked=!!(lt&&Date.parse(lt)<=Date.now());
-    }
-    standingsWeek=currentLocked?ow:Math.max(1,ow-1);
-  }
-  const sw=Number(standingsWeek||officialWeek||week||1);
+  standingsWeek=Number(week||1);
+  const sw=Number(week||1);
   let d;try{d=await api(qForWeek(`/api/standings?_=${Date.now()}`,sw))}catch(e){return}
   $("#standingsTitle").textContent="Standings";$("#potBadge").textContent="";$("#potBadge").classList.add("hide");
   $("#autoTieStatus").textContent=d.actualTie!=null?`Final-game combined score: ${d.actualTie}`:"Wins and losses count only after a game is FINAL. Tiebreaker settles equal win totals after the final game.";
   const hasOfficialWinner=!!d.finalizedWinner;
   $("#standingsWinnerAdmin")?.classList.toggle("hide",role!=="admin");
   $("#standingsBody").innerHTML=`
-    <div class="standings-week-picker-v184">
-      <span class="week-picker-kicker-v184">RESULTS WEEK</span>
-      <select id="standingsWeekSelect" aria-label="Standings week">${weekOptionMarkup(sw)}</select>
-    </div>
-    <div class="standings-table-wrap-v189"><table><thead><tr><th>#</th><th>Player</th><th>W</th><th>L</th><th>Record</th><th>Tie Pick</th><th>Tie Diff</th></tr></thead><tbody>${(d.rows||[]).map((r,i)=>{
+<div class="standings-table-wrap-v189"><table><thead><tr><th>#</th><th>Player</th><th>W</th><th>L</th><th>Record</th><th>Tie Pick</th><th>Tie Diff</th></tr></thead><tbody>${(d.rows||[]).map((r,i)=>{
       const won=hasOfficialWinner&&d.finalizedWinner===r.player;
       const wins=Number(r.wins??r.correct??0),losses=Number(r.losses??0);
       return `<tr class="${won?"winner":""}"><td>${i+1}</td><td>${r.player}${won?" 🏆 WINNER":""}</td><td class="standings-win">${wins}</td><td class="standings-loss">${losses}</td><td class="standings-record">${wins}–${losses}</td><td class="standings-tie-pick-v189">${r.tiePick??"—"}</td><td>${r.tieDiff??"—"}</td></tr>`;
     }).join("")}</tbody></table></div>`;
-  const standingsWeekSelect=$("#standingsWeekSelect");
-  if(standingsWeekSelect)standingsWeekSelect.onchange=()=>changeStandingsWeekInPlace(standingsWeekSelect.value);
 }
 
 
@@ -3913,6 +3901,7 @@ $("#signOut").onclick=signOut;$("#sportSignOut").onclick=signOut;$("#squaresSign
 $("#weekSelect").onchange=async()=>{
   const currentTab=$$(".tabs button").find(b=>b.classList.contains("active"))?.dataset.tab||"picks";
   week=Number($("#weekSelect").value);
+  officialWeek=week;adminWeek=week;standingsWeek=week;standingsManualSelectionV198=true;
   await refreshWeek();
   const stayTab=(currentTab==="admin"&&isCommissioner)?"admin":currentTab;
   showTab(stayTab);
@@ -4830,6 +4819,12 @@ $("#chooseSquares").onclick=()=>enterSquares();
  #adminModeBarV372 button{font-size:11px;padding:9px 10px}
  #adminModeTitleV372{font-size:15px}
 }
+</style>
+<style id="links-v373-game33-isolation">
+body:not(.links-game33-active-v373) #special33,
+body:not(.links-game33-active-v373) #game33,
+body:not(.links-game33-active-v373) #game33Page,
+body:not(.links-game33-active-v373) [data-game33-only]{display:none!important}
 </style>
 <style id="links-v366-week-selector-fix">
 #weekPickerCard:not(.hide){display:grid!important}
