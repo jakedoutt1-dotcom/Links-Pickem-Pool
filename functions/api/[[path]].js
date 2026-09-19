@@ -2848,6 +2848,15 @@ export async function onRequest(context){
     }
     if(path==="default-week"&&method==="GET"){
       const maxWeek=sport==="nfl"?22:15;
+      // v379: College follows the live ESPN college-football week, independently of NFL.
+      if(sport==="college"){
+        for(let wk=1;wk<=maxWeek;wk++){
+          try{
+            const slate=await fetchCollegeWeek(wk);
+            if((slate||[]).some(g=>!g.completed)){return json({week:wk,maxWeek,source:"ESPN COLLEGE SCHEDULE"});}
+          }catch(e){}
+        }
+      }
       const rows=(await DB.prepare("SELECT week,finalized_winner,payout_paid FROM pool_week_meta WHERE pool_id=? AND sport=? ORDER BY week")
         .bind(pid,sport).all()).results||[];
 
@@ -2965,18 +2974,10 @@ export async function onRequest(context){
       return json({locked:isLocked,players:out,games:sync.liveGames,results,finalGames:resultRows.length});
     }
     if(path==="college-top25-scores"&&method==="GET"){
-      if(sport!=="college")return json({games:[],source:"ESPN College Football Top 25"});
-
-      let games=await fetchCollegeWeek(w);
-      const top=await fetchCollegeTop25();
-      if(top)games=applyCollegeRanks(games,top);
-
-      games=games.filter(g=>
-        (Number(g.awayRank)>=1&&Number(g.awayRank)<=25)||
-        (Number(g.homeRank)>=1&&Number(g.homeRank)<=25)
-      );
-
-      return json({games,live:true,source:"ESPN College Football — Top 25"});
+      if(sport!=="college")return json({games:[],source:"ESPN College Football"});
+      // v379: Live Scores must mirror the exact slate selected for this pool/week.
+      const sync=await syncWeek(DB,pid,"college",w);
+      return json({games:sync.liveGames,live:true,source:sync.source||"ESPN College Football — selected pool games"});
     }
 
     if(path==="scores"&&method==="GET"){
