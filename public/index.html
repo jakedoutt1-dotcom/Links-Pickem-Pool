@@ -1507,7 +1507,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v440</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v441</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -4074,7 +4074,7 @@ $("#createPoolBtn").onclick=async()=>{
   if(createBtn){createBtn.disabled=true;createBtn.textContent="CREATING POOL…"}
   try{
     applyOwnerGameAccessV357();
-    const d=await api("/api/pool/create",{method:"POST",body:JSON.stringify({name:$("#createPoolName").value,email:$("#createPoolEmail").value,playerName:$("#createPoolPlayerName").value,password:$("#createPoolPass").value,gameTypes:$$(`#createPoolGames input[type="checkbox"]:checked`).map(x=>x.value),copies:Number($("#createPoolCopies")?.value||1),plan:$("#createPoolPlan")?.value||"free"})});
+    const d=await api("/api/pool/create",{method:"POST",body:JSON.stringify({name:$("#createPoolName").value,email:$("#createPoolEmail").value,playerName:$("#createPoolPlayerName").value,password:$("#createPoolPass").value,gameTypes:(window.linksCreatePoolSelectedGamesV441?window.linksCreatePoolSelectedGamesV441():$(`#createPoolGames input[type="checkbox"]:checked`).map(x=>x.value)),copies:Number($("#createPoolCopies")?.value||1),plan:$("#createPoolPlan")?.value||"free"})});
     sessionStorage.removeItem("linksWelcomeSeen");
     token=d.token; role="player"; isCommissioner=true; currentUser=d.playerName; poolName=d.name; poolCode=d.code;applyPoolAdMode(!!d.service?.adFree);
     Object.entries({poolToken:token,poolRole:role,poolUser:currentUser,poolName,poolCode,poolIsCommissioner:"1"}).forEach(([k,v])=>sessionStorage.setItem(k,v));
@@ -4930,36 +4930,41 @@ $("#chooseSquares").onclick=()=>enterSquares();
 })();
 </script>
 
-<script id="links-v440-create-game-selection">
+<script id="links-v441-create-game-selection">
 (()=>{
-  function root(){return document.getElementById("createPoolGames")}
-  function sync(){
+  const selected=new Set(["nfl"]);
+  const root=()=>document.getElementById("createPoolGames");
+  function paint(){
     const r=root();if(!r)return;
-    r.querySelectorAll('input[type="checkbox"]').forEach(cb=>{
+    r.querySelectorAll('label').forEach(card=>{
+      const cb=card.querySelector('input[type="checkbox"]');if(!cb)return;
       cb.disabled=false;cb.removeAttribute("disabled");
-      const card=cb.closest("label");
-      if(card)card.classList.toggle("links-create-game-selected-v435",!!cb.checked);
+      cb.checked=selected.has(cb.value);
+      card.classList.toggle("links-create-game-selected-v441",cb.checked);
+      let mark=card.querySelector(".links-create-check-v441");
+      if(!mark){mark=document.createElement("span");mark.className="links-create-check-v441";mark.setAttribute("aria-hidden","true");card.appendChild(mark)}
+      mark.textContent=cb.checked?"✓":"";
     });
   }
-  document.addEventListener("click",e=>{
-    const r=root();if(!r)return;
-    const card=e.target.closest("#createPoolGames label");if(!card)return;
+  document.addEventListener("pointerup",e=>{
+    const card=e.target.closest?.("#createPoolGames label");if(!card)return;
+    e.preventDefault();e.stopPropagation();
     const cb=card.querySelector('input[type="checkbox"]');if(!cb)return;
-    e.preventDefault();
-    cb.disabled=false;
-    cb.checked=!cb.checked;
-    sync();
-    r.dispatchEvent(new Event("change",{bubbles:true}));
+    if(selected.has(cb.value))selected.delete(cb.value);else selected.add(cb.value);
+    paint();
+    root()?.dispatchEvent(new Event("change",{bubbles:true}));
   },true);
-  document.addEventListener("change",e=>{if(e.target.closest?.("#createPoolGames"))sync()},true);
-  new MutationObserver(sync).observe(document.body,{subtree:true,attributes:true,attributeFilter:["class"]});
-  sync();
+  document.addEventListener("click",e=>{if(e.target.closest?.("#createPoolGames label"))e.preventDefault()},true);
+  window.linksCreatePoolSelectedGamesV441=()=>Array.from(selected);
+  paint();
 })();
 </script>
-<style id="links-v440-create-game-selection-css">
-#createPoolGames label.links-create-game-selected-v435{border-color:#ff6a1a!important;box-shadow:inset 0 0 0 2px #ff6a1a,0 0 16px rgba(255,106,26,.38)!important;background:linear-gradient(180deg,#2a1b12,#17120e)!important}
-#createPoolGames label.links-create-game-selected-v435 input[type="checkbox"]{appearance:none!important;-webkit-appearance:none!important;background:#ff4b3e!important;border:2px solid #ff7a68!important;display:grid!important;place-items:center!important}
-#createPoolGames label.links-create-game-selected-v435 input[type="checkbox"]:after{content:"✓"!important;color:#fff!important;font-size:24px!important;font-weight:1000!important;line-height:1!important}
+<style id="links-v441-create-game-selection-css">
+#createPoolGames label{position:relative!important}
+#createPoolGames input[type="checkbox"]{opacity:0!important;pointer-events:none!important}
+#createPoolGames label.links-create-game-selected-v441{border-color:#ff6a1a!important;box-shadow:inset 0 0 0 2px #ff6a1a,0 0 16px rgba(255,106,26,.38)!important;background:linear-gradient(180deg,#2a1b12,#17120e)!important}
+#createPoolGames .links-create-check-v441{position:absolute;top:12px;right:12px;width:40px;height:40px;border-radius:12px;background:#fff;border:2px solid #d8d8d8;display:grid;place-items:center;color:transparent;font-size:29px;font-weight:1000;line-height:1;z-index:10;box-sizing:border-box;pointer-events:none}
+#createPoolGames label.links-create-game-selected-v441 .links-create-check-v441{background:#ff4438;border-color:#ff665d;color:#fff}
 </style>
 </body></html>
 
