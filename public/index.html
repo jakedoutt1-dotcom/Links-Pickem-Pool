@@ -1431,7 +1431,18 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
 #createPoolBtn.links-create-pressed-v452{transform:scale(.97)!important;filter:brightness(.78)!important;box-shadow:inset 0 3px 10px rgba(0,0,0,.45),0 0 0 3px rgba(113,230,160,.28)!important;cursor:wait!important}
 .links-btn-spinner-v452{display:inline-block;width:20px;height:20px;border:3px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;vertical-align:-4px;margin-right:8px;animation:linksSpinV452 .75s linear infinite}
 @keyframes linksSpinV452{to{transform:rotate(360deg)}}
-</style></head>
+</style>
+<style id="links-v471-press-overlay">
+/* Keep every button's normal artwork/color visible while pressed.
+   iOS/touch feedback is a transparent blue overlay instead of replacing the button background. */
+button{position:relative;-webkit-tap-highlight-color:transparent}
+button:active::after{
+  content:"";position:absolute;inset:0;border-radius:inherit;
+  background:rgba(55,145,255,.20);pointer-events:none;z-index:999;
+}
+button:active{filter:none!important}
+</style>
+</head>
 
 <body><div id="top"></div><div class="wrap">
 
@@ -1539,7 +1550,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v470</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v471</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2835,12 +2846,14 @@ async function enterApp(selected){
   }
   officialWeek=week;adminWeek=week;standingsWeek=week;
   $("#weekSelect").value=week;showOnly("app");applyRoleNavigation();
-  // v469: normal navigation must finish without a DOM-selector crash before any
-  // Picks/access/tab requests run. Then perform the proven manual-access sequence.
+  // v471: resolve the Admin-selected game instance BEFORE requesting Picks.
+  // The pick-page API is instance-aware. Previously the first request ran with
+  // activeGameInstanceId still unset; visiting another tab/Refresh Access worked
+  // only because the instance had been resolved by then.
+  await renderGameInstanceUI(sport);
   await refreshWeek();
   await checkPaymentStatus({silent:true});
   showTab("picks");
-  await renderGameInstanceUI(sport);
 }
 const SPECIAL_GAME_DATA={
   survivor:{title:"NFL SURVIVOR",logo:"./nfl-survivor-logo-v102.jpg",lead:"Pick one NFL team each week. Win and survive; lose and you are out.",rules:"Pick one NFL team to win each week. A team cannot be used twice. Picks lock at kickoff. Commissioner rules control lives, buy-backs and tie situations."},
