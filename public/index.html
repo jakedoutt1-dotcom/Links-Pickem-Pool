@@ -1494,7 +1494,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v398</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v399</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -4011,12 +4011,22 @@ $("#createPoolBtn").onclick=async()=>{
 };
 $("#backHomeBtn").onclick=async()=>{await loadPoolMenu(poolCode);showOnly("home")};
 $("#signIn").onclick=async()=>{
+  const btn=$("#signIn"),err=$("#loginErr"),name=$("#loginName")?.value||"",password=$("#loginPass")?.value||"";
+  if(err)err.textContent="";
+  if(!poolCode){if(err)err.textContent="Pool code is missing. Tap Change Pool and open your pool again.";return}
+  if(!name){if(err)err.textContent="Choose your player name.";return}
+  if(!password){if(err)err.textContent="Enter your password.";return}
+  const old=btn.textContent;btn.disabled=true;btn.textContent="SIGNING IN…";
   try{
-    const d=await api("/api/login",{method:"POST",body:JSON.stringify({poolCode,name:$("#loginName").value,password:$("#loginPass").value})});
+    const d=await api("/api/login",{method:"POST",body:JSON.stringify({poolCode,name,password})});
+    if(!d?.token)throw new Error("Login did not return a valid session. Please try again.");
     token=d.token;role="player";isCommissioner=!!d.isCommissioner;currentUser=d.name;poolName=d.poolName;poolCode=d.poolCode;applyPoolAdMode(!!d.access?.adFree);
     Object.entries({poolToken:token,poolRole:role,poolUser:currentUser,poolName,poolCode,poolIsCommissioner:isCommissioner?"1":"0"}).forEach(([k,v])=>sessionStorage.setItem(k,v));
-    await enterAfterPlayerLoginV382(d.games,d.gameType);
-  }catch(e){$("#loginErr").textContent=e.message}
+    // Login success must never be lost because optional package/game discovery fails.
+    try{await enterAfterPlayerLoginV382(d.games,d.gameType)}
+    catch(routeErr){console.warn("Post-login routing fallback",routeErr);savePoolGames(d.games,d.gameType||"nfl");await enterPoolGames(poolGames,d.gameType||poolGames[0]||"nfl")}
+  }catch(e){if(err)err.textContent=e?.message||"Could not sign in. Please try again."}
+  finally{btn.disabled=false;btn.textContent=old}
 };
 function clickOnEnter(inputSelector,buttonSelector){
   const input=$(inputSelector),button=$(buttonSelector);if(!input||!button)return;
