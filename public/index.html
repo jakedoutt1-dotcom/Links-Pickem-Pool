@@ -1535,7 +1535,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v449</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v450</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -4053,7 +4053,7 @@ $("#createPoolPlan").value=sessionStorage.getItem("linksCommissionerPurchasePlan
 const rememberedCommissionerEmail=sessionStorage.getItem("linksCommissionerEmail")||"";if(rememberedCommissionerEmail){if($("#createPoolEmail"))$("#createPoolEmail").value=rememberedCommissionerEmail;if($("#pricingCommissionerEmail"))$("#pricingCommissionerEmail").value=rememberedCommissionerEmail;}
 // v434 — pool creation is a true game chooser: every game card is selectable for every commissioner.
 function unlockCreatePoolGamesV434(){
-  $("#createPoolGames input[type='checkbox']").forEach(x=>{x.disabled=false;x.removeAttribute("disabled");x.closest("label")?.classList.remove("locked","disabled")});
+  $$("#createPoolGames input[type='checkbox']").forEach(x=>{x.disabled=false;x.removeAttribute("disabled");x.closest("label")?.classList.remove("locked","disabled")});
 }
 $("#showCreatePool")?.addEventListener("click",()=>setTimeout(unlockCreatePoolGamesV434,0));
 $("#createFreePoolHome")?.addEventListener("click",()=>setTimeout(unlockCreatePoolGamesV434,0));
