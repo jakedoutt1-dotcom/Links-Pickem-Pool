@@ -2655,10 +2655,19 @@ function setSportHero(){
   }
 }
 
+function applyGame33ShellV426(){
+  const on=sport==="33";
+  document.body.classList.toggle("links-game33-active-v426",on);
+  const tabs=document.querySelector(".tabs");
+  if(tabs)tabs.classList.toggle("hide",on);
+  ["#weekSelect","#weekSelectLabel","#deadlineLine","#sportPageIndicator"].forEach(sel=>{const el=$(sel);if(el)el.classList.toggle("hide",on)});
+  const adminTab=document.querySelector('[data-tab="admin"]');if(adminTab&&on)adminTab.classList.add("hide");
+}
 async function enterApp(selected){
   sport=selected;sessionStorage.setItem("poolSport",sport);
   document.body.classList.toggle("links-game33-active-v373",sport==="33");
   setSportHero();
+  applyGame33ShellV426();
   $("#appPoolName").textContent=poolName;
   $("#sportBadge").textContent=sport==="nfl"?"🏈 NFL":(sport==="college"?"🎓 COLLEGE":"3️⃣3️⃣ 33");
   $("#currentUser").textContent=currentUser;
@@ -5058,4 +5067,13 @@ body:not(.links-game33-active-v373) [data-game33-only]{display:none!important}
 .team.sel:not(.pick-final-loser):not(.pick-final-winner){outline:5px solid #38f58a!important;outline-offset:-5px!important;box-shadow:0 0 22px rgba(56,245,138,.62),inset 0 0 0 2px rgba(255,255,255,.85)!important;transform:scale(.99)!important}
 .team.sel .pickmark,.team[data-picked="1"] .pickmark{display:block!important;font-size:13px!important;font-weight:1000!important;padding:7px 11px!important;top:7px!important;right:7px!important;background:#35e77d!important;color:#07150c!important;border:2px solid #fff!important;box-shadow:0 3px 12px rgba(0,0,0,.45)!important}
 .team.pick-final-winner .pickmark,.team.pick-final-loser .pickmark{font-size:12px!important}
+
+/* v426 — Game 33 owns its page; never show NFL Pick'em navigation on it */
+body.links-game33-active-v426 #app .tabs,
+body.links-game33-active-v426 #app .sport-page-indicator,
+body.links-game33-active-v426 #app #weekSelect,
+body.links-game33-active-v426 #app #weekSelectLabel{display:none!important}
+body.links-game33-active-v426 #app .game33-hero,
+body.links-game33-active-v426 #app [class*="game33"],
+body.links-game33-active-v426 #app [class*="g33"]{display:block}
 </style>
