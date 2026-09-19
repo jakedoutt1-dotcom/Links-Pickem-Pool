@@ -1488,7 +1488,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v382</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v383</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2873,12 +2873,35 @@ function collectSpecialSettingsFromForm(){
   $$("#specialSettingsForm [data-special-setting]").forEach(el=>{const k=el.dataset.specialSetting,t=el.dataset.type;if(t==="checkbox")out[k]=!!el.checked;else out[k]=el.value});
   return out;
 }
+let specialStateV383=null;
+function specialEntryFieldsV383(kind,st){
+  const s=st.settings||{},me=st.myEntry||{}, field=(kind==="masters"?"golferField":kind==="nascar"?"driverField":null),available=field?safeJsonArray(s[field]):[];
+  if(kind==="survivor")return `<label class="field-label">YOUR SURVIVOR TEAM</label><input id="specialEntryTextV383" value="${escapeHtml(me.team||"")}" placeholder="Team for this week"><div class="small">LINKS saves this as your official Survivor entry. Team-reuse and automatic NFL result enforcement are the next scoring layer.</div>`;
+  if(kind==="confidence")return `<label class="field-label">YOUR PICKS + CONFIDENCE</label><textarea id="specialEntryTextV383" style="width:100%;min-height:150px" placeholder="Example: DAL 16, TEN 15, BUF 14...">${escapeHtml(me.picks||"")}</textarea>`;
+  if(kind==="props")return `<label class="field-label">YOUR PROP ANSWERS</label><textarea id="specialEntryTextV383" style="width:100%;min-height:170px" placeholder="Enter your answers in the same order as the commissioner prop sheet.">${escapeHtml(me.answers||"")}</textarea>`;
+  if(kind==="playoff")return `<label class="field-label">YOUR PLAYOFF PICKS</label><textarea id="specialEntryTextV383" style="width:100%;min-height:150px" placeholder="Enter your playoff selections.">${escapeHtml(me.picks||"")}</textarea>`;
+  if(kind==="masters"||kind==="nascar"){const key=kind==="masters"?"golfers":"drivers",chosen=new Set(Array.isArray(me[key])?me[key]:[]);return `<div class="small" style="margin-bottom:8px">Choose from the commissioner-approved field.</div><div class="special-picker-list">${available.map(x=>`<label class="special-picker-item"><input type="checkbox" class="specialEntryCheckV383" value="${escapeHtml(x.name)}" ${chosen.has(x.name)?"checked":""}><span>${escapeHtml(x.name)}</span></label>`).join("")||'<div class="small">The commissioner has not loaded the field yet.</div>'}</div>`}
+  return "";
+}
+async function renderSpecialPlayerEngineV383(kind){
+  if(["fantasy","dynasty"].includes(kind))return;
+  const host=$("#specialGameCards");if(!host)return;
+  try{
+    const st=await api(`/api/special/state?gameType=${encodeURIComponent(kind)}`);specialStateV383=st;
+    const submitted=st.mySubmittedAt?`Saved ${new Date(st.mySubmittedAt).toLocaleString()}`:"No entry saved yet";
+    host.innerHTML=`<div class="special-game-card" style="grid-column:1/-1"><b>🎮 MY ${escapeHtml((SPECIAL_GAME_DATA[kind]?.title||"GAME").toUpperCase())} ENTRY</b><span>${submitted}</span><div style="margin-top:10px">${specialEntryFieldsV383(kind,st)}</div><button id="saveSpecialEntryV383" class="green" style="width:100%;margin-top:12px">SAVE MY ENTRY</button><div id="specialEntryStatusV383" class="small" style="margin-top:7px"></div></div>`;
+    $("#saveSpecialEntryV383").onclick=async()=>{const status=$("#specialEntryStatusV383");let entry={};if(kind==="survivor")entry={team:$("#specialEntryTextV383")?.value||""};else if(["confidence","playoff"].includes(kind))entry={picks:$("#specialEntryTextV383")?.value||""};else if(kind==="props")entry={answers:$("#specialEntryTextV383")?.value||""};else entry={[kind==="masters"?"golfers":"drivers"]:$(".specialEntryCheckV383:checked").map(x=>x.value)};status.textContent="Saving…";try{await api("/api/special/entry",{method:"POST",body:JSON.stringify({gameType:kind,entry})});status.textContent="✅ Entry saved.";await renderSpecialPlayerEngineV383(kind);populateSpecialUtilityPanes(kind)}catch(e){status.textContent=e.message||"Could not save entry."}};
+    populateSpecialUtilityPanes(kind);
+  }catch(e){host.innerHTML=`<div class="special-game-card" style="grid-column:1/-1"><b>Game entry</b><span>${escapeHtml(e.message||"Could not load game entry.")}</span></div>`}
+}
 function populateSpecialUtilityPanes(kind){
   const d=SPECIAL_GAME_DATA[kind]||SPECIAL_GAME_DATA.survivor,name=d.title;
   const cmp=$("#specialCompareBody"),scores=$("#specialScoresBody"),stand=$("#specialStandingsBody"),proj=$("#specialProjectedBody"),access=$("#specialAccessBody");
-  if(cmp)cmp.innerHTML=`Compare Picks is ready as the comparison area for <b>${escapeHtml(name)}</b>. Player selections stay private until the game's commissioner lock/deadline.`;
-  if(scores)scores.innerHTML=`This is the results area for <b>${escapeHtml(name)}</b>. Results and official answers are controlled by the saved game setup and commissioner controls.`;
-  if(stand)stand.innerHTML=`Standings for <b>${escapeHtml(name)}</b> will be shown here as player results are finalized. Final winners belong on this Standings page.`;
+  const st=specialStateV383&&specialStateV383.gameType===kind?specialStateV383:null;
+  const entries=st?.entries||[],scoreRows=[...(st?.scores||[])].sort((a,b)=>Number(b.score||0)-Number(a.score||0));
+  if(cmp)cmp.innerHTML=entries.length?entries.map(x=>`<div class="card"><b>${escapeHtml(x.playerName)}</b><div class="small">${escapeHtml(JSON.stringify(x.entry))}</div></div>`).join(""):`Player selections for <b>${escapeHtml(name)}</b> stay private until the commissioner enables reveal.`;
+  if(scores)scores.innerHTML=scoreRows.length?scoreRows.map(x=>`<div class="result-row"><b>${escapeHtml(x.playerName)}</b><span>${Number(x.score||0)}</span><span>${escapeHtml(x.status||"OPEN")}</span></div>`).join(""):`No official <b>${escapeHtml(name)}</b> scores have been posted yet.`;
+  if(stand)stand.innerHTML=scoreRows.length?`<table><thead><tr><th>PLAYER</th><th>SCORE</th><th>STATUS</th></tr></thead><tbody>${scoreRows.map((x,i)=>`<tr><td>${i+1}. ${escapeHtml(x.playerName)}</td><td>${Number(x.score||0)}</td><td>${escapeHtml(x.status||"OPEN")}</td></tr>`).join("")}</tbody></table>`:`Standings for <b>${escapeHtml(name)}</b> will appear as official scores are recorded.`;
   if(proj)proj.innerHTML=`Projected results for <b>${escapeHtml(name)}</b> appear here when enough live or commissioner-entered result data is available.`;
   if(access)access.innerHTML=isCommissioner?`Commissioner access controls are managed from the pool's main <b>Player Access</b> controls. Players marked ACTIVE can participate; PENDING players remain locked.`:`Your commissioner controls whether your player access is ACTIVE or PENDING for this pool.`;
 }
@@ -3032,6 +3055,7 @@ async function enterSpecialGame(kind){
   if(adminTab)adminTab.classList.toggle("hide",!isCommissioner);
   $("#specialPlayerAccessHelp")?.classList.toggle("hide",!!isCommissioner);
   populateSpecialUtilityPanes(kind);
+  renderSpecialPlayerEngineV383(kind).catch(e=>console.warn("Special player engine",e));
   if(isCommissioner)await renderGameInstanceUI(kind);
   if(kind==="dynasty"){
     $("#specialTabs").classList.add("hide");
