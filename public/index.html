@@ -1494,7 +1494,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v402</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v403</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -4848,12 +4848,38 @@ $("#chooseSquares").onclick=()=>enterSquares();
         .catch(function(e){var err=byId("homePortalErr");if(err)err.textContent=e.message||"Could not search pools."});
     },150);
   }
+  function continueToLogin(){
+    var input=byId("poolCodeInput"),err=byId("homePortalErr"),raw=String(input&&input.value||"").trim();
+    if(err)err.textContent="";
+    var code=String(input&&input.dataset.selectedCode||"").trim();
+    if(!code&&raw.indexOf(" — ")>=0)code=raw.split(" — ").pop().trim();
+    if(!code&&raw)code=raw;
+    if(!code){if(err)err.textContent="Type your pool name or pool code first.";return}
+    var btn=byId("enterPoolBtn"),old=btn?btn.textContent:"CONTINUE TO LOGIN";
+    if(btn){btn.disabled=true;btn.textContent="OPENING POOL…"}
+    fetch("/api/pool?code="+encodeURIComponent(code),{credentials:"same-origin"})
+      .then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||"Pool not found.");return d})})
+      .then(function(d){
+        try{sessionStorage.setItem("poolCode",d.code||code);sessionStorage.setItem("poolName",d.name||"")}catch(e){}
+        var title=byId("loginPoolName");if(title)title.textContent=d.name||"";
+        var names=byId("loginName"),players=Array.isArray(d.players)?d.players:[];
+        if(names)names.innerHTML=players.length?players.map(function(p){return "<option>"+String(p)+"</option>"}).join(""):'<option disabled>No players yet — commissioner must add them</option>';
+        var le=byId("loginErr");if(le)le.textContent="";
+        closeLoginModal();
+        var screens=["home","demoPage","commissionerWelcome","createPoolPage","linksAdmin","publicScoresPage","gameInfoPage","inviteJoinPage","playerSetupPage","login","sportChoice","specialGameApp","squaresApp","marchApp","app"];
+        screens.forEach(function(id){var el=byId(id);if(el)el.classList.toggle("hide",id!=="login")});
+        var login=byId("login");if(login){login.classList.remove("hide");login.style.display="block";login.scrollIntoView({block:"start"})}
+      })
+      .catch(function(e){if(err)err.textContent=e.message||"Could not open pool."})
+      .finally(function(){if(btn){btn.disabled=false;btn.textContent=old}});
+  }
   function bind(){
-    var open=byId("openPoolLoginV150"),close=byId("closePoolLoginV150"),modal=byId("poolLoginModalV150"),input=byId("poolCodeInput");
+    var open=byId("openPoolLoginV150"),close=byId("closePoolLoginV150"),modal=byId("poolLoginModalV150"),input=byId("poolCodeInput"),cont=byId("enterPoolBtn");
     if(open&&!open.dataset.v401){open.dataset.v401="1";open.addEventListener("click",function(e){e.preventDefault();openLoginModal()},true)}
     if(close&&!close.dataset.v401){close.dataset.v401="1";close.addEventListener("click",function(e){e.preventDefault();closeLoginModal()},true)}
     if(modal&&!modal.dataset.v401){modal.dataset.v401="1";modal.addEventListener("click",function(e){if(e.target===modal)closeLoginModal()})}
     if(input&&!input.dataset.v402){input.dataset.v402="1";input.addEventListener("input",function(e){input.dataset.selectedCode="";livePoolSearch(e.target.value)},true);input.addEventListener("focus",function(){if(input.value&&!input.dataset.selectedCode)livePoolSearch(input.value)},true)}
+    if(cont&&!cont.dataset.v403){cont.dataset.v403="1";cont.addEventListener("click",function(e){e.preventDefault();e.stopImmediatePropagation();continueToLogin()},true)}
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",bind);else bind();
   window.addEventListener("pageshow",bind);
