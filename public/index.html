@@ -1309,8 +1309,8 @@ table{max-width:100%}
 @media(max-width:700px){#home .links-benefits-v193>div{min-height:170px!important;padding-top:76px!important}#home .links-benefits-v193>div:after{font-size:39px}#home .links-category-v193 summary{min-height:145px!important;padding-top:69px!important}#home .links-category-v193:nth-child(n) summary:after{right:50px;transform:scale(.82);transform-origin:right top}.links-home-footer-v200:before{font-size:16px;letter-spacing:10px}}
 </style>
 
-<style id="links-v376-admin-nav-fix">
-/* v376 — stronger Back to Pool action + prevent admin subtitle/week badge overlap. */
+<style id="links-v377-admin-nav-fix">
+/* v377 — stronger Back to Pool action + prevent admin subtitle/week badge overlap. */
 #adminModeBarV372{grid-template-columns:minmax(180px,auto) 1fr!important;padding:12px!important;gap:12px!important}
 #adminModeBarV372 button{min-height:52px!important;padding:12px 18px!important;border:2px solid #ff7a2d!important;background:linear-gradient(180deg,#263746,#111b24)!important;color:#fff!important;font-size:15px!important;box-shadow:0 0 0 2px rgba(255,122,45,.10),0 5px 14px #0008!important}
 #adminControls:not(.admin-tool-active-v185)>.commissioner-sport-card{grid-template-columns:minmax(0,1fr) auto!important;grid-template-rows:auto auto!important;align-items:start!important;row-gap:8px!important;padding-bottom:18px!important}
@@ -1326,8 +1326,8 @@ table{max-width:100%}
 }
 </style>
 
-<style id="links-v376-admin-header-fix">
-/* v376 — force the admin sport header into three non-overlapping mobile rows. */
+<style id="links-v377-admin-header-fix">
+/* v377 — force the admin sport header into three non-overlapping mobile rows. */
 @media(max-width:620px){
  #adminControls:not(.admin-tool-active-v185)>.commissioner-sport-card{
    display:flex!important;flex-direction:column!important;align-items:center!important;
@@ -1346,6 +1346,12 @@ table{max-width:100%}
  }
  #adminControls:not(.admin-tool-active-v185)>.commissioner-sport-card #adminChangeGame{order:4!important}
 }
+</style>
+
+<style id="links-v377-admin-arrow-cleanup">
+/* v377 — expanded Pool Settings already has Back to Admin; hide redundant orange caret. */
+#adminControls.admin-section-active-v186 .commissioner-settings-card.admin-section-expanded-v186 h3:after,
+#adminControls:not(.admin-tool-active-v185)>.commissioner-settings-card.admin-open-v368 h3:after{content:none!important;display:none!important}
 </style>
 </head>
 
@@ -1455,7 +1461,7 @@ table{max-width:100%}
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v376</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v377</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
