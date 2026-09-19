@@ -1507,7 +1507,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v438</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v439</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -4930,23 +4930,27 @@ $("#chooseSquares").onclick=()=>enterSquares();
 })();
 </script>
 
-<script id="links-v435-create-game-selection">
+<script id="links-v439-create-game-selection">
 (()=>{
-  const box=()=>document.getElementById("createPoolGames");
+  const root=document.getElementById("createPoolGames");
+  if(!root)return;
   function sync(){
-    const root=box();if(!root)return;
     root.querySelectorAll('input[type="checkbox"]').forEach(cb=>{
       cb.disabled=false;
+      cb.removeAttribute("disabled");
       cb.closest("label")?.classList.toggle("links-create-game-selected-v435",cb.checked);
     });
   }
-  document.addEventListener("click",e=>{
-    const label=e.target.closest("#createPoolGames label");if(!label)return;
-    const cb=label.querySelector(\'input[type="checkbox"]\');if(!cb)return;
-    // v437: handle the card tap ourselves in capture phase and stop the native label click\n    // from firing a second time (which previously toggled the checkbox right back off).\n    e.preventDefault();e.stopImmediatePropagation();\n    cb.disabled=false;cb.checked=!cb.checked;\n    cb.dispatchEvent(new Event("change",{bubbles:true}));\n    sync();
-  },true);
-  document.addEventListener("change",e=>{if(e.target.matches?.('#createPoolGames input[type="checkbox"]'))sync()},true);
-  new MutationObserver(()=>{if(!document.getElementById("createPoolPage")?.classList.contains("hide"))sync()}).observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:["class"]});
+  root.addEventListener("change",sync);
+  root.addEventListener("click",e=>{
+    const label=e.target.closest("label");
+    if(!label||e.target.matches('input[type="checkbox"]'))return;
+    e.preventDefault();
+    const cb=label.querySelector('input[type="checkbox"]');
+    if(!cb)return;
+    cb.checked=!cb.checked;
+    cb.dispatchEvent(new Event("change",{bubbles:true}));
+  });
   sync();
 })();
 </script>
