@@ -3274,6 +3274,10 @@ export async function onRequest(context){
       await DB.prepare("INSERT INTO pool_week_meta(pool_id,sport,week,payout_paid) VALUES(?,?,?,?) ON CONFLICT(pool_id,sport,week) DO UPDATE SET payout_paid=excluded.payout_paid").bind(pid,sport,w,next).run();
       return json({ok:true,payoutPaid:next===1});
     }
+    if(path==="college-selection"&&method==="GET"){
+      const mode=await getPoolSetting(DB,pid,`college_selection_mode_${w}`,"commissioner"),count=Number(await getPoolSetting(DB,pid,`college_selection_count_${w}`,"0"))||0;
+      return json({mode,count,week:w});
+    }
     if(path==="college-candidates"&&method==="GET"){
       if(s.role!=="admin")return json({error:"Commissioner only."},403);
       let games=await fetchCollegeWeek(w);
@@ -3301,6 +3305,10 @@ export async function onRequest(context){
       if(s.role!=="admin")return json({error:"Commissioner only."},403);
       const chosen=Array.isArray(body.games)?body.games:[];
       if(!chosen.length)return json({error:"Select at least one college game."},400);
+      const existingPick=await DB.prepare("SELECT 1 AS ok FROM pool_picks WHERE pool_id=? AND sport='college' AND week=? LIMIT 1").bind(pid,w).first();
+      const metaLock=await DB.prepare("SELECT lock_time FROM pool_week_meta WHERE pool_id=? AND sport='college' AND week=?").bind(pid,w).first();
+      if(existingPick?.ok||Number.isFinite(Date.parse(metaLock?.lock_time||""))&&Date.parse(metaLock.lock_time)<=Date.now())return json({error:"This college slate is locked because picks already exist or the deadline has passed. Clear/correct picks before changing the games."},409);
+      const mode=String(body.mode||"commissioner")==="random"?"random":"commissioner";
 
       // Clear only this pool/sport/week, then save each selected game.
       await DB.prepare("DELETE FROM pool_games WHERE pool_id=? AND sport='college' AND week=?").bind(pid,w).run();
@@ -3332,7 +3340,9 @@ export async function onRequest(context){
         awayId:String(x.away_id||""),homeId:String(x.home_id||""),
         kickoff:x.kickoff||null
       }));
-      return json({ok:true,count:savedGames.length,games:savedGames});
+      await DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,?,?) ON CONFLICT(pool_id,key) DO UPDATE SET value=excluded.value").bind(pid,`college_selection_mode_${w}`,mode).run();
+      await DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,?,?) ON CONFLICT(pool_id,key) DO UPDATE SET value=excluded.value").bind(pid,`college_selection_count_${w}`,String(savedGames.length)).run();
+      return json({ok:true,count:savedGames.length,games:savedGames,mode});
     }
     return json({error:"Not found."},404);
   }catch(e){return json({error:String(e?.message||e)},500)}
