@@ -1488,7 +1488,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v386</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v387</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2908,6 +2908,7 @@ function populateSpecialUtilityPanes(kind){
   const entries=st?.entries||[],scoreRows=[...(st?.scores||[])].sort((a,b)=>Number(b.score||0)-Number(a.score||0));
   if(cmp)cmp.innerHTML=entries.length?entries.map(x=>`<div class="card"><b>${escapeHtml(x.playerName)}</b><div class="small">${escapeHtml(JSON.stringify(x.entry))}</div></div>`).join(""):`Player selections for <b>${escapeHtml(name)}</b> stay private until the commissioner enables reveal.`;
   if(scores)scores.innerHTML=scoreRows.length?scoreRows.map(x=>`<div class="result-row"><b>${escapeHtml(x.playerName)}</b><span>${Number(x.score||0)}</span><span>${escapeHtml(x.status||"OPEN")}</span></div>`).join(""):`No official <b>${escapeHtml(name)}</b> scores have been posted yet.`;
+  if(kind==="masters"&&scores){api("/api/masters/leaderboard").then(d=>{const rows=d.leaderboard||[];if(rows.length)scores.innerHTML=`<div style="font-weight:900;margin-bottom:8px">⛳ ${escapeHtml(d.eventName||"Masters")} LIVE LEADERBOARD</div><table><thead><tr><th>POS</th><th>GOLFER</th><th>SCORE</th></tr></thead><tbody>${rows.slice(0,60).map(x=>`<tr><td>${escapeHtml(x.position||"")}</td><td>${escapeHtml(x.name)}</td><td>${Number.isFinite(Number(x.score))?Number(x.score):"—"}</td></tr>`).join("")}</tbody></table>`}).catch(()=>{})}
   if(stand)stand.innerHTML=scoreRows.length?`<table><thead><tr><th>PLAYER</th><th>SCORE</th><th>STATUS</th></tr></thead><tbody>${scoreRows.map((x,i)=>`<tr><td>${i+1}. ${escapeHtml(x.playerName)}</td><td>${Number(x.score||0)}</td><td>${escapeHtml(x.status||"OPEN")}</td></tr>`).join("")}</tbody></table>`:`Standings for <b>${escapeHtml(name)}</b> will appear as official scores are recorded.`;
   if(proj)proj.innerHTML=`Projected results for <b>${escapeHtml(name)}</b> appear here when enough live or commissioner-entered result data is available.`;
   if(access)access.innerHTML=isCommissioner?`Commissioner access controls are managed from the pool's main <b>Player Access</b> controls. Players marked ACTIVE can participate; PENDING players remain locked.`:`Your commissioner controls whether your player access is ACTIVE or PENDING for this pool.`;
