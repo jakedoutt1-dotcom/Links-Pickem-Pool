@@ -1488,7 +1488,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v383</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v384</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2874,13 +2874,20 @@ function collectSpecialSettingsFromForm(){
   return out;
 }
 let specialStateV383=null;
-function specialEntryFieldsV383(kind,st){
+function specialNFLPickCardV384(g,kind,me,i){
+  const picks=Array.isArray(me.picks)?me.picks:[],saved=kind==="survivor"?String(me.team||""):String(picks[i]?.team||"");
+  const rank=kind==="confidence"?Number(picks[i]?.confidence||0):0;
+  return `<div class="card" style="margin:7px 0"><div class="small">${escapeHtml(g.status||new Date(g.kickoff).toLocaleString())}</div><label><input type="radio" name="spgame${i}" value="${escapeHtml(g.away)}" ${saved===g.away?"checked":""}> ${escapeHtml(g.awayName||g.away)}</label><br><label><input type="radio" name="spgame${i}" value="${escapeHtml(g.home)}" ${saved===g.home?"checked":""}> ${escapeHtml(g.homeName||g.home)}</label>${kind==="confidence"?`<input class="specialConfidenceV384" data-index="${i}" type="number" min="1" max="32" value="${rank||""}" placeholder="Confidence" style="margin-top:6px;width:130px">`:""}</div>`;
+}
+async function specialEntryFieldsV383(kind,st){
   const s=st.settings||{},me=st.myEntry||{}, field=(kind==="masters"?"golferField":kind==="nascar"?"driverField":null),available=field?safeJsonArray(s[field]):[];
-  if(kind==="survivor")return `<label class="field-label">YOUR SURVIVOR TEAM</label><input id="specialEntryTextV383" value="${escapeHtml(me.team||"")}" placeholder="Team for this week"><div class="small">LINKS saves this as your official Survivor entry. Team-reuse and automatic NFL result enforcement are the next scoring layer.</div>`;
-  if(kind==="confidence")return `<label class="field-label">YOUR PICKS + CONFIDENCE</label><textarea id="specialEntryTextV383" style="width:100%;min-height:150px" placeholder="Example: DAL 16, TEN 15, BUF 14...">${escapeHtml(me.picks||"")}</textarea>`;
+  if(["survivor","confidence","playoff"].includes(kind)){
+    const wk=Math.max(1,Number(me.week||s.week||1)),d=await api(`/api/special/nfl-week?gameType=${encodeURIComponent(kind)}&week=${wk}`),games=d.games||[];
+    if(kind==="survivor")return `<label class="field-label">NFL WEEK</label><input id="specialWeekV384" type="number" min="1" max="18" value="${wk}" style="max-width:110px"><div class="small" style="margin:7px 0">Pick one team to win this week.</div>${games.map((g,i)=>specialNFLPickCardV384(g,kind,me,i)).join("")||'<div class="small">NFL games are not available for this week yet.</div>'}`;
+    return `<label class="field-label">NFL WEEK</label><input id="specialWeekV384" type="number" min="1" max="22" value="${wk}" style="max-width:110px"><div class="small" style="margin:7px 0">${kind==="confidence"?"Pick every game and give each pick a unique confidence value.":"Choose the winners for this playoff round."}</div>${games.map((g,i)=>specialNFLPickCardV384(g,kind,me,i)).join("")||'<div class="small">NFL games are not available for this week yet.</div>'}`;
+  }
   if(kind==="props")return `<label class="field-label">YOUR PROP ANSWERS</label><textarea id="specialEntryTextV383" style="width:100%;min-height:170px" placeholder="Enter your answers in the same order as the commissioner prop sheet.">${escapeHtml(me.answers||"")}</textarea>`;
-  if(kind==="playoff")return `<label class="field-label">YOUR PLAYOFF PICKS</label><textarea id="specialEntryTextV383" style="width:100%;min-height:150px" placeholder="Enter your playoff selections.">${escapeHtml(me.picks||"")}</textarea>`;
-  if(kind==="masters"||kind==="nascar"){const key=kind==="masters"?"golfers":"drivers",chosen=new Set(Array.isArray(me[key])?me[key]:[]);return `<div class="small" style="margin-bottom:8px">Choose from the commissioner-approved field.</div><div class="special-picker-list">${available.map(x=>`<label class="special-picker-item"><input type="checkbox" class="specialEntryCheckV383" value="${escapeHtml(x.name)}" ${chosen.has(x.name)?"checked":""}><span>${escapeHtml(x.name)}</span></label>`).join("")||'<div class="small">The commissioner has not loaded the field yet.</div>'}</div>`}
+  if(kind==="masters"||kind==="nascar"){const key=kind==="masters"?"golfers":"drivers",chosen=new Set(Array.isArray(me[key])?me[key]:[]),max=Math.max(1,Number(s[kind==="masters"?"lineupSize":"driversPerPlayer"]||1));return `<div class="small" style="margin-bottom:8px">Choose exactly <b>${max}</b> from the commissioner-approved field.</div><div class="special-picker-list">${available.map(x=>`<label class="special-picker-item"><input type="checkbox" class="specialEntryCheckV383" value="${escapeHtml(x.name)}" ${chosen.has(x.name)?"checked":""}><span>${escapeHtml(x.name)}</span></label>`).join("")||'<div class="small">The commissioner has not loaded the field yet.</div>'}</div>`}
   return "";
 }
 async function renderSpecialPlayerEngineV383(kind){
@@ -2889,8 +2896,8 @@ async function renderSpecialPlayerEngineV383(kind){
   try{
     const st=await api(`/api/special/state?gameType=${encodeURIComponent(kind)}`);specialStateV383=st;
     const submitted=st.mySubmittedAt?`Saved ${new Date(st.mySubmittedAt).toLocaleString()}`:"No entry saved yet";
-    host.innerHTML=`<div class="special-game-card" style="grid-column:1/-1"><b>🎮 MY ${escapeHtml((SPECIAL_GAME_DATA[kind]?.title||"GAME").toUpperCase())} ENTRY</b><span>${submitted}</span><div style="margin-top:10px">${specialEntryFieldsV383(kind,st)}</div><button id="saveSpecialEntryV383" class="green" style="width:100%;margin-top:12px">SAVE MY ENTRY</button><div id="specialEntryStatusV383" class="small" style="margin-top:7px"></div></div>`;
-    $("#saveSpecialEntryV383").onclick=async()=>{const status=$("#specialEntryStatusV383");let entry={};if(kind==="survivor")entry={team:$("#specialEntryTextV383")?.value||""};else if(["confidence","playoff"].includes(kind))entry={picks:$("#specialEntryTextV383")?.value||""};else if(kind==="props")entry={answers:$("#specialEntryTextV383")?.value||""};else entry={[kind==="masters"?"golfers":"drivers"]:$(".specialEntryCheckV383:checked").map(x=>x.value)};status.textContent="Saving…";try{await api("/api/special/entry",{method:"POST",body:JSON.stringify({gameType:kind,entry})});status.textContent="✅ Entry saved.";await renderSpecialPlayerEngineV383(kind);populateSpecialUtilityPanes(kind)}catch(e){status.textContent=e.message||"Could not save entry."}};
+    const entryHtml=await specialEntryFieldsV383(kind,st);host.innerHTML=`<div class="special-game-card" style="grid-column:1/-1"><b>🎮 MY ${escapeHtml((SPECIAL_GAME_DATA[kind]?.title||"GAME").toUpperCase())} ENTRY</b><span>${submitted}</span><div style="margin-top:10px">${entryHtml}</div><button id="saveSpecialEntryV383" class="green" style="width:100%;margin-top:12px">SAVE MY ENTRY</button><div id="specialEntryStatusV383" class="small" style="margin-top:7px"></div></div>`;
+    $("#saveSpecialEntryV383").onclick=async()=>{const status=$("#specialEntryStatusV383");let entry={};if(["survivor","confidence","playoff"].includes(kind)){const week=Number($("#specialWeekV384")?.value||1),radios=$('input[name^="spgame"]:checked');if(kind==="survivor")entry={week,team:radios[0]?.value||""};else entry={week,picks:radios.map(r=>{const i=Number(r.name.replace("spgame",""));return {gameIndex:i,team:r.value,confidence:kind==="confidence"?Number($(`.specialConfidenceV384[data-index="${i}"]`)?.value||0):0}})}}else else if(kind==="props")entry={answers:$("#specialEntryTextV383")?.value||""};else entry={[kind==="masters"?"golfers":"drivers"]:$(".specialEntryCheckV383:checked").map(x=>x.value)};status.textContent="Saving…";try{await api("/api/special/entry",{method:"POST",body:JSON.stringify({gameType:kind,entry})});status.textContent="✅ Entry saved.";await renderSpecialPlayerEngineV383(kind);populateSpecialUtilityPanes(kind)}catch(e){status.textContent=e.message||"Could not save entry."}};
     populateSpecialUtilityPanes(kind);
   }catch(e){host.innerHTML=`<div class="special-game-card" style="grid-column:1/-1"><b>Game entry</b><span>${escapeHtml(e.message||"Could not load game entry.")}</span></div>`}
 }
