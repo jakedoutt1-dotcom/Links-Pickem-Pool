@@ -1507,7 +1507,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v426</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v427</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -4844,6 +4844,34 @@ $("#chooseSquares").onclick=()=>enterSquares();
 <script id="links-v339-home-js">
 (()=>{const by=id=>document.getElementById(id);by('createFreePoolTopV339')?.addEventListener('click',()=>by('createFreePoolHome')?.click());const modal=by('nflPickemInfoModalV339'),info=by('nflPickemInfoV339');info?.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();modal?.classList.add('open')});modal?.querySelector('.links-nfl-info-close-v339')?.addEventListener('click',()=>modal.classList.remove('open'));modal?.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('open')})})();
 </script>
+
+<script id="links-v427-button-feedback">
+(()=>{
+  const navWords=/sign in|login|continue|open|enter|change game|home|picks|compare|scores|standings|projected|rules|admin|profile|player access|game select|back/i;
+  function feedback(btn){
+    if(!btn||btn.disabled||btn.dataset.linksBusy==="1")return;
+    const original=btn.innerHTML;
+    const text=(btn.textContent||"").trim();
+    const isSign=/sign in|login/i.test(text);
+    const isNav=isSign||navWords.test(text)||btn.matches("[data-tab],[data-special-tab],[data-sqtab],[data-march-tab],.sport-btn,.game-instance-tab-v180");
+    if(!isNav)return;
+    btn.dataset.linksBusy="1";
+    btn.dataset.linksOriginal=original;
+    btn.classList.add("links-button-busy-v427");
+    btn.setAttribute("aria-busy","true");
+    if(isSign)btn.textContent="SIGNING IN…";
+    else if(!/sign out/i.test(text))btn.textContent="LOADING…";
+    setTimeout(()=>{
+      if(!document.body.contains(btn))return;
+      btn.innerHTML=btn.dataset.linksOriginal||original;
+      btn.classList.remove("links-button-busy-v427");
+      btn.removeAttribute("aria-busy");
+      delete btn.dataset.linksBusy;delete btn.dataset.linksOriginal;
+    },3500);
+  }
+  document.addEventListener("click",e=>{const b=e.target.closest("button,a[role='button']");if(b)feedback(b)},true);
+})();
+</script>
 </body></html>
 
 <!-- v139 local audio caching + one Games in This Pool control at bottom of each commissioner admin page -->
@@ -5076,4 +5104,7 @@ body.links-game33-active-v426 #app #weekSelectLabel{display:none!important}
 body.links-game33-active-v426 #app .game33-hero,
 body.links-game33-active-v426 #app [class*="game33"],
 body.links-game33-active-v426 #app [class*="g33"]{display:block}
+
+/* v427 — immediate tap feedback for navigation and sign-in buttons */
+.links-button-busy-v427{opacity:.72!important;transform:scale(.98);filter:brightness(1.15);pointer-events:none!important;transition:.12s ease}.links-button-busy-v427:after{content:"";display:inline-block;width:12px;height:12px;margin-left:8px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;vertical-align:-2px;animation:linksSpinV427 .7s linear infinite}@keyframes linksSpinV427{to{transform:rotate(360deg)}}
 </style>
