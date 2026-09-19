@@ -1,7 +1,12 @@
 LINKS PICK’EM POOLS — CURRENT PRODUCTION BUILD
-Build: v275
-Baseline preserved from: v274
-Cleanup backup branch: backup-v274-before-cleanup
+Build: v400
+Baseline preserved from: v399
+Deployment recovery: fresh production deploy trigger after failed v399 deployment
+
+CURRENT APP
+- public/index.html footer: LINKS PICK’EM POOLS — v400
+- preserve all v400 login, game-selection, admin, scoring, artwork, and pool fixes
+- deploy from GitHub main as source of truth
 
 CURRENT ADD-ON FILES
 - player-access-current.js
@@ -16,4 +21,4 @@ CURRENT NAVIGATION ARTWORK
 CURRENT SITE ICON
 - app-logo.png
 
-Cleanup rule: old superseded copies are removed from main only after the current replacement is confirmed. The backup branch retains the complete pre-cleanup v274 tree for rollback.
+Recovery rule: do not roll production back to the older live build. Deploy the current main branch containing v400.
