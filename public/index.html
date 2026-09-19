@@ -1308,6 +1308,23 @@ table{max-width:100%}
 #home .links-home-footer-v200{position:relative;overflow:hidden;padding-top:34px!important;background:radial-gradient(ellipse at 50% 0,#51301a 0,#241208 36%,#090604 80%)!important;border:2px solid #57402f!important}#home .links-home-footer-v200:before{content:'✦     ✦     ✦     ✦     ✦';position:absolute;top:2px;left:0;right:0;color:#ffc17c;font-size:22px;letter-spacing:22px;text-shadow:0 0 9px #ff8a2b,0 0 18px #fff;text-align:center}.links-home-footer-logo-v200{border-color:#9a8d7d!important;background:repeating-linear-gradient(90deg,#3b1d0d 0 18px,#542b14 18px 36px)!important;font-family:Impact,Arial Black,sans-serif!important}.links-home-footer-logo-v200:before{content:'🐾';display:block;margin:-34px auto 2px;color:#ff6a1a;font-size:27px}.links-home-footer-slogan-v200{font-family:Arial Black,sans-serif!important;transform:skew(-5deg)}
 @media(max-width:700px){#home .links-benefits-v193>div{min-height:170px!important;padding-top:76px!important}#home .links-benefits-v193>div:after{font-size:39px}#home .links-category-v193 summary{min-height:145px!important;padding-top:69px!important}#home .links-category-v193:nth-child(n) summary:after{right:50px;transform:scale(.82);transform-origin:right top}.links-home-footer-v200:before{font-size:16px;letter-spacing:10px}}
 </style>
+
+<style id="links-v375-admin-nav-fix">
+/* v375 — stronger Back to Pool action + prevent admin subtitle/week badge overlap. */
+#adminModeBarV372{grid-template-columns:minmax(180px,auto) 1fr!important;padding:12px!important;gap:12px!important}
+#adminModeBarV372 button{min-height:52px!important;padding:12px 18px!important;border:2px solid #ff7a2d!important;background:linear-gradient(180deg,#263746,#111b24)!important;color:#fff!important;font-size:15px!important;box-shadow:0 0 0 2px rgba(255,122,45,.10),0 5px 14px #0008!important}
+#adminControls:not(.admin-tool-active-v185)>.commissioner-sport-card{grid-template-columns:minmax(0,1fr) auto!important;grid-template-rows:auto auto!important;align-items:start!important;row-gap:8px!important;padding-bottom:18px!important}
+#adminControls:not(.admin-tool-active-v185)>.commissioner-sport-card .small{grid-column:1/-1!important;grid-row:2!important;margin-top:0!important;padding-right:0!important;line-height:1.35!important}
+#adminControls:not(.admin-tool-active-v185)>.commissioner-sport-card:after{grid-column:2!important;grid-row:1!important;align-self:center!important;position:relative!important;z-index:2!important}
+@media(max-width:620px){
+ #adminModeBarV372{grid-template-columns:1fr!important}
+ #adminModeBarV372 button{width:100%!important;font-size:16px!important;min-height:54px!important}
+ #adminModeBarV372>div{text-align:center!important}
+ #adminControls:not(.admin-tool-active-v185)>.commissioner-sport-card{grid-template-columns:1fr!important;grid-template-rows:auto auto auto!important}
+ #adminControls:not(.admin-tool-active-v185)>.commissioner-sport-card:after{grid-column:1!important;grid-row:2!important;justify-self:start!important}
+ #adminControls:not(.admin-tool-active-v185)>.commissioner-sport-card .small{grid-column:1!important;grid-row:3!important;padding-top:2px!important}
+}
+</style>
 </head>
 
 <body><div id="top"></div><div class="wrap">
@@ -1416,7 +1433,7 @@ table{max-width:100%}
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v374</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v375</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
