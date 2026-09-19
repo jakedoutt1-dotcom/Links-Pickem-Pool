@@ -1539,7 +1539,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v462</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v463</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2324,7 +2324,7 @@ async function renderGameInstanceUI(gt){
   }
   const host=gameInstanceTabHost(gt);
   if(host){
-    const gameTabs=rows.map(x=>`<button type="button" class="game-instance-tab-v180 ${Number(x.id)===Number(activeGameInstanceId)?"active":""}" data-instance-id="${x.id}">${escapeHtml(x.name)}</button>`).join("");
+    const gameTabs=rows.length?rows.map(x=>`<button type="button" class="game-instance-tab-v180 ${Number(x.id)===Number(activeGameInstanceId)?"active":""}" data-instance-id="${x.id}">${escapeHtml(x.name)}</button>`).join(""):(isCommissioner?`<button type="button" class="game-instance-tab-v180 active" disabled>${escapeHtml(gameInstanceDefaultLabel(gt,1))}</button>`:"");
     // v462: players never see sales/add tabs. Commissioners always see ADD as the
     // upgrade/add-game selling point on every game page.
     host.innerHTML=gameTabs+(isCommissioner?`<button type="button" class="game-instance-tab-v180 game-instance-add-v180" data-links-add-game="1">＋ ADD</button>`:"");
@@ -2836,11 +2836,12 @@ async function enterApp(selected){
   }
   officialWeek=week;adminWeek=week;standingsWeek=week;
   $("#weekSelect").value=week;showOnly("app");applyRoleNavigation();
-  // v460: resolve this pool's own game tab BEFORE loading picks. The previous
-  // async order could request the slate with no/current-wrong instance, leaving
-  // the tab strip blank and the Picks page empty while Compare Picks still had data.
-  try{await renderGameInstanceUI(sport)}catch(e){console.warn("Game tabs load failed",e)}
+  // v463: the original/free game uses the legacy data path. Tabs are presentation/
+  // upgrade navigation and must never gate the existing NFL slate or saved picks.
+  activeGameInstanceId=0;activeGameInstanceName="";
+  sessionStorage.removeItem("linksGameInstanceId");sessionStorage.removeItem("linksGameInstanceName");
   await refreshWeek();showTab("picks");
+  renderGameInstanceUI(sport).catch(e=>console.warn("Game tabs load failed",e));
 }
 const SPECIAL_GAME_BANNERS_V381={survivor:"./nfl-survivor-logo-v102.jpg",confidence:"./confidence-pool-logo-v102.jpg",props:"./super-bowl-props-logo-v102.jpg",playoff:"./nfl-playoff-challenge-logo-v102.jpg",masters:"./masters-golf-pool-logo-v102.jpg",nascar:"./nascar-pool-logo-v102.jpg",fantasy:"./fantasy-football-logo-v154.png",dynasty:"./dynasty-fantasy-football-logo-v157.png"};
 const SPECIAL_GAME_DATA={
