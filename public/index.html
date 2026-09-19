@@ -1539,7 +1539,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v459</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v460</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2774,8 +2774,12 @@ async function enterApp(selected){
     }catch(e){}
   }
   officialWeek=week;adminWeek=week;standingsWeek=week;
-  $("#weekSelect").value=week;showOnly("app");applyRoleNavigation();await refreshWeek();showTab("picks");
-  renderGameInstanceUI(sport).catch(e=>console.warn("Game tabs load failed",e));
+  $("#weekSelect").value=week;showOnly("app");applyRoleNavigation();
+  // v460: resolve this pool's own game tab BEFORE loading picks. The previous
+  // async order could request the slate with no/current-wrong instance, leaving
+  // the tab strip blank and the Picks page empty while Compare Picks still had data.
+  try{await renderGameInstanceUI(sport)}catch(e){console.warn("Game tabs load failed",e)}
+  await refreshWeek();showTab("picks");
 }
 const SPECIAL_GAME_BANNERS_V381={survivor:"./nfl-survivor-logo-v102.jpg",confidence:"./confidence-pool-logo-v102.jpg",props:"./super-bowl-props-logo-v102.jpg",playoff:"./nfl-playoff-challenge-logo-v102.jpg",masters:"./masters-golf-pool-logo-v102.jpg",nascar:"./nascar-pool-logo-v102.jpg",fantasy:"./fantasy-football-logo-v154.png",dynasty:"./dynasty-fantasy-football-logo-v157.png"};
 const SPECIAL_GAME_DATA={
