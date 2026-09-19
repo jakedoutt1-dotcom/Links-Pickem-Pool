@@ -1507,7 +1507,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v434</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v435</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -4928,6 +4928,29 @@ $("#chooseSquares").onclick=()=>enterSquares();
   document.addEventListener("click",openCreatePoolV433,true);
 })();
 </script>
+
+<script id="links-v435-create-game-selection">
+(()=>{
+  const box=()=>document.getElementById("createPoolGames");
+  function sync(){
+    const root=box();if(!root)return;
+    root.querySelectorAll('input[type="checkbox"]').forEach(cb=>{
+      cb.disabled=false;
+      cb.closest("label")?.classList.toggle("links-create-game-selected-v435",cb.checked);
+    });
+  }
+  document.addEventListener("click",e=>{
+    const label=e.target.closest("#createPoolGames label");if(!label)return;
+    const cb=label.querySelector('input[type="checkbox"]');if(!cb)return;
+    // Images/text can sit above the native checkbox on mobile; make the whole card a reliable selector.
+    if(e.target!==cb){e.preventDefault();cb.checked=!cb.checked;cb.dispatchEvent(new Event("change",{bubbles:true}));}
+    requestAnimationFrame(sync);
+  },true);
+  document.addEventListener("change",e=>{if(e.target.matches?.('#createPoolGames input[type="checkbox"]'))sync()},true);
+  new MutationObserver(()=>{if(!document.getElementById("createPoolPage")?.classList.contains("hide"))sync()}).observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:["class"]});
+  sync();
+})();
+</script>
 </body></html>
 
 <!-- v139 local audio caching + one Games in This Pool control at bottom of each commissioner admin page -->
@@ -5173,4 +5196,8 @@ body.links-game33-active-v426 #app [class*="g33"]{display:block}
 /* v434 — all games are selectable while creating a pool */
 #createPoolGames input[type="checkbox"]:disabled{opacity:1!important;pointer-events:auto!important;filter:none!important}
 #createPoolGames label{opacity:1!important;pointer-events:auto!important;filter:none!important;cursor:pointer!important}
+
+/* v435 — entire Create Pool game card is tappable and visibly selected */
+#createPoolGames label.links-create-game-selected-v435{border-color:#ff6a1a!important;box-shadow:inset 0 0 0 2px #ff6a1a,0 0 16px rgba(255,106,26,.38)!important;background:linear-gradient(180deg,#2a1b12,#17120e)!important}
+#createPoolGames label{touch-action:manipulation!important;-webkit-tap-highlight-color:rgba(255,106,26,.22)!important}
 </style>
