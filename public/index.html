@@ -1488,7 +1488,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v423</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v424</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2921,6 +2921,13 @@ function loadLiveEventResultsV420(kind,scores){
   if(!scores)return;
   if(kind==="masters")api("/api/masters/leaderboard").then(d=>{const rows=d.leaderboard||[];if(rows.length)scores.innerHTML=`<div style="font-weight:900;margin-bottom:8px">⛳ ${escapeHtml(d.eventName||"Masters")} LIVE LEADERBOARD</div><table><thead><tr><th>POS</th><th>GOLFER</th><th>SCORE</th></tr></thead><tbody>${rows.slice(0,60).map(x=>`<tr><td>${escapeHtml(x.position||"")}</td><td>${escapeHtml(x.name)}</td><td>${Number.isFinite(Number(x.score))?Number(x.score):"—"}</td></tr>`).join("")}</tbody></table>`}).catch(()=>{});
   if(kind==="nascar")api("/api/nascar/results").then(d=>{const rows=d.results||[];if(rows.length)scores.innerHTML=`<div style="font-weight:900;margin-bottom:8px">🏁 ${escapeHtml(d.event?.name||"NASCAR RACE")} RESULTS</div><table><thead><tr><th>POS</th><th>DRIVER</th><th>POINTS</th></tr></thead><tbody>${rows.slice(0,60).map(x=>`<tr><td>${escapeHtml(x.position||"")}</td><td>${escapeHtml(x.name)}</td><td>${Number.isFinite(Number(x.points))?Number(x.points):"—"}</td></tr>`).join("")}</tbody></table>`}).catch(()=>{});
+}
+function specialScoreAdminV424(kind,rows){
+  if(!isCommissioner||!rows.length)return "";
+  return `<div class="card" style="margin-top:12px;border-color:#ff6a1a"><b>⚙️ COMMISSIONER SCORE CONTROL</b><div class="small" style="margin:5px 0 9px">Correct a score/status when needed. Manual corrections remain separate from automatic scoring.</div>${rows.map((x,i)=>`<div class="result-row" style="grid-template-columns:minmax(110px,1fr) 85px 115px auto"><b>${escapeHtml(x.playerName)}</b><input class="spAdminScoreV424" data-i="${i}" type="number" step="0.01" value="${Number(x.score||0)}"><select class="spAdminStatusV424" data-i="${i}"><option ${x.status==="OPEN"?"selected":""}>OPEN</option><option ${x.status==="FINAL"?"selected":""}>FINAL</option><option ${x.status==="ALIVE"?"selected":""}>ALIVE</option><option ${x.status==="ELIMINATED"?"selected":""}>ELIMINATED</option></select><button class="spSaveScoreV424" data-i="${i}" type="button">SAVE SCORE</button></div>`).join("")}</div>`;
+}
+function bindSpecialScoreAdminV424(kind,rows){
+  $(".spSaveScoreV424").forEach(b=>b.onclick=async()=>{const i=Number(b.dataset.i),x=rows[i];if(!x)return;try{b.disabled=true;b.textContent="SAVING…";await api("/api/admin/special-score",{method:"POST",body:JSON.stringify({gameType:kind,playerName:x.playerName,score:Number(document.querySelector(`.spAdminScoreV424[data-i="${i}"]`)?.value||0),status:document.querySelector(`.spAdminStatusV424[data-i="${i}"]`)?.value||"FINAL"})});b.textContent="SAVED ✓";setTimeout(()=>renderSpecialPlayerEngineV417(kind),500)}catch(e){b.disabled=false;b.textContent="SAVE SCORE";msg(e.message||"Could not save score.")}});
 }
 function populateSpecialUtilityPanes(kind){
   const d=SPECIAL_GAME_DATA[kind]||SPECIAL_GAME_DATA.survivor,name=d.title;
