@@ -1494,7 +1494,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v401</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v402</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -4828,11 +4828,32 @@ $("#chooseSquares").onclick=()=>enterSquares();
     var m=byId("poolLoginModalV150");
     if(m){m.classList.add("hide");m.style.removeProperty("display");m.setAttribute("aria-hidden","true");}
   }
+  function renderMatches(rows){
+    var box=byId("poolSearchResults");if(!box)return;
+    rows=(rows||[]).slice(0,20);
+    if(!rows.length){box.innerHTML='<div class="pool-search-empty">No matching pools found.</div>';box.classList.add("show");return}
+    box.innerHTML=rows.map(function(p){return '<button type="button" class="pool-search-item" data-pool-code="'+String(p.code||'').replace(/"/g,'&quot;')+'" data-pool-name="'+String(p.name||'').replace(/"/g,'&quot;')+'"><span><b>'+String(p.name||'')+'</b></span><span class="pool-search-code">'+String(p.code||'')+'</span></button>'}).join('');
+    box.classList.add("show");
+    box.querySelectorAll(".pool-search-item").forEach(function(btn){btn.addEventListener("click",function(){var input=byId("poolCodeInput");if(!input)return;input.dataset.selectedCode=btn.dataset.poolCode;input.value=btn.dataset.poolName+" — "+btn.dataset.poolCode;box.classList.remove("show")})});
+  }
+  var searchTimer=null;
+  function livePoolSearch(value){
+    clearTimeout(searchTimer);
+    var q=String(value||"").trim(),box=byId("poolSearchResults");
+    if(!q){if(box)box.classList.remove("show");return}
+    searchTimer=setTimeout(function(){
+      fetch("/api/pool-search?q="+encodeURIComponent(q),{credentials:"same-origin"})
+        .then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||"Could not search pools.");return d})})
+        .then(function(d){renderMatches(d.pools||[])})
+        .catch(function(e){var err=byId("homePortalErr");if(err)err.textContent=e.message||"Could not search pools."});
+    },150);
+  }
   function bind(){
-    var open=byId("openPoolLoginV150"),close=byId("closePoolLoginV150"),modal=byId("poolLoginModalV150");
+    var open=byId("openPoolLoginV150"),close=byId("closePoolLoginV150"),modal=byId("poolLoginModalV150"),input=byId("poolCodeInput");
     if(open&&!open.dataset.v401){open.dataset.v401="1";open.addEventListener("click",function(e){e.preventDefault();openLoginModal()},true)}
     if(close&&!close.dataset.v401){close.dataset.v401="1";close.addEventListener("click",function(e){e.preventDefault();closeLoginModal()},true)}
     if(modal&&!modal.dataset.v401){modal.dataset.v401="1";modal.addEventListener("click",function(e){if(e.target===modal)closeLoginModal()})}
+    if(input&&!input.dataset.v402){input.dataset.v402="1";input.addEventListener("input",function(e){input.dataset.selectedCode="";livePoolSearch(e.target.value)},true);input.addEventListener("focus",function(){if(input.value&&!input.dataset.selectedCode)livePoolSearch(input.value)},true)}
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",bind);else bind();
   window.addEventListener("pageshow",bind);
