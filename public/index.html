@@ -1494,7 +1494,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v409</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v410</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -4525,6 +4525,25 @@ async function restore(){
   const launchQs=new URLSearchParams(location.search),setupParam=launchQs.get("setup"),inviteParam=launchQs.get("invite");
   if(setupParam){await openPlayerSetup(setupParam);return;}
   if(inviteParam){await openInviteJoin(inviteParam);return;}
+  // v410: consume the successful-login handoff BEFORE /api/session.
+  // The session endpoint is what has been bouncing this fresh login back Home.
+  var directRecovery=null;try{directRecovery=JSON.parse(sessionStorage.getItem("linksLoginRecoveryV408")||"null")}catch(e){}
+  if(directRecovery&&token){
+    try{
+      sessionStorage.removeItem("linksLoginRecoveryV408");
+      role=sessionStorage.getItem("poolRole")||"player";
+      currentUser=sessionStorage.getItem("poolUser")||currentUser;
+      poolCode=sessionStorage.getItem("poolCode")||poolCode;
+      poolName=sessionStorage.getItem("poolName")||poolName;
+      isCommissioner=sessionStorage.getItem("poolIsCommissioner")==="1";
+      poolGames=normalizePoolGames(directRecovery.games,directRecovery.gameType||"nfl");
+      await enterPoolGames(poolGames,directRecovery.gameType||poolGames[0]||"nfl");
+      return;
+    }catch(e){
+      console.warn("Direct login handoff failed",e);
+      sessionStorage.setItem("linksLoginRecoveryV408",JSON.stringify(directRecovery));
+    }
+  }
   if(token){
     try{
       const d=await api("/api/session");try{sessionStorage.removeItem("linksLoginRecoveryV407")}catch(e){}isCommissioner=!!d.isCommissioner;role="player";currentUser=d.name;poolCode=d.poolCode;poolName=d.poolName;applyPoolAdMode(!!d.access?.adFree);
