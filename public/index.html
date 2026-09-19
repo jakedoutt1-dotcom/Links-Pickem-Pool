@@ -1308,7 +1308,79 @@ table{max-width:100%}
 #home .links-home-footer-v200{position:relative;overflow:hidden;padding-top:34px!important;background:radial-gradient(ellipse at 50% 0,#51301a 0,#241208 36%,#090604 80%)!important;border:2px solid #57402f!important}#home .links-home-footer-v200:before{content:'✦     ✦     ✦     ✦     ✦';position:absolute;top:2px;left:0;right:0;color:#ffc17c;font-size:22px;letter-spacing:22px;text-shadow:0 0 9px #ff8a2b,0 0 18px #fff;text-align:center}.links-home-footer-logo-v200{border-color:#9a8d7d!important;background:repeating-linear-gradient(90deg,#3b1d0d 0 18px,#542b14 18px 36px)!important;font-family:Impact,Arial Black,sans-serif!important}.links-home-footer-logo-v200:before{content:'🐾';display:block;margin:-34px auto 2px;color:#ff6a1a;font-size:27px}.links-home-footer-slogan-v200{font-family:Arial Black,sans-serif!important;transform:skew(-5deg)}
 @media(max-width:700px){#home .links-benefits-v193>div{min-height:170px!important;padding-top:76px!important}#home .links-benefits-v193>div:after{font-size:39px}#home .links-category-v193 summary{min-height:145px!important;padding-top:69px!important}#home .links-category-v193:nth-child(n) summary:after{right:50px;transform:scale(.82);transform-origin:right top}.links-home-footer-v200:before{font-size:16px;letter-spacing:10px}}
 </style>
-</head>
+
+<style id="links-v379-admin-nav-fix">
+/* v379 — stronger Back to Pool action + prevent admin subtitle/week badge overlap. */
+#adminModeBarV372{grid-template-columns:minmax(180px,auto) 1fr!important;padding:12px!important;gap:12px!important}
+#adminModeBarV372 button{min-height:52px!important;padding:12px 18px!important;border:2px solid #ff7a2d!important;background:linear-gradient(180deg,#263746,#111b24)!important;color:#fff!important;font-size:15px!important;box-shadow:0 0 0 2px rgba(255,122,45,.10),0 5px 14px #0008!important}
+#adminControls:not(.admin-tool-active-v185)>.commissioner-sport-card{grid-template-columns:minmax(0,1fr) auto!important;grid-template-rows:auto auto!important;align-items:start!important;row-gap:8px!important;padding-bottom:18px!important}
+#adminControls:not(.admin-tool-active-v185)>.commissioner-sport-card .small{grid-column:1/-1!important;grid-row:2!important;margin-top:0!important;padding-right:0!important;line-height:1.35!important}
+#adminControls:not(.admin-tool-active-v185)>.commissioner-sport-card:after{grid-column:2!important;grid-row:1!important;align-self:center!important;position:relative!important;z-index:2!important}
+@media(max-width:620px){
+ #adminModeBarV372{grid-template-columns:1fr!important}
+ #adminModeBarV372 button{width:100%!important;font-size:16px!important;min-height:54px!important}
+ #adminModeBarV372>div{text-align:center!important}
+ #adminControls:not(.admin-tool-active-v185)>.commissioner-sport-card{grid-template-columns:1fr!important;grid-template-rows:auto auto auto!important}
+ #adminControls:not(.admin-tool-active-v185)>.commissioner-sport-card:after{grid-column:1!important;grid-row:2!important;justify-self:start!important}
+ #adminControls:not(.admin-tool-active-v185)>.commissioner-sport-card .small{grid-column:1!important;grid-row:3!important;padding-top:2px!important}
+}
+</style>
+
+<style id="links-v379-admin-header-fix">
+/* v379 — force the admin sport header into three non-overlapping mobile rows. */
+@media(max-width:620px){
+ #adminControls:not(.admin-tool-active-v185)>.commissioner-sport-card{
+   display:flex!important;flex-direction:column!important;align-items:center!important;
+   gap:0!important;padding:20px 18px 18px!important;min-height:0!important;text-align:center!important;
+ }
+ #adminControls:not(.admin-tool-active-v185)>.commissioner-sport-card #commissionerSportTitle{
+   width:100%!important;order:1!important;margin:0 0 8px!important;line-height:1.15!important;
+ }
+ #adminControls:not(.admin-tool-active-v185)>.commissioner-sport-card .small{
+   width:100%!important;order:2!important;margin:0 0 14px!important;padding:0!important;
+   line-height:1.35!important;position:relative!important;z-index:3!important;
+ }
+ #adminControls:not(.admin-tool-active-v185)>.commissioner-sport-card:after{
+   order:3!important;display:block!important;position:relative!important;inset:auto!important;
+   align-self:center!important;margin:0!important;line-height:1.2!important;z-index:3!important;
+ }
+ #adminControls:not(.admin-tool-active-v185)>.commissioner-sport-card #adminChangeGame{order:4!important}
+}
+</style>
+
+<style id="links-v379-admin-arrow-cleanup">
+/* v379 — expanded Pool Settings already has Back to Admin; hide redundant orange caret. */
+#adminControls.admin-section-active-v186 .commissioner-settings-card.admin-section-expanded-v186 h3:after,
+#adminControls:not(.admin-tool-active-v185)>.commissioner-settings-card.admin-open-v368 h3:after{content:none!important;display:none!important}
+</style>
+
+<style id="links-v379-game33-admin">
+/* v379 — Game 33-only commissioner dashboard. NFL/College selectors are intentionally untouched. */
+.links-game33-active-v373 #g33Admin{margin-top:14px}
+.links-game33-active-v373 .g33-admin-head-v379{border-color:#d5a72f!important;background:linear-gradient(135deg,#241b08,#10151b)!important;text-align:center}
+.links-game33-active-v373 .g33-admin-head-v379 h2{color:#ffd45d}
+.links-game33-active-v373 .g33-admin-grid-v379{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.links-game33-active-v373 .g33-admin-card-v379{margin:0!important;border-color:#4c4530;background:linear-gradient(180deg,#151b20,#0c1116)}
+.links-game33-active-v373 .g33-admin-card-v379 h3{margin:0 0 7px}
+.links-game33-active-v373 .g33-admin-card-v379 button{width:100%;margin-top:10px;font-weight:950;min-height:48px}
+.links-game33-active-v373 .g33-finalize-v379{border-color:#d5a72f}
+@media(max-width:620px){.links-game33-active-v373 .g33-admin-grid-v379{grid-template-columns:1fr}}
+</style>
+<style id="links-v379-college-only">
+body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+#collegeSetup .college-mode-v379 label{display:flex;gap:7px;align-items:center;background:#101820;border:1px solid #40515e;border-radius:10px;padding:10px;font-weight:800}
+.college-record-v379{color:#aebbc5;font-size:11px;font-weight:700}
+@media(max-width:520px){#collegeSetup .college-mode-v379{grid-template-columns:1fr}}
+</style><style id="links-v380-special-nav">
+/* v380 — game-specific navigation. NFL Pick'em is intentionally untouched. */
+#specialGameApp[data-active-game="survivor"] #specialTabs [data-special-tab="compare"],#specialGameApp[data-active-game="survivor"] #specialTabs [data-special-tab="projected"],#specialGameApp[data-active-game="survivor"] #specialTabs [data-special-tab="access"],
+#specialGameApp[data-active-game="confidence"] #specialTabs [data-special-tab="projected"],#specialGameApp[data-active-game="confidence"] #specialTabs [data-special-tab="access"],
+#specialGameApp[data-active-game="props"] #specialTabs [data-special-tab="scores"],#specialGameApp[data-active-game="props"] #specialTabs [data-special-tab="projected"],#specialGameApp[data-active-game="props"] #specialTabs [data-special-tab="access"],
+#specialGameApp[data-active-game="playoff"] #specialTabs [data-special-tab="projected"],#specialGameApp[data-active-game="playoff"] #specialTabs [data-special-tab="access"],
+#specialGameApp[data-active-game="masters"] #specialTabs [data-special-tab="compare"],#specialGameApp[data-active-game="masters"] #specialTabs [data-special-tab="projected"],#specialGameApp[data-active-game="masters"] #specialTabs [data-special-tab="access"],
+#specialGameApp[data-active-game="nascar"] #specialTabs [data-special-tab="compare"],#specialGameApp[data-active-game="nascar"] #specialTabs [data-special-tab="projected"],#specialGameApp[data-active-game="nascar"] #specialTabs [data-special-tab="access"]{display:none!important}
+#specialGameApp:not([data-active-game="fantasy"]):not([data-active-game="dynasty"]) #specialTabs{grid-template-columns:repeat(auto-fit,minmax(112px,1fr))!important}
+</style></head>
 
 <body><div id="top"></div><div class="wrap">
 
@@ -1416,7 +1488,7 @@ table{max-width:100%}
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v412</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v413</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -1977,11 +2049,14 @@ table{max-width:100%}
     <div class="card"><h3 style="margin-top:0">🏈 Teams & Scores</h3><div id="g33ScoreBoard"></div></div>
     <div class="card"><h3 style="margin-top:0">🏆 33 Winner History</h3><div id="g33History"></div></div>
     <div id="g33Admin" class="hide">
-      <div class="card"><h2 style="margin-top:0">3️⃣3️⃣ Commissioner — Yearly Team Draw</h2><div class="small">Do this <b>one time for the year</b>. Every player keeps the same team for all 18 weeks. Game 33 is limited to <b>32 players</b> because there are only 32 NFL teams.</div><div id="g33DrawStatus" class="msg" style="margin-top:10px"></div><button id="g33RandomDraw" class="green" style="width:100%;margin-top:10px">🎲 RANDOM DRAW — ASSIGN YEARLY TEAMS</button></div>
-      <div class="card"><h3 style="margin-top:0">Or Load Teams From Your Own Drawing</h3><div class="small">If your group drew teams in person, choose each player's team here and save them for the whole year.</div><div id="g33ManualAssignments"></div><button id="g33SaveManual" class="gold" style="width:100%;margin-top:10px">SAVE YEARLY TEAM ASSIGNMENTS</button></div>
-      <div class="card"><h3 style="margin-top:0">Season Player Access</h3><div class="small">Record whether each player is ACTIVE or PENDING for the season.</div><div id="g33PaymentAdmin"></div></div>
-      <div class="card"><h3 style="margin-top:0">Finalize This 33 Week</h3><div class="small">After every NFL game is final, this checks each active player's assigned team for exactly 33 points. No 33 means the rollover streak continues to the next week.</div><button id="g33Finalize" class="green" style="width:100%;margin-top:10px">🏁 FINALIZE 33 WEEK</button><button id="g33Payout" style="width:100%;margin-top:8px">MARK WINNER STATUS COMPLETE / OPEN</button></div>
-      <div class="card pool-games-manager links-games-manager-bottom"><h3 style="margin-top:0">🎮 Games in This Pool</h3><div class="small">Add another Links game to this same pool. With more than one active game, players choose from only the games in this pool.</div><div class="pool-games-active" style="margin-top:10px"></div><div class="pool-games-add" style="margin-top:10px"></div></div>
+      <div class="card g33-admin-head-v379"><h2 style="margin:0">⚙️ GAME 33 ADMIN</h2><div class="small">Commissioner controls for Game 33 only. NFL Pick’em and College Pick’em controls are unchanged.</div></div>
+      <div class="g33-admin-grid-v379">
+        <div class="card g33-admin-card-v379"><h3>🎲 Yearly Team Draw</h3><div class="small">Run the one-time random draw. Each player keeps the assigned NFL team for all 18 regular-season weeks.</div><div id="g33DrawStatus" class="msg" style="margin-top:10px"></div><button id="g33RandomDraw" class="green">RANDOM DRAW — ASSIGN YEARLY TEAMS</button></div>
+        <div class="card g33-admin-card-v379"><h3>📝 Manual Team Assignments</h3><div class="small">Use this when your group draws teams in person. Maximum 32 players, one NFL team per player.</div><div id="g33ManualAssignments"></div><button id="g33SaveManual" class="gold">SAVE YEARLY TEAM ASSIGNMENTS</button></div>
+        <div class="card g33-admin-card-v379"><h3>👥 Player Access</h3><div class="small">Set each Game 33 player ACTIVE or PENDING for the season.</div><div id="g33PaymentAdmin"></div></div>
+        <div class="card g33-admin-card-v379 g33-finalize-v379"><h3>🏁 Finalize Week & Rollover</h3><div class="small">After all NFL games are final, check active assigned teams for exactly 33 points. If nobody hits 33, carry the rollover into the next week.</div><button id="g33Finalize" class="green">FINALIZE GAME 33 WEEK</button><button id="g33Payout">WINNER STATUS — COMPLETE / OPEN</button></div>
+        <div class="card pool-games-manager links-games-manager-bottom g33-admin-card-v379"><h3>🎮 Games in This Pool</h3><div class="small">Add another Links game to this pool. Game 33 keeps its own controls when selected.</div><div class="pool-games-active" style="margin-top:10px"></div><div class="pool-games-add" style="margin-top:10px"></div></div>
+      </div>
     </div>
     <div class="links-fixed-ad" aria-label="Advertisement" style="margin:18px auto;max-width:1100px;display:none"><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-2654873707790051" data-ad-slot="9269292379" data-ad-format="auto" data-full-width-responsive="true"></ins></div>
   </section>
@@ -2016,9 +2091,13 @@ table{max-width:100%}
         <button id="adminUndoFinalizeV196" class="red hide" type="button" style="width:100%;margin-top:8px">UNDO FINALIZED WINNER</button>
       </div>
       <div id="collegeSetup" class="card hide">
-        <h3 style="margin-top:0">🎓 College Games for This Week</h3>
-        <div class="small">Only games involving a current Top 25 team are shown. Choose which of those games your pool will use this week.</div>
-        <button id="loadCollegeGames" class="blue" style="width:100%;margin-top:8px">Load Top 25 College Games</button>
+        <h3 style="margin-top:0">🎓 College Week Setup</h3>
+        <div class="small">Build this week's slate from current AP Top 25 games. Random mode shuffles the API slate; commissioner mode lets you choose the games yourself.</div>
+        <div class="college-mode-v379"><label><input type="radio" name="collegePickModeV379" value="random" checked> 🎲 Random Top 25</label><label><input type="radio" name="collegePickModeV379" value="commissioner"> 👤 Commissioner Picked</label></div>
+        <label class="small" for="collegeGameCountV379">How many games count this week?</label>
+        <select id="collegeGameCountV379" style="width:100%;margin-top:6px"><option value="1" >1 game</option><option value="2" >2 games</option><option value="3" >3 games</option><option value="4" >4 games</option><option value="5" >5 games</option><option value="6" >6 games</option><option value="7" >7 games</option><option value="8" >8 games</option><option value="9" >9 games</option><option value="10" selected>10 games</option><option value="11" >11 games</option><option value="12" >12 games</option><option value="13" >13 games</option><option value="14" >14 games</option><option value="15" >15 games</option><option value="16" >16 games</option><option value="17" >17 games</option><option value="18" >18 games</option><option value="19" >19 games</option><option value="20" >20 games</option></select>
+        <button id="randomCollegeGamesV379" class="gold" style="width:100%;margin-top:8px">🎲 RANDOMLY PICK TOP 25 GAMES</button>
+        <button id="loadCollegeGames" class="blue" style="width:100%;margin-top:8px">LOAD TOP 25 GAMES FOR MANUAL PICK</button>
         <div class="small" style="margin-top:8px">AP Top 25 filter</div><input id="collegeFilter" class="hide" placeholder="Filter Top 25 games..." style="width:100%;margin-top:6px">
         <div id="collegeCandidates" class="college-list hide"></div>
         <button id="saveCollegeGames" class="green hide" style="width:100%;margin-top:8px">Save Selected College Games</button>
@@ -2195,6 +2274,10 @@ function teamLogoFor(t,g,kind){
   return id?`https://a.espncdn.com/i/teamlogos/ncaa/500/${encodeURIComponent(id)}.png`:"";
 }
 function teamLogo(t,g){return teamLogoFor(t,g,sport)}
+function collegeRecordV379(t,g){
+  if(sport!=="college"||!g)return "";
+  return g.records?.[t]||"";
+}
 function teamStyle(t){
   if(sport==="nfl"&&COLORS[t])return `background:${COLORS[t][0]};border-color:${COLORS[t][1]}`;
   return `background:#18222d;border-color:#566473`;
@@ -2592,13 +2675,13 @@ const SPECIAL_SETTINGS_FIELDS={
     ["missedWeek","Missed pick","select",[["eliminate","Eliminate / use a life"],["commissioner","Commissioner decides"]]],
     ["noReuse","Prevent team reuse","checkbox"],
     ["buyback","Allow buy-back / re-entry","checkbox"],
-    ["buybackCutoff","Buy-back cutoff week","number"],
+    ["buybackCutoff","Buy-back cutoff week","number"],["lockRule","Weekly pick lock","select",[["teamKickoff","Selected team's kickoff"],["firstKickoff","First NFL kickoff"]]],["autoAdvance","Automatically score survival from NFL finals","checkbox"],
   ],
   confidence:[
     ["format","Pool format","select",[["weekly","Weekly"],["season","Season-long"],["both","Weekly + season"]]],
     ["maxConfidence","Highest confidence value","number"],
     ["lockRule","Pick lock","select",[["firstKickoff","First game kickoff"],["gameKickoff","Each game's kickoff"]]],
-    ["tieBreaker","Tiebreaker","text"],
+    ["tieBreaker","Tiebreaker","text"],["autoScore","Automatically score confidence points from NFL finals","checkbox"],
   ],
   props:[
     ["pointsPerQuestion","Points per correct prop","number"],
@@ -2612,21 +2695,21 @@ const SPECIAL_SETTINGS_FIELDS={
     ["divisionalPoints","Divisional points","number"],
     ["conferencePoints","Conference points","number"],
     ["superBowlPoints","Super Bowl points","number"],
-    ["tieBreaker","Super Bowl tiebreaker","text"],
+    ["tieBreaker","Super Bowl tiebreaker","text"],["autoAdvance","Automatically advance results from NFL finals","checkbox"],
   ],
   masters:[
     ["lineupSize","Golfers per player","number"],
     ["scoresCount","Golfer scores that count","number"],
     ["useTiers","Use golfer tiers","checkbox"],
     ["cutRule","Missed-cut rule","select",[["penalty","Commissioner penalty score"],["drop","Drop missed-cut golfer"],["count","Count posted score"]]],
-    ["tieBreaker","Tiebreaker","text"],
+    ["tieBreaker","Tiebreaker","text"],["lockRule","Lineup lock","select",[["eventStart","Tournament start"],["firstTee","First tee time"]]],["autoScore","Automatically update leaderboard","checkbox"],
   ],
   nascar:[
     ["format","Pool format","select",[["single","Single race"],["season","Season-long"]]],
     ["driversPerPlayer","Drivers per player","number"],
     ["scoringMethod","Scoring method","select",[["finish","Finishing position"],["points","Commissioner points system"]]],
     ["reuseRule","Driver reuse","select",[["allowed","Drivers may be reused"],["noReuse","No driver reuse"]]],
-    ["tieBreaker","Tiebreaker","text"],
+    ["tieBreaker","Tiebreaker","text"],["lockRule","Driver lock","select",[["raceStart","Race start"],["qualifying","Qualifying start"]]],["autoScore","Automatically update race scoring","checkbox"],
   ],
   fantasy:[
     ["leagueName","League name","text",null,"Example: Sunday Night Legends"],
@@ -2944,7 +3027,7 @@ async function enterSpecialGame(kind){
   if(kind==="fantasy"){
     const labels={picks:["🏈","MY TEAM"],compare:["⚔️","MATCHUPS"],scores:["⚡","LIVE"],standings:["🏆","LEAGUE"],projected:["📋","ROSTERS"],paid:["👥","ACCESS"],rules:["📜","RULES"],admin:["⚙️","COMMISH"]};
     $$("#specialTabs [data-special-tab]").forEach(b=>{const x=labels[b.dataset.specialTab];if(x){b.classList.add("fantasy-art-tab-v186");b.innerHTML=`<span class="fantasy-tab-icon-v186">${x[0]}</span><span class="fantasy-tab-label-v186">${x[1]}</span>`}});
-  }else{const labels={picks:"🏈 PICKS",compare:"📋 COMPARE PICKS",scores:"📊 SCORES",standings:"🏆 STANDINGS",projected:"🔮 PROJECTED"};$$("#specialTabs [data-special-tab]").forEach(b=>{if(labels[b.dataset.specialTab])b.textContent=labels[b.dataset.specialTab]})}
+  }else{const gameLabels={survivor:{picks:"🏈 MY PICK",scores:"📊 RESULTS",standings:"🏆 SURVIVORS",rules:"📜 RULES",admin:"⚙️ ADMIN"},confidence:{picks:"🏈 PICKS",compare:"📋 COMPARE",scores:"📊 SCORES",standings:"🏆 STANDINGS",rules:"📜 RULES",admin:"⚙️ ADMIN"},props:{picks:"🎯 MY PROPS",compare:"📋 ANSWERS",standings:"🏆 STANDINGS",rules:"📜 RULES",admin:"⚙️ ADMIN"},playoff:{picks:"🏈 PLAYOFF PICKS",compare:"📋 COMPARE",scores:"📊 RESULTS",standings:"🏆 STANDINGS",rules:"📜 RULES",admin:"⚙️ ADMIN"},masters:{picks:"⛳ MY GOLFERS",scores:"📊 LEADERBOARD",standings:"🏆 POOL STANDINGS",rules:"📜 RULES",admin:"⚙️ ADMIN"},nascar:{picks:"🏁 MY DRIVERS",scores:"📊 RACE RESULTS",standings:"🏆 STANDINGS",rules:"📜 RULES",admin:"⚙️ ADMIN"}};const labels=gameLabels[kind]||{picks:"🏈 PICKS",compare:"📋 COMPARE PICKS",scores:"📊 SCORES",standings:"🏆 STANDINGS",projected:"🔮 PROJECTED",rules:"📜 RULES",admin:"⚙️ ADMIN"};$("#specialTabs [data-special-tab]").forEach(b=>{if(labels[b.dataset.specialTab])b.textContent=labels[b.dataset.specialTab]})}
   showSpecialTab("picks");
   if(kind==="fantasy")renderFantasyLeagueV154();
   if(kind==="dynasty"){
@@ -3110,7 +3193,7 @@ function renderPicks(){
         const isFinal=!!x.completed&&!!x.winner;
         const resultClass=isFinal?(sameSavedPick(t,x.winner)?" pick-final-winner":" pick-final-loser"):"";
         const resultMark=isFinal?(sameSavedPick(t,x.winner)?" ✓ WINNER":" ✕ LOSS"):"";
-        return `<button class="team ${picked?"sel":""}${resultClass}" data-picked="${picked?"1":"0"}" data-game="${i}" data-team="${t}" style="${teamStyle(t)}" ${locked||paymentLocked||role!=="player"?"disabled":""}><span class="pickmark">✓ YOUR PICK</span><div class="logo-pad">${logo?`<img class="logo" src="${logo}" alt="">`:""}</div><div class="nm">${teamName(t,x)}${resultMark}</div><div class="rec">${boot.records?.[t]?`Record: ${boot.records[t]}`:""}</div></button>`;
+        return `<button class="team ${picked?"sel":""}${resultClass}" data-picked="${picked?"1":"0"}" data-game="${i}" data-team="${t}" style="${teamStyle(t)}" ${locked||paymentLocked||role!=="player"?"disabled":""}><span class="pickmark">✓ YOUR PICK</span><div class="logo-pad">${logo?`<img class="logo" src="${logo}" alt="">`:""}</div><div class="nm">${teamName(t,x)}${resultMark}</div><div class="rec">${(boot.records?.[t]||collegeRecordV379(t,x))?`Record: ${boot.records?.[t]||collegeRecordV379(t,x)}`:""}</div></button>`;
       };
       const cleanStatus=cleanGameStatus(x.status);const info=x.kickoff?`${fmtKickoff(x.kickoff)}${cleanStatus?` • ${cleanStatus}`:""}`:(cleanStatus||"");
       return `<div class="game">${info?`<div class="small" style="text-align:center;margin:2px 0 7px">${info}</div>`:""}<div class="match">${btn(a)}<span class="small" style="text-align:center">AT</span>${btn(b)}</div></div>`;
@@ -3172,7 +3255,7 @@ async function renderScores(){
   $("#scoresTitle").textContent=sport==="college"?`${weekLabel()} — Top 25 College Scores`:`${weekLabel()} — Game Scores`;
   $("#scoresStatus").textContent="LIVE DATA";
   $("#scoresNote").textContent=sport==="college"
-    ? `Showing this week's games involving a current Top 25 college team. Scores refresh from ${d.source||"ESPN"}.`
+    ? `Showing only the College Pick'em games selected for this pool and week. Scores refresh from ${d.source||"ESPN"}.`
     : `Scores refresh from ${d.source||"the live feed"}.`;
   const games=(d.games||[]).map((g,originalIndex)=>({g,originalIndex})).sort((a,b)=>{
     const rank=x=>x.completed?2:((x.state==="in"||Number(x.period)>0)?0:1);
@@ -3186,8 +3269,8 @@ async function renderScores(){
     const cls=g.completed?"score-final":(g.state==="in"||g.period>0?"score-live":"score-upcoming");
     const awayScore=g.awayScore==null?"—":g.awayScore,homeScore=g.homeScore==null?"—":g.homeScore;
     return `<div class="score-game"><div class="score-head"><b>Game ${i+1}</b><span class="${cls}">${state}</span></div>
-      <div class="score-team${g.completed?(g.winner===g.away?" score-winner":" score-loser"):""}"><b style="display:flex;align-items:center;gap:8px">${teamLogo(g.away,g)?`<img src="${teamLogo(g.away,g)}" alt="" style="width:34px;height:34px;object-fit:contain">`:""}<span>${teamName(g.away,g)}</span></b><span class="score-num">${awayScore}</span></div>
-      <div class="score-team${g.completed?(g.winner===g.home?" score-winner":" score-loser"):""}"><b style="display:flex;align-items:center;gap:8px">${teamLogo(g.home,g)?`<img src="${teamLogo(g.home,g)}" alt="" style="width:34px;height:34px;object-fit:contain">`:""}<span>${teamName(g.home,g)}</span></b><span class="score-num">${homeScore}</span></div>
+      <div class="score-team${g.completed?(g.winner===g.away?" score-winner":" score-loser"):""}"><b style="display:flex;align-items:center;gap:8px">${teamLogo(g.away,g)?`<img src="${teamLogo(g.away,g)}" alt="" style="width:34px;height:34px;object-fit:contain">`:""}<span>${teamName(g.away,g)}${g.records?.[g.away]?` <small class="college-record-v379">(${g.records[g.away]})</small>`:""}</span></b><span class="score-num">${awayScore}</span></div>
+      <div class="score-team${g.completed?(g.winner===g.home?" score-winner":" score-loser"):""}"><b style="display:flex;align-items:center;gap:8px">${teamLogo(g.home,g)?`<img src="${teamLogo(g.home,g)}" alt="" style="width:34px;height:34px;object-fit:contain">`:""}<span>${teamName(g.home,g)}${g.records?.[g.home]?` <small class="college-record-v379">(${g.records[g.home]})</small>`:""}</span></b><span class="score-num">${homeScore}</span></div>
       </div>`;
   }).join("");
 }
@@ -3536,7 +3619,9 @@ async function renderRules(){
   if(sport==="college"){
     title.textContent="📜 College Football Pick'em Rules";
     badge.textContent="COLLEGE";
-    standard.innerHTML=`<div class="small" style="line-height:1.7"><b>How the game works</b><br>• Each week, the commissioner selects the games players will pick from the AP Top 25 games.<br>• Pick one team in every game the commissioner selected for the week.<br>• Save all picks before the pool lock time shown at the top of the page.<br>• Once picks lock, use <b>Compare Picks</b> to see everyone's selections.<br>• Each correct pick counts toward your weekly total.<br>• The tiebreaker is the combined score of the final selected game unless your commissioner sets a different rule below.<br>• <b>Live Scores, Standings and Projected</b> update as results come in.<br>• Your commissioner controls player access and pool-specific rules.</div>`;
+    const collegeMode=sessionStorage.getItem(`collegeSelectionMode:${poolCode}:${week}`)||"commissioner";
+    const collegeCount=Number(sessionStorage.getItem(`collegeSelectionCount:${poolCode}:${week}`)||gamesNow().length||0);
+    standard.innerHTML=`<div class="small" style="line-height:1.7"><b>How the game works</b><br>• This week's games are <b>${collegeMode==="random"?"randomly selected by LINKS from the AP Top 25 API slate":"selected by the commissioner from AP Top 25 games"}</b>.${collegeCount?` <b>${collegeCount} games</b> count this week.`:""}<br>• Pick one team in every game the commissioner selected for the week.<br>• Save all picks before the pool lock time shown at the top of the page.<br>• Once picks lock, use <b>Compare Picks</b> to see everyone's selections.<br>• Each correct pick counts toward your weekly total.<br>• The tiebreaker is the combined score of the final selected game unless your commissioner sets a different rule below.<br>• <b>Live Scores, Standings and Projected</b> update as results come in.<br>• Your commissioner controls player access and pool-specific rules.</div>`;
   }else{
     title.textContent="📜 NFL Pick'em Rules";
     badge.textContent="NFL";
@@ -4107,6 +4192,19 @@ function renderCollegeCandidates(){
   }).join("")||`<div class="small" style="padding:10px">No games matched.</div>`;
 }
 $("#loadCollegeGames").onclick=loadCollegeGames;$("#collegeFilter").oninput=renderCollegeCandidates;
+$("#randomCollegeGamesV379").onclick=async()=>{
+  await loadCollegeGames();
+  const count=Math.max(1,Number($("#collegeGameCountV379")?.value||10));
+  const shuffled=[...collegeCandidates].sort(()=>Math.random()-.5).slice(0,Math.min(count,collegeCandidates.length));
+  const ids=new Set(shuffled.map(g=>String(g.eventId)));
+  $("[data-college-id]").forEach(x=>x.checked=ids.has(String(x.dataset.collegeId)));
+  setCollegeSaveStatus(`🎲 Randomly selected ${shuffled.length} Top 25 game${shuffled.length===1?"":"s"}. Review them, then save.`,true);
+};
+$('input[name="collegePickModeV379"]').forEach(r=>r.onchange=()=>{
+  const random=$('input[name="collegePickModeV379"]:checked')?.value==="random";
+  $("#randomCollegeGamesV379")?.classList.toggle("hide",!random);
+  $("#loadCollegeGames")?.classList.toggle("hide",random);
+});
 $("#saveCollegeGames").onclick=async()=>{
   const ids=new Set($$("[data-college-id]:checked").map(x=>String(x.dataset.collegeId))),
         chosen=collegeCandidates.filter(g=>ids.has(String(g.eventId)));
@@ -4117,6 +4215,9 @@ $("#saveCollegeGames").onclick=async()=>{
   }
 
   const btn=$("#saveCollegeGames");
+  const mode=$('input[name="collegePickModeV379"]:checked')?.value||"commissioner";
+  sessionStorage.setItem(`collegeSelectionMode:${poolCode}:${week}`,mode);
+  sessionStorage.setItem(`collegeSelectionCount:${poolCode}:${week}`,String(chosen.length));
   btn.disabled=true;
   btn.textContent="Saving Picks…";
   setCollegeSaveStatus(`Saving ${chosen.length} selected game${chosen.length===1?"":"s"}…`,true);
