@@ -1539,7 +1539,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v455</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v456</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2480,7 +2480,11 @@ function applyRoleNavigation(){
   $$(".player-tab").forEach(b=>b.classList.remove("hide"));
   const g33=$("#game33");
   if(sport==="33"){
-    if(tabs)tabs.classList.add("hide");
+    if(tabs){
+      tabs.classList.remove("hide");
+      $(".tabs button").forEach(b=>b.classList.add("hide"));
+      if(adminBtn&&isCommissioner){adminBtn.classList.remove("hide");adminBtn.textContent="⚙️ GAME 33 ADMIN"}
+    }
     const indicator=$("#pageSportIndicator");if(indicator){indicator.className="sport-page-indicator college";indicator.textContent="3️⃣3️⃣ THE 33 GAME"}
     ["picks","compare","scores","standings","projected","paid","rules","admin"].forEach(id=>{const el=$("#"+id);if(el)el.classList.add("hide")});
     if(g33)g33.classList.remove("hide");
@@ -2491,6 +2495,8 @@ function applyRoleNavigation(){
   // Game 33 must never leak into NFL/College pick pages.
   if(g33)g33.classList.add("hide");
   if(tabs)tabs.classList.remove("hide");
+  $(".tabs button").forEach(b=>{if(b.classList.contains("player-tab"))b.classList.remove("hide")});
+  if(adminBtn){adminBtn.classList.toggle("hide",!isCommissioner);adminBtn.textContent="⚙️ ADMIN"}
   const wp=$("#weekPickerCard");if(wp)wp.classList.toggle("hide",!(sport==="nfl"||sport==="college")||name==="standings");
   const lc=$("#pickLockCard");if(lc)lc.classList.remove("hide");
   const indicator=$("#pageSportIndicator");
@@ -3825,6 +3831,12 @@ $("#adminBackToPoolV372")?.addEventListener("click",exitAdminModeV372);
 function showTab(name){
   setTimeout(()=>ensureSectionAd(name),350);
   if(name==="admin"&&!isCommissioner)name="picks";
+  if(name==="admin"&&sport==="33"){
+    $("#app")?.classList.remove("admin-mode-v372");
+    applyRoleNavigation();
+    render33().then(()=>setTimeout(()=>$("#g33Admin")?.scrollIntoView({behavior:"smooth",block:"start"}),100));
+    return;
+  }
   if(name==="admin")enterAdminModeV372(); else $("#app")?.classList.remove("admin-mode-v372");
   const wpV374=$("#weekPickerCard");
   if(wpV374)wpV374.style.setProperty("display",name==="standings"?"none":"",name==="standings"?"important":"");
