@@ -1488,7 +1488,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v388</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v389</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -1839,7 +1839,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
   <div class="v180-pool-game-tabs-wrap"><div class="v180-pool-game-tabs-label">Pool tabs</div><div id="squaresGameInstanceTabs" class="game-instance-tabs-v180"></div></div>
   <img class="squares-logo-hero" src="./football-squares-logo-v102.png" alt="Links Football Squares">
   <div class="row" style="align-items:center;gap:10px;flex-wrap:wrap"><div style="flex:1;min-width:220px"><b id="squaresPoolLine"></b><div class="small">Football Squares • Any NFL game through the Super Bowl</div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button id="squaresChangeGame" class="hide">CHANGE GAME</button><button id="squaresSignOut" class="red" type="button">SIGN OUT</button></div></div>
-  <div class="squares-tabs"><button data-sqtab="boards" class="blue">▦ BOARDS</button><button data-sqtab="rules">📜 RULES</button><button data-sqtab="admin" class="squares-admin-only hide">⚙️ ADMIN</button></div>
+  <div class="squares-tabs"><button data-sqtab="boards" class="blue">▦ GRID / RESULTS</button><button data-sqtab="rules">📜 RULES</button><button data-sqtab="admin" class="squares-admin-only hide">⚙️ ADMIN</button></div>
   <div id="squaresMsg" class="squares-msg"></div>
   <section id="squaresBoardsPane">
     <div id="squaresBoardPicker" class="squares-board-picker-v132 hide">
@@ -4550,7 +4550,7 @@ function squaresBoardHtml(b){
   for(let r=0;r<10;r++){grid+=`<div class="sq-head">${drawn?home[r]:"?"}</div>`;for(let c=0;c<10;c++){const idx=r*10+c,cl=claims.get(idx),mine=cl?.player_name===currentUser,klass=cl?(mine?"sq-mine":"sq-taken"):"sq-open";grid+=`<div class="sq-cell ${klass}${wins.has(idx)?" sq-winner":""}${cl&&!cl.paid?" sq-unpaid":""}" data-sq-board="${b.id}" data-sq-index="${idx}"><div><b>${cl?escapeHtml(cl.player_name):String(idx+1)}</b>${cl?`<br><span class="small">${cl.paid?"ACTIVE":"PENDING"}</span>`:""}</div></div>`}grid+=``}grid+=`</div>`;
   const l=b.live||{},w=b.winners||{};const line=(name,a,h,win)=>`<div class="squares-scorebox"><b>${name}</b><div>${a==null||h==null?"Waiting":`${escapeHtml(b.away)} ${a} • ${escapeHtml(b.home)} ${h}`}</div>${win?`<div style="color:#ffd34d;font-weight:900">🏆 ${escapeHtml(win.player)}</div>`:""}</div>`;
   const admin=isCommissioner?`<div style="margin-top:10px"><label>Assign clicked squares to <select class="sq-admin-player" data-board="${b.id}">${(squaresStateData?.players||[]).map(n=>`<option>${escapeHtml(n)}</option>`).join("")}</select></label>${!drawn?` <button class="sq-draw red" data-board="${b.id}">🎲 DRAW & LOCK NUMBERS</button>`:" <span class=\"badge\">NUMBERS LOCKED</span>"} <button class="sq-delete" data-board="${b.id}">DELETE BOARD</button></div>`:"";
-  return `<div class="squares-card"><div class="squares-board-title"><div><h2 style="margin:0">${escapeHtml(b.title)}</h2><div class="small">${escapeHtml(b.away_name||b.away)} at ${escapeHtml(b.home_name||b.home)} • ${squaresWeekLabel(Number(b.week))}${b.kickoff?` • ${fmtKickoff(b.kickoff)}`:""}</div></div></div><div class="squares-scoreline" style="margin-top:10px">${line("1ST QUARTER",l.q1Away,l.q1Home,w.q1)}${line("HALFTIME",l.halfAway,l.halfHome,w.half)}${line("3RD QUARTER",l.q3Away,l.q3Home,w.q3)}${line("FINAL",l.finalAway,l.finalHome,w.final)}</div><div class="small" style="margin:10px 0">${l.status?escapeHtml(l.status):""}</div><div class="squares-board-wrap">${grid}</div>${admin}</div>`;
+  return `<div class="squares-card"><div class="squares-board-title"><div><h2 style="margin:0">${escapeHtml(b.title)}</h2><div class="small">${escapeHtml(b.away_name||b.away)} at ${escapeHtml(b.home_name||b.home)} • ${squaresWeekLabel(Number(b.week))}${b.kickoff?` • ${fmtKickoff(b.kickoff)}`:""} • <b>${escapeHtml(b.status||"OPEN")}</b></div></div></div><div class="squares-scoreline" style="margin-top:10px">${line("1ST QUARTER",l.q1Away,l.q1Home,w.q1)}${line("HALFTIME",l.halfAway,l.halfHome,w.half)}${line("3RD QUARTER",l.q3Away,l.q3Home,w.q3)}${line("FINAL",l.finalAway,l.finalHome,w.final)}</div><div class="small" style="margin:10px 0">${l.status?escapeHtml(l.status):""}</div><div class="squares-board-wrap">${grid}</div>${admin}</div>`;
 }
 async function renderSquares(){
   try{
