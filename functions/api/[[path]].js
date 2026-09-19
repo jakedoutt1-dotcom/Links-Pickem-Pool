@@ -1443,7 +1443,17 @@ async function game33DefaultWeek(DB,pid){
   for(let w=1;w<=GAME33_WEEKS;w++)if(!done.has(w))return w;
   return GAME33_WEEKS;
 }
+async function game33AutoFinalizeV391(DB,pid,w){
+  const existing=await DB.prepare("SELECT finalized FROM pool_33_week_meta WHERE pool_id=? AND week=?").bind(pid,w).first();if(Number(existing?.finalized||0)===1)return false;
+  const assignments=(await DB.prepare("SELECT player_name,team FROM pool_33_assignments WHERE pool_id=? ORDER BY rowid").bind(pid).all()).results||[];if(!assignments.length)return false;
+  let live=[];try{live=await fetchNFLWeek(w)}catch(e){return false}if(!live.length||live.some(g=>!g.completed))return false;
+  const paid=await game33PaidMap(DB,pid),scores={};for(const g of live){scores[g.away]=Number(g.awayScore);scores[g.home]=Number(g.homeScore)}
+  const winners=assignments.filter(a=>paid[a.player_name]&&scores[a.team]===33).map(a=>({player:a.player_name,team:a.team}));
+  const players=(await DB.prepare("SELECT name FROM pool_players WHERE pool_id=? ORDER BY rowid").bind(pid).all()).results.map(x=>x.name),paidCount=players.filter(p=>paid[p]).length,baseWeekly=(paidCount*GAME33_ENTRY_FEE)/GAME33_WEEKS,carry=await game33CarryCount(DB,pid,w),payout=winners.length?baseWeekly*(carry+1):0;
+  await DB.prepare("INSERT INTO pool_33_week_meta(pool_id,week,finalized,winners_json,payout_amount,payout_paid,finalized_at) VALUES(?,?,1,?,?,0,?) ON CONFLICT(pool_id,week) DO UPDATE SET finalized=1,winners_json=excluded.winners_json,payout_amount=excluded.payout_amount,payout_paid=CASE WHEN pool_33_week_meta.payout_paid=1 THEN 1 ELSE 0 END,finalized_at=excluded.finalized_at").bind(pid,w,JSON.stringify(winners),payout,new Date().toISOString()).run();return true;
+}
 async function game33Data(DB,pid,w,viewer){
+  try{await game33AutoFinalizeV391(DB,pid,w)}catch(e){}
   const players=(await DB.prepare("SELECT name FROM pool_players WHERE pool_id=? ORDER BY rowid").bind(pid).all()).results.map(x=>x.name);
   const paid=await game33PaidMap(DB,pid);
   const paidCount=players.filter(p=>paid[p]).length;
