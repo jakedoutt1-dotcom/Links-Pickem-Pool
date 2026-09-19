@@ -508,6 +508,7 @@ async function ensureV2(DB){
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   )`,
+`CREATE TABLE IF NOT EXISTS special_game_period_entries (pool_id INTEGER NOT NULL, game_type TEXT NOT NULL, player_name TEXT NOT NULL, period_key TEXT NOT NULL, entry_json TEXT NOT NULL DEFAULT '{}', submitted_at TEXT NOT NULL, PRIMARY KEY(pool_id,game_type,player_name,period_key))`,
 `CREATE TABLE IF NOT EXISTS special_game_entries (pool_id INTEGER NOT NULL, game_type TEXT NOT NULL, player_name TEXT NOT NULL, entry_json TEXT NOT NULL DEFAULT '{}', submitted_at TEXT NOT NULL, PRIMARY KEY(pool_id,game_type,player_name))`,
 `CREATE TABLE IF NOT EXISTS special_game_scores (pool_id INTEGER NOT NULL, game_type TEXT NOT NULL, player_name TEXT NOT NULL, score REAL NOT NULL DEFAULT 0, status TEXT NOT NULL DEFAULT 'OPEN', detail_json TEXT NOT NULL DEFAULT '{}', updated_at TEXT NOT NULL, PRIMARY KEY(pool_id,game_type,player_name))`,
 `CREATE INDEX IF NOT EXISTS idx_game_instances_pool_game ON game_instances(pool_id,game_type,active,sort_order,id)`
@@ -2525,11 +2526,12 @@ export async function onRequest(context){
       if(gt==="masters"){try{await autoScoreMastersV387(settings)}catch(e){}}
       if(gt==="nascar"){try{await autoScoreNascarV388(settings)}catch(e){}}
       const entries=(await DB.prepare("SELECT player_name,entry_json,submitted_at FROM special_game_entries WHERE pool_id=? AND game_type=? ORDER BY player_name").bind(pid,gt).all()).results||[];
+      let history=[];if(["survivor","confidence","playoff"].includes(gt)){history=(await DB.prepare("SELECT player_name,period_key,entry_json,submitted_at FROM special_game_period_entries WHERE pool_id=? AND game_type=? ORDER BY CAST(period_key AS INTEGER),player_name").bind(pid,gt).all()).results||[]}
       const scores=(await DB.prepare("SELECT player_name,score,status,detail_json,updated_at FROM special_game_scores WHERE pool_id=? AND game_type=? ORDER BY score DESC,player_name").bind(pid,gt).all()).results||[];
       const mine=entries.find(x=>String(x.player_name).toLowerCase()===String(s.player_name||"").toLowerCase());
       let myEntry={};try{myEntry=JSON.parse(mine?.entry_json||"{}")||{}}catch(e){}
       const publicEntries=entries.map(x=>{let entry={};try{entry=JSON.parse(x.entry_json||"{}")||{}}catch(e){}return {playerName:x.player_name,entry,submittedAt:x.submitted_at}});
-      return json({gameType:gt,settings,myEntry,mySubmittedAt:mine?.submitted_at||null,entries:s.role==="admin"||String(settings.revealPicks||"").toLowerCase()==="true"?publicEntries:[],entryCount:entries.length,scores:scores.map(x=>({playerName:x.player_name,score:Number(x.score||0),status:x.status,updatedAt:x.updated_at}))});
+      return json({gameType:gt,settings,myEntry,mySubmittedAt:mine?.submitted_at||null,entries:s.role==="admin"||String(settings.revealPicks||"").toLowerCase()==="true"?publicEntries:[],entryCount:entries.length,history:history.map(x=>{let entry={};try{entry=JSON.parse(x.entry_json||"{}")||{}}catch(e){}return {playerName:x.player_name,periodKey:x.period_key,entry,submittedAt:x.submitted_at}}),scores:scores.map(x=>({playerName:x.player_name,score:Number(x.score||0),status:x.status,updatedAt:x.updated_at}))});
     }
     if(path==="special/entry"&&method==="POST"){
       const gt=String(body.gameType||"").trim().toLowerCase();
@@ -2542,6 +2544,20 @@ export async function onRequest(context){
       if(gt==="props"){const questions=String(gameSettings.propQuestions||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean),a=Array.isArray(entry.answers)?entry.answers:[];if(questions.length&&a.length!==questions.length)return json({error:"Answer every prop question before saving."},400)}
       if(gt==="masters"){const max=Math.max(1,Number(gameSettings.lineupSize||6)),a=Array.isArray(entry.golfers)?entry.golfers:[];if(a.length!==max)return json({error:`Choose exactly ${max} golfers.`},400)}
       if(gt==="nascar"){const max=Math.max(1,Number(gameSettings.driversPerPlayer||1)),a=Array.isArray(entry.drivers)?entry.drivers:[];if(a.length!==max)return json({error:`Choose exactly ${max} drivers.`},400)}
+      if(["survivor","confidence","playoff"].includes(gt)){
+        const wk=Math.max(1,Math.min(22,Number(entry.week||1))),periodKey=String(wk);
+        if(gt==="survivor"&&String(gameSettings.noReuse||"true")!=="false"){
+          const old=(await DB.prepare("SELECT entry_json FROM special_game_period_entries WHERE pool_id=? AND game_type='survivor' AND player_name=? AND period_key<>?").bind(pid,s.player_name,periodKey).all()).results||[];
+          const used=old.map(x=>{try{return String(JSON.parse(x.entry_json||"{}").team||"")}catch(e){return ""}}).filter(Boolean);
+          if(used.includes(String(entry.team||"")))return json({error:"You already used that team in Survivor. Choose a different team."},409);
+        }
+        if(gt==="confidence"){
+          const picks=Array.isArray(entry.picks)?entry.picks:[],games=await fetchNFLWeek(wk),vals=picks.map(x=>Number(x.confidence));
+          if(picks.length!==games.length||picks.some(x=>!x.team))return json({error:"Pick every NFL game before saving your Confidence entry."},400);
+          if(vals.some(x=>!Number.isInteger(x)||x<1||x>picks.length)||new Set(vals).size!==vals.length)return json({error:`Use each confidence number 1 through ${picks.length} exactly once.`},400);
+        }
+        await DB.prepare("INSERT INTO special_game_period_entries(pool_id,game_type,player_name,period_key,entry_json,submitted_at) VALUES(?,?,?,?,?,?) ON CONFLICT(pool_id,game_type,player_name,period_key) DO UPDATE SET entry_json=excluded.entry_json,submitted_at=excluded.submitted_at").bind(pid,gt,s.player_name,periodKey,JSON.stringify(entry),new Date().toISOString()).run();
+      }
       const payload=JSON.stringify(entry);if(payload.length>50000)return json({error:"Entry is too large."},400);
       await DB.prepare("INSERT INTO special_game_entries(pool_id,game_type,player_name,entry_json,submitted_at) VALUES(?,?,?,?,?) ON CONFLICT(pool_id,game_type,player_name) DO UPDATE SET entry_json=excluded.entry_json,submitted_at=excluded.submitted_at").bind(pid,gt,s.player_name,payload,new Date().toISOString()).run();
       return json({ok:true});
