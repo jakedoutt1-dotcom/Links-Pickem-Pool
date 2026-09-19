@@ -1488,7 +1488,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v421</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v422</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -3674,8 +3674,7 @@ async function renderRules(){
   if(sport==="college"){
     title.textContent="📜 College Football Pick'em Rules";
     badge.textContent="COLLEGE";
-    const collegeMode=sessionStorage.getItem(`collegeSelectionMode:${poolCode}:${week}`)||"commissioner";
-    const collegeCount=Number(sessionStorage.getItem(`collegeSelectionCount:${poolCode}:${week}`)||gamesNow().length||0);
+    let collegeMode="commissioner",collegeCount=gamesNow().length||0;try{const cs=await api(q("/api/college-selection"));collegeMode=cs.mode||collegeMode;collegeCount=Number(cs.count||collegeCount)}catch(e){}
     standard.innerHTML=`<div class="small" style="line-height:1.7"><b>How the game works</b><br>• This week's games are <b>${collegeMode==="random"?"randomly selected by LINKS from the AP Top 25 API slate":"selected by the commissioner from AP Top 25 games"}</b>.${collegeCount?` <b>${collegeCount} games</b> count this week.`:""}<br>• Pick one team in every game the commissioner selected for the week.<br>• Save all picks before the pool lock time shown at the top of the page.<br>• Once picks lock, use <b>Compare Picks</b> to see everyone's selections.<br>• Each correct pick counts toward your weekly total.<br>• The tiebreaker is the combined score of the final selected game unless your commissioner sets a different rule below.<br>• <b>Live Scores, Standings and Projected</b> update as results come in.<br>• Your commissioner controls player access and pool-specific rules.</div>`;
   }else{
     title.textContent="📜 NFL Pick'em Rules";
@@ -4280,7 +4279,7 @@ $("#saveCollegeGames").onclick=async()=>{
   try{
     const saved=await api(aq("/api/admin/college-games"),{
       method:"POST",
-      body:JSON.stringify({sport:"college",week,games:chosen})
+      body:JSON.stringify({sport:"college",week,games:chosen,mode})
     });
 
     if(!saved?.ok || Number(saved.count||0)!==chosen.length){
