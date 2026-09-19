@@ -1555,7 +1555,7 @@ button:active::after{
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v476</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v477</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2264,19 +2264,16 @@ function gameInstanceKey(gt){return normalizePoolGameType(gt||sport||"nfl")}
 function gameInstanceDefaultLabel(gt,n=1){const b={nfl:"NFL Pick’em",college:"College Pick’em",march:"March Madness","33":"Game 33",squares:"Football Squares",survivor:"NFL Survivor",confidence:"Confidence Pool",props:"Super Bowl Props",playoff:"NFL Playoff Challenge",masters:"Masters Golf",nascar:"NASCAR",fantasy:"Fantasy",dynasty:"Dynasty"}[gt]||"Game";return n>1?`${b} ${n}`:b}
 async function fetchGameInstances(gt){
   gt=gameInstanceKey(gt);
-  // v475: discovery may temporarily suppress the current instance header, but
-  // it must NEVER leave global instance state at 0 if the request fails.
-  const savedId=activeGameInstanceId;
+  // v477: restore the actual pre-v461 behavior. Game-instance discovery uses
+  // the current authenticated pool context exactly as it did before the blank
+  // tab/slate regression was introduced.
   try{
-    activeGameInstanceId=0;
     const d=await api(`/api/game-instances?gameType=${encodeURIComponent(gt)}`);
     gameInstanceCache[gt]=d.instances||[];
     return gameInstanceCache[gt];
   }catch(e){
     console.warn("Game instance discovery failed",gt,e);
     return gameInstanceCache[gt]||[];
-  }finally{
-    activeGameInstanceId=savedId;
   }
 }
 function currentGameInstance(gt){const a=gameInstanceCache[gameInstanceKey(gt)]||[];return a.find(x=>Number(x.id)===Number(activeGameInstanceId))||a[0]||null}
@@ -5390,4 +5387,10 @@ body.links-game33-active-v426 #app [class*="g33"]{display:block}
 /* v435 — entire Create Pool game card is tappable and visibly selected */
 #createPoolGames label.links-create-game-selected-v435{border-color:#ff6a1a!important;box-shadow:inset 0 0 0 2px #ff6a1a,0 0 16px rgba(255,106,26,.38)!important;background:linear-gradient(180deg,#2a1b12,#17120e)!important}
 #createPoolGames label{touch-action:manipulation!important;-webkit-tap-highlight-color:rgba(255,106,26,.22)!important}
+</style>
+
+<style id="links-v477-button-state">
+/* v477: no solid-blue selected/pressed navigation state on iPhone. */
+.tabs .player-tab.active,.demo-tabs-real button.active,.special-tabs-v137 button.active{border:2px solid #ff7a2f!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)!important;background-color:transparent!important}
+.tabs button:active,.tabs button:focus,.tabs button:focus-visible,.game-instance-tab-v180:active,.game-instance-tab-v180:focus,.game-instance-tab-v180:focus-visible{outline:none!important;-webkit-tap-highlight-color:transparent!important}
 </style>
