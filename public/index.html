@@ -1535,7 +1535,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v447</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v448</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -1704,7 +1704,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <span id="selectedPlanSummary" class="hide"></span>
     <div id="servicePurchaseGate" class="hide"></div>
     <div style="margin-top:10px;text-align:center;color:#71e6a0;font-weight:900">FIRST POOL FREE FOR LIFE • NO CREDIT CARD</div>
-    <button id="createPoolBtn" class="green" style="width:100%;font-size:18px;margin-top:14px">CREATE FREE POOL</button>
+    <button id="createPoolBtn" class="green" style="width:100%;font-size:18px;margin-top:14px">FINISH &amp; CREATE MY POOL</button>
     <div id="homeErr" class="portal-error-v2" style="margin-top:10px"></div>
   </div>
   <div class="links-fixed-ad login-ad-v119" aria-label="Advertisement" style="display:none"><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-2654873707790051" data-ad-slot="9269292379" data-ad-format="auto" data-full-width-responsive="true"></ins></div>
@@ -4105,7 +4105,7 @@ if(showCreatePoolBtnV432)showCreatePoolBtnV432.onclick=()=>{
 };
 $("#createPoolBtn").onclick=async()=>{
   $("#homeErr").textContent="";
-  const createBtn=$("#createPoolBtn"),oldLabel=createBtn?.textContent||"CREATE FREE POOL";
+  const createBtn=$("#createPoolBtn"),oldLabel=createBtn?.textContent||"FINISH & CREATE MY POOL";
   if(createBtn){createBtn.disabled=true;createBtn.textContent="CREATING YOUR POOL…"}
   try{
     applyOwnerGameAccessV357();
