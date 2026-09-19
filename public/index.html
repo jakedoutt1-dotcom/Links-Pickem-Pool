@@ -1555,7 +1555,7 @@ button:active::after{
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v472</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v473</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2858,9 +2858,17 @@ async function enterApp(selected){
   await refreshWeek();
   showTab("picks");
   await renderGameInstanceUI(sport);
-  await checkPaymentStatus({silent:true});
-  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-  await checkPaymentStatus({silent:true});
+  // v473: invoke the exact same DOM button path that is proven to recover the
+  // page manually. This includes browser event dispatch/handler context rather
+  // than merely calling the helper function.
+  const accessBtn=$("#refreshPaymentStatus");
+  if(accessBtn){
+    accessBtn.click();
+    await new Promise(resolve=>setTimeout(resolve,350));
+    accessBtn.click();
+  }else{
+    await checkPaymentStatus({silent:true});
+  }
 }
 const SPECIAL_GAME_DATA={
   survivor:{title:"NFL SURVIVOR",logo:"./nfl-survivor-logo-v102.jpg",lead:"Pick one NFL team each week. Win and survive; lose and you are out.",rules:"Pick one NFL team to win each week. A team cannot be used twice. Picks lock at kickoff. Commissioner rules control lives, buy-backs and tie situations."},
@@ -4284,7 +4292,11 @@ $("#weekSelect").onchange=async()=>{
   showTab(stayTab);
   await loadTabData(stayTab);
 };
-$("#refreshPaymentStatus").onclick=checkPaymentStatus;
+$("#refreshPaymentStatus").onclick=async()=>{
+  // v473 diagnostic parity: keep this handler intentionally thin so automatic
+  // bootstrap and the manual recovery button call the identical function.
+  await checkPaymentStatus();
+};
 $("#savePicks").onclick=async()=>{
   const missing=gamesNow().length-Object.keys(me.picks||{}).length;if(missing)return msg(`⚠️ <b>You forgot a pick dumbass.</b><br>${missing} pick${missing===1?"":"s"} missing`);
   try{await api(q("/api/picks"),{method:"POST",body:JSON.stringify({sport,week,picks:me.picks,tie:$("#tieInput").value})});me.tie=$("#tieInput").value;writePickPageCacheV194({boot,me});msg("✅ <b>Good luck! Your picks are saved.</b>",true)}catch(e){msg(e.message)}
