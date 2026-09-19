@@ -1018,9 +1018,6 @@ body{
 @media(max-width:1120px){.dynasty-hero-v178{grid-template-columns:repeat(3,1fr)}.dynasty-identity-v178{grid-column:1/-1}.dynasty-dashboard-v178{grid-template-columns:1fr 1fr}.dynasty-dashboard-v178>.dynasty-panel-v178:first-child{grid-column:1/-1}}
 @media(max-width:720px){#specialGameApp[data-active-game="dynasty"]{width:calc(100vw - 8px)!important}.dynasty-nav-v178{grid-template-columns:repeat(10,124px);gap:6px}.dynasty-nav-v178 button{min-height:59px;grid-template-columns:36px 1fr;padding:6px 7px!important}.dynasty-nav-v178 .dyn-nav-logo-v178{width:34px;height:34px}.dynasty-nav-v178 svg{width:22px;height:22px}.dynasty-hero-v178{grid-template-columns:repeat(2,1fr)}.dynasty-identity-v178{grid-column:1/-1}.dynasty-identity-v178 h2{font-size:21px}.dynasty-stat-v178 b{font-size:17px}.dynasty-dashboard-v178{grid-template-columns:1fr}.dynasty-dashboard-v178>.dynasty-panel-v178:first-child{grid-column:auto}.dynasty-match-grid-v178{grid-template-columns:1fr}.dynasty-actions-v178{grid-template-columns:1fr 1fr}}
 
-
-/* v425 — consistent LINKS game artwork */
-#sportChoice .sport-choice-art{object-fit:cover!important;background:#070b0f!important}.pool-game-check .game-selector-logo{object-fit:cover!important}.links-hub-pool-v150 .game-selector-logo{object-fit:cover!important}
 </style>
 <style id="links-mobile-safe-v150">
 /* v150: app-wide mobile viewport protection preserved */
@@ -1176,6 +1173,12 @@ table{max-width:100%}
   #createPoolGames .game-selector-name{font-size:12px!important}
   #createPoolGames input[type="checkbox"]{width:22px!important;height:22px!important;top:7px!important;right:7px!important}
 }
+
+/* v397 — use the same LINKS game artwork throughout selectors */
+#sportChoice .sport-choice-art{object-fit:cover!important;background:#070b0f!important}.pool-game-check .game-selector-logo{object-fit:cover!important}.links-hub-pool-v150 .game-selector-logo{object-fit:cover!important}
+
+/* v398 — Create Pool uses the same LINKS game art as Game Select/Admin. */
+#createPoolGames .game-selector-logo{width:100%!important;height:68px!important;max-width:150px!important;min-width:0!important;flex-basis:auto!important;object-fit:cover!important;object-position:center!important;padding:0!important;border:1px solid #263947!important;border-radius:9px!important}#createPoolGames.create-game-grid label{min-height:128px!important;justify-content:center!important}@media(max-width:420px){#createPoolGames .game-selector-logo{width:100%!important;height:60px!important;max-width:138px!important;min-width:0!important;flex-basis:auto!important}#createPoolGames.create-game-grid label{min-height:116px!important}}
 </style>
 
 <style id="links-v180-game-instance-tabs">
@@ -1184,7 +1187,7 @@ table{max-width:100%}
 <style id="links-v186-polish">
 /* v186: full-color navigation, clean selected border, no orange/outer glow */
 .tabs .player-tab img.links-nav-art-v174,.demo-tabs-real button img.links-nav-art-v174,.special-tabs-v137 button img.links-nav-art-v174{filter:none!important;opacity:1!important}
-.tabs .player-tab.active,.demo-tabs-real button.active,.special-tabs-v137 button.active{border:2px solid #ff7a2f!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)!important}
+.tabs .player-tab.active,.demo-tabs-real button.active,.special-tabs-v137 button.active{border:2px solid #62a9ff!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.28)!important}
 #pickLockCard.locked-simple-v186{padding:16px 18px!important;border-color:#596774!important;background:linear-gradient(180deg,#151d24,#0c1217)!important}
 #pickLockCard.locked-simple-v186>b{color:#fff!important;font-size:20px!important}
 #pickLockCard.locked-simple-v186 #lockDeadline{display:none!important}
@@ -1383,71 +1386,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
 #specialGameApp[data-active-game="masters"] #specialTabs [data-special-tab="compare"],#specialGameApp[data-active-game="masters"] #specialTabs [data-special-tab="projected"],#specialGameApp[data-active-game="masters"] #specialTabs [data-special-tab="access"],
 #specialGameApp[data-active-game="nascar"] #specialTabs [data-special-tab="compare"],#specialGameApp[data-active-game="nascar"] #specialTabs [data-special-tab="projected"],#specialGameApp[data-active-game="nascar"] #specialTabs [data-special-tab="access"]{display:none!important}
 #specialGameApp:not([data-active-game="fantasy"]):not([data-active-game="dynasty"]) #specialTabs{grid-template-columns:repeat(auto-fit,minmax(112px,1fr))!important}
-</style><style id="links-v381-game-banners">#specialGameLogo.special-game-hero{display:block;width:100%!important;max-width:1180px!important;max-height:none!important;aspect-ratio:1400/360;object-fit:cover!important;margin:0 auto 14px!important;border-radius:16px!important;border:1px solid #334955!important;box-shadow:0 10px 28px rgba(0,0,0,.45)}@media(max-width:600px){#specialGameLogo.special-game-hero{border-radius:12px!important;margin-bottom:10px!important}}</style><style id="links-v426-game33-own-page">
-/* Game 33 owns this page when active. Hide NFL/College Pick'em navigation only on Game 33. */
-.links-game33-active-v373 #sportBadge,
-.links-game33-active-v373 #weekNav,
-.links-game33-active-v373 #weekSelect,
-.links-game33-active-v373 .tabs:not(.g33-tabs),
-.links-game33-active-v373 #picksPane,
-.links-game33-active-v373 #comparePane,
-.links-game33-active-v373 #scoresPane,
-.links-game33-active-v373 #standingsPane,
-.links-game33-active-v373 #projectedPane,
-.links-game33-active-v373 #paidPane,
-.links-game33-active-v373 #rulesPane,
-.links-game33-active-v373 #adminControls{display:none!important}
-.links-game33-active-v373 #g33Pane{display:block!important}
-</style>
-<style id="links-v444-create-pool-redesign">
-#createPoolPage .pool-logo{max-height:150px!important;object-fit:contain!important}
-#createPoolPage .pool-name-banner{max-width:700px;margin:0 auto 10px!important;border-radius:12px!important}
-#createPoolPage>.card{max-width:700px!important;padding:14px!important;background:linear-gradient(180deg,#111a22,#0b1218)!important;border:1px solid #344958!important;border-radius:16px!important}
-#createPoolPage .commissioner-create-warning-v118{margin:0 0 14px!important;padding:12px!important;border-radius:12px!important;font-size:13px!important;line-height:1.45!important}
-#createPoolPage .field-label{display:block;margin:15px 0 6px!important;font-size:13px!important;letter-spacing:1px!important}
-#createPoolPage input:not([type=checkbox]),#createPoolPage select{min-height:50px!important;border-radius:12px!important;font-size:16px!important;padding:10px 12px!important}
-#createPoolGames.create-game-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;margin-top:7px!important}
-#createPoolGames.create-game-grid label{display:grid!important;grid-template-columns:86px minmax(0,1fr) 34px!important;align-items:center!important;gap:10px!important;min-height:88px!important;padding:8px!important;border:1px solid #344b5c!important;border-radius:13px!important;background:#0d171f!important;overflow:hidden!important}
-#createPoolGames .game-selector-logo{grid-column:1!important;width:86px!important;height:68px!important;max-width:86px!important;object-fit:contain!important;object-position:center!important;background:#080d11!important;border:0!important;border-radius:8px!important}
-#createPoolGames .game-selector-name{grid-column:2!important;text-align:left!important;font-size:14px!important;line-height:1.12!important;font-weight:900!important}
-#createPoolGames .links-create-check-v441{grid-column:3!important;position:static!important;width:32px!important;height:32px!important;border-radius:9px!important;font-size:22px!important;justify-self:end!important}
-#createPoolGames label.links-create-game-selected-v441{border-color:#ff6a1a!important;box-shadow:inset 0 0 0 2px #ff6a1a!important;background:#20150f!important}
-#createPoolPage .create-upgrade-row-v150{display:none!important}
-#createPoolPage #createPlanStatus{margin-top:12px!important;border-radius:10px!important}
-#createPoolPage #createPoolBtn{min-height:56px!important;border-radius:12px!important;font-size:18px!important}
-@media(max-width:560px){
- #createPoolPage>.card{padding:11px!important}
- #createPoolGames.create-game-grid{grid-template-columns:1fr!important;gap:8px!important}
- #createPoolGames.create-game-grid label{grid-template-columns:104px minmax(0,1fr) 36px!important;min-height:82px!important}
- #createPoolGames .game-selector-logo{width:104px!important;max-width:104px!important;height:66px!important}
- #createPoolGames .game-selector-name{font-size:15px!important}
-}
-</style><style id="links-v445-coming-games">
-#createPoolGames .links-coming-game-v445{opacity:.78!important;cursor:default!important;grid-template-columns:86px minmax(0,1fr) auto!important}
-#createPoolGames .links-coming-art-v445{width:86px;height:68px;display:grid;place-items:center;border-radius:8px;background:linear-gradient(145deg,#17232c,#080d11);font-size:36px;border:1px solid #2f4352}
-#createPoolGames .links-coming-badge-v445{font-size:9px;font-weight:1000;letter-spacing:.8px;padding:5px 6px;border-radius:999px;border:1px solid #647582;color:#c8d2d8;background:#172028}
-@media(max-width:560px){#createPoolGames .links-coming-game-v445{grid-template-columns:104px minmax(0,1fr) auto!important}#createPoolGames .links-coming-art-v445{width:104px;height:66px}}
-</style><style id="links-v452-create-button-feedback">
-#createPoolBtn.links-create-pressed-v452{transform:scale(.97)!important;filter:brightness(.78)!important;box-shadow:inset 0 3px 10px rgba(0,0,0,.45),0 0 0 3px rgba(113,230,160,.28)!important;cursor:wait!important}
-.links-btn-spinner-v452{display:inline-block;width:20px;height:20px;border:3px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;vertical-align:-4px;margin-right:8px;animation:linksSpinV452 .75s linear infinite}
-@keyframes linksSpinV452{to{transform:rotate(360deg)}}
-</style>
-<style id="links-v472-press-feedback">
-/* iPhone/Safari press feedback: preserve the real button artwork.
-   Disable the native blue tap flash and use only a subtle transparent overlay. */
-html,body,*{-webkit-tap-highlight-color:rgba(0,0,0,0)!important}
-button,input[type="button"],input[type="submit"],a[role="button"]{
-  -webkit-tap-highlight-color:transparent!important;
-  -webkit-appearance:none;
-}
-button{position:relative}
-button:active{filter:none!important;opacity:1!important}
-button:active::after{
-  content:"";position:absolute!important;inset:0!important;border-radius:inherit!important;
-  background:rgba(255,255,255,.08)!important;pointer-events:none!important;z-index:2147483646!important;
-}
-</style>
-</head>
+</style><style id="links-v381-game-banners">#specialGameLogo.special-game-hero{display:block;width:100%!important;max-width:1180px!important;max-height:none!important;aspect-ratio:1400/360;object-fit:cover!important;margin:0 auto 14px!important;border-radius:16px!important;border:1px solid #334955!important;box-shadow:0 10px 28px rgba(0,0,0,.45)}@media(max-width:600px){#specialGameLogo.special-game-hero{border-radius:12px!important;margin-bottom:10px!important}}</style></head>
 
 <body><div id="top"></div><div class="wrap">
 
@@ -1555,7 +1494,7 @@ button:active::after{
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v477</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v478</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -1566,7 +1505,7 @@ button:active::after{
     <div class="links-package-lead-v150"><b>Players never pay LINKS.</b> Your first game-pool slot is free for life. Upgrade for more simultaneous pool slots, repeat game types and an ad-free experience.</div>
     <div class="links-package-email-v150"><label class="small" for="pricingCommissionerEmail">COMMISSIONER EMAIL FOR PAID PACKAGES</label><input id="pricingCommissionerEmail" type="email" placeholder="you@example.com"><div class="small" style="margin-top:5px">Use the same commissioner email you use for your LINKS pools.</div></div>
     <div class="links-package-grid-v150">
-      <div class="links-package-card-v150"><h3>FREE FOR LIFE</h3><div class="links-package-price-v150">$0</div><p><b>1 active game-pool slot</b></p><ul><li>Choose any 1 game type</li><li>Unlimited players</li><li>Full basic commissioner tools</li><li>Ad supported</li></ul><button id="createFreePoolPricing" type="button">FINISH &amp; CREATE MY POOL</button></div>
+      <div class="links-package-card-v150"><h3>FREE FOR LIFE</h3><div class="links-package-price-v150">$0</div><p><b>1 active game-pool slot</b></p><ul><li>Choose any 1 game type</li><li>Unlimited players</li><li>Full basic commissioner tools</li><li>Ad supported</li></ul><button id="createFreePoolPricing" type="button">CREATE FREE POOL</button></div>
       <div class="links-package-card-v150 featured"><h3>LINKS PLUS</h3><div class="links-package-price-v150">$19.99 <span style="font-size:.44em;font-weight:850;white-space:nowrap">/ YEAR</span></div><p><b>3 game-pool slots</b></p><ul><li>Unlimited players</li><li>Mix &amp; match games</li><li>Repeat the same game</li><li><b>NO ADS</b></li></ul><button class="green" type="button" data-links-plan="plus">GET PLUS</button></div>
       <div class="links-package-card-v150"><h3>NFL PACKAGE</h3><div class="links-package-price-v150">$29.99 <span style="font-size:.44em;font-weight:850;white-space:nowrap">/ YEAR</span></div><p><b>6 NFL game-pool slots</b></p><ul><li>Unlimited players</li><li>Repeat included NFL games</li><li>Pick'em, Survivor, Confidence, Squares, Props &amp; Playoffs</li><li>Fantasy Football</li><li><b>NO ADS</b></li></ul><button class="green" type="button" data-links-plan="nfl_package">GET NFL PACKAGE</button></div>
       <div class="links-package-card-v150"><h3>ALL ACCESS</h3><div class="links-package-price-v150">$49.99 <span style="font-size:.44em;font-weight:850;white-space:nowrap">/ YEAR</span></div><p><b>10 game-pool slots</b></p><ul><li>Unlimited players</li><li>Every current LINKS game</li><li>Mix duplicate and different games</li><li>Future game types during active term</li><li><b>NO ADS</b></li></ul><button class="green" type="button" data-links-plan="all_access">GET ALL ACCESS</button></div>
@@ -1685,46 +1624,39 @@ button:active::after{
 <img class="pool-logo login-brand-v121" src="./links-login-banner-v121.png" alt="Links Pick Em Pools">
   <div class="pool-name-banner">CREATE A NEW POOL — COMMISSIONER SETUP</div>
   <div class="card" style="max-width:620px;margin-left:auto;margin-right:auto">
-    <div class="commissioner-create-warning-v118"><b>START YOUR LINKS POOL</b><br><br>Your first pool is <b>FREE FOR LIFE</b> — choose one game, invite your players, and run your pool with no credit card required.<br><br>Want to run more pools or more game types? You can add a LINKS package anytime. Your original free pool stays yours for life.<br><br><b>You’re the commissioner and a player.</b> After the pool is created, use ADMIN to invite players, manage the pool, and add available games or packages.<br><br><b>Joining someone else’s pool?</b> Use the private invitation from that commissioner instead of creating a new pool.</div>
-    <label class="field-label" for="createPoolName">1. POOL DETAILS — POOL NAME</label><input id="createPoolName" placeholder="Example: Barnes Family" style="width:100%">
+    <div class="commissioner-create-warning-v118"><b>THIS STARTS A BRAND-NEW POOL.</b><br>This page is for the person running the pool. Creating a pool makes you the commissioner and also a player in it.<br><br><b>Trying to play in someone else’s pool?</b> You must join from that commissioner’s private invitation.</div>
+    <label class="field-label" for="createPoolName">POOL NAME</label><input id="createPoolName" placeholder="Example: Barnes Family" style="width:100%">
     <div style="margin-top:10px;padding:11px 12px;border:1px solid #33434f;border-radius:9px;background:#101820;color:#c8d3da;font-size:13px;line-height:1.45">
       <b style="color:#fff">Pool Code:</b> Links will automatically create a unique code for this pool. Pool names can be the same — the code keeps every pool separate.
     </div>
     <label class="field-label" for="createPoolEmail">YOUR EMAIL</label><input id="createPoolEmail" type="email" placeholder="you@example.com" style="width:100%"><div class="small" style="margin-top:5px">This becomes the commissioner contact email for the pool.</div>
     <label class="field-label" for="createPoolPlayerName">YOUR PLAYER NAME</label><input id="createPoolPlayerName" placeholder="Example: Jake" style="width:100%"><div class="small" style="margin-top:5px">You will use this same player name to make picks. Your account will also have the ADMIN button.</div>
     <label class="field-label" for="createPoolPass">YOUR PASSWORD</label><input id="createPoolPass" type="password" placeholder="Create your player password" style="width:100%">
-    <label class="field-label">2. CHOOSE YOUR GAMES</label><div class="small" style="margin-bottom:6px">Tap any game to add it. Selected games turn orange with a checkmark. Your commissioner package is checked when you finish, so only games included with that package can be activated.</div>
+    <label class="field-label">GAMES FOR THIS POOL</label>
     <div class="create-game-grid" id="createPoolGames">
       <label><input type="checkbox" value="nfl" checked><img class="game-selector-logo" src="./nfl-pickem-logo.png" alt=""><span class="game-selector-name">NFL Pick’em</span></label>
-      <label><input type="checkbox" value="college"><img class="game-selector-logo" src="./college-pickem-logo.png" alt=""><span class="game-selector-name">College Pick’em</span></label>
-      <label><input type="checkbox" value="march"><img class="game-selector-logo" src="./march-madness-logo.png" alt=""><span class="game-selector-name">March Madness</span></label>
-      <label><input type="checkbox" value="33"><img class="game-selector-logo" src="./game-33-logo.png" alt=""><span class="game-selector-name">Game 33</span></label>
+      <label><input type="checkbox" value="college"><img class="game-selector-logo" src="./college-page-banner.jpg" alt=""><span class="game-selector-name">College Pick’em</span></label>
+      <label><input type="checkbox" value="march"><img class="game-selector-logo" src="./march-page-banner.jpg" alt=""><span class="game-selector-name">March Madness</span></label>
+      <label><input type="checkbox" value="33"><img class="game-selector-logo" src="./game33-page-banner.jpg" alt=""><span class="game-selector-name">Game 33</span></label>
       <label><input type="checkbox" value="squares"><img class="game-selector-logo" src="./football-squares-logo-v102.png" alt=""><span class="game-selector-name">Football Squares</span></label>
-      <label><input type="checkbox" value="survivor"><img class="game-selector-logo" src="./nfl-survivor-logo-v102.jpg" alt=""><span class="game-selector-name">NFL Survivor</span></label>
-      <label><input type="checkbox" value="confidence"><img class="game-selector-logo" src="./confidence-pool-logo-v102.jpg" alt=""><span class="game-selector-name">Confidence Pool</span></label>
-      <label><input type="checkbox" value="props"><img class="game-selector-logo" src="./super-bowl-props-logo-v102.jpg" alt=""><span class="game-selector-name">Super Bowl Props</span></label>
-      <label><input type="checkbox" value="playoff"><img class="game-selector-logo" src="./nfl-playoff-challenge-logo-v102.jpg" alt=""><span class="game-selector-name">NFL Playoff Challenge</span></label>
-      <label><input type="checkbox" value="masters"><img class="game-selector-logo" src="./masters-golf-pool-logo-v102.jpg" alt=""><span class="game-selector-name">Masters Golf Pool</span></label>
-      <label><input type="checkbox" value="nascar"><img class="game-selector-logo" src="./nascar-pool-logo-v102.jpg" alt=""><span class="game-selector-name">NASCAR Pool</span></label>
-      <label><input type="checkbox" value="fantasy"><img class="game-selector-logo" src="./fantasy-football-logo-v154.png" alt=""><span class="game-selector-name">Fantasy Football</span></label>
-      <label><input type="checkbox" value="dynasty"><img class="game-selector-logo" src="./dynasty-fantasy-football-logo-v157.png" alt=""><span class="game-selector-name">Dynasty Fantasy Football</span></label>
-      <label class="links-coming-game-v445" data-coming-game="nba"><span class="links-coming-art-v445">🏀</span><span class="game-selector-name">NBA Playoff Pick’em</span><span class="links-coming-badge-v445">COMING</span></label>
-      <label class="links-coming-game-v445" data-coming-game="nhl"><span class="links-coming-art-v445">🏒</span><span class="game-selector-name">NHL Playoff Pick’em</span><span class="links-coming-badge-v445">COMING</span></label>
-      <label class="links-coming-game-v445" data-coming-game="mlb"><span class="links-coming-art-v445">⚾</span><span class="game-selector-name">MLB Playoff Pick’em</span><span class="links-coming-badge-v445">COMING</span></label>
-      <label class="links-coming-game-v445" data-coming-game="derby"><span class="links-coming-art-v445">🏇</span><span class="game-selector-name">Kentucky Derby Pool</span><span class="links-coming-badge-v445">COMING</span></label>
-      <label class="links-coming-game-v445" data-coming-game="golf-majors"><span class="links-coming-art-v445">⛳</span><span class="game-selector-name">Golf Majors Pool</span><span class="links-coming-badge-v445">COMING</span></label>
-      <label class="links-coming-game-v445" data-coming-game="nascar-survivor"><span class="links-coming-art-v445">🏁</span><span class="game-selector-name">NASCAR Survivor</span><span class="links-coming-badge-v445">COMING</span></label>
-      <label class="links-coming-game-v445" data-coming-game="prop-pickem"><span class="links-coming-art-v445">🎯</span><span class="game-selector-name">Prop Pick’em</span><span class="links-coming-badge-v445">COMING</span></label>
+      <label><input type="checkbox" value="survivor"><img class="game-selector-logo" src="./survivor-page-banner-v381.svg" alt=""><span class="game-selector-name">NFL Survivor</span></label>
+      <label><input type="checkbox" value="confidence"><img class="game-selector-logo" src="./confidence-page-banner-v381.svg" alt=""><span class="game-selector-name">Confidence Pool</span></label>
+      <label><input type="checkbox" value="props"><img class="game-selector-logo" src="./props-page-banner-v381.svg" alt=""><span class="game-selector-name">Super Bowl Props</span></label>
+      <label><input type="checkbox" value="playoff"><img class="game-selector-logo" src="./playoff-page-banner-v381.svg" alt=""><span class="game-selector-name">NFL Playoff Challenge</span></label>
+      <label><input type="checkbox" value="masters"><img class="game-selector-logo" src="./masters-page-banner-v381.svg" alt=""><span class="game-selector-name">Masters Golf Pool</span></label>
+      <label><input type="checkbox" value="nascar"><img class="game-selector-logo" src="./nascar-page-banner-v381.svg" alt=""><span class="game-selector-name">NASCAR Pool</span></label>
+      <label><input type="checkbox" value="fantasy"><img class="game-selector-logo" src="./fantasy-page-banner-v381.svg" alt=""><span class="game-selector-name">Fantasy Football</span></label>
+      <label><input type="checkbox" value="dynasty"><img class="game-selector-logo" src="./dynasty-page-banner-v381.svg" alt=""><span class="game-selector-name">Dynasty Fantasy Football</span></label>
     </div>
-    <div class="small" style="margin-top:10px;line-height:1.5"><b>FREE FOR LIFE:</b> Your first pool includes one game and stays free. Need more later? Add a package to unlock additional pool slots, additional games, and package features without losing your original free pool.</div>
-    <label class="field-label" for="createPoolCopies">3. NUMBER OF SEPARATE POOLS</label><select id="createPoolCopies" style="width:100%"><option value="1">1 pool</option><option value="2">2 separate pools</option><option value="3">3 separate pools</option><option value="4">4 separate pools</option><option value="5">5 separate pools</option><option value="6">6 separate pools</option><option value="7">7 separate pools</option><option value="8">8 separate pools</option><option value="9">9 separate pools</option><option value="10">10 separate pools</option></select><div class="small" style="margin-top:5px;line-height:1.45">Copies are independent. Example: choose NFL Pick’em and 3 copies to create NFL Pick’em #1, #2 and #3, each with its own pool code, players, picks and standings.</div>
+    <div class="small" style="margin-top:7px;line-height:1.45">Your first pool is <b>FREE FOR LIFE</b> and includes one game. Paid packages let you run additional separate game pools — including 2, 3, 4 or more copies of the <b>same</b> game — and remove ads.</div>
+    <label class="field-label" for="createPoolCopies">HOW MANY SEPARATE COPIES OF THIS POOL?</label><select id="createPoolCopies" style="width:100%"><option value="1">1 pool</option><option value="2">2 separate pools</option><option value="3">3 separate pools</option><option value="4">4 separate pools</option><option value="5">5 separate pools</option><option value="6">6 separate pools</option><option value="7">7 separate pools</option><option value="8">8 separate pools</option><option value="9">9 separate pools</option><option value="10">10 separate pools</option></select><div class="small" style="margin-top:5px;line-height:1.45">Copies are independent. Example: choose NFL Pick’em and 3 copies to create NFL Pick’em #1, #2 and #3, each with its own pool code, players, picks and standings.</div>
     <div id="createPlanStatus" class="create-plan-status-v150"><b>FREE FOR LIFE</b> • 1 game pool • ad supported</div>
     <div class="create-upgrade-row-v150"><button type="button" data-links-plan="plus">PLUS $19.99 / YEAR</button><button type="button" data-links-plan="nfl_package">NFL $29.99 / YEAR</button><button type="button" data-links-plan="all_access">ALL ACCESS $49.99 / YEAR</button></div>
     <input id="createPoolPlan" type="hidden" value="free">
     <span id="selectedPlanSummary" class="hide"></span>
     <div id="servicePurchaseGate" class="hide"></div>
     <div style="margin-top:10px;text-align:center;color:#71e6a0;font-weight:900">FIRST POOL FREE FOR LIFE • NO CREDIT CARD</div>
-    <button id="createPoolBtn" class="green" style="width:100%;font-size:18px;margin-top:14px">FINISH &amp; CREATE MY POOL</button>
+    <button id="createPoolBtn" class="green" style="width:100%;font-size:18px;margin-top:14px">CREATE FREE POOL</button>
     <div id="homeErr" class="portal-error-v2" style="margin-top:10px"></div>
   </div>
   <div class="links-fixed-ad login-ad-v119" aria-label="Advertisement" style="display:none"><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-2654873707790051" data-ad-slot="9269292379" data-ad-format="auto" data-full-width-responsive="true"></ins></div>
@@ -1873,7 +1805,7 @@ button:active::after{
 
 
 <div id="specialGameApp" class="hide special-game-shell links-interactive-zone">
-  <img id="specialGameLogo" class="special-game-hero" src="./nfl-survivor-logo-v102.jpg" alt="Links game">
+  <img id="specialGameLogo" class="special-game-hero" src="./survivor-page-banner-v381.svg" alt="Links game">
   <div class="row" style="align-items:center;margin-top:10px;gap:10px;flex-wrap:wrap"><div style="flex:1;min-width:220px"><b id="specialPoolLine"></b><div class="small" id="specialGameSubline"></div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button id="specialChangeGame" class="hide">🎮 CHANGE GAME</button><button id="specialSignOut" class="red" type="button">SIGN OUT</button></div></div>
   <div class="v180-pool-game-tabs-wrap"><div class="v180-pool-game-tabs-label">League tabs</div><div id="specialGameInstanceTabs" class="game-instance-tabs-v180"></div></div>
   <h1 id="specialGameTitle" class="special-game-title">NFL SURVIVOR</h1>
@@ -1950,7 +1882,7 @@ button:active::after{
 </div>
 
 <div id="marchApp" class="hide march-shell">
-  <img class="game-info-banner" src="./march-madness-logo.png" alt="Links March Madness">
+  <img class="game-info-banner" src="./march-page-banner.jpg" alt="Links March Madness">
   <div class="march-top">
     <div><div id="marchPoolLine" class="march-sub"></div></div>
     <div><button id="marchChangeGame" type="button" class="hide">🎮 Change Game</button> <button id="marchSignOut" class="red" type="button">Sign Out</button></div>
@@ -2262,96 +2194,15 @@ let activeGameInstanceId=Number(sessionStorage.getItem("linksGameInstanceId")||0
 const gameInstanceCache={};
 function gameInstanceKey(gt){return normalizePoolGameType(gt||sport||"nfl")}
 function gameInstanceDefaultLabel(gt,n=1){const b={nfl:"NFL Pick’em",college:"College Pick’em",march:"March Madness","33":"Game 33",squares:"Football Squares",survivor:"NFL Survivor",confidence:"Confidence Pool",props:"Super Bowl Props",playoff:"NFL Playoff Challenge",masters:"Masters Golf",nascar:"NASCAR",fantasy:"Fantasy",dynasty:"Dynasty"}[gt]||"Game";return n>1?`${b} ${n}`:b}
-async function fetchGameInstances(gt){
-  gt=gameInstanceKey(gt);
-  // v477: restore the actual pre-v461 behavior. Game-instance discovery uses
-  // the current authenticated pool context exactly as it did before the blank
-  // tab/slate regression was introduced.
-  try{
-    const d=await api(`/api/game-instances?gameType=${encodeURIComponent(gt)}`);
-    gameInstanceCache[gt]=d.instances||[];
-    return gameInstanceCache[gt];
-  }catch(e){
-    console.warn("Game instance discovery failed",gt,e);
-    return gameInstanceCache[gt]||[];
-  }
-}
+async function fetchGameInstances(gt){gt=gameInstanceKey(gt);try{const d=await api(`/api/game-instances?gameType=${encodeURIComponent(gt)}`);gameInstanceCache[gt]=d.instances||[];return gameInstanceCache[gt]}catch(e){return gameInstanceCache[gt]||[]}}
 function currentGameInstance(gt){const a=gameInstanceCache[gameInstanceKey(gt)]||[];return a.find(x=>Number(x.id)===Number(activeGameInstanceId))||a[0]||null}
 async function selectGameInstance(gt,id){gt=gameInstanceKey(gt);const rows=gameInstanceCache[gt]||await fetchGameInstances(gt),x=rows.find(r=>Number(r.id)===Number(id));if(!x)return;activeGameInstanceId=Number(x.id);activeGameInstanceName=x.name||"";sessionStorage.setItem("linksGameInstanceId",String(activeGameInstanceId));sessionStorage.setItem("linksGameInstanceName",activeGameInstanceName);await renderGameInstanceUI(gt);if(gt==="nfl"||gt==="college"||gt==="33"){try{await refreshWeek()}catch(e){}}else if(gt==="squares"){try{await renderSquares()}catch(e){}}else if(gt==="march"){try{await loadMarch()}catch(e){}}else{try{await enterSpecialGame(gt)}catch(e){}}}
 async function addGameInstance(gt){if(!isCommissioner)return;gt=gameInstanceKey(gt);const rows=gameInstanceCache[gt]||await fetchGameInstances(gt),name=prompt(`Name the new ${gameInstanceDefaultLabel(gt)} tab:`,gameInstanceDefaultLabel(gt,rows.length+1));if(name===null)return;try{const d=await api("/api/admin/game-instance",{method:"POST",body:JSON.stringify({action:"create",gameType:gt,name:name.trim()})});gameInstanceCache[gt]=d.instances||[];const newest=gameInstanceCache[gt][gameInstanceCache[gt].length-1];if(newest){activeGameInstanceId=Number(newest.id);activeGameInstanceName=newest.name||"";sessionStorage.setItem("linksGameInstanceId",String(activeGameInstanceId));sessionStorage.setItem("linksGameInstanceName",activeGameInstanceName)}await renderGameInstanceUI(gt)}catch(e){msg(e.message||"Could not add another game tab.",false)}}
 async function renameGameInstance(gt,id,oldName){if(!isCommissioner)return;const name=prompt("Rename this game tab:",oldName||"");if(name===null||!name.trim())return;try{const d=await api("/api/admin/game-instance",{method:"POST",body:JSON.stringify({action:"rename",id,name:name.trim()})});gameInstanceCache[gameInstanceKey(gt)]=d.instances||[];await renderGameInstanceUI(gt)}catch(e){msg(e.message||"Could not rename tab.",false)}}
 async function archiveGameInstance(gt,id){if(!isCommissioner||!confirm("Archive this game tab? The other tabs will stay active."))return;try{const d=await api("/api/admin/game-instance",{method:"POST",body:JSON.stringify({action:"archive",id})});gameInstanceCache[gameInstanceKey(gt)]=d.instances||[];const cur=currentGameInstance(gt);activeGameInstanceId=Number(cur?.id||0);activeGameInstanceName=cur?.name||"";await renderGameInstanceUI(gt)}catch(e){msg(e.message||"Could not archive tab.",false)}}
 function gameInstanceTabHost(gt){gt=gameInstanceKey(gt);if(gt==="march")return $("#marchGameInstanceTabs");if(gt==="squares")return $("#squaresGameInstanceTabs");if(["nfl","college","33"].includes(gt))return $("#mainGameInstanceTabs");return $("#specialGameInstanceTabs")}
-function gameInstancePageNameV431(gt){
-  const x=currentGameInstance(gt);
-  return String(x?.name||"").trim()||gameInstanceDefaultLabel(gameInstanceKey(gt),1);
-}
-function paintCurrentGameNameV431(gt){
-  const name=gameInstancePageNameV431(gt);
-  const targets=gt==="march"?["#marchPoolLine"]:gt==="squares"?["#squaresPoolLine"]:["#appPoolName","#specialPoolLine"];
-  targets.forEach(sel=>{const el=$(sel);if(el)el.dataset.gameInstanceName=name});
-  document.querySelectorAll("[data-links-current-game-name]").forEach(el=>el.textContent=name);
-}
 function gameInstanceAdminHost(gt){gt=gameInstanceKey(gt);return ["nfl","college","33"].includes(gt)?$("#mainGameInstanceAdmin"):$("#specialGameInstanceAdmin")}
-function correctGameInstanceLabelsV430(gt,rows){
-  const defaults=/^(NFL Pick[’']?em|College Pick[’']?em|Game 33|33|March Madness|Football Squares|NFL Survivor|Confidence Pool|Super Bowl Props|NFL Playoff Challenge|Masters Golf|NASCAR|Fantasy|Dynasty)(\s+\d+)?$/i;
-  return (rows||[]).map((x,i)=>{
-    const saved=String(x.name||"").trim();
-    // A commissioner-entered custom name always wins. Only replace an old generic
-    // game label when it belongs to a different game than the page being viewed.
-    if(saved&&!defaults.test(saved))return Object.assign({},x,{name:saved});
-    const expected=gameInstanceDefaultLabel(gt,i+1);
-    const belongsHere=saved&&saved.toLowerCase().startsWith(gameInstanceDefaultLabel(gt,1).toLowerCase());
-    return Object.assign({},x,{name:belongsHere?saved:expected});
-  });
-}
-async function openGameAddV462(gt){
-  if(!isCommissioner)return;
-  // Existing paid entitlement with an available slot can use the normal commissioner
-  // add-game flow. Free/no-slot commissioners are sent to packages as the upgrade CTA.
-  try{
-    const d=await api("/api/commissioner/hub");
-    const remaining=Number(d?.remaining||0),plan=String(d?.plan||"free").toLowerCase();
-    if(plan!=="free"&&remaining>0){
-      showOnly("sportChoice");
-      await renderSportChoice();
-      return;
-    }
-  }catch(e){}
-  const home=$("#home"),plans=$("#plansPageV201");
-  if(home)home.classList.add("hide");
-  if(plans)plans.classList.remove("hide");
-  const email=sessionStorage.getItem("linksCommissionerEmail")||"";
-  if($("#pricingCommissionerEmail")&&email)$("#pricingCommissionerEmail").value=email;
-  window.scrollTo(0,0);
-}
-async function renderGameInstanceUI(gt){
-  gt=gameInstanceKey(gt);
-  let rows=await fetchGameInstances(gt);
-  rows=correctGameInstanceLabelsV430(gt,rows);
-  gameInstanceCache[gt]=rows;
-  if(rows.length&&!rows.some(x=>Number(x.id)===Number(activeGameInstanceId))){
-    activeGameInstanceId=Number(rows[0].id);
-    activeGameInstanceName=rows[0].name||"";
-    sessionStorage.setItem("linksGameInstanceId",String(activeGameInstanceId));
-    sessionStorage.setItem("linksGameInstanceName",activeGameInstanceName);
-  }
-  const host=gameInstanceTabHost(gt);
-  if(host){
-    const gameTabs=rows.length?rows.map(x=>`<button type="button" class="game-instance-tab-v180 ${Number(x.id)===Number(activeGameInstanceId)?"active":""}" data-instance-id="${x.id}">${escapeHtml(x.name)}</button>`).join(""):(isCommissioner?`<button type="button" class="game-instance-tab-v180 active" disabled>${escapeHtml(gameInstanceDefaultLabel(gt,1))}</button>`:"");
-    // v462: players never see sales/add tabs. Commissioners always see ADD as the
-    // upgrade/add-game selling point on every game page.
-    host.innerHTML=gameTabs+(isCommissioner?`<button type="button" class="game-instance-tab-v180 game-instance-add-v180" data-links-add-game="1">＋ ADD</button>`:"");
-    host.querySelectorAll("[data-instance-id]").forEach(b=>b.onclick=()=>selectGameInstance(gt,b.dataset.instanceId));
-    host.querySelector("[data-links-add-game]")?.addEventListener("click",()=>openGameAddV462(gt));
-  }
-  const admin=gameInstanceAdminHost(gt);
-  if(admin&&isCommissioner){
-    admin.innerHTML=rows.map(x=>`<div class="game-instance-admin-row-v180"><input value="${escapeHtml(x.name)}" readonly><button type="button" data-instance-rename="${x.id}">RENAME</button><button type="button" class="red" data-instance-archive="${x.id}">ARCHIVE</button></div>`).join("");
-    admin.querySelectorAll("[data-instance-rename]").forEach(b=>b.onclick=()=>{const x=rows.find(r=>Number(r.id)===Number(b.dataset.instanceRename));renameGameInstance(gt,b.dataset.instanceRename,x?.name)});
-    admin.querySelectorAll("[data-instance-archive]").forEach(b=>b.onclick=()=>archiveGameInstance(gt,b.dataset.instanceArchive));
-  }
-}
+async function renderGameInstanceUI(gt){gt=gameInstanceKey(gt);const rows=await fetchGameInstances(gt);if(rows.length&&!rows.some(x=>Number(x.id)===Number(activeGameInstanceId))){activeGameInstanceId=Number(rows[0].id);activeGameInstanceName=rows[0].name||"";sessionStorage.setItem("linksGameInstanceId",String(activeGameInstanceId));sessionStorage.setItem("linksGameInstanceName",activeGameInstanceName)}const host=gameInstanceTabHost(gt);if(host){host.innerHTML=rows.map(x=>`<button type="button" class="game-instance-tab-v180 ${Number(x.id)===Number(activeGameInstanceId)?"active":""}" data-instance-id="${x.id}">${escapeHtml(x.name)}</button>`).join("")+(isCommissioner?`<button type="button" class="game-instance-tab-v180 game-instance-add-v180" data-instance-add="1">＋ ADD</button>`:"");host.querySelectorAll("[data-instance-id]").forEach(b=>b.onclick=()=>selectGameInstance(gt,b.dataset.instanceId));host.querySelector("[data-instance-add]")?.addEventListener("click",()=>addGameInstance(gt))}const admin=gameInstanceAdminHost(gt);if(admin&&isCommissioner){admin.innerHTML=rows.map(x=>`<div class="game-instance-admin-row-v180"><input value="${escapeHtml(x.name)}" readonly><button type="button" data-instance-rename="${x.id}">RENAME</button><button type="button" class="red" data-instance-archive="${x.id}">ARCHIVE</button></div>`).join("")+`<div class="game-instance-admin-add-v180"><div class="small">Need another ${escapeHtml(gameInstanceDefaultLabel(gt))}? Add it here and it will appear as another tab beneath the pool name.</div><button type="button" class="gold" data-instance-admin-add="1">＋ ADD ANOTHER</button></div>`;admin.querySelectorAll("[data-instance-rename]").forEach(b=>b.onclick=()=>{const x=rows.find(r=>Number(r.id)===Number(b.dataset.instanceRename));renameGameInstance(gt,b.dataset.instanceRename,x?.name)});admin.querySelectorAll("[data-instance-archive]").forEach(b=>b.onclick=()=>archiveGameInstance(gt,b.dataset.instanceArchive));admin.querySelector("[data-instance-admin-add]")?.addEventListener("click",()=>addGameInstance(gt))}}
 async function api(path,opt={}){
   opt.headers=Object.assign({"Content-Type":"application/json"},opt.headers||{});
   if(token)opt.headers.Authorization="Bearer "+token;
@@ -2402,13 +2253,7 @@ window.addEventListener("popstate",e=>{
   const id=e.state?.linksScreen||"home";
   showOnly(id,{fromHistory:true});
 });
-let linksMessageTimerV455=null;
-function msg(html,good=false){
-  const m=$("#message");if(!m)return;
-  if(linksMessageTimerV455){clearTimeout(linksMessageTimerV455);linksMessageTimerV455=null}
-  m.classList.remove("hide");m.style.background=good?"#083821":"#392908";m.style.border=good?"2px solid #3bdd86":"2px solid #e4b72c";m.innerHTML=html;
-  if(good)linksMessageTimerV455=setTimeout(()=>{m.classList.add("hide");m.innerHTML="";linksMessageTimerV455=null},5000);
-}
+function msg(html,good=false){const m=$("#message");m.classList.remove("hide");m.style.background=good?"#083821":"#392908";m.style.border=good?"2px solid #3bdd86":"2px solid #e4b72c";m.innerHTML=html}
 function toLocalInput(iso){if(!iso)return"";let d=new Date(iso),z=n=>String(n).padStart(2,"0");return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`}
 function fmtKickoff(iso){if(!iso)return"";const opt={weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit",timeZoneName:"short"};return new Intl.DateTimeFormat("en-US",opt).format(new Date(iso))}
 function statusLooksLikeKickoffTime(status){const s=String(status||"").trim();return !!s&&(/\b(?:AM|PM)\b/i.test(s)&&( /\b(?:EST|EDT|CST|CDT|MST|MDT|PST|PDT)\b/i.test(s)||/^\d{1,2}\/\d{1,2}\s*[-–—•]/.test(s)));}
@@ -2555,11 +2400,7 @@ function applyRoleNavigation(){
   $$(".player-tab").forEach(b=>b.classList.remove("hide"));
   const g33=$("#game33");
   if(sport==="33"){
-    if(tabs){
-      tabs.classList.remove("hide");
-      $(".tabs button").forEach(b=>b.classList.add("hide"));
-      if(adminBtn&&isCommissioner){adminBtn.classList.remove("hide");adminBtn.textContent="⚙️ GAME 33 ADMIN"}
-    }
+    if(tabs)tabs.classList.add("hide");
     const indicator=$("#pageSportIndicator");if(indicator){indicator.className="sport-page-indicator college";indicator.textContent="3️⃣3️⃣ THE 33 GAME"}
     ["picks","compare","scores","standings","projected","paid","rules","admin"].forEach(id=>{const el=$("#"+id);if(el)el.classList.add("hide")});
     if(g33)g33.classList.remove("hide");
@@ -2570,8 +2411,6 @@ function applyRoleNavigation(){
   // Game 33 must never leak into NFL/College pick pages.
   if(g33)g33.classList.add("hide");
   if(tabs)tabs.classList.remove("hide");
-  $(".tabs button").forEach(b=>{if(b.classList.contains("player-tab"))b.classList.remove("hide")});
-  if(adminBtn){adminBtn.classList.toggle("hide",!isCommissioner);adminBtn.textContent="⚙️ ADMIN"}
   const wp=$("#weekPickerCard");if(wp)wp.classList.toggle("hide",!(sport==="nfl"||sport==="college")||name==="standings");
   const lc=$("#pickLockCard");if(lc)lc.classList.remove("hide");
   const indicator=$("#pageSportIndicator");
@@ -2617,8 +2456,8 @@ function poolGameName(gt){
     gt==="nascar"?"NASCAR Pool":
     gt==="fantasy"?"Fantasy Football":gt==="dynasty"?"Dynasty Fantasy Football":"Game 33";
 }
-function poolGameArtV425(gt){
-  const m={nfl:"./nfl-pickem-logo.png",college:"./college-pickem-logo.png",march:"./march-madness-logo.png","33":"./game-33-logo.png",squares:"./football-squares-logo-v102.png",survivor:"./nfl-survivor-logo-v102.jpg",confidence:"./confidence-pool-logo-v102.jpg",props:"./super-bowl-props-logo-v102.jpg",playoff:"./nfl-playoff-challenge-logo-v102.jpg",masters:"./masters-golf-pool-logo-v102.jpg",nascar:"./nascar-pool-logo-v102.jpg",fantasy:"./fantasy-football-logo-v154.png",dynasty:"./dynasty-fantasy-football-logo-v157.png"};return m[gt]||poolGameLogo(gt)
+function poolGameArtV397(gt){
+  const m={nfl:"./nfl-pickem-logo.png",college:"./college-page-banner.jpg",march:"./march-page-banner.jpg","33":"./game33-page-banner.jpg",squares:"./football-squares-logo-v102.png",survivor:"./survivor-page-banner-v381.svg",confidence:"./confidence-page-banner-v381.svg",props:"./props-page-banner-v381.svg",playoff:"./playoff-page-banner-v381.svg",masters:"./masters-page-banner-v381.svg",nascar:"./nascar-page-banner-v381.svg",fantasy:"./fantasy-page-banner-v381.svg",dynasty:"./dynasty-page-banner-v381.svg"};return m[gt]||poolGameLogo(gt)
 }
 function poolGameLogo(gt){
   return gt==="nfl"?"./nfl-pickem-logo.png":
@@ -2683,9 +2522,9 @@ async function enterSportChoice(){
   });
   showOnly("sportChoice");
 }
-async function enterPoolGames(gameTypes,gameType,forceGameSelect=false){
+async function enterPoolGames(gameTypes,gameType){
   const games=savePoolGames(gameTypes,gameType||"nfl");
-  if(forceGameSelect||games.length>1)return enterSportChoice();
+  if(games.length>1)return enterSportChoice();
   const assigned=games[0];
   if(assigned==="march")return enterMarch();
   if(assigned==="squares")return enterSquares();
@@ -2699,20 +2538,16 @@ async function refreshPoolGames(){
     return poolGames;
   }catch(e){return poolGames}
 }
-
-// v416 protected baseline contract:
-// Do not replace the proven player-login/session handlers or the NFL Pick'em page flow
-// while restoring later special-game features. New games must route around this baseline.
-const LINKS_PROTECTED_BASELINE_V416=Object.freeze({
-  login:true,
-  nflPickem:true,
-  protectedAreas:["player-login","session-restore","nfl-picks","nfl-compare","nfl-scores","nfl-standings","nfl-projected","nfl-player-access","nfl-rules"]
-});
-async function enterMultiGameChoiceV415(gameTypes,gameType){
-  // Safe additive helper only: preserves the proven v374/v381 login handlers.
-  const games=savePoolGames(gameTypes,gameType||"nfl");
-  if(games.length>1)return enterSportChoice();
-  return enterPoolGames(games,gameType||games[0]||"nfl");
+async function enterAfterPlayerLoginV382(gameTypes,gameType){
+  // Paid / multi-game pools must resolve the live pool game list before routing.
+  // This prevents a stale/default NFL gameType from skipping the Game Select page.
+  savePoolGames(gameTypes,gameType||"nfl");
+  let paid=false;
+  try{paid=await refreshPackageAccessV363()}catch(e){}
+  try{await refreshPoolGames()}catch(e){}
+  const active=normalizePoolGames(poolGames,gameType||"nfl");
+  if(paid&&active.length>1)return enterSportChoice();
+  return enterPoolGames(active,gameType||active[0]||"nfl");
 }
 function moveGameManagersToAdminBottom(){
   ["#adminControls","#specialAdminNotice","#g33Admin","#marchAdminPane"].forEach(sel=>{
@@ -2734,7 +2569,7 @@ async function renderCommissionerHubV150(){
     const d=await api("/api/commissioner/dashboard");
     const used=Number(d.used||0),limit=Number(d.limit||1),remaining=Math.max(0,limit-used),cp=d.currentPool||{};
     const games=normalizePoolGames(cp.games||poolGames,cp.gameType||sport||"nfl");
-    const body=`<h3 style="margin:0 0 4px">🔗 MY LINKS PACKAGE &amp; THIS POOL</h3><div class="small">Your package is tied to your commissioner email. For privacy and easy organization, this page only shows the pool you are currently managing.</div><div class="links-hub-summary-v150"><div class="links-hub-stat-v150"><b>${escapeHtml(linksPlanNameV150(d.plan))}</b><div class="small">YOUR PACKAGE</div></div><div class="links-hub-stat-v150"><b>${used} of ${limit}</b><div class="small">ACCOUNT SLOTS USED</div></div><div class="links-hub-stat-v150"><b>${d.adFree?"OFF":"SUPPORTED"}</b><div class="small">ADS</div></div></div><div class="links-hub-groups-v150"><div class="links-hub-group-v150"><b>📁 ${escapeHtml(cp.name||poolName||"CURRENT POOL")}</b><div class="small" style="margin-top:4px">Pool code: ${escapeHtml(cp.code||poolCode||"")}</div><div class="small" style="margin-top:9px"><b>GAMES IN THIS POOL</b></div>${games.map(g=>`<div class="links-hub-pool-v150"><span><img src="${poolGameArtV425(g)}" class="game-selector-logo" alt=""> <b>${escapeHtml(poolGameName(g))}</b></span></div>`).join("")||'<div class="small">No active games found for this pool.</div>'}</div></div><div class="links-hub-actions-v150"><button type="button" class="green commissioner-new-pool-v150">＋ CREATE ANOTHER POOL</button>${remaining<=0?'<button type="button" class="commissioner-upgrade-v150">UNLOCK MORE LINKS</button>':`<button type="button" class="commissioner-new-pool-v150">${remaining} SLOT${remaining===1?'':'S'} AVAILABLE</button>`}</div><div class="small" style="margin-top:8px">Your FREE FOR LIFE allowance is tied to your commissioner email, so creating another pool name with the same email does not create another free account. Use LOGIN / SELECT POOL to open another pool you own.</div>`;
+    const body=`<h3 style="margin:0 0 4px">🔗 MY LINKS PACKAGE &amp; THIS POOL</h3><div class="small">Your package is tied to your commissioner email. For privacy and easy organization, this page only shows the pool you are currently managing.</div><div class="links-hub-summary-v150"><div class="links-hub-stat-v150"><b>${escapeHtml(linksPlanNameV150(d.plan))}</b><div class="small">YOUR PACKAGE</div></div><div class="links-hub-stat-v150"><b>${used} of ${limit}</b><div class="small">ACCOUNT SLOTS USED</div></div><div class="links-hub-stat-v150"><b>${d.adFree?"OFF":"SUPPORTED"}</b><div class="small">ADS</div></div></div><div class="links-hub-groups-v150"><div class="links-hub-group-v150"><b>📁 ${escapeHtml(cp.name||poolName||"CURRENT POOL")}</b><div class="small" style="margin-top:4px">Pool code: ${escapeHtml(cp.code||poolCode||"")}</div><div class="small" style="margin-top:9px"><b>GAMES IN THIS POOL</b></div>${games.map(g=>`<div class="links-hub-pool-v150"><span><img src="${poolGameLogo(g)}" class="game-selector-logo" alt=""> <b>${escapeHtml(poolGameName(g))}</b></span></div>`).join("")||'<div class="small">No active games found for this pool.</div>'}</div></div><div class="links-hub-actions-v150"><button type="button" class="green commissioner-new-pool-v150">＋ CREATE ANOTHER POOL</button>${remaining<=0?'<button type="button" class="commissioner-upgrade-v150">UNLOCK MORE LINKS</button>':`<button type="button" class="commissioner-new-pool-v150">${remaining} SLOT${remaining===1?'':'S'} AVAILABLE</button>`}</div><div class="small" style="margin-top:8px">Your FREE FOR LIFE allowance is tied to your commissioner email, so creating another pool name with the same email does not create another free account. Use LOGIN / SELECT POOL to open another pool you own.</div>`;
     $$(".links-commissioner-hub-v150").forEach(x=>x.innerHTML=body);
     $$(".commissioner-new-pool-v150").forEach(b=>b.onclick=()=>{sessionStorage.setItem("linksCommissionerEmail",d.email||"");showOnly("createPoolPage");if($("#createPoolEmail"))$("#createPoolEmail").value=d.email||""});
     $$(".commissioner-upgrade-v150").forEach(b=>b.onclick=()=>{showOnly("home");setTimeout(()=>$("#linksPackages")?.scrollIntoView({behavior:"smooth"}),50)});
@@ -2751,7 +2586,7 @@ function renderPoolGamesManagers(){
     const active=card.querySelector(".pool-games-active"),add=card.querySelector(".pool-games-add");
     if(active)active.innerHTML=`<div class="small" style="margin:8px 0 5px"><b>ACTIVE NOW</b> — ${games.map(g=>poolGameLabel(g)).join(" • ")}</div>`;
     if(add){
-      add.innerHTML=`<div class="small" style="margin-bottom:6px"><b>GAMES FOR THIS POOL</b></div><div class="pool-game-check-grid">${choices.map(g=>`<label class="pool-game-check"><input type="checkbox" class="pool-game-check-input" data-card="${cardIndex}" value="${g}" ${games.includes(g)?"checked":""}><img class="game-selector-logo" src="${poolGameArtV425(g)}" alt=""><span class="game-selector-name">${poolGameName(g)}</span></label>`).join("")}</div><button type="button" class="green pool-save-games" data-card="${cardIndex}" style="width:100%;margin-top:9px">SAVE ACTIVE GAMES</button><div class="small pool-games-save-status" style="margin-top:6px"></div>`;
+      add.innerHTML=`<div class="small" style="margin-bottom:6px"><b>GAMES FOR THIS POOL</b></div><div class="pool-game-check-grid">${choices.map(g=>`<label class="pool-game-check"><input type="checkbox" class="pool-game-check-input" data-card="${cardIndex}" value="${g}" ${games.includes(g)?"checked":""}><img class="game-selector-logo" src="${poolGameArtV397(g)}" alt=""><span class="game-selector-name">${poolGameName(g)}</span></label>`).join("")}</div><button type="button" class="green pool-save-games" data-card="${cardIndex}" style="width:100%;margin-top:9px">SAVE ACTIVE GAMES</button><div class="small pool-games-save-status" style="margin-top:6px"></div>`;
     }
     let hub=card.querySelector(".links-commissioner-hub-v150");
     if(isCommissioner){if(!hub){hub=document.createElement("div");hub.className="links-commissioner-hub-v150";card.appendChild(hub)}hub.innerHTML='<div class="small">Loading your LINKS package and current pool…</div>';}else hub?.remove();
@@ -2789,13 +2624,13 @@ function setSportHero(){
     img.src="./nfl-page-banner.jpg";
     img.alt="Links NFL Pick'em";
   }else if(sport==="college"){
-    img.src="./college-pickem-logo.png";
+    img.src="./college-page-banner.jpg";
     img.alt="Links College Pick'em";
   }else if(sport==="33"){
-    img.src="./game-33-logo.png";
+    img.src="./game33-page-banner.jpg";
     img.alt="Links 33 Game";
   }else if(sport==="march"){
-    img.src="./march-madness-logo.png";
+    img.src="./march-page-banner.jpg";
     img.alt="Links March Madness";
   }else{
     img.src="./app-logo.png";
@@ -2803,14 +2638,6 @@ function setSportHero(){
   }
 }
 
-function applyGame33ShellV426(){
-  const on=sport==="33";
-  document.body.classList.toggle("links-game33-active-v426",on);
-  const tabs=document.querySelector(".tabs");
-  if(tabs)tabs.classList.toggle("hide",on);
-  ["#weekSelect","#weekSelectLabel","#deadlineLine","#sportPageIndicator"].forEach(sel=>{const el=$(sel);if(el)el.classList.toggle("hide",on)});
-  const adminTab=document.querySelector('[data-tab="admin"]');if(adminTab&&on)adminTab.classList.add("hide");
-}
 async function enterApp(selected){
   sport=selected;sessionStorage.setItem("poolSport",sport);
   document.body.classList.toggle("links-game33-active-v373",sport==="33");
@@ -2839,6 +2666,7 @@ async function enterApp(selected){
   week=1;
   try{const d=await api(q("/api/default-week"));const proposed=Number(d?.week||1);if(Number.isFinite(proposed)&&proposed>=1&&proposed<=n)week=proposed}catch(e){week=1}
   // v363: an unfinished/empty prior pool week must never pin NFL Pick'em there.
+  // Ask the live NFL schedule for the current round and prefer that over pool finalization history.
   if(sport==="nfl"){
     try{
       const live=await api("/api/scores?sport=nfl");
@@ -2847,15 +2675,10 @@ async function enterApp(selected){
     }catch(e){}
   }
   officialWeek=week;adminWeek=week;standingsWeek=week;
-  $("#weekSelect").value=week;showOnly("app");applyRoleNavigation();
-
-  // v476: resolve the pool's real game tab FIRST. The screenshot proved the
-  // blank Pool Tabs row and blank Picks slate are the same missing-instance state.
-  // Once the tab id is known, load Picks using that exact commissioner-selected id.
-  await renderGameInstanceUI(sport);
-  await refreshWeek();
-  showTab("picks");
+  $("#weekSelect").value=week;showOnly("app");applyRoleNavigation();await refreshWeek();showTab("picks");
+  renderGameInstanceUI(sport).catch(e=>console.warn("Game tabs load failed",e));
 }
+const SPECIAL_GAME_BANNERS_V381={survivor:"./survivor-page-banner-v381.svg",confidence:"./confidence-page-banner-v381.svg",props:"./props-page-banner-v381.svg",playoff:"./playoff-page-banner-v381.svg",masters:"./masters-page-banner-v381.svg",nascar:"./nascar-page-banner-v381.svg",fantasy:"./fantasy-page-banner-v381.svg",dynasty:"./dynasty-page-banner-v381.svg"};
 const SPECIAL_GAME_DATA={
   survivor:{title:"NFL SURVIVOR",logo:"./nfl-survivor-logo-v102.jpg",lead:"Pick one NFL team each week. Win and survive; lose and you are out.",rules:"Pick one NFL team to win each week. A team cannot be used twice. Picks lock at kickoff. Commissioner rules control lives, buy-backs and tie situations."},
   confidence:{title:"CONFIDENCE POOL",logo:"./confidence-pool-logo-v102.jpg",lead:"Pick every NFL game and rank each pick by confidence.",rules:"Choose every game, then use each confidence value once. Correct picks earn the confidence points assigned to them. Highest total wins under commissioner rules."},
@@ -3060,64 +2883,51 @@ function collectSpecialSettingsFromForm(){
   return out;
 }
 let specialStateV383=null;
-async function loadSpecialNFLSlateV418(kind,week){
-  if(!["survivor","confidence","playoff"].includes(kind))return [];
-  try{
-    const d=await api(`/api/special/nfl-week?gameType=${encodeURIComponent(kind)}&week=${encodeURIComponent(week||1)}`);
-    return Array.isArray(d.games)?d.games:[];
-  }catch(e){console.warn("Special NFL slate",e);return []}
+function specialNFLPickCardV384(g,kind,me,i){
+  const picks=Array.isArray(me.picks)?me.picks:[],saved=kind==="survivor"?String(me.team||""):String(picks[i]?.team||"");
+  const rank=kind==="confidence"?Number(picks[i]?.confidence||0):0;
+  return `<div class="card" style="margin:7px 0"><div class="small">${escapeHtml(g.status||new Date(g.kickoff).toLocaleString())}</div><label><input type="radio" name="spgame${i}" value="${escapeHtml(g.away)}" ${saved===g.away?"checked":""}> ${escapeHtml(g.awayName||g.away)}</label><br><label><input type="radio" name="spgame${i}" value="${escapeHtml(g.home)}" ${saved===g.home?"checked":""}> ${escapeHtml(g.homeName||g.home)}</label>${kind==="confidence"?`<input class="specialConfidenceV384" data-index="${i}" type="number" min="1" max="32" value="${rank||""}" placeholder="Confidence" style="margin-top:6px;width:130px">`:""}</div>`;
 }
-function renderPropsQuestionsV419(settings,myEntry){
-  const qs=String(settings?.propQuestions||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-  const saved=Array.isArray(myEntry?.answers)?myEntry.answers:[];
-  if(!qs.length)return '<div class="small">The commissioner has not published the prop questions yet.</div>';
-  return qs.map((line,i)=>{const p=line.split("|").map(x=>x.trim()).filter(Boolean),q=p.shift()||`Prop ${i+1}`;return `<div class="card" style="margin:7px 0"><b>${escapeHtml(q)}</b><div style="margin-top:7px">${p.length?p.map(o=>`<label style="display:block;margin:5px 0"><input type="radio" name="propV419_${i}" value="${escapeHtml(o)}" ${String(saved[i]||"")===o?"checked":""}> ${escapeHtml(o)}</label>`).join(""):`<input class="propTextV419" data-index="${i}" value="${escapeHtml(saved[i]||"")}" placeholder="Your answer">`}</div></div>`}).join("");
+async function specialEntryFieldsV383(kind,st){
+  const s=st.settings||{},me=st.myEntry||{}, field=(kind==="masters"?"golferField":kind==="nascar"?"driverField":null),available=field?safeJsonArray(s[field]):[];
+  if(["survivor","confidence","playoff"].includes(kind)){
+    const wk=Math.max(1,Number(me.week||s.week||1)),d=await api(`/api/special/nfl-week?gameType=${encodeURIComponent(kind)}&week=${wk}`),games=d.games||[];
+    if(kind==="survivor")return `<label class="field-label">NFL WEEK</label><input id="specialWeekV384" type="number" min="1" max="18" value="${wk}" style="max-width:110px"><div class="small" style="margin:7px 0">Pick one team to win this week.</div>${games.map((g,i)=>specialNFLPickCardV384(g,kind,me,i)).join("")||'<div class="small">NFL games are not available for this week yet.</div>'}`;
+    return `<label class="field-label">NFL WEEK</label><input id="specialWeekV384" type="number" min="1" max="22" value="${wk}" style="max-width:110px"><div class="small" style="margin:7px 0">${kind==="confidence"?"Pick every game and give each pick a unique confidence value.":"Choose the winners for this playoff round."}</div>${games.map((g,i)=>specialNFLPickCardV384(g,kind,me,i)).join("")||'<div class="small">NFL games are not available for this week yet.</div>'}`;
+  }
+  if(kind==="props"){const qs=String(s.propQuestions||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean),saved=Array.isArray(me.answers)?me.answers:[];return qs.length?`<div class="small" style="margin-bottom:8px">Answer every question before the commissioner lock time.</div>${qs.map((line,i)=>{const p=line.split("|").map(x=>x.trim()).filter(Boolean),q=p.shift()||`Prop ${i+1}`,opts=p;return `<div class="card" style="margin:7px 0"><b>${escapeHtml(q)}</b><div style="margin-top:7px">${opts.length?opts.map(o=>`<label style="display:block;margin:5px 0"><input type="radio" name="propV386_${i}" value="${escapeHtml(o)}" ${String(saved[i]||"")===o?"checked":""}> ${escapeHtml(o)}</label>`).join(""):`<input class="propTextV386" data-index="${i}" value="${escapeHtml(saved[i]||"")}" placeholder="Your answer">`}</div></div>`}).join("")}`:'<div class="small">The commissioner has not published the prop questions yet.</div>'}
+  if(kind==="masters"||kind==="nascar"){const key=kind==="masters"?"golfers":"drivers",chosen=new Set(Array.isArray(me[key])?me[key]:[]),max=Math.max(1,Number(s[kind==="masters"?"lineupSize":"driversPerPlayer"]||1));return `<div class="small" style="margin-bottom:8px">Choose exactly <b>${max}</b> from the commissioner-approved field.</div><div class="special-picker-list">${available.map(x=>`<label class="special-picker-item"><input type="checkbox" class="specialEntryCheckV383" value="${escapeHtml(x.name)}" ${chosen.has(x.name)?"checked":""}><span>${escapeHtml(x.name)}</span></label>`).join("")||'<div class="small">The commissioner has not loaded the field yet.</div>'}</div>`}
+  return "";
 }
-function collectPropsAnswersV419(settings){
-  const qs=String(settings?.propQuestions||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-  return qs.map((_,i)=>document.querySelector(`input[name="propV419_${i}"]:checked`)?.value||document.querySelector(`.propTextV419[data-index="${i}"]`)?.value||"");
-}
-function specialGameLockLabelV418(settings){
-  const raw=String(settings?.lockTime||settings?.deadline||settings?.eventDate||"").trim();
-  if(!raw)return "Commissioner lock time applies.";
-  const t=Date.parse(raw);if(!Number.isFinite(t))return "Commissioner lock time applies.";
-  return t<=Date.now()?"🔒 Entries locked":`🔓 Entries open until ${new Date(t).toLocaleString()}`;
-}
-async function renderSpecialPlayerEngineV417(kind){
+async function renderSpecialPlayerEngineV383(kind){
   if(["fantasy","dynasty"].includes(kind))return;
   const host=$("#specialGameCards");if(!host)return;
   try{
     const st=await api(`/api/special/state?gameType=${encodeURIComponent(kind)}`);specialStateV383=st;
-    const rows=[...(st.scores||[])].sort((a,b)=>Number(b.score||0)-Number(a.score||0));
-    if(rows.length)host.insertAdjacentHTML("beforeend",`<div class="special-game-card" style="grid-column:1/-1"><b>🏆 LIVE STANDINGS</b><span>${rows.map((x,i)=>`${i+1}. ${escapeHtml(x.playerName)} — ${Number(x.score||0)} ${escapeHtml(x.status||"OPEN")}`).join("<br>")}</span></div>`);
-  }catch(e){console.warn("Special standings",e)}
+    const submitted=st.mySubmittedAt?`Saved ${new Date(st.mySubmittedAt).toLocaleString()}`:"No entry saved yet",mineScore=(st.scores||[]).find(x=>String(x.playerName).toLowerCase()===String(currentUser||"").toLowerCase()),scoreLine=mineScore?` • Score: ${Number(mineScore.score||0)} • ${escapeHtml(mineScore.status||"OPEN")}`:"";
+    const entryHtml=await specialEntryFieldsV383(kind,st);host.innerHTML=`<div class="special-game-card" style="grid-column:1/-1"><b>🎮 MY ${escapeHtml((SPECIAL_GAME_DATA[kind]?.title||"GAME").toUpperCase())} ENTRY</b><span>${submitted}${scoreLine}</span><div style="margin-top:10px">${entryHtml}</div><button id="saveSpecialEntryV383" class="green" style="width:100%;margin-top:12px">SAVE MY ENTRY</button><div id="specialEntryStatusV383" class="small" style="margin-top:7px"></div></div>`;
+    $("#saveSpecialEntryV383").onclick=async()=>{const status=$("#specialEntryStatusV383");let entry={};if(["survivor","confidence","playoff"].includes(kind)){const week=Number($("#specialWeekV384")?.value||1),radios=$('input[name^="spgame"]:checked');if(kind==="survivor")entry={week,team:radios[0]?.value||""};else entry={week,picks:radios.map(r=>{const i=Number(r.name.replace("spgame",""));return {gameIndex:i,team:r.value,confidence:kind==="confidence"?Number($(`.specialConfidenceV384[data-index="${i}"]`)?.value||0):0}})}}else else if(kind==="props"){const qs=String(st.settings?.propQuestions||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean);entry={answers:qs.map((line,i)=>document.querySelector(`input[name="propV386_${i}"]:checked`)?.value||document.querySelector(`.propTextV386[data-index="${i}"]`)?.value||"")}}else entry={[kind==="masters"?"golfers":"drivers"]:$(".specialEntryCheckV383:checked").map(x=>x.value)};status.textContent="Saving…";try{await api("/api/special/entry",{method:"POST",body:JSON.stringify({gameType:kind,entry})});status.textContent="✅ Entry saved.";await renderSpecialPlayerEngineV383(kind);populateSpecialUtilityPanes(kind)}catch(e){status.textContent=e.message||"Could not save entry."}};
+    populateSpecialUtilityPanes(kind);
+  }catch(e){host.innerHTML=`<div class="special-game-card" style="grid-column:1/-1"><b>Game entry</b><span>${escapeHtml(e.message||"Could not load game entry.")}</span></div>`}
 }
-function renderCumulativeSpecialStandingsV423(kind,st,host){
-  if(!host||!["survivor","confidence","playoff"].includes(kind))return false;
-  const rows=[...(st?.scores||[])].sort((a,b)=>Number(b.score||0)-Number(a.score||0));
-  if(!rows.length)return false;
-  host.innerHTML=`<div class="small" style="margin-bottom:8px"><b>CUMULATIVE STANDINGS</b> • Results carry across saved weeks/rounds.</div><table><thead><tr><th>PLAYER</th><th>SCORE</th><th>STATUS</th></tr></thead><tbody>${rows.map((x,i)=>`<tr><td>${i+1}. ${escapeHtml(x.playerName)}</td><td>${Number(x.score||0)}</td><td>${escapeHtml(x.status||"OPEN")}</td></tr>`).join("")}</tbody></table>`;
-  return true;
-}
-function loadLiveEventResultsV420(kind,scores){
-  if(!scores)return;
-  if(kind==="masters")api("/api/masters/leaderboard").then(d=>{const rows=d.leaderboard||[];if(rows.length)scores.innerHTML=`<div style="font-weight:900;margin-bottom:8px">⛳ ${escapeHtml(d.eventName||"Masters")} LIVE LEADERBOARD</div><table><thead><tr><th>POS</th><th>GOLFER</th><th>SCORE</th></tr></thead><tbody>${rows.slice(0,60).map(x=>`<tr><td>${escapeHtml(x.position||"")}</td><td>${escapeHtml(x.name)}</td><td>${Number.isFinite(Number(x.score))?Number(x.score):"—"}</td></tr>`).join("")}</tbody></table>`}).catch(()=>{});
-  if(kind==="nascar")api("/api/nascar/results").then(d=>{const rows=d.results||[];if(rows.length)scores.innerHTML=`<div style="font-weight:900;margin-bottom:8px">🏁 ${escapeHtml(d.event?.name||"NASCAR RACE")} RESULTS</div><table><thead><tr><th>POS</th><th>DRIVER</th><th>POINTS</th></tr></thead><tbody>${rows.slice(0,60).map(x=>`<tr><td>${escapeHtml(x.position||"")}</td><td>${escapeHtml(x.name)}</td><td>${Number.isFinite(Number(x.points))?Number(x.points):"—"}</td></tr>`).join("")}</tbody></table>`}).catch(()=>{});
-}
-function specialScoreAdminV424(kind,rows){
+function specialScoreAdminV396(kind,rows){
   if(!isCommissioner||!rows.length)return "";
-  return `<div class="card" style="margin-top:12px;border-color:#ff6a1a"><b>⚙️ COMMISSIONER SCORE CONTROL</b><div class="small" style="margin:5px 0 9px">Correct a score/status when needed. Manual corrections remain separate from automatic scoring.</div>${rows.map((x,i)=>`<div class="result-row" style="grid-template-columns:minmax(110px,1fr) 85px 115px auto"><b>${escapeHtml(x.playerName)}</b><input class="spAdminScoreV424" data-i="${i}" type="number" step="0.01" value="${Number(x.score||0)}"><select class="spAdminStatusV424" data-i="${i}"><option ${x.status==="OPEN"?"selected":""}>OPEN</option><option ${x.status==="FINAL"?"selected":""}>FINAL</option><option ${x.status==="ALIVE"?"selected":""}>ALIVE</option><option ${x.status==="ELIMINATED"?"selected":""}>ELIMINATED</option></select><button class="spSaveScoreV424" data-i="${i}" type="button">SAVE SCORE</button></div>`).join("")}</div>`;
+  return `<div class="card" style="margin-top:12px;border-color:#ff6a1a"><b>⚙️ COMMISSIONER SCORE CONTROL</b><div class="small" style="margin:5px 0 9px">Correct a score/status when needed. Manual corrections stay protected from automatic scoring until you return that player to AUTO.</div>${rows.map((x,i)=>`<div class="result-row" style="grid-template-columns:minmax(110px,1fr) 85px 115px auto"><b>${escapeHtml(x.playerName)}</b><input class="spAdminScoreV396" data-i="${i}" type="number" step="0.01" value="${Number(x.score||0)}"><select class="spAdminStatusV396" data-i="${i}"><option ${x.status==="OPEN"?"selected":""}>OPEN</option><option ${x.status==="FINAL"?"selected":""}>FINAL</option><option ${x.status==="ALIVE"?"selected":""}>ALIVE</option><option ${x.status==="ELIMINATED"?"selected":""}>ELIMINATED</option></select><span><button class="spSaveScoreV396" data-i="${i}" type="button">SAVE${x.manualOverride?" ✓":""}</button>${x.manualOverride?` <button class="spAutoScoreV396 blue" data-i="${i}" type="button">AUTO</button>`:""}</span></div>`).join("")}</div>`;
 }
-function bindSpecialScoreAdminV424(kind,rows){
-  $(".spSaveScoreV424").forEach(b=>b.onclick=async()=>{const i=Number(b.dataset.i),x=rows[i];if(!x)return;try{b.disabled=true;b.textContent="SAVING…";await api("/api/admin/special-score",{method:"POST",body:JSON.stringify({gameType:kind,playerName:x.playerName,score:Number(document.querySelector(`.spAdminScoreV424[data-i="${i}"]`)?.value||0),status:document.querySelector(`.spAdminStatusV424[data-i="${i}"]`)?.value||"FINAL"})});b.textContent="SAVED ✓";setTimeout(()=>renderSpecialPlayerEngineV417(kind),500)}catch(e){b.disabled=false;b.textContent="SAVE SCORE";msg(e.message||"Could not save score.")}});
+function bindSpecialScoreAdminV396(kind,rows){
+  $(".spSaveScoreV396").forEach(b=>b.onclick=async()=>{const i=Number(b.dataset.i),x=rows[i];try{await api("/api/admin/special-score",{method:"POST",body:JSON.stringify({gameType:kind,playerName:x.playerName,score:Number($(`.spAdminScoreV396[data-i="${i}"]`)?.value||0),status:$(`.spAdminStatusV396[data-i="${i}"]`)?.value||"FINAL"})});await renderSpecialPlayerEngineV383(kind)}catch(e){msg(e.message||"Could not save score.")}});
+  $(".spAutoScoreV396").forEach(b=>b.onclick=async()=>{const i=Number(b.dataset.i),x=rows[i];try{await api("/api/admin/special-score-auto",{method:"POST",body:JSON.stringify({gameType:kind,playerName:x.playerName})});await renderSpecialPlayerEngineV383(kind)}catch(e){msg(e.message||"Could not return player to automatic scoring.")}});
 }
 function populateSpecialUtilityPanes(kind){
   const d=SPECIAL_GAME_DATA[kind]||SPECIAL_GAME_DATA.survivor,name=d.title;
   const cmp=$("#specialCompareBody"),scores=$("#specialScoresBody"),stand=$("#specialStandingsBody"),proj=$("#specialProjectedBody"),access=$("#specialAccessBody");
-  const rows=[...(specialStateV383?.scores||[])].sort((a,b)=>Number(b.score||0)-Number(a.score||0));
-  if(cmp)cmp.innerHTML=rows.length?`<table><thead><tr><th>PLAYER</th><th>SCORE</th><th>STATUS</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${escapeHtml(x.playerName)}</td><td>${Number(x.score||0)}</td><td>${escapeHtml(x.status||"OPEN")}</td></tr>`).join("")}</tbody></table>`:`Player selections stay private until the <b>${escapeHtml(name)}</b> lock/deadline.`;
-  if(scores){scores.innerHTML=rows.length?`<table><thead><tr><th>PLAYER</th><th>SCORE</th><th>STATUS</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${escapeHtml(x.playerName)}</td><td>${Number(x.score||0)}</td><td>${escapeHtml(x.status||"OPEN")}</td></tr>`).join("")}</tbody></table>`:`No finalized <b>${escapeHtml(name)}</b> results yet.`;loadLiveEventResultsV420(kind,scores)}
-  if(stand)stand.innerHTML=rows.length?`<table><thead><tr><th>#</th><th>PLAYER</th><th>SCORE</th><th>STATUS</th></tr></thead><tbody>${rows.map((x,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(x.playerName)}</td><td>${Number(x.score||0)}</td><td>${escapeHtml(x.status||"OPEN")}</td></tr>`).join("")}</tbody></table>`:`No <b>${escapeHtml(name)}</b> standings yet.`;
+  const st=specialStateV383&&specialStateV383.gameType===kind?specialStateV383:null;
+  const entries=st?.entries||[],scoreRows=[...(st?.scores||[])].sort((a,b)=>Number(b.score||0)-Number(a.score||0));
+  if(cmp)cmp.innerHTML=entries.length?entries.map(x=>`<div class="card"><b>${escapeHtml(x.playerName)}</b><div class="small">${escapeHtml(JSON.stringify(x.entry))}</div></div>`).join(""):`Player selections for <b>${escapeHtml(name)}</b> stay private until the commissioner enables reveal.`;
+  if(scores){scores.innerHTML=scoreRows.length?scoreRows.map(x=>`<div class="result-row"><b>${escapeHtml(x.playerName)}</b><span>${Number(x.score||0)}</span><span>${escapeHtml(x.status||"OPEN")}${x.manualOverride?" • MANUAL":""}</span></div>`).join(""):`No official <b>${escapeHtml(name)}</b> scores have been posted yet.`;scores.insertAdjacentHTML("beforeend",specialScoreAdminV396(kind,scoreRows));bindSpecialScoreAdminV396(kind,scoreRows)}
+  if(kind==="masters"&&scores){api("/api/masters/leaderboard").then(d=>{const rows=d.leaderboard||[];if(rows.length)scores.innerHTML=`<div style="font-weight:900;margin-bottom:8px">⛳ ${escapeHtml(d.eventName||"Masters")} LIVE LEADERBOARD</div><table><thead><tr><th>POS</th><th>GOLFER</th><th>SCORE</th></tr></thead><tbody>${rows.slice(0,60).map(x=>`<tr><td>${escapeHtml(x.position||"")}</td><td>${escapeHtml(x.name)}</td><td>${Number.isFinite(Number(x.score))?Number(x.score):"—"}</td></tr>`).join("")}</tbody></table>`}).catch(()=>{})}
+  if(kind==="nascar"&&scores){api("/api/nascar/results").then(d=>{const rows=d.results||[];if(rows.length)scores.innerHTML=`<div style="font-weight:900;margin-bottom:8px">🏁 ${escapeHtml(d.event?.name||"NASCAR RACE")} RESULTS</div><table><thead><tr><th>POS</th><th>DRIVER</th><th>POINTS</th></tr></thead><tbody>${rows.slice(0,60).map(x=>`<tr><td>${escapeHtml(x.position||"")}</td><td>${escapeHtml(x.name)}</td><td>${Number.isFinite(Number(x.points))?Number(x.points):"—"}</td></tr>`).join("")}</tbody></table>`}).catch(()=>{})}
+  if(stand)stand.innerHTML=scoreRows.length?`<table><thead><tr><th>PLAYER</th><th>SCORE</th><th>STATUS</th></tr></thead><tbody>${scoreRows.map((x,i)=>`<tr><td>${i+1}. ${escapeHtml(x.playerName)}</td><td>${Number(x.score||0)}</td><td>${escapeHtml(x.status||"OPEN")}</td></tr>`).join("")}</tbody></table>`:`Standings for <b>${escapeHtml(name)}</b> will appear as official scores are recorded.`;
   if(proj)proj.innerHTML=`Projected results for <b>${escapeHtml(name)}</b> appear here when enough live or commissioner-entered result data is available.`;
   if(access)access.innerHTML=isCommissioner?`Commissioner access controls are managed from the pool's main <b>Player Access</b> controls. Players marked ACTIVE can participate; PENDING players remain locked.`:`Your commissioner controls whether your player access is ACTIVE or PENDING for this pool.`;
 }
@@ -3271,7 +3081,7 @@ async function enterSpecialGame(kind){
   if(adminTab)adminTab.classList.toggle("hide",!isCommissioner);
   $("#specialPlayerAccessHelp")?.classList.toggle("hide",!!isCommissioner);
   populateSpecialUtilityPanes(kind);
-  renderSpecialPlayerEngineV417(kind).catch(e=>console.warn("Special player engine",e));
+  renderSpecialPlayerEngineV383(kind).catch(e=>console.warn("Special player engine",e));
   if(isCommissioner)await renderGameInstanceUI(kind);
   if(kind==="dynasty"){
     $("#specialTabs").classList.add("hide");
@@ -3466,18 +3276,12 @@ async function startSquareCheckout(){
     if(b){b.disabled=false;b.textContent=`💳 Pay $${Number(boot.fee).toFixed(2)} with Square`}
   }
 }
-async function checkPaymentStatus({silent=false}={}){
+async function checkPaymentStatus(){
   try{
     const d=await api(q("/api/payment/status"));
-    // v467: refreshing access must also refresh the complete legacy Picks payload.
-    // This is the same action that proved to wake up Barnes Family on iPhone.
-    await refreshWeek();
-    if(!silent){
-      if(d.paid)msg("✅ Player access confirmed. Your picks are unlocked.",true);
-      else msg("Player access is still pending. Picks and games have been refreshed.",true);
-    }
-    return !!d.paid;
-  }catch(e){if(!silent)msg(e.message);return false}
+    if(d.paid){await refreshWeek();msg("✅ Player access confirmed. Your picks are unlocked.",true)}
+    else msg("Player access is still pending. If the commissioner just activated you, wait a few seconds and try again.");
+  }catch(e){msg(e.message)}
 }
 async function renderCompare(){
   let d;
@@ -3916,12 +3720,6 @@ $("#adminBackToPoolV372")?.addEventListener("click",exitAdminModeV372);
 function showTab(name){
   setTimeout(()=>ensureSectionAd(name),350);
   if(name==="admin"&&!isCommissioner)name="picks";
-  if(name==="admin"&&sport==="33"){
-    $("#app")?.classList.remove("admin-mode-v372");
-    applyRoleNavigation();
-    render33().then(()=>setTimeout(()=>$("#g33Admin")?.scrollIntoView({behavior:"smooth",block:"start"}),100));
-    return;
-  }
   if(name==="admin")enterAdminModeV372(); else $("#app")?.classList.remove("admin-mode-v372");
   const wpV374=$("#weekPickerCard");
   if(wpV374)wpV374.style.setProperty("display",name==="standings"?"none":"",name==="standings"?"important":"");
@@ -4158,26 +3956,17 @@ document.addEventListener("click",e=>{if(!e.target.closest(".portal-main-v2"))$(
 // v154 commissioner packages: free entitlement stays tied to commissioner email; commissioner page shows only the current pool.
 $("#createPoolPlan").value=sessionStorage.getItem("linksCommissionerPurchasePlan")||"free";
 const rememberedCommissionerEmail=sessionStorage.getItem("linksCommissionerEmail")||"";if(rememberedCommissionerEmail){if($("#createPoolEmail"))$("#createPoolEmail").value=rememberedCommissionerEmail;if($("#pricingCommissionerEmail"))$("#pricingCommissionerEmail").value=rememberedCommissionerEmail;}
-// v434 — pool creation is a true game chooser: every game card is selectable for every commissioner.
-function unlockCreatePoolGamesV434(){
-  $$("#createPoolGames input[type='checkbox']").forEach(x=>{x.disabled=false;x.removeAttribute("disabled");x.closest("label")?.classList.remove("locked","disabled")});
-}
-$("#showCreatePool")?.addEventListener("click",()=>setTimeout(unlockCreatePoolGamesV434,0));
-$("#createFreePoolHome")?.addEventListener("click",()=>setTimeout(unlockCreatePoolGamesV434,0));
-$("#createFreePoolPricing")?.addEventListener("click",()=>setTimeout(unlockCreatePoolGamesV434,0));
-setTimeout(unlockCreatePoolGamesV434,0);
 // v357 — owner access is automatic by commissioner email; no LINKS Admin entitlement step.
 const LINKS_OWNER_EMAIL_V357="jakedoutt@yahoo.com";
 function applyOwnerGameAccessV357(){
   const email=String($("#createPoolEmail")?.value||"").trim().toLowerCase();
   const owner=email===LINKS_OWNER_EMAIL_V357;
-  if(!owner){unlockCreatePoolGamesV434();return false;}
-  // v437: owner entitlement must never reset the commissioner\'s manual game choices.
-  unlockCreatePoolGamesV434();
+  if(!owner)return false;
+  $('#createPoolGames input[type="checkbox"]').forEach(x=>x.checked=true);
   if($("#createPoolPlan"))$("#createPoolPlan").value="all_access";
   sessionStorage.setItem("linksCommissionerEmail",email);
   sessionStorage.setItem("linksCommissionerPurchasePlan","all_access");
-  const st=$("#createPlanStatus");if(st)st.innerHTML='<b>LINKS OWNER ACCESS — ALL ACCESS</b> • Choose any games below';
+  const st=$("#createPlanStatus");if(st)st.innerHTML='<b>LINKS OWNER ACCESS</b> • ALL GAMES AVAILABLE AUTOMATICALLY';
   return true;
 }
 $("#createPoolEmail")?.addEventListener("input",()=>{if(!applyOwnerGameAccessV357()&&$("#createPoolPlan")?.value==="all_access"&&sessionStorage.getItem("linksCommissionerEmail")===LINKS_OWNER_EMAIL_V357){$("#createPoolPlan").value="free"}});
@@ -4205,36 +3994,39 @@ $("#enterPoolBtn").onclick=async()=>{
   if(!code){$("#homePortalErr").textContent="Type your pool name or pool code first.";return}
   await openPool(code);
 };
-const showCreatePoolBtnV432=$("#showCreatePool");
-if(showCreatePoolBtnV432)showCreatePoolBtnV432.onclick=()=>{
-  showOnly("createPoolPage");
-  setTimeout(()=>$("#createPoolName")?.focus(),80);
-};
+$("#showCreatePool").onclick=()=>showOnly("createPoolPage");
 $("#createPoolBtn").onclick=async()=>{
   $("#homeErr").textContent="";
-  const createBtn=$("#createPoolBtn"),oldLabel=createBtn?.textContent||"FINISH & CREATE MY POOL";
-  if(createBtn){createBtn.disabled=true;createBtn.classList.add("links-create-pressed-v452");createBtn.innerHTML='<span class="links-btn-spinner-v452"></span> CREATING YOUR POOL…';createBtn.scrollIntoView({block:"center",behavior:"smooth"})}
   try{
     applyOwnerGameAccessV357();
-    const d=await api("/api/pool/create",{method:"POST",body:JSON.stringify({name:$("#createPoolName").value,email:$("#createPoolEmail").value,playerName:$("#createPoolPlayerName").value,password:$("#createPoolPass").value,gameTypes:(window.linksCreatePoolSelectedGamesV441?window.linksCreatePoolSelectedGamesV441():$(`#createPoolGames input[type="checkbox"]:checked`).map(x=>x.value)),copies:Number($("#createPoolCopies")?.value||1),plan:$("#createPoolPlan")?.value||"free"})});
+    const d=await api("/api/pool/create",{method:"POST",body:JSON.stringify({name:$("#createPoolName").value,email:$("#createPoolEmail").value,playerName:$("#createPoolPlayerName").value,password:$("#createPoolPass").value,gameTypes:$$(`#createPoolGames input[type="checkbox"]:checked`).map(x=>x.value),copies:Number($("#createPoolCopies")?.value||1),plan:$("#createPoolPlan")?.value||"free"})});
     sessionStorage.removeItem("linksWelcomeSeen");
     token=d.token; role="player"; isCommissioner=true; currentUser=d.playerName; poolName=d.name; poolCode=d.code;applyPoolAdMode(!!d.service?.adFree);
     Object.entries({poolToken:token,poolRole:role,poolUser:currentUser,poolName,poolCode,poolIsCommissioner:"1"}).forEach(([k,v])=>sessionStorage.setItem(k,v));
-    await enterPoolGames(d.games,d.gameType,true);
+    await enterPoolGames(d.games,d.gameType);
     const created=Array.isArray(d.createdPools)?d.createdPools:[];const emailNote=d.commissionerWelcomeEmailSent?` Welcome email${created.length>1?"s":""} sent to <b>${escapeHtml($("#createPoolEmail").value)}</b>.`:` <span style="color:#ffd166">Welcome email was NOT sent${d.commissionerWelcomeEmailError?`: ${escapeHtml(d.commissionerWelcomeEmailError)}`:""}.</span>`;
     const copiesNote=created.length>1?` Created <b>${created.length} separate game pools</b>: ${created.map(x=>`<b>${escapeHtml(x.name)}</b> — ${escapeHtml(x.code)}`).join(" • ")}. You are signed into the first one.`:` Pool code: <b>${escapeHtml(poolCode)}</b>.`;
     msg(`✅ ${created.length>1?"Pools":"Pool"} created. You have commissioner ADMIN access.${copiesNote}${emailNote}`,true);
   }catch(e){$("#homeErr").innerHTML=`${escapeHtml(e.message)}${/upgrade|free for life|package/i.test(e.message)?' <a href="#" id="createUpgradeLink" style="color:#ff9a57;font-weight:900">View commissioner packages</a>':''}`;$("#createUpgradeLink")?.addEventListener("click",ev=>{ev.preventDefault();showOnly("home");setTimeout(()=>$("#linksPackages")?.scrollIntoView({behavior:"smooth"}),50);});}
-  finally{if(createBtn&&document.body.contains(createBtn)){createBtn.disabled=false;createBtn.classList.remove("links-create-pressed-v452");createBtn.textContent=oldLabel}}
 };
 $("#backHomeBtn").onclick=async()=>{await loadPoolMenu(poolCode);showOnly("home")};
 $("#signIn").onclick=async()=>{
+  const btn=$("#signIn"),err=$("#loginErr"),name=$("#loginName")?.value||"",password=$("#loginPass")?.value||"";
+  if(err)err.textContent="";
+  if(!poolCode){if(err)err.textContent="Pool code is missing. Tap Change Pool and open your pool again.";return}
+  if(!name){if(err)err.textContent="Choose your player name.";return}
+  if(!password){if(err)err.textContent="Enter your password.";return}
+  const old=btn.textContent;btn.disabled=true;btn.textContent="SIGNING IN…";
   try{
-    const d=await api("/api/login",{method:"POST",body:JSON.stringify({poolCode,name:$("#loginName").value,password:$("#loginPass").value})});
+    const d=await api("/api/login",{method:"POST",body:JSON.stringify({poolCode,name,password})});
+    if(!d?.token)throw new Error("Login did not return a valid session. Please try again.");
     token=d.token;role="player";isCommissioner=!!d.isCommissioner;currentUser=d.name;poolName=d.poolName;poolCode=d.poolCode;applyPoolAdMode(!!d.access?.adFree);
     Object.entries({poolToken:token,poolRole:role,poolUser:currentUser,poolName,poolCode,poolIsCommissioner:isCommissioner?"1":"0"}).forEach(([k,v])=>sessionStorage.setItem(k,v));
-    await enterPoolGames(d.games,d.gameType,!!(d.access?.multiGame||d.access?.paidPackage||d.access?.allAccess||String(d.access?.plan||d.plan||"free").toLowerCase()!=="free"));
-  }catch(e){$("#loginErr").textContent=e.message}
+    // Login success must never be lost because optional package/game discovery fails.
+    try{await enterAfterPlayerLoginV382(d.games,d.gameType)}
+    catch(routeErr){console.warn("Post-login routing fallback",routeErr);savePoolGames(d.games,d.gameType||"nfl");await enterPoolGames(poolGames,d.gameType||poolGames[0]||"nfl")}
+  }catch(e){if(err)err.textContent=e?.message||"Could not sign in. Please try again."}
+  finally{btn.disabled=false;btn.textContent=old}
 };
 function clickOnEnter(inputSelector,buttonSelector){
   const input=$(inputSelector),button=$(buttonSelector);if(!input||!button)return;
@@ -4278,11 +4070,7 @@ $("#weekSelect").onchange=async()=>{
   showTab(stayTab);
   await loadTabData(stayTab);
 };
-$("#refreshPaymentStatus").onclick=async()=>{
-  // v473 diagnostic parity: keep this handler intentionally thin so automatic
-  // bootstrap and the manual recovery button call the identical function.
-  await checkPaymentStatus();
-};
+$("#refreshPaymentStatus").onclick=checkPaymentStatus;
 $("#savePicks").onclick=async()=>{
   const missing=gamesNow().length-Object.keys(me.picks||{}).length;if(missing)return msg(`⚠️ <b>You forgot a pick dumbass.</b><br>${missing} pick${missing===1?"":"s"} missing`);
   try{await api(q("/api/picks"),{method:"POST",body:JSON.stringify({sport,week,picks:me.picks,tie:$("#tieInput").value})});me.tie=$("#tieInput").value;writePickPageCacheV194({boot,me});msg("✅ <b>Good luck! Your picks are saved.</b>",true)}catch(e){msg(e.message)}
@@ -4557,9 +4345,9 @@ $("#saveCollegeGames").onclick=async()=>{
 
 const GAME_INFO={
   nfl:{title:"NFL PICK'EM",banner:"./nfl-page-banner.jpg",logo:"./nfl-pickem-logo.png",lead:"Pick the winners of the NFL games each week. Links handles the schedule, locks, scoring, standings and weekly pool management so the commissioner does not have to total everything by hand.",features:[["🏈 WEEKLY PICKS","Players choose a winner for every selected NFL game before the pool locks."],["🔒 AUTOMATIC PICK LOCK","The commissioner can set the lock time and Links keeps late changes under control."],["📊 LIVE SCORES & STANDINGS","Scores and standings update inside Links so everyone can follow the week."],["👀 COMPARE PICKS","After picks lock, players can compare selections and see correct final picks in green and losing picks in red."],["💵 ENTRY STATUS","The commissioner can mark players ACTIVE or PENDING. ACTIVE players can submit picks; PENDING players remain locked."],["🏆 WEEKLY WINNER","Links totals the results, handles the tiebreaker and gives the commissioner the tools to finalize the winner."]]},
-  college:{title:"COLLEGE FOOTBALL PICK'EM",banner:"./college-pickem-logo.png",logo:"./college-pickem-logo.png",lead:"Each week, the commissioner chooses which matchups from games involving the current AP Top 25 teams will be included in the pool. Players make their picks from those selected games, and Links handles picks, live results, scoring and standings.",features:[["🎓 COMMISSIONER GAME SELECTION","The commissioner selects the matchups for that week from games involving AP Top 25 teams. Only those selected games appear on the players’ pick sheet."],["🏈 PLAYER PICKS","Players make their weekly selections only from the games chosen by the commissioner."],["⏰ PICK DEADLINES","Links keeps the weekly lock time with the pool so picks stay organized."],["📺 LIVE COLLEGE SCORES","Follow selected college game scores from the same Links pool page."],["📊 STANDINGS","Weekly results and pool standings are calculated without an Excel sheet."],["👥 SAME POOL CONTROLS","Player access and ACTIVE / PENDING tracking stay in the same commissioner area."]]},
-  march:{title:"MARCH MADNESS",banner:"./march-madness-logo.png",logo:"./march-madness-logo.png",lead:"Run a full March Madness bracket pool inside Links with bracket picks, automatic round scoring, standings and commissioner controls.",features:[["🏀 TOURNAMENT POOL","A Links pool mode designed around the NCAA tournament and bracket competition."],["🧩 BRACKET PICKS","Players will make their tournament selections inside their own Links login."],["📊 AUTOMATIC SCORING","Bracket results and standings are designed to update as tournament games are completed."],["🏆 LEADERBOARD","Players will be able to follow the bracket race from the Links standings page."],["👥 COMMISSIONER CONTROL","Manage the tournament pool and players from the same Links commissioner tools."],["📜 CLASSIC SCORING","Standard 1-2-4-8-16-32 round scoring with a championship total-score tiebreaker."]]},
-  "33":{title:"GAME 33",banner:"./game-33-logo.png",logo:"./game-33-logo.png",lead:"Game 33 is a season-long NFL side pool for up to 32 players. Each player is assigned one NFL team for the year and tries to hit exactly 33 points in a week.",features:[["3️⃣3️⃣ HIT EXACTLY 33","A player's assigned NFL team must score exactly 33 points in a week to hit Game 33."],["👥 MAXIMUM 32 PLAYERS","Game 33 is limited to 32 players because there are only 32 NFL teams and each player receives one team."],["🎲 YEARLY TEAM DRAW","The commissioner runs one random or manual team draw and each player keeps that team for all 18 weeks."],["↪️ ROLLOVER STREAK","If nobody hits exactly 33 in a week, the rollover streak continues into the next week."],["🏆 WEEKLY WINNER","When a week is final, any active player whose assigned team scored exactly 33 is shown as a winner."]]},
+  college:{title:"COLLEGE FOOTBALL PICK'EM",banner:"./college-page-banner.jpg",logo:"./college-pickem-logo.png",lead:"Each week, the commissioner chooses which matchups from games involving the current AP Top 25 teams will be included in the pool. Players make their picks from those selected games, and Links handles picks, live results, scoring and standings.",features:[["🎓 COMMISSIONER GAME SELECTION","The commissioner selects the matchups for that week from games involving AP Top 25 teams. Only those selected games appear on the players’ pick sheet."],["🏈 PLAYER PICKS","Players make their weekly selections only from the games chosen by the commissioner."],["⏰ PICK DEADLINES","Links keeps the weekly lock time with the pool so picks stay organized."],["📺 LIVE COLLEGE SCORES","Follow selected college game scores from the same Links pool page."],["📊 STANDINGS","Weekly results and pool standings are calculated without an Excel sheet."],["👥 SAME POOL CONTROLS","Player access and ACTIVE / PENDING tracking stay in the same commissioner area."]]},
+  march:{title:"MARCH MADNESS",banner:"./march-page-banner.jpg",logo:"./march-madness-logo.png",lead:"Run a full March Madness bracket pool inside Links with bracket picks, automatic round scoring, standings and commissioner controls.",features:[["🏀 TOURNAMENT POOL","A Links pool mode designed around the NCAA tournament and bracket competition."],["🧩 BRACKET PICKS","Players will make their tournament selections inside their own Links login."],["📊 AUTOMATIC SCORING","Bracket results and standings are designed to update as tournament games are completed."],["🏆 LEADERBOARD","Players will be able to follow the bracket race from the Links standings page."],["👥 COMMISSIONER CONTROL","Manage the tournament pool and players from the same Links commissioner tools."],["📜 CLASSIC SCORING","Standard 1-2-4-8-16-32 round scoring with a championship total-score tiebreaker."]]},
+  "33":{title:"GAME 33",banner:"./game33-page-banner.jpg",logo:"./game-33-logo.png",lead:"Game 33 is a season-long NFL side pool for up to 32 players. Each player is assigned one NFL team for the year and tries to hit exactly 33 points in a week.",features:[["3️⃣3️⃣ HIT EXACTLY 33","A player's assigned NFL team must score exactly 33 points in a week to hit Game 33."],["👥 MAXIMUM 32 PLAYERS","Game 33 is limited to 32 players because there are only 32 NFL teams and each player receives one team."],["🎲 YEARLY TEAM DRAW","The commissioner runs one random or manual team draw and each player keeps that team for all 18 weeks."],["↪️ ROLLOVER STREAK","If nobody hits exactly 33 in a week, the rollover streak continues into the next week."],["🏆 WEEKLY WINNER","When a week is final, any active player whose assigned team scored exactly 33 is shown as a winner."]]},
 
   survivor:{title:"NFL SURVIVOR",banner:"./nfl-survivor-logo-v102.jpg",logo:"./nfl-survivor-logo-v102.jpg",lead:"Pick one NFL team to win each week. Win and stay alive. Lose and you are out unless the commissioner allows lives or buy-backs.",features:[["🛡️ ONE TEAM PER WEEK","Each player chooses one NFL team to win for the week."],["🚫 NO REPEATS","Players cannot use the same team twice during the season."],["✅ AUTO RESULTS","Links tracks NFL scores and marks players alive or eliminated."],["👥 LAST PLAYER STANDING","The pool continues until one player remains or commissioner rules decide the winner."],["⚙️ COMMISSIONER OPTIONS","Set lives, buy-backs and competition rules."],["📱 EASY FOR PLAYERS","Players make one quick pick from their phone each week."]]},
   confidence:{title:"CONFIDENCE POOL",banner:"./confidence-pool-logo-v102.jpg",logo:"./confidence-pool-logo-v102.jpg",lead:"Pick every NFL game and rank your picks by confidence. Correct picks earn the points you assigned.",features:[["🏈 PICK EVERY GAME","Players choose winners for the full NFL slate."],["🔢 RANK 1 THROUGH 16","Use each confidence value once based on how strongly you feel."],["📊 POINT TOTALS","Correct picks earn their confidence points."],["🏆 WEEKLY AND SEASON","Run weekly winners, season standings or both."],["🧠 MORE STRATEGY","It is not just who you pick — it is how much you trust the pick."],["✅ LINKS TRACKS IT","Scores and standings update through Links."]]},
@@ -4591,7 +4379,7 @@ async function openInviteJoin(inviteToken){
 $("#inviteJoinBtn").onclick=async()=>{
   $("#inviteJoinErr").textContent="";
   try{const d=await api("/api/invite/join",{method:"POST",body:JSON.stringify({token:activeInviteToken,name:$("#inviteJoinName").value,password:$("#inviteJoinPassword").value,dynastyTeamName:$("#inviteDynastyTeam")?.value||""})});
-    token=d.token;role="player";currentUser=d.name;poolName=d.poolName;poolCode=d.poolCode;activeGameInstanceId=0;activeGameInstanceName="";Object.keys(gameInstanceCache).forEach(k=>delete gameInstanceCache[k]);sessionStorage.removeItem("linksGameInstanceId");sessionStorage.removeItem("linksGameInstanceName");Object.entries({poolToken:token,poolRole:role,poolUser:currentUser,poolName,poolCode}).forEach(([k,v])=>sessionStorage.setItem(k,v));history.replaceState({},document.title,location.pathname);await enterPoolGames(d.games,d.gameType);
+    token=d.token;role="player";currentUser=d.name;poolName=d.poolName;poolCode=d.poolCode;Object.entries({poolToken:token,poolRole:role,poolUser:currentUser,poolName,poolCode}).forEach(([k,v])=>sessionStorage.setItem(k,v));history.replaceState({},document.title,location.pathname);await enterAfterPlayerLoginV382(d.games,d.gameType);
   }catch(e){$("#inviteJoinErr").textContent=e.message}
 };
 $("#inviteJoinHome").onclick=()=>{history.replaceState({},document.title,location.pathname);showOnly("home")};
@@ -4602,7 +4390,7 @@ async function openPlayerSetup(setupToken){
   try{const d=await api(`/api/player-setup?token=${encodeURIComponent(activePlayerSetupToken)}`);$("#playerSetupInfo").innerHTML=`<b>${escapeHtml(d.playerName)}</b><br><span class="small">${escapeHtml(d.poolName)} • Pool Code: ${escapeHtml(d.poolCode)}${d.email?` • ${escapeHtml(d.email)}`:" • Text setup link"}</span>`}
   catch(e){$("#playerSetupInfo").textContent="This password setup link could not be opened.";$("#playerSetupErr").textContent=e.message}
 }
-$("#playerSetupBtn").onclick=async()=>{const p1=$("#playerSetupPassword").value,p2=$("#playerSetupPassword2").value;$("#playerSetupErr").textContent="";if(p1!==p2){$("#playerSetupErr").textContent="Passwords do not match.";return}try{const d=await api("/api/player-setup/complete",{method:"POST",body:JSON.stringify({token:activePlayerSetupToken,password:p1})});token=d.token;role="player";currentUser=d.name;poolName=d.poolName;poolCode=d.poolCode;activeGameInstanceId=0;activeGameInstanceName="";Object.keys(gameInstanceCache).forEach(k=>delete gameInstanceCache[k]);sessionStorage.removeItem("linksGameInstanceId");sessionStorage.removeItem("linksGameInstanceName");Object.entries({poolToken:token,poolRole:role,poolUser:currentUser,poolName,poolCode}).forEach(([k,v])=>sessionStorage.setItem(k,v));history.replaceState({},document.title,"/");await enterPoolGames(d.games,d.gameType)}catch(e){$("#playerSetupErr").textContent=e.message}};
+$("#playerSetupBtn").onclick=async()=>{const p1=$("#playerSetupPassword").value,p2=$("#playerSetupPassword2").value;$("#playerSetupErr").textContent="";if(p1!==p2){$("#playerSetupErr").textContent="Passwords do not match.";return}try{const d=await api("/api/player-setup/complete",{method:"POST",body:JSON.stringify({token:activePlayerSetupToken,password:p1})});token=d.token;role="player";currentUser=d.name;poolName=d.poolName;poolCode=d.poolCode;Object.entries({poolToken:token,poolRole:role,poolUser:currentUser,poolName,poolCode}).forEach(([k,v])=>sessionStorage.setItem(k,v));history.replaceState({},document.title,"/");await enterAfterPlayerLoginV382(d.games,d.gameType)}catch(e){$("#playerSetupErr").textContent=e.message}};
 $("#playerSetupHome").onclick=()=>{history.replaceState({},document.title,"/");showOnly("home")};
 
 $("#sendPlayerInvites").onclick=async()=>{
@@ -4733,8 +4521,6 @@ document.addEventListener("keydown",e=>{
   if(btn){e.preventDefault();btn.click()}
 });
 async function restore(){
-  const protectedNflRoutesV458=new Set(["/nfl-picks","/compare-picks","/scores","/standings","/projected-standings","/paid-payout","/rules","/commissioner"]);
-  const requestedPathV458=location.pathname;
   try{history.replaceState({linksScreen:"home"},"",location.href)}catch(e){}
   const launchQs=new URLSearchParams(location.search),setupParam=launchQs.get("setup"),inviteParam=launchQs.get("invite");
   if(setupParam){await openPlayerSetup(setupParam);return;}
@@ -4743,20 +4529,12 @@ async function restore(){
     try{
       const d=await api("/api/session");isCommissioner=!!d.isCommissioner;role="player";currentUser=d.name;poolCode=d.poolCode;poolName=d.poolName;applyPoolAdMode(!!d.access?.adFree);
       Object.entries({poolRole:role,poolUser:currentUser,poolCode,poolName,poolIsCommissioner:isCommissioner?"1":"0"}).forEach(([k,v])=>sessionStorage.setItem(k,v));
-      await enterPoolGames(d.games,d.gameType);return;
+      await enterAfterPlayerLoginV382(d.games,d.gameType);return;
     }catch(e){token="";sessionStorage.removeItem("poolToken")}
   }
   applyPoolAdMode(false);
   await refreshLinksPurchase();
   await loadPoolMenu(poolCode);
-  if(protectedNflRoutesV458.has(requestedPathV458)){
-    sessionStorage.removeItem("poolToken");
-    token="";
-    showOnly("home");
-    setLinksRoute(LINKS_ROUTES.home,true);
-    const err=$("#homePortalErr");if(err)err.textContent="Sign in to your pool to open NFL Pick’em.";
-    return;
-  }
   showOnly("home");
 }
 applyPoolAdMode(sessionStorage.getItem("linksPoolAdFree")==="1");
@@ -4798,7 +4576,7 @@ function squaresBoardHtml(b){
   for(let r=0;r<10;r++){grid+=`<div class="sq-head">${drawn?home[r]:"?"}</div>`;for(let c=0;c<10;c++){const idx=r*10+c,cl=claims.get(idx),mine=cl?.player_name===currentUser,klass=cl?(mine?"sq-mine":"sq-taken"):"sq-open";grid+=`<div class="sq-cell ${klass}${wins.has(idx)?" sq-winner":""}${cl&&!cl.paid?" sq-unpaid":""}" data-sq-board="${b.id}" data-sq-index="${idx}"><div><b>${cl?escapeHtml(cl.player_name):String(idx+1)}</b>${cl?`<br><span class="small">${cl.paid?"ACTIVE":"PENDING"}</span>`:""}</div></div>`}grid+=``}grid+=`</div>`;
   const l=b.live||{},w=b.winners||{};const line=(name,a,h,win)=>`<div class="squares-scorebox"><b>${name}</b><div>${a==null||h==null?"Waiting":`${escapeHtml(b.away)} ${a} • ${escapeHtml(b.home)} ${h}`}</div>${win?`<div style="color:#ffd34d;font-weight:900">🏆 ${escapeHtml(win.player)}</div>`:""}</div>`;
   const admin=isCommissioner?`<div style="margin-top:10px"><label>Assign clicked squares to <select class="sq-admin-player" data-board="${b.id}">${(squaresStateData?.players||[]).map(n=>`<option>${escapeHtml(n)}</option>`).join("")}</select></label>${!drawn?` <button class="sq-draw red" data-board="${b.id}">🎲 DRAW & LOCK NUMBERS</button>`:" <span class=\"badge\">NUMBERS LOCKED</span>"} <button class="sq-delete" data-board="${b.id}">DELETE BOARD</button></div>`:"";
-  return `<div class="squares-card"><div class="squares-board-title"><div><h2 style="margin:0">${escapeHtml(b.title)}</h2><div class="small">${escapeHtml(b.away_name||b.away)} at ${escapeHtml(b.home_name||b.home)} • ${squaresWeekLabel(Number(b.week))}${b.kickoff?` • ${fmtKickoff(b.kickoff)}`:""}</div></div></div><div class="squares-scoreline" style="margin-top:10px">${line("1ST QUARTER",l.q1Away,l.q1Home,w.q1)}${line("HALFTIME",l.halfAway,l.halfHome,w.half)}${line("3RD QUARTER",l.q3Away,l.q3Home,w.q3)}${line("FINAL",l.finalAway,l.finalHome,w.final)}</div><div class="small" style="margin:10px 0">${l.status?escapeHtml(l.status):""}</div><div class="squares-board-wrap">${grid}</div>${admin}</div>`;
+  return `<div class="squares-card"><div class="squares-board-title"><div><h2 style="margin:0">${escapeHtml(b.title)}</h2><div class="small">${escapeHtml(b.away_name||b.away)} at ${escapeHtml(b.home_name||b.home)} • ${squaresWeekLabel(Number(b.week))}${b.kickoff?` • ${fmtKickoff(b.kickoff)}`:""} • <b>${escapeHtml(b.status||"OPEN")}</b></div></div></div><div class="squares-scoreline" style="margin-top:10px">${line("1ST QUARTER",l.q1Away,l.q1Home,w.q1)}${line("HALFTIME",l.halfAway,l.halfHome,w.half)}${line("3RD QUARTER",l.q3Away,l.q3Home,w.q3)}${line("FINAL",l.finalAway,l.finalHome,w.final)}</div><div class="small" style="margin:10px 0">${l.status?escapeHtml(l.status):""}</div><div class="squares-board-wrap">${grid}</div>${admin}</div>`;
 }
 async function renderSquares(){
   try{
@@ -5038,106 +4816,6 @@ $("#chooseSquares").onclick=()=>enterSquares();
 <script id="links-v339-home-js">
 (()=>{const by=id=>document.getElementById(id);by('createFreePoolTopV339')?.addEventListener('click',()=>by('createFreePoolHome')?.click());const modal=by('nflPickemInfoModalV339'),info=by('nflPickemInfoV339');info?.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();modal?.classList.add('open')});modal?.querySelector('.links-nfl-info-close-v339')?.addEventListener('click',()=>modal.classList.remove('open'));modal?.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('open')})})();
 </script>
-
-<script id="links-v427-button-feedback">
-(()=>{
-  const navWords=/sign in|login|continue|open|enter|change game|home|picks|compare|scores|standings|projected|rules|admin|profile|player access|game select|back/i;
-  function feedback(btn){
-    if(!btn||btn.disabled||btn.dataset.linksBusy==="1")return;
-    const original=btn.innerHTML;
-    const text=(btn.textContent||"").trim();
-    const isSign=/sign in|login/i.test(text);
-    const isNav=isSign||navWords.test(text)||btn.matches("[data-tab],[data-special-tab],[data-sqtab],[data-march-tab],.sport-btn,.game-instance-tab-v180");
-    if(!isNav)return;
-    btn.dataset.linksBusy="1";
-    btn.dataset.linksOriginal=original;
-    btn.classList.add("links-button-busy-v427");
-    btn.setAttribute("aria-busy","true");
-    if(isSign)btn.textContent="SIGNING IN…";
-    else if(!/sign out/i.test(text))btn.textContent="LOADING…";
-    setTimeout(()=>{
-      if(!document.body.contains(btn))return;
-      btn.innerHTML=btn.dataset.linksOriginal||original;
-      btn.classList.remove("links-button-busy-v427");
-      btn.removeAttribute("aria-busy");
-      delete btn.dataset.linksBusy;delete btn.dataset.linksOriginal;
-    },3500);
-  }
-  document.addEventListener("click",e=>{const b=e.target.closest("button,a[role='button']");if(b)feedback(b)},true);
-})();
-</script>
-
-<script id="links-v433-create-pool-rescue">
-(()=>{
-  function openCreatePoolV433(e){
-    const b=e.target.closest('#showCreatePool,#createFreePoolHome,#createFreePoolPricing,#createFreePoolTopV339,[data-create-pool]');
-    if(!b)return;
-    e.preventDefault();e.stopPropagation();
-    if(typeof showOnly==="function"){
-      showOnly("createPoolPage");
-      setTimeout(()=>document.getElementById("createPoolName")?.focus(),80);
-    }else{
-      document.querySelectorAll("#home,#demoPage,#commissionerWelcome,#linksAdmin,#publicScoresPage,#gameInfoPage,#inviteJoinPage,#playerSetupPage,#login,#sportChoice,#specialGameApp,#squaresApp,#marchApp,#app").forEach(x=>x.classList.add("hide"));
-      document.getElementById("createPoolPage")?.classList.remove("hide");
-      window.scrollTo(0,0);
-    }
-  }
-  document.addEventListener("click",openCreatePoolV433,true);
-})();
-</script>
-
-<script id="links-v441-create-game-selection">
-(()=>{
-  const selected=new Set(["nfl"]);
-  const root=()=>document.getElementById("createPoolGames");
-  function paint(){
-    const r=root();if(!r)return;
-    r.querySelectorAll('label').forEach(card=>{
-      const cb=card.querySelector('input[type="checkbox"]');if(!cb)return;
-      cb.disabled=false;cb.removeAttribute("disabled");
-      cb.checked=selected.has(cb.value);
-      card.classList.toggle("links-create-game-selected-v441",cb.checked);
-      let mark=card.querySelector(".links-create-check-v441");
-      if(!mark){mark=document.createElement("span");mark.className="links-create-check-v441";mark.setAttribute("aria-hidden","true");card.appendChild(mark)}
-      mark.textContent=cb.checked?"✓":"";
-    });
-  }
-  document.addEventListener("pointerup",e=>{
-    const card=e.target.closest?.("#createPoolGames label");if(!card)return;
-    e.preventDefault();e.stopPropagation();
-    const cb=card.querySelector('input[type="checkbox"]');if(!cb)return;
-    if(selected.has(cb.value))selected.delete(cb.value);else selected.add(cb.value);
-    paint();
-    root()?.dispatchEvent(new Event("change",{bubbles:true}));
-  },true);
-  document.addEventListener("click",e=>{if(e.target.closest?.("#createPoolGames label"))e.preventDefault()},true);
-  window.linksCreatePoolSelectedGamesV441=()=>Array.from(selected);
-  paint();
-})();
-</script>
-<style id="links-v441-create-game-selection-css">
-#createPoolGames label{position:relative!important}
-#createPoolGames input[type="checkbox"]{display:none!important;opacity:0!important;pointer-events:none!important}
-#createPoolGames label.links-create-game-selected-v441{border-color:#ff6a1a!important;box-shadow:inset 0 0 0 2px #ff6a1a,0 0 16px rgba(255,106,26,.38)!important;background:linear-gradient(180deg,#2a1b12,#17120e)!important}
-#createPoolGames .links-create-check-v441{position:absolute;top:12px;right:12px;width:40px;height:40px;border-radius:12px;background:#fff;border:2px solid #d8d8d8;display:grid;place-items:center;color:transparent;font-size:29px;font-weight:1000;line-height:1;z-index:10;box-sizing:border-box;pointer-events:none}
-#createPoolGames label.links-create-game-selected-v441 .links-create-check-v441{background:#ff4438;border-color:#ff665d;color:#fff}
-</style>
-<style id="links-v443-create-game-images">
-#createPoolGames .game-selector-logo{
-  width:100%!important;
-  height:78px!important;
-  max-width:none!important;
-  min-width:0!important;
-  object-fit:contain!important;
-  object-position:center center!important;
-  background:#080d11!important;
-  padding:0!important;
-  border-radius:9px!important;
-}
-@media(max-width:420px){
-  #createPoolGames .game-selector-logo{height:72px!important;max-width:none!important}
-}
-</style>
 </body></html>
 
 <!-- v139 local audio caching + one Games in This Pool control at bottom of each commissioner admin page -->
@@ -5361,36 +5039,4 @@ body:not(.links-game33-active-v373) [data-game33-only]{display:none!important}
 .team.sel:not(.pick-final-loser):not(.pick-final-winner){outline:5px solid #38f58a!important;outline-offset:-5px!important;box-shadow:0 0 22px rgba(56,245,138,.62),inset 0 0 0 2px rgba(255,255,255,.85)!important;transform:scale(.99)!important}
 .team.sel .pickmark,.team[data-picked="1"] .pickmark{display:block!important;font-size:13px!important;font-weight:1000!important;padding:7px 11px!important;top:7px!important;right:7px!important;background:#35e77d!important;color:#07150c!important;border:2px solid #fff!important;box-shadow:0 3px 12px rgba(0,0,0,.45)!important}
 .team.pick-final-winner .pickmark,.team.pick-final-loser .pickmark{font-size:12px!important}
-
-/* v426 — Game 33 owns its page; never show NFL Pick'em navigation on it */
-body.links-game33-active-v426 #app .tabs,
-body.links-game33-active-v426 #app .sport-page-indicator,
-body.links-game33-active-v426 #app #weekSelect,
-body.links-game33-active-v426 #app #weekSelectLabel{display:none!important}
-body.links-game33-active-v426 #app .game33-hero,
-body.links-game33-active-v426 #app [class*="game33"],
-body.links-game33-active-v426 #app [class*="g33"]{display:block}
-
-/* v427 — immediate tap feedback for navigation and sign-in buttons */
-.links-button-busy-v427{opacity:.72!important;transform:scale(.98);filter:brightness(1.15);pointer-events:none!important;transition:.12s ease}.links-button-busy-v427:after{content:"";display:inline-block;width:12px;height:12px;margin-left:8px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;vertical-align:-2px;animation:linksSpinV427 .7s linear infinite}@keyframes linksSpinV427{to{transform:rotate(360deg)}}
-
-/* v428 — Create Pool uses the same LINKS game artwork as Game Select/Admin */
-#createPoolGames .game-selector-logo{width:100%!important;height:68px!important;max-width:150px!important;min-width:0!important;flex-basis:auto!important;object-fit:cover!important;object-position:center!important;padding:0!important;border:1px solid #263947!important;border-radius:9px!important}#createPoolGames.create-game-grid label{min-height:128px!important;justify-content:center!important}@media(max-width:420px){#createPoolGames .game-selector-logo{height:60px!important;max-width:138px!important}#createPoolGames.create-game-grid label{min-height:116px!important}}
-
-/* v431 — every game page/tab uses its own commissioner-defined instance name */
-.game-instance-tab-v180{text-transform:none!important}
-
-/* v434 — all games are selectable while creating a pool */
-#createPoolGames input[type="checkbox"]:disabled{opacity:1!important;pointer-events:auto!important;filter:none!important}
-#createPoolGames label{opacity:1!important;pointer-events:auto!important;filter:none!important;cursor:pointer!important}
-
-/* v435 — entire Create Pool game card is tappable and visibly selected */
-#createPoolGames label.links-create-game-selected-v435{border-color:#ff6a1a!important;box-shadow:inset 0 0 0 2px #ff6a1a,0 0 16px rgba(255,106,26,.38)!important;background:linear-gradient(180deg,#2a1b12,#17120e)!important}
-#createPoolGames label{touch-action:manipulation!important;-webkit-tap-highlight-color:rgba(255,106,26,.22)!important}
-</style>
-
-<style id="links-v477-button-state">
-/* v477: no solid-blue selected/pressed navigation state on iPhone. */
-.tabs .player-tab.active,.demo-tabs-real button.active,.special-tabs-v137 button.active{border:2px solid #ff7a2f!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)!important;background-color:transparent!important}
-.tabs button:active,.tabs button:focus,.tabs button:focus-visible,.game-instance-tab-v180:active,.game-instance-tab-v180:focus,.game-instance-tab-v180:focus-visible{outline:none!important;-webkit-tap-highlight-color:transparent!important}
 </style>
