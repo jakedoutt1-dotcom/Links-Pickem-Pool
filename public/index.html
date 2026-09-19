@@ -1309,8 +1309,8 @@ table{max-width:100%}
 @media(max-width:700px){#home .links-benefits-v193>div{min-height:170px!important;padding-top:76px!important}#home .links-benefits-v193>div:after{font-size:39px}#home .links-category-v193 summary{min-height:145px!important;padding-top:69px!important}#home .links-category-v193:nth-child(n) summary:after{right:50px;transform:scale(.82);transform-origin:right top}.links-home-footer-v200:before{font-size:16px;letter-spacing:10px}}
 </style>
 
-<style id="links-v377-admin-nav-fix">
-/* v377 — stronger Back to Pool action + prevent admin subtitle/week badge overlap. */
+<style id="links-v378-admin-nav-fix">
+/* v378 — stronger Back to Pool action + prevent admin subtitle/week badge overlap. */
 #adminModeBarV372{grid-template-columns:minmax(180px,auto) 1fr!important;padding:12px!important;gap:12px!important}
 #adminModeBarV372 button{min-height:52px!important;padding:12px 18px!important;border:2px solid #ff7a2d!important;background:linear-gradient(180deg,#263746,#111b24)!important;color:#fff!important;font-size:15px!important;box-shadow:0 0 0 2px rgba(255,122,45,.10),0 5px 14px #0008!important}
 #adminControls:not(.admin-tool-active-v185)>.commissioner-sport-card{grid-template-columns:minmax(0,1fr) auto!important;grid-template-rows:auto auto!important;align-items:start!important;row-gap:8px!important;padding-bottom:18px!important}
@@ -1326,8 +1326,8 @@ table{max-width:100%}
 }
 </style>
 
-<style id="links-v377-admin-header-fix">
-/* v377 — force the admin sport header into three non-overlapping mobile rows. */
+<style id="links-v378-admin-header-fix">
+/* v378 — force the admin sport header into three non-overlapping mobile rows. */
 @media(max-width:620px){
  #adminControls:not(.admin-tool-active-v185)>.commissioner-sport-card{
    display:flex!important;flex-direction:column!important;align-items:center!important;
@@ -1348,10 +1348,23 @@ table{max-width:100%}
 }
 </style>
 
-<style id="links-v377-admin-arrow-cleanup">
-/* v377 — expanded Pool Settings already has Back to Admin; hide redundant orange caret. */
+<style id="links-v378-admin-arrow-cleanup">
+/* v378 — expanded Pool Settings already has Back to Admin; hide redundant orange caret. */
 #adminControls.admin-section-active-v186 .commissioner-settings-card.admin-section-expanded-v186 h3:after,
 #adminControls:not(.admin-tool-active-v185)>.commissioner-settings-card.admin-open-v368 h3:after{content:none!important;display:none!important}
+</style>
+
+<style id="links-v378-game33-admin">
+/* v378 — Game 33-only commissioner dashboard. NFL/College selectors are intentionally untouched. */
+.links-game33-active-v373 #g33Admin{margin-top:14px}
+.links-game33-active-v373 .g33-admin-head-v378{border-color:#d5a72f!important;background:linear-gradient(135deg,#241b08,#10151b)!important;text-align:center}
+.links-game33-active-v373 .g33-admin-head-v378 h2{color:#ffd45d}
+.links-game33-active-v373 .g33-admin-grid-v378{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.links-game33-active-v373 .g33-admin-card-v378{margin:0!important;border-color:#4c4530;background:linear-gradient(180deg,#151b20,#0c1116)}
+.links-game33-active-v373 .g33-admin-card-v378 h3{margin:0 0 7px}
+.links-game33-active-v373 .g33-admin-card-v378 button{width:100%;margin-top:10px;font-weight:950;min-height:48px}
+.links-game33-active-v373 .g33-finalize-v378{border-color:#d5a72f}
+@media(max-width:620px){.links-game33-active-v373 .g33-admin-grid-v378{grid-template-columns:1fr}}
 </style>
 </head>
 
@@ -1461,7 +1474,7 @@ table{max-width:100%}
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v377</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v378</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2022,11 +2035,14 @@ table{max-width:100%}
     <div class="card"><h3 style="margin-top:0">🏈 Teams & Scores</h3><div id="g33ScoreBoard"></div></div>
     <div class="card"><h3 style="margin-top:0">🏆 33 Winner History</h3><div id="g33History"></div></div>
     <div id="g33Admin" class="hide">
-      <div class="card"><h2 style="margin-top:0">3️⃣3️⃣ Commissioner — Yearly Team Draw</h2><div class="small">Do this <b>one time for the year</b>. Every player keeps the same team for all 18 weeks. Game 33 is limited to <b>32 players</b> because there are only 32 NFL teams.</div><div id="g33DrawStatus" class="msg" style="margin-top:10px"></div><button id="g33RandomDraw" class="green" style="width:100%;margin-top:10px">🎲 RANDOM DRAW — ASSIGN YEARLY TEAMS</button></div>
-      <div class="card"><h3 style="margin-top:0">Or Load Teams From Your Own Drawing</h3><div class="small">If your group drew teams in person, choose each player's team here and save them for the whole year.</div><div id="g33ManualAssignments"></div><button id="g33SaveManual" class="gold" style="width:100%;margin-top:10px">SAVE YEARLY TEAM ASSIGNMENTS</button></div>
-      <div class="card"><h3 style="margin-top:0">Season Player Access</h3><div class="small">Record whether each player is ACTIVE or PENDING for the season.</div><div id="g33PaymentAdmin"></div></div>
-      <div class="card"><h3 style="margin-top:0">Finalize This 33 Week</h3><div class="small">After every NFL game is final, this checks each active player's assigned team for exactly 33 points. No 33 means the rollover streak continues to the next week.</div><button id="g33Finalize" class="green" style="width:100%;margin-top:10px">🏁 FINALIZE 33 WEEK</button><button id="g33Payout" style="width:100%;margin-top:8px">MARK WINNER STATUS COMPLETE / OPEN</button></div>
-      <div class="card pool-games-manager links-games-manager-bottom"><h3 style="margin-top:0">🎮 Games in This Pool</h3><div class="small">Add another Links game to this same pool. With more than one active game, players choose from only the games in this pool.</div><div class="pool-games-active" style="margin-top:10px"></div><div class="pool-games-add" style="margin-top:10px"></div></div>
+      <div class="card g33-admin-head-v378"><h2 style="margin:0">⚙️ GAME 33 ADMIN</h2><div class="small">Commissioner controls for Game 33 only. NFL Pick’em and College Pick’em controls are unchanged.</div></div>
+      <div class="g33-admin-grid-v378">
+        <div class="card g33-admin-card-v378"><h3>🎲 Yearly Team Draw</h3><div class="small">Run the one-time random draw. Each player keeps the assigned NFL team for all 18 regular-season weeks.</div><div id="g33DrawStatus" class="msg" style="margin-top:10px"></div><button id="g33RandomDraw" class="green">RANDOM DRAW — ASSIGN YEARLY TEAMS</button></div>
+        <div class="card g33-admin-card-v378"><h3>📝 Manual Team Assignments</h3><div class="small">Use this when your group draws teams in person. Maximum 32 players, one NFL team per player.</div><div id="g33ManualAssignments"></div><button id="g33SaveManual" class="gold">SAVE YEARLY TEAM ASSIGNMENTS</button></div>
+        <div class="card g33-admin-card-v378"><h3>👥 Player Access</h3><div class="small">Set each Game 33 player ACTIVE or PENDING for the season.</div><div id="g33PaymentAdmin"></div></div>
+        <div class="card g33-admin-card-v378 g33-finalize-v378"><h3>🏁 Finalize Week & Rollover</h3><div class="small">After all NFL games are final, check active assigned teams for exactly 33 points. If nobody hits 33, carry the rollover into the next week.</div><button id="g33Finalize" class="green">FINALIZE GAME 33 WEEK</button><button id="g33Payout">WINNER STATUS — COMPLETE / OPEN</button></div>
+        <div class="card pool-games-manager links-games-manager-bottom g33-admin-card-v378"><h3>🎮 Games in This Pool</h3><div class="small">Add another Links game to this pool. Game 33 keeps its own controls when selected.</div><div class="pool-games-active" style="margin-top:10px"></div><div class="pool-games-add" style="margin-top:10px"></div></div>
+      </div>
     </div>
     <div class="links-fixed-ad" aria-label="Advertisement" style="margin:18px auto;max-width:1100px;display:none"><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-2654873707790051" data-ad-slot="9269292379" data-ad-format="auto" data-full-width-responsive="true"></ins></div>
   </section>
