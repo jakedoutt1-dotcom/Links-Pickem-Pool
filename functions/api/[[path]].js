@@ -1793,7 +1793,7 @@ async function squaresState(DB,pid,viewer,role){
     const claims=(await DB.prepare("SELECT square_index,player_name,paid,claimed_at FROM squares_claims WHERE board_id=? ORDER BY square_index").bind(b.id).all()).results||[];
     const awayNums=numArray(b.numbers_away),homeNums=numArray(b.numbers_home);
     let live=null;try{live=await squareLiveScore(b.event_id)}catch(e){}
-    const winners=live?{
+    let winners=live?{
       q1:squareWinner(claims,awayNums,homeNums,live.q1Away,live.q1Home),
       half:squareWinner(claims,awayNums,homeNums,live.halfAway,live.halfHome),
       q3:squareWinner(claims,awayNums,homeNums,live.q3Away,live.q3Home),
