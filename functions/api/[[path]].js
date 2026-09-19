@@ -2459,6 +2459,18 @@ export async function onRequest(context){
       const rows=(await DB.prepare("SELECT player_name,entry_json FROM special_game_entries WHERE pool_id=? AND game_type='props'").bind(pid).all()).results||[],pts=Math.max(0,Number(settings.pointsPerQuestion||1)),now=new Date().toISOString();
       for(const r of rows){let e={};try{e=JSON.parse(r.entry_json||"{}")||{}}catch(x){}const picks=Array.isArray(e.answers)?e.answers:String(e.answers||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean);let correct=0;answers.forEach((a,i)=>{if(String(picks[i]||"").trim().toLowerCase()===a.toLowerCase())correct++});const score=correct*pts;await DB.prepare("INSERT INTO special_game_scores(pool_id,game_type,player_name,score,status,detail_json,updated_at) VALUES(?,'props',? ,?,'FINAL',?,?) ON CONFLICT(pool_id,game_type,player_name) DO UPDATE SET score=excluded.score,status='FINAL',detail_json=excluded.detail_json,updated_at=excluded.updated_at").bind(pid,r.player_name,score,JSON.stringify({correct,total:answers.length,pointsPerQuestion:pts}),now).run()}
     }
+    async function fetchMastersLeaderboardV387(settings){
+      const id=String(settings.eventId||"").trim();if(!id)return [];
+      const j=await getJSON(`https://site.api.espn.com/apis/site/v2/sports/golf/pga/leaderboard?tournamentId=${encodeURIComponent(id)}&_=${Date.now()}`);
+      const ev=(j?.events||[])[0]||j?.event||j, comps=ev?.competitions?.[0]?.competitors||j?.leaderboard||[];
+      return (comps||[]).map((x,i)=>({id:String(x?.athlete?.id||x?.id||""),name:String(x?.athlete?.displayName||x?.athlete?.fullName||x?.displayName||x?.name||""),score:Number(x?.score??x?.statistics?.find?.(z=>z.name==="score")?.value),position:Number(x?.status?.position?.id||x?.position||i+1),status:String(x?.status?.type?.description||x?.status||"")})).filter(x=>x.name);
+    }
+    async function autoScoreMastersV387(settings){
+      if(String(settings.autoScore||"false")!=="true")return;
+      const lb=await fetchMastersLeaderboardV387(settings);if(!lb.length)return;
+      const map=new Map(lb.map(x=>[x.name.toLowerCase(),x])),rows=(await DB.prepare("SELECT player_name,entry_json FROM special_game_entries WHERE pool_id=? AND game_type='masters'").bind(pid).all()).results||[],count=Math.max(1,Number(settings.scoresCount||settings.lineupSize||4)),now=new Date().toISOString();
+      for(const r of rows){let e={};try{e=JSON.parse(r.entry_json||"{}")||{}}catch(x){}const chosen=(e.golfers||[]).map(n=>map.get(String(n).toLowerCase())).filter(Boolean).sort((a,b)=>a.position-b.position),used=chosen.slice(0,count),score=used.reduce((t,x)=>t+(Number.isFinite(x.score)?x.score:x.position),0);await DB.prepare("INSERT INTO special_game_scores(pool_id,game_type,player_name,score,status,detail_json,updated_at) VALUES(?,'masters',?,?, 'OPEN',?,?) ON CONFLICT(pool_id,game_type,player_name) DO UPDATE SET score=excluded.score,status=excluded.status,detail_json=excluded.detail_json,updated_at=excluded.updated_at").bind(pid,r.player_name,score,JSON.stringify({counted:used.map(x=>x.name),leaderboard:chosen}),now).run()}
+    }
     if(path==="special/nfl-week"&&method==="GET"){
       const gt=String(url.searchParams.get("gameType")||"").trim().toLowerCase(),sw=Math.max(1,Math.min(22,Number(url.searchParams.get("week")||1)));
       if(!["survivor","confidence","playoff"].includes(gt))return json({error:"This game does not use the NFL weekly slate."},400);
@@ -2471,6 +2483,7 @@ export async function onRequest(context){
       const raw=await getPoolSetting(DB,pid,`game_settings_${gt}`,"{}");let settings={};try{settings=JSON.parse(raw||"{}")||{}}catch(e){}
       if(["survivor","confidence","playoff"].includes(gt)){try{await autoScoreSpecialNFLV385(gt)}catch(e){}}
       if(gt==="props"){try{await autoScorePropsV386(settings)}catch(e){}}
+      if(gt==="masters"){try{await autoScoreMastersV387(settings)}catch(e){}}
       const entries=(await DB.prepare("SELECT player_name,entry_json,submitted_at FROM special_game_entries WHERE pool_id=? AND game_type=? ORDER BY player_name").bind(pid,gt).all()).results||[];
       const scores=(await DB.prepare("SELECT player_name,score,status,detail_json,updated_at FROM special_game_scores WHERE pool_id=? AND game_type=? ORDER BY score DESC,player_name").bind(pid,gt).all()).results||[];
       const mine=entries.find(x=>String(x.player_name).toLowerCase()===String(s.player_name||"").toLowerCase());
@@ -2512,6 +2525,10 @@ export async function onRequest(context){
       const year=Number(url.searchParams.get("year")||new Date().getUTCFullYear());
       const events=await fetchNascarPoolEvents(year);
       return json({year,events});
+    }
+    if(path==="masters/leaderboard"&&method==="GET"){
+      const raw=await getPoolSetting(DB,pid,"game_settings_masters","{}");let settings={};try{settings=JSON.parse(raw||"{}")||{}}catch(e){}
+      return json({eventId:settings.eventId||"",eventName:settings.eventName||"",leaderboard:await fetchMastersLeaderboardV387(settings)});
     }
     if(path==="masters/setup"&&method==="GET"){
       const year=Number(url.searchParams.get("year")||new Date().getUTCFullYear());
