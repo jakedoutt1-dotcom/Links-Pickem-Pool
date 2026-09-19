@@ -1539,7 +1539,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v461</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v462</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2291,7 +2291,53 @@ function correctGameInstanceLabelsV430(gt,rows){
     return Object.assign({},x,{name:belongsHere?saved:expected});
   });
 }
-async function renderGameInstanceUI(gt){gt=gameInstanceKey(gt);let rows=await fetchGameInstances(gt);rows=correctGameInstanceLabelsV430(gt,rows);gameInstanceCache[gt]=rows;if(rows.length&&!rows.some(x=>Number(x.id)===Number(activeGameInstanceId))){activeGameInstanceId=Number(rows[0].id);activeGameInstanceName=rows[0].name||"";sessionStorage.setItem("linksGameInstanceId",String(activeGameInstanceId));sessionStorage.setItem("linksGameInstanceName",activeGameInstanceName)}const host=gameInstanceTabHost(gt);if(host){host.innerHTML=rows.map(x=>`<button type="button" class="game-instance-tab-v180 ${Number(x.id)===Number(activeGameInstanceId)?"active":""}" data-instance-id="${x.id}">${escapeHtml(x.name)}</button>`).join("")+(isCommissioner?`<button type="button" class="game-instance-tab-v180 game-instance-add-v180" data-instance-add="1">＋ ADD</button>`:"");host.querySelectorAll("[data-instance-id]").forEach(b=>b.onclick=()=>selectGameInstance(gt,b.dataset.instanceId));host.querySelector("[data-instance-add]")?.addEventListener("click",()=>addGameInstance(gt))}const admin=gameInstanceAdminHost(gt);if(admin&&isCommissioner){admin.innerHTML=rows.map(x=>`<div class="game-instance-admin-row-v180"><input value="${escapeHtml(x.name)}" readonly><button type="button" data-instance-rename="${x.id}">RENAME</button><button type="button" class="red" data-instance-archive="${x.id}">ARCHIVE</button></div>`).join("")+`<div class="game-instance-admin-add-v180"><div class="small">Need another ${escapeHtml(gameInstanceDefaultLabel(gt))}? Add it here and it will appear as another tab beneath the pool name.</div><button type="button" class="gold" data-instance-admin-add="1">＋ ADD ANOTHER</button></div>`;admin.querySelectorAll("[data-instance-rename]").forEach(b=>b.onclick=()=>{const x=rows.find(r=>Number(r.id)===Number(b.dataset.instanceRename));renameGameInstance(gt,b.dataset.instanceRename,x?.name)});admin.querySelectorAll("[data-instance-archive]").forEach(b=>b.onclick=()=>archiveGameInstance(gt,b.dataset.instanceArchive));admin.querySelector("[data-instance-admin-add]")?.addEventListener("click",()=>addGameInstance(gt))}}
+async function openGameAddV462(gt){
+  if(!isCommissioner)return;
+  // Existing paid entitlement with an available slot can use the normal commissioner
+  // add-game flow. Free/no-slot commissioners are sent to packages as the upgrade CTA.
+  try{
+    const d=await api("/api/commissioner/hub");
+    const remaining=Number(d?.remaining||0),plan=String(d?.plan||"free").toLowerCase();
+    if(plan!=="free"&&remaining>0){
+      showOnly("sportChoice");
+      await renderSportChoice();
+      return;
+    }
+  }catch(e){}
+  const home=$("#home"),plans=$("#plansPageV201");
+  if(home)home.classList.add("hide");
+  if(plans)plans.classList.remove("hide");
+  const email=sessionStorage.getItem("linksCommissionerEmail")||"";
+  if($("#pricingCommissionerEmail")&&email)$("#pricingCommissionerEmail").value=email;
+  window.scrollTo(0,0);
+}
+async function renderGameInstanceUI(gt){
+  gt=gameInstanceKey(gt);
+  let rows=await fetchGameInstances(gt);
+  rows=correctGameInstanceLabelsV430(gt,rows);
+  gameInstanceCache[gt]=rows;
+  if(rows.length&&!rows.some(x=>Number(x.id)===Number(activeGameInstanceId))){
+    activeGameInstanceId=Number(rows[0].id);
+    activeGameInstanceName=rows[0].name||"";
+    sessionStorage.setItem("linksGameInstanceId",String(activeGameInstanceId));
+    sessionStorage.setItem("linksGameInstanceName",activeGameInstanceName);
+  }
+  const host=gameInstanceTabHost(gt);
+  if(host){
+    const gameTabs=rows.map(x=>`<button type="button" class="game-instance-tab-v180 ${Number(x.id)===Number(activeGameInstanceId)?"active":""}" data-instance-id="${x.id}">${escapeHtml(x.name)}</button>`).join("");
+    // v462: players never see sales/add tabs. Commissioners always see ADD as the
+    // upgrade/add-game selling point on every game page.
+    host.innerHTML=gameTabs+(isCommissioner?`<button type="button" class="game-instance-tab-v180 game-instance-add-v180" data-links-add-game="1">＋ ADD</button>`:"");
+    host.querySelectorAll("[data-instance-id]").forEach(b=>b.onclick=()=>selectGameInstance(gt,b.dataset.instanceId));
+    host.querySelector("[data-links-add-game]")?.addEventListener("click",()=>openGameAddV462(gt));
+  }
+  const admin=gameInstanceAdminHost(gt);
+  if(admin&&isCommissioner){
+    admin.innerHTML=rows.map(x=>`<div class="game-instance-admin-row-v180"><input value="${escapeHtml(x.name)}" readonly><button type="button" data-instance-rename="${x.id}">RENAME</button><button type="button" class="red" data-instance-archive="${x.id}">ARCHIVE</button></div>`).join("");
+    admin.querySelectorAll("[data-instance-rename]").forEach(b=>b.onclick=()=>{const x=rows.find(r=>Number(r.id)===Number(b.dataset.instanceRename));renameGameInstance(gt,b.dataset.instanceRename,x?.name)});
+    admin.querySelectorAll("[data-instance-archive]").forEach(b=>b.onclick=()=>archiveGameInstance(gt,b.dataset.instanceArchive));
+  }
+}
 async function api(path,opt={}){
   opt.headers=Object.assign({"Content-Type":"application/json"},opt.headers||{});
   if(token)opt.headers.Authorization="Bearer "+token;
