@@ -1539,7 +1539,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v454</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v455</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2327,7 +2327,13 @@ window.addEventListener("popstate",e=>{
   const id=e.state?.linksScreen||"home";
   showOnly(id,{fromHistory:true});
 });
-function msg(html,good=false){const m=$("#message");m.classList.remove("hide");m.style.background=good?"#083821":"#392908";m.style.border=good?"2px solid #3bdd86":"2px solid #e4b72c";m.innerHTML=html}
+let linksMessageTimerV455=null;
+function msg(html,good=false){
+  const m=$("#message");if(!m)return;
+  if(linksMessageTimerV455){clearTimeout(linksMessageTimerV455);linksMessageTimerV455=null}
+  m.classList.remove("hide");m.style.background=good?"#083821":"#392908";m.style.border=good?"2px solid #3bdd86":"2px solid #e4b72c";m.innerHTML=html;
+  if(good)linksMessageTimerV455=setTimeout(()=>{m.classList.add("hide");m.innerHTML="";linksMessageTimerV455=null},5000);
+}
 function toLocalInput(iso){if(!iso)return"";let d=new Date(iso),z=n=>String(n).padStart(2,"0");return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`}
 function fmtKickoff(iso){if(!iso)return"";const opt={weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit",timeZoneName:"short"};return new Intl.DateTimeFormat("en-US",opt).format(new Date(iso))}
 function statusLooksLikeKickoffTime(status){const s=String(status||"").trim();return !!s&&(/\b(?:AM|PM)\b/i.test(s)&&( /\b(?:EST|EDT|CST|CDT|MST|MDT|PST|PDT)\b/i.test(s)||/^\d{1,2}\/\d{1,2}\s*[-–—•]/.test(s)));}
