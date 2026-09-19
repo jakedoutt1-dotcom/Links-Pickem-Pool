@@ -1539,7 +1539,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v457</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v458</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -4645,6 +4645,8 @@ document.addEventListener("keydown",e=>{
   if(btn){e.preventDefault();btn.click()}
 });
 async function restore(){
+  const protectedNflRoutesV458=new Set(["/nfl-picks","/compare-picks","/scores","/standings","/projected-standings","/paid-payout","/rules","/commissioner"]);
+  const requestedPathV458=location.pathname;
   try{history.replaceState({linksScreen:"home"},"",location.href)}catch(e){}
   const launchQs=new URLSearchParams(location.search),setupParam=launchQs.get("setup"),inviteParam=launchQs.get("invite");
   if(setupParam){await openPlayerSetup(setupParam);return;}
@@ -4659,6 +4661,14 @@ async function restore(){
   applyPoolAdMode(false);
   await refreshLinksPurchase();
   await loadPoolMenu(poolCode);
+  if(protectedNflRoutesV458.has(requestedPathV458)){
+    sessionStorage.removeItem("poolToken");
+    token="";
+    showOnly("home");
+    setLinksRoute(LINKS_ROUTES.home,true);
+    const err=$("#homePortalErr");if(err)err.textContent="Sign in to your pool to open NFL Pick’em.";
+    return;
+  }
   showOnly("home");
 }
 applyPoolAdMode(sessionStorage.getItem("linksPoolAdFree")==="1");
