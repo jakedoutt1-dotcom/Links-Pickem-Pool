@@ -1416,7 +1416,7 @@ table{max-width:100%}
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v362</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v363</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2084,6 +2084,7 @@ let sport=sessionStorage.getItem("poolSport")||"";
 let poolGames=[];try{poolGames=JSON.parse(sessionStorage.getItem("poolGames")||"[]")}catch(e){poolGames=[]}
 let week=1,officialWeek=1,adminWeek=1,standingsWeek=1,boot=null,me=null,collegeCandidates=[],scoreTimer=null,liveRefreshBusy=false,lastScoreHasLive=false,venmoStarted=false,poolDisplayTimezone="auto";
 let pickLockCountdownTimerV198=null,standingsManualSelectionV198=false;
+let linksPaidPackageV363=sessionStorage.getItem("linksPaidPackageV363")==="1";
 
 // Stable, human-readable routes make LINKS screens addressable by AdSense and the browser.
 const LINKS_ROUTES={
@@ -2387,13 +2388,34 @@ function savePoolGames(list,fallback="nfl"){
   return poolGames;
 }
 function updateChangeGameButtons(){
-  const many=normalizePoolGames(poolGames,sport||"nfl").length>1;
-  // Commissioner always gets CHANGE GAME on the player-facing game page.
-  // Players only see it when the pool actually has multiple active games.
-  const main=$("#changeSport");if(main)main.classList.toggle("hide",isCommissioner?false:!many);
-  ["#specialChangeGame","#squaresChangeGame","#marchChangeGame","#adminChangeGame"].forEach(sel=>{
-    const el=$(sel);if(el)el.classList.toggle("hide",!many);
+  // v363: CHANGE GAME belongs to the whole pool, not just the commissioner.
+  // Show it to commissioner + players only when the pool is on a paid/multi-slot package.
+  const show=!!linksPaidPackageV363;
+  ["#changeSport","#specialChangeGame","#squaresChangeGame","#marchChangeGame","#adminChangeGame"].forEach(sel=>{
+    const el=$(sel);if(el)el.classList.toggle("hide",!show);
   });
+}
+async function refreshPackageAccessV363(){
+  let paid=false;
+  try{
+    // Commissioner gets authoritative package data from the dashboard.
+    if(isCommissioner){
+      const d=await api("/api/commissioner/dashboard");
+      const plan=String(d?.plan||"free").toLowerCase(),limit=Number(d?.limit||1);
+      const owner=String(d?.email||sessionStorage.getItem("linksCommissionerEmail")||"").trim().toLowerCase()===LINKS_OWNER_EMAIL_V357;
+      paid=owner||plan!=="free"||limit>1;
+    }else{
+      // Player sessions use the pool access returned by the session/pool APIs when present.
+      const d=await api("/api/session");
+      const plan=String(d?.plan||d?.access?.plan||d?.poolPlan||"free").toLowerCase();
+      const limit=Number(d?.limit||d?.access?.limit||d?.poolLimit||1);
+      paid=!!(d?.access?.multiGame||d?.access?.paidPackage||d?.access?.allAccess)||plan!=="free"||limit>1;
+    }
+  }catch(e){}
+  linksPaidPackageV363=paid;
+  sessionStorage.setItem("linksPaidPackageV363",paid?"1":"0");
+  updateChangeGameButtons();
+  return paid;
 }
 async function enterSportChoice(){
   // Always refresh the exact active-game list from the pool before showing choices.
@@ -2528,6 +2550,7 @@ async function enterApp(selected){
   $("#sportBadge").textContent=sport==="nfl"?"🏈 NFL":(sport==="college"?"🎓 COLLEGE":"3️⃣3️⃣ 33");
   $("#currentUser").textContent=currentUser;
   updateChangeGameButtons();
+  refreshPackageAccessV363().catch(()=>{});
   if(isCommissioner)setTimeout(()=>{try{renderPoolGamesManagers()}catch(e){}},0);
   // Do not block the first paint on commissioner extras or league-tab metadata. Load them after the game page is usable.
 
@@ -2544,6 +2567,15 @@ async function enterApp(selected){
   $("#weekSelect").innerHTML=Array.from({length:n},(_,i)=>`<option value="${i+1}">${sport==="nfl"?(i+1<=18?`Week ${i+1}`:({19:"Wild Card",20:"Divisional",21:"Conference Championships",22:"Super Bowl"}[i+1])):`College Week ${i+1}`}</option>`).join("");
   week=1;
   try{const d=await api(q("/api/default-week"));const proposed=Number(d?.week||1);if(Number.isFinite(proposed)&&proposed>=1&&proposed<=n)week=proposed}catch(e){week=1}
+  // v363: an unfinished/empty prior pool week must never pin NFL Pick'em there.
+  // Ask the live NFL schedule for the current round and prefer that over pool finalization history.
+  if(sport==="nfl"){
+    try{
+      const live=await api("/api/scores?sport=nfl");
+      const candidates=[live?.week,live?.currentWeek,live?.season?.week,live?.calendar?.week,live?.meta?.week].map(Number).filter(x=>Number.isFinite(x)&&x>=1&&x<=22);
+      if(candidates.length)week=candidates[0];
+    }catch(e){}
+  }
   officialWeek=week;adminWeek=week;standingsWeek=week;
   $("#weekSelect").value=week;showOnly("app");applyRoleNavigation();await refreshWeek();showTab("picks");
   renderGameInstanceUI(sport).catch(e=>console.warn("Game tabs load failed",e));
@@ -3834,26 +3866,15 @@ clickOnEnter("#playerSetupPassword2","#playerSetupBtn");
 clickOnEnter("#createPoolPass","#createPoolBtn");
 $("#chooseNFL").onclick=()=>enterApp("nfl");$("#chooseCollege").onclick=()=>enterApp("college");$("#choose33").onclick=()=>enterApp("33");
 async function commissionerChangeGameV358(){
-  if(!isCommissioner)return enterSportChoice();
-  try{
-    const d=await api("/api/commissioner/dashboard");
-    const owner=String(d.email||$("#commissionerEmailInput")?.value||sessionStorage.getItem("linksCommissionerEmail")||"").trim().toLowerCase()===LINKS_OWNER_EMAIL_V357;
-    const plan=String(d.plan||"free").toLowerCase();
-    const limit=Number(d.limit||1);
-    const hasMoreAccess=owner||plan!=="free"||limit>1;
-    if(hasMoreAccess)return enterSportChoice();
-  }catch(e){
-    const owner=String($("#commissionerEmailInput")?.value||sessionStorage.getItem("linksCommissionerEmail")||"").trim().toLowerCase()===LINKS_OWNER_EMAIL_V357;
-    if(owner)return enterSportChoice();
-  }
-  showOnly("home");
-  setTimeout(()=>$("#linksPackages")?.scrollIntoView({behavior:"smooth",block:"start"}),60);
+  const allowed=await refreshPackageAccessV363();
+  if(allowed)return enterSportChoice();
+  updateChangeGameButtons();
 }
 $("#changeSport").onclick=commissionerChangeGameV358;
 $("#adminChangeGame").onclick=commissionerChangeGameV358;
 async function signOut(){
   try{await api("/api/logout",{method:"POST"})}catch(e){}
-  ["poolToken","poolRole","poolUser","poolSport","poolGames","poolIsCommissioner","linksPoolAdFree"].forEach(k=>sessionStorage.removeItem(k));token=role=currentUser=sport="";isCommissioner=false;poolGames=[];applyPoolAdMode(false);await loadPoolMenu(poolCode);showOnly("home");
+  ["poolToken","poolRole","poolUser","poolSport","poolGames","poolIsCommissioner","linksPoolAdFree","linksPaidPackageV363"].forEach(k=>sessionStorage.removeItem(k));token=role=currentUser=sport="";isCommissioner=false;poolGames=[];applyPoolAdMode(false);await loadPoolMenu(poolCode);showOnly("home");
 }
 $("#signOut").onclick=signOut;$("#sportSignOut").onclick=signOut;$("#squaresSignOut").onclick=signOut;
 $("#weekSelect").onchange=async()=>{
@@ -4316,7 +4337,7 @@ async function restore(){
   showOnly("home");
 }
 applyPoolAdMode(sessionStorage.getItem("linksPoolAdFree")==="1");
-restore().then?.(()=>setTimeout(ensureCommissionerChangeGameV359,0));
+restore();
 
 
 
