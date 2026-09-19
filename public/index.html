@@ -1488,7 +1488,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v384</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v385</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2895,8 +2895,8 @@ async function renderSpecialPlayerEngineV383(kind){
   const host=$("#specialGameCards");if(!host)return;
   try{
     const st=await api(`/api/special/state?gameType=${encodeURIComponent(kind)}`);specialStateV383=st;
-    const submitted=st.mySubmittedAt?`Saved ${new Date(st.mySubmittedAt).toLocaleString()}`:"No entry saved yet";
-    const entryHtml=await specialEntryFieldsV383(kind,st);host.innerHTML=`<div class="special-game-card" style="grid-column:1/-1"><b>🎮 MY ${escapeHtml((SPECIAL_GAME_DATA[kind]?.title||"GAME").toUpperCase())} ENTRY</b><span>${submitted}</span><div style="margin-top:10px">${entryHtml}</div><button id="saveSpecialEntryV383" class="green" style="width:100%;margin-top:12px">SAVE MY ENTRY</button><div id="specialEntryStatusV383" class="small" style="margin-top:7px"></div></div>`;
+    const submitted=st.mySubmittedAt?`Saved ${new Date(st.mySubmittedAt).toLocaleString()}`:"No entry saved yet",mineScore=(st.scores||[]).find(x=>String(x.playerName).toLowerCase()===String(currentUser||"").toLowerCase()),scoreLine=mineScore?` • Score: ${Number(mineScore.score||0)} • ${escapeHtml(mineScore.status||"OPEN")}`:"";
+    const entryHtml=await specialEntryFieldsV383(kind,st);host.innerHTML=`<div class="special-game-card" style="grid-column:1/-1"><b>🎮 MY ${escapeHtml((SPECIAL_GAME_DATA[kind]?.title||"GAME").toUpperCase())} ENTRY</b><span>${submitted}${scoreLine}</span><div style="margin-top:10px">${entryHtml}</div><button id="saveSpecialEntryV383" class="green" style="width:100%;margin-top:12px">SAVE MY ENTRY</button><div id="specialEntryStatusV383" class="small" style="margin-top:7px"></div></div>`;
     $("#saveSpecialEntryV383").onclick=async()=>{const status=$("#specialEntryStatusV383");let entry={};if(["survivor","confidence","playoff"].includes(kind)){const week=Number($("#specialWeekV384")?.value||1),radios=$('input[name^="spgame"]:checked');if(kind==="survivor")entry={week,team:radios[0]?.value||""};else entry={week,picks:radios.map(r=>{const i=Number(r.name.replace("spgame",""));return {gameIndex:i,team:r.value,confidence:kind==="confidence"?Number($(`.specialConfidenceV384[data-index="${i}"]`)?.value||0):0}})}}else else if(kind==="props")entry={answers:$("#specialEntryTextV383")?.value||""};else entry={[kind==="masters"?"golfers":"drivers"]:$(".specialEntryCheckV383:checked").map(x=>x.value)};status.textContent="Saving…";try{await api("/api/special/entry",{method:"POST",body:JSON.stringify({gameType:kind,entry})});status.textContent="✅ Entry saved.";await renderSpecialPlayerEngineV383(kind);populateSpecialUtilityPanes(kind)}catch(e){status.textContent=e.message||"Could not save entry."}};
     populateSpecialUtilityPanes(kind);
   }catch(e){host.innerHTML=`<div class="special-game-card" style="grid-column:1/-1"><b>Game entry</b><span>${escapeHtml(e.message||"Could not load game entry.")}</span></div>`}
