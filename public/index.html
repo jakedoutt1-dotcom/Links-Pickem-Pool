@@ -1539,7 +1539,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v468</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v469</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2834,15 +2834,13 @@ async function enterApp(selected){
     }catch(e){}
   }
   officialWeek=week;adminWeek=week;standingsWeek=week;
-  $("#weekSelect").value=week;showOnly("app");applyRoleNavigation();// v468: Admin-saved week/game/access data is authoritative. Do not paint the
-  // Picks page until the same access round-trip used by the working manual button
-  // has completed and the full legacy Picks payload has been re-read.
+  $("#weekSelect").value=week;showOnly("app");applyRoleNavigation();
+  // v469: normal navigation must finish without a DOM-selector crash before any
+  // Picks/access/tab requests run. Then perform the proven manual-access sequence.
   await refreshWeek();
-  try{await checkPaymentStatus({silent:true})}catch(e){}
-  await refreshWeek();
+  await checkPaymentStatus({silent:true});
   showTab("picks");
-  // Tabs remain presentation only and cannot gate or replace Admin-selected NFL data.
-  renderGameInstanceUI(sport).catch(e=>console.warn("Game tabs load failed",e));
+  await renderGameInstanceUI(sport);
 }
 const SPECIAL_GAME_DATA={
   survivor:{title:"NFL SURVIVOR",logo:"./nfl-survivor-logo-v102.jpg",lead:"Pick one NFL team each week. Win and survive; lose and you are out.",rules:"Pick one NFL team to win each week. A team cannot be used twice. Picks lock at kickoff. Commissioner rules control lives, buy-backs and tie situations."},
