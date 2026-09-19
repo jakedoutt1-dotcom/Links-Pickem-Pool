@@ -1539,7 +1539,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v465</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v466</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2801,7 +2801,6 @@ async function enterApp(selected){
   sport=selected;sessionStorage.setItem("poolSport",sport);
   document.body.classList.toggle("links-game33-active-v373",sport==="33");
   setSportHero();
-  applyGame33ShellV426();
   $("#appPoolName").textContent=poolName;
   $("#sportBadge").textContent=sport==="nfl"?"🏈 NFL":(sport==="college"?"🎓 COLLEGE":"3️⃣3️⃣ 33");
   $("#currentUser").textContent=currentUser;
@@ -2835,15 +2834,10 @@ async function enterApp(selected){
     }catch(e){}
   }
   officialWeek=week;adminWeek=week;standingsWeek=week;
-  $("#weekSelect").value=week;showOnly("app");applyRoleNavigation();
-  // v463: the original/free game uses the legacy data path. Tabs are presentation/
-  // upgrade navigation and must never gate the existing NFL slate or saved picks.
-  activeGameInstanceId=0;activeGameInstanceName="";
-  sessionStorage.removeItem("linksGameInstanceId");sessionStorage.removeItem("linksGameInstanceName");
-  await refreshWeek();showTab("picks");
+  $("#weekSelect").value=week;showOnly("app");applyRoleNavigation();await refreshWeek();showTab("picks");
+  // v466: preserve the proven legacy NFL data path; tabs render only after Picks is fully loaded.
   renderGameInstanceUI(sport).catch(e=>console.warn("Game tabs load failed",e));
 }
-const SPECIAL_GAME_BANNERS_V381={survivor:"./nfl-survivor-logo-v102.jpg",confidence:"./confidence-pool-logo-v102.jpg",props:"./super-bowl-props-logo-v102.jpg",playoff:"./nfl-playoff-challenge-logo-v102.jpg",masters:"./masters-golf-pool-logo-v102.jpg",nascar:"./nascar-pool-logo-v102.jpg",fantasy:"./fantasy-football-logo-v154.png",dynasty:"./dynasty-fantasy-football-logo-v157.png"};
 const SPECIAL_GAME_DATA={
   survivor:{title:"NFL SURVIVOR",logo:"./nfl-survivor-logo-v102.jpg",lead:"Pick one NFL team each week. Win and survive; lose and you are out.",rules:"Pick one NFL team to win each week. A team cannot be used twice. Picks lock at kickoff. Commissioner rules control lives, buy-backs and tie situations."},
   confidence:{title:"CONFIDENCE POOL",logo:"./confidence-pool-logo-v102.jpg",lead:"Pick every NFL game and rank each pick by confidence.",rules:"Choose every game, then use each confidence value once. Correct picks earn the confidence points assigned to them. Highest total wins under commissioner rules."},
@@ -3330,30 +3324,12 @@ function applyPickPageDataV194(first,{cache=false}={}){
   const marker=$("#pickCacheStatusV194");if(marker)marker.textContent=cache?"Loaded instantly • checking for updates…":"Up to date";
 }
 async function refreshWeek(){
-  // v465: never allow the NFL shell to paint an empty regular-season slate.
-  // Seed the known 2026 slate BEFORE cache/API work so later tab/package code cannot
-  // leave a legacy pool at "0 games".
-  if(sport==="nfl"&&Number(week)>=1&&Number(week)<=18){
-    const raw={"1":"NE@SEA,SF@LAR,CHI@CAR,TB@CIN,NO@DET,BUF@HOU,BAL@IND,CLE@JAX,ATL@PIT,NYJ@TEN,ARI@LAC,MIA@LV,GB@MIN,WAS@PHI,DAL@NYG,DEN@KC","2":"DET@BUF,CAR@ATL,NO@BAL,MIN@CHI,CIN@HOU,PIT@NE,GB@NYJ,CLE@TB,PHI@TEN,JAX@DEN,LV@LAC,SEA@ARI,WAS@DAL,MIA@SF,IND@KC,NYG@LAR"}[Number(week)]||"";
-    if(raw){
-      const seed=raw.split(",").map((m,i)=>{const [away,home]=m.split("@");return {gameIndex:i,away,home,awayName:away,homeName:home,completed:false,winner:null,status:"",state:"pre",clock:"",awayScore:null,homeScore:null}});
-      if(!boot)boot={};boot.liveGames=seed;if(!boot.locks)boot.locks={};renderPicks();
-    }
-  }
   // v194 stale-while-revalidate: paint the last known picks/slate immediately,
   // then quietly replace it with the authoritative server copy.
   const cached=readPickPageCacheV194();
-  if(cached&&!(sport==="nfl"&&Number(week)<=18&&!(cached?.boot?.liveGames||[]).length))applyPickPageDataV194(cached,{cache:true});
+  if(cached)applyPickPageDataV194(cached,{cache:true});
   try{
     const first=await api(q("/api/pick-page"));
-    // v464 safety net: a regular-season NFL pick page can never legitimately have
-    // zero games. If an older/legacy pool response is empty, rebuild the slate from
-    // the same 2026 schedule used by the known-good pre-tab builds, while preserving
-    // all server-returned saved picks, locks and access data.
-    if(sport==="nfl"&&Number(week)>=1&&Number(week)<=18&&!(first?.boot?.liveGames||[]).length){
-      const raw={"1":"NE@SEA,SF@LAR,CHI@CAR,TB@CIN,NO@DET,BUF@HOU,BAL@IND,CLE@JAX,ATL@PIT,NYJ@TEN,ARI@LAC,MIA@LV,GB@MIN,WAS@PHI,DAL@NYG,DEN@KC","2":"DET@BUF,CAR@ATL,NO@BAL,MIN@CHI,CIN@HOU,PIT@NE,GB@NYJ,CLE@TB,PHI@TEN,JAX@DEN,LV@LAC,SEA@ARI,WAS@DAL,MIA@SF,IND@KC,NYG@LAR"}[Number(week)]||"";
-      if(raw)first.boot.liveGames=raw.split(",").map((m,i)=>{const [away,home]=m.split("@");return {gameIndex:i,away,home,awayName:away,homeName:home,completed:false,winner:null,status:"",state:"pre",clock:"",awayScore:null,homeScore:null}});
-    }
     writePickPageCacheV194(first);
     applyPickPageDataV194(first,{cache:false});
   }catch(e){
