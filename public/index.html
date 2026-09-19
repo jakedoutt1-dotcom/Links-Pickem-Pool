@@ -1507,7 +1507,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v432</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v433</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -4899,6 +4899,25 @@ $("#chooseSquares").onclick=()=>enterSquares();
     },3500);
   }
   document.addEventListener("click",e=>{const b=e.target.closest("button,a[role='button']");if(b)feedback(b)},true);
+})();
+</script>
+
+<script id="links-v433-create-pool-rescue">
+(()=>{
+  function openCreatePoolV433(e){
+    const b=e.target.closest('#showCreatePool,#createFreePoolHome,#createFreePoolPricing,#createFreePoolTopV339,[data-create-pool]');
+    if(!b)return;
+    e.preventDefault();e.stopPropagation();
+    if(typeof showOnly==="function"){
+      showOnly("createPoolPage");
+      setTimeout(()=>document.getElementById("createPoolName")?.focus(),80);
+    }else{
+      document.querySelectorAll("#home,#demoPage,#commissionerWelcome,#linksAdmin,#publicScoresPage,#gameInfoPage,#inviteJoinPage,#playerSetupPage,#login,#sportChoice,#specialGameApp,#squaresApp,#marchApp,#app").forEach(x=>x.classList.add("hide"));
+      document.getElementById("createPoolPage")?.classList.remove("hide");
+      window.scrollTo(0,0);
+    }
+  }
+  document.addEventListener("click",openCreatePoolV433,true);
 })();
 </script>
 </body></html>
