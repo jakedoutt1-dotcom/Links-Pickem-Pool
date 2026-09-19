@@ -1371,6 +1371,15 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
 #collegeSetup .college-mode-v379 label{display:flex;gap:7px;align-items:center;background:#101820;border:1px solid #40515e;border-radius:10px;padding:10px;font-weight:800}
 .college-record-v379{color:#aebbc5;font-size:11px;font-weight:700}
 @media(max-width:520px){#collegeSetup .college-mode-v379{grid-template-columns:1fr}}
+</style><style id="links-v380-special-nav">
+/* v380 — game-specific navigation. NFL Pick'em is intentionally untouched. */
+#specialGameApp[data-active-game="survivor"] #specialTabs [data-special-tab="compare"],#specialGameApp[data-active-game="survivor"] #specialTabs [data-special-tab="projected"],#specialGameApp[data-active-game="survivor"] #specialTabs [data-special-tab="access"],
+#specialGameApp[data-active-game="confidence"] #specialTabs [data-special-tab="projected"],#specialGameApp[data-active-game="confidence"] #specialTabs [data-special-tab="access"],
+#specialGameApp[data-active-game="props"] #specialTabs [data-special-tab="scores"],#specialGameApp[data-active-game="props"] #specialTabs [data-special-tab="projected"],#specialGameApp[data-active-game="props"] #specialTabs [data-special-tab="access"],
+#specialGameApp[data-active-game="playoff"] #specialTabs [data-special-tab="projected"],#specialGameApp[data-active-game="playoff"] #specialTabs [data-special-tab="access"],
+#specialGameApp[data-active-game="masters"] #specialTabs [data-special-tab="compare"],#specialGameApp[data-active-game="masters"] #specialTabs [data-special-tab="projected"],#specialGameApp[data-active-game="masters"] #specialTabs [data-special-tab="access"],
+#specialGameApp[data-active-game="nascar"] #specialTabs [data-special-tab="compare"],#specialGameApp[data-active-game="nascar"] #specialTabs [data-special-tab="projected"],#specialGameApp[data-active-game="nascar"] #specialTabs [data-special-tab="access"]{display:none!important}
+#specialGameApp:not([data-active-game="fantasy"]):not([data-active-game="dynasty"]) #specialTabs{grid-template-columns:repeat(auto-fit,minmax(112px,1fr))!important}
 </style></head>
 
 <body><div id="top"></div><div class="wrap">
@@ -1479,7 +1488,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v379</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v380</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2666,13 +2675,13 @@ const SPECIAL_SETTINGS_FIELDS={
     ["missedWeek","Missed pick","select",[["eliminate","Eliminate / use a life"],["commissioner","Commissioner decides"]]],
     ["noReuse","Prevent team reuse","checkbox"],
     ["buyback","Allow buy-back / re-entry","checkbox"],
-    ["buybackCutoff","Buy-back cutoff week","number"],
+    ["buybackCutoff","Buy-back cutoff week","number"],["lockRule","Weekly pick lock","select",[["teamKickoff","Selected team's kickoff"],["firstKickoff","First NFL kickoff"]]],["autoAdvance","Automatically score survival from NFL finals","checkbox"],
   ],
   confidence:[
     ["format","Pool format","select",[["weekly","Weekly"],["season","Season-long"],["both","Weekly + season"]]],
     ["maxConfidence","Highest confidence value","number"],
     ["lockRule","Pick lock","select",[["firstKickoff","First game kickoff"],["gameKickoff","Each game's kickoff"]]],
-    ["tieBreaker","Tiebreaker","text"],
+    ["tieBreaker","Tiebreaker","text"],["autoScore","Automatically score confidence points from NFL finals","checkbox"],
   ],
   props:[
     ["pointsPerQuestion","Points per correct prop","number"],
@@ -2686,21 +2695,21 @@ const SPECIAL_SETTINGS_FIELDS={
     ["divisionalPoints","Divisional points","number"],
     ["conferencePoints","Conference points","number"],
     ["superBowlPoints","Super Bowl points","number"],
-    ["tieBreaker","Super Bowl tiebreaker","text"],
+    ["tieBreaker","Super Bowl tiebreaker","text"],["autoAdvance","Automatically advance results from NFL finals","checkbox"],
   ],
   masters:[
     ["lineupSize","Golfers per player","number"],
     ["scoresCount","Golfer scores that count","number"],
     ["useTiers","Use golfer tiers","checkbox"],
     ["cutRule","Missed-cut rule","select",[["penalty","Commissioner penalty score"],["drop","Drop missed-cut golfer"],["count","Count posted score"]]],
-    ["tieBreaker","Tiebreaker","text"],
+    ["tieBreaker","Tiebreaker","text"],["lockRule","Lineup lock","select",[["eventStart","Tournament start"],["firstTee","First tee time"]]],["autoScore","Automatically update leaderboard","checkbox"],
   ],
   nascar:[
     ["format","Pool format","select",[["single","Single race"],["season","Season-long"]]],
     ["driversPerPlayer","Drivers per player","number"],
     ["scoringMethod","Scoring method","select",[["finish","Finishing position"],["points","Commissioner points system"]]],
     ["reuseRule","Driver reuse","select",[["allowed","Drivers may be reused"],["noReuse","No driver reuse"]]],
-    ["tieBreaker","Tiebreaker","text"],
+    ["tieBreaker","Tiebreaker","text"],["lockRule","Driver lock","select",[["raceStart","Race start"],["qualifying","Qualifying start"]]],["autoScore","Automatically update race scoring","checkbox"],
   ],
   fantasy:[
     ["leagueName","League name","text",null,"Example: Sunday Night Legends"],
@@ -3018,7 +3027,7 @@ async function enterSpecialGame(kind){
   if(kind==="fantasy"){
     const labels={picks:["🏈","MY TEAM"],compare:["⚔️","MATCHUPS"],scores:["⚡","LIVE"],standings:["🏆","LEAGUE"],projected:["📋","ROSTERS"],paid:["👥","ACCESS"],rules:["📜","RULES"],admin:["⚙️","COMMISH"]};
     $$("#specialTabs [data-special-tab]").forEach(b=>{const x=labels[b.dataset.specialTab];if(x){b.classList.add("fantasy-art-tab-v186");b.innerHTML=`<span class="fantasy-tab-icon-v186">${x[0]}</span><span class="fantasy-tab-label-v186">${x[1]}</span>`}});
-  }else{const labels={picks:"🏈 PICKS",compare:"📋 COMPARE PICKS",scores:"📊 SCORES",standings:"🏆 STANDINGS",projected:"🔮 PROJECTED"};$$("#specialTabs [data-special-tab]").forEach(b=>{if(labels[b.dataset.specialTab])b.textContent=labels[b.dataset.specialTab]})}
+  }else{const gameLabels={survivor:{picks:"🏈 MY PICK",scores:"📊 RESULTS",standings:"🏆 SURVIVORS",rules:"📜 RULES",admin:"⚙️ ADMIN"},confidence:{picks:"🏈 PICKS",compare:"📋 COMPARE",scores:"📊 SCORES",standings:"🏆 STANDINGS",rules:"📜 RULES",admin:"⚙️ ADMIN"},props:{picks:"🎯 MY PROPS",compare:"📋 ANSWERS",standings:"🏆 STANDINGS",rules:"📜 RULES",admin:"⚙️ ADMIN"},playoff:{picks:"🏈 PLAYOFF PICKS",compare:"📋 COMPARE",scores:"📊 RESULTS",standings:"🏆 STANDINGS",rules:"📜 RULES",admin:"⚙️ ADMIN"},masters:{picks:"⛳ MY GOLFERS",scores:"📊 LEADERBOARD",standings:"🏆 POOL STANDINGS",rules:"📜 RULES",admin:"⚙️ ADMIN"},nascar:{picks:"🏁 MY DRIVERS",scores:"📊 RACE RESULTS",standings:"🏆 STANDINGS",rules:"📜 RULES",admin:"⚙️ ADMIN"}};const labels=gameLabels[kind]||{picks:"🏈 PICKS",compare:"📋 COMPARE PICKS",scores:"📊 SCORES",standings:"🏆 STANDINGS",projected:"🔮 PROJECTED",rules:"📜 RULES",admin:"⚙️ ADMIN"};$("#specialTabs [data-special-tab]").forEach(b=>{if(labels[b.dataset.specialTab])b.textContent=labels[b.dataset.specialTab]})}
   showSpecialTab("picks");
   if(kind==="fantasy")renderFantasyLeagueV154();
   if(kind==="dynasty"){
