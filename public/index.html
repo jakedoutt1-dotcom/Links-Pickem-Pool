@@ -1507,7 +1507,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v435</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v436</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -4029,12 +4029,12 @@ const LINKS_OWNER_EMAIL_V357="jakedoutt@yahoo.com";
 function applyOwnerGameAccessV357(){
   const email=String($("#createPoolEmail")?.value||"").trim().toLowerCase();
   const owner=email===LINKS_OWNER_EMAIL_V357;
-  if(!owner)return false;
-  $('#createPoolGames input[type="checkbox"]').forEach(x=>x.checked=true);
+  if(!owner){unlockCreatePoolGamesV434();return false;}
+  $("#createPoolGames input[type='checkbox']").forEach(x=>{x.disabled=false;x.checked=false;});
   if($("#createPoolPlan"))$("#createPoolPlan").value="all_access";
   sessionStorage.setItem("linksCommissionerEmail",email);
   sessionStorage.setItem("linksCommissionerPurchasePlan","all_access");
-  const st=$("#createPlanStatus");if(st)st.innerHTML='<b>LINKS OWNER ACCESS</b> • ALL GAMES AVAILABLE AUTOMATICALLY';
+  const st=$("#createPlanStatus");if(st)st.innerHTML='<b>LINKS OWNER ACCESS — ALL ACCESS</b> • Choose any games below';
   return true;
 }
 $("#createPoolEmail")?.addEventListener("input",()=>{if(!applyOwnerGameAccessV357()&&$("#createPoolPlan")?.value==="all_access"&&sessionStorage.getItem("linksCommissionerEmail")===LINKS_OWNER_EMAIL_V357){$("#createPoolPlan").value="free"}});
