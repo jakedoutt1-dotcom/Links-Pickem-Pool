@@ -1539,7 +1539,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v458</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v459</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -4503,7 +4503,7 @@ async function openInviteJoin(inviteToken){
 $("#inviteJoinBtn").onclick=async()=>{
   $("#inviteJoinErr").textContent="";
   try{const d=await api("/api/invite/join",{method:"POST",body:JSON.stringify({token:activeInviteToken,name:$("#inviteJoinName").value,password:$("#inviteJoinPassword").value,dynastyTeamName:$("#inviteDynastyTeam")?.value||""})});
-    token=d.token;role="player";currentUser=d.name;poolName=d.poolName;poolCode=d.poolCode;Object.entries({poolToken:token,poolRole:role,poolUser:currentUser,poolName,poolCode}).forEach(([k,v])=>sessionStorage.setItem(k,v));history.replaceState({},document.title,location.pathname);await enterPoolGames(d.games,d.gameType);
+    token=d.token;role="player";currentUser=d.name;poolName=d.poolName;poolCode=d.poolCode;activeGameInstanceId=0;activeGameInstanceName="";sessionStorage.removeItem("linksGameInstanceId");sessionStorage.removeItem("linksGameInstanceName");Object.entries({poolToken:token,poolRole:role,poolUser:currentUser,poolName,poolCode}).forEach(([k,v])=>sessionStorage.setItem(k,v));history.replaceState({},document.title,location.pathname);await enterPoolGames(d.games,d.gameType);
   }catch(e){$("#inviteJoinErr").textContent=e.message}
 };
 $("#inviteJoinHome").onclick=()=>{history.replaceState({},document.title,location.pathname);showOnly("home")};
@@ -4514,7 +4514,7 @@ async function openPlayerSetup(setupToken){
   try{const d=await api(`/api/player-setup?token=${encodeURIComponent(activePlayerSetupToken)}`);$("#playerSetupInfo").innerHTML=`<b>${escapeHtml(d.playerName)}</b><br><span class="small">${escapeHtml(d.poolName)} • Pool Code: ${escapeHtml(d.poolCode)}${d.email?` • ${escapeHtml(d.email)}`:" • Text setup link"}</span>`}
   catch(e){$("#playerSetupInfo").textContent="This password setup link could not be opened.";$("#playerSetupErr").textContent=e.message}
 }
-$("#playerSetupBtn").onclick=async()=>{const p1=$("#playerSetupPassword").value,p2=$("#playerSetupPassword2").value;$("#playerSetupErr").textContent="";if(p1!==p2){$("#playerSetupErr").textContent="Passwords do not match.";return}try{const d=await api("/api/player-setup/complete",{method:"POST",body:JSON.stringify({token:activePlayerSetupToken,password:p1})});token=d.token;role="player";currentUser=d.name;poolName=d.poolName;poolCode=d.poolCode;Object.entries({poolToken:token,poolRole:role,poolUser:currentUser,poolName,poolCode}).forEach(([k,v])=>sessionStorage.setItem(k,v));history.replaceState({},document.title,"/");await enterPoolGames(d.games,d.gameType)}catch(e){$("#playerSetupErr").textContent=e.message}};
+$("#playerSetupBtn").onclick=async()=>{const p1=$("#playerSetupPassword").value,p2=$("#playerSetupPassword2").value;$("#playerSetupErr").textContent="";if(p1!==p2){$("#playerSetupErr").textContent="Passwords do not match.";return}try{const d=await api("/api/player-setup/complete",{method:"POST",body:JSON.stringify({token:activePlayerSetupToken,password:p1})});token=d.token;role="player";currentUser=d.name;poolName=d.poolName;poolCode=d.poolCode;activeGameInstanceId=0;activeGameInstanceName="";sessionStorage.removeItem("linksGameInstanceId");sessionStorage.removeItem("linksGameInstanceName");Object.entries({poolToken:token,poolRole:role,poolUser:currentUser,poolName,poolCode}).forEach(([k,v])=>sessionStorage.setItem(k,v));history.replaceState({},document.title,"/");await enterPoolGames(d.games,d.gameType)}catch(e){$("#playerSetupErr").textContent=e.message}};
 $("#playerSetupHome").onclick=()=>{history.replaceState({},document.title,"/");showOnly("home")};
 
 $("#sendPlayerInvites").onclick=async()=>{
