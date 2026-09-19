@@ -1494,7 +1494,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v408</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v409</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -4530,10 +4530,15 @@ async function restore(){
       const d=await api("/api/session");try{sessionStorage.removeItem("linksLoginRecoveryV407")}catch(e){}isCommissioner=!!d.isCommissioner;role="player";currentUser=d.name;poolCode=d.poolCode;poolName=d.poolName;applyPoolAdMode(!!d.access?.adFree);
       Object.entries({poolRole:role,poolUser:currentUser,poolCode,poolName,poolIsCommissioner:isCommissioner?"1":"0"}).forEach(([k,v])=>sessionStorage.setItem(k,v));
       await enterAfterPlayerLoginV382(d.games,d.gameType);return;
-    }catch(e){token="";sessionStorage.removeItem("poolToken")}
+    }catch(e){
+      // v409: do not erase a freshly authenticated token before the recovery
+      // handoff gets a chance to route the player into the pool.
+      var pendingRecovery=null;try{pendingRecovery=JSON.parse(sessionStorage.getItem("linksLoginRecoveryV408")||"null")}catch(_e){}
+      if(!pendingRecovery){token="";sessionStorage.removeItem("poolToken")}
+    }
   }
-  // If the session endpoint is unavailable during the recovery reload, keep
-  // the authenticated client session instead of throwing the player back Home.
+  // If session restore fails immediately after login, use the authenticated
+  // token plus the login response's game list rather than returning Home.
   var recovery=null;try{recovery=JSON.parse(sessionStorage.getItem("linksLoginRecoveryV408")||"null")}catch(e){}
   if(recovery&&token){
     try{
