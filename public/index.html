@@ -1488,7 +1488,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v422</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v423</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2909,6 +2909,13 @@ async function renderSpecialPlayerEngineV417(kind){
     const rows=[...(st.scores||[])].sort((a,b)=>Number(b.score||0)-Number(a.score||0));
     if(rows.length)host.insertAdjacentHTML("beforeend",`<div class="special-game-card" style="grid-column:1/-1"><b>🏆 LIVE STANDINGS</b><span>${rows.map((x,i)=>`${i+1}. ${escapeHtml(x.playerName)} — ${Number(x.score||0)} ${escapeHtml(x.status||"OPEN")}`).join("<br>")}</span></div>`);
   }catch(e){console.warn("Special standings",e)}
+}
+function renderCumulativeSpecialStandingsV423(kind,st,host){
+  if(!host||!["survivor","confidence","playoff"].includes(kind))return false;
+  const rows=[...(st?.scores||[])].sort((a,b)=>Number(b.score||0)-Number(a.score||0));
+  if(!rows.length)return false;
+  host.innerHTML=`<div class="small" style="margin-bottom:8px"><b>CUMULATIVE STANDINGS</b> • Results carry across saved weeks/rounds.</div><table><thead><tr><th>PLAYER</th><th>SCORE</th><th>STATUS</th></tr></thead><tbody>${rows.map((x,i)=>`<tr><td>${i+1}. ${escapeHtml(x.playerName)}</td><td>${Number(x.score||0)}</td><td>${escapeHtml(x.status||"OPEN")}</td></tr>`).join("")}</tbody></table>`;
+  return true;
 }
 function loadLiveEventResultsV420(kind,scores){
   if(!scores)return;
