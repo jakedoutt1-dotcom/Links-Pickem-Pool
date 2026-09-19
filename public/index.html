@@ -1555,7 +1555,7 @@ button:active::after{
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v473</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v474</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2841,7 +2841,6 @@ async function enterApp(selected){
   week=1;
   try{const d=await api(q("/api/default-week"));const proposed=Number(d?.week||1);if(Number.isFinite(proposed)&&proposed>=1&&proposed<=n)week=proposed}catch(e){week=1}
   // v363: an unfinished/empty prior pool week must never pin NFL Pick'em there.
-  // Ask the live NFL schedule for the current round and prefer that over pool finalization history.
   if(sport==="nfl"){
     try{
       const live=await api("/api/scores?sport=nfl");
@@ -2851,24 +2850,20 @@ async function enterApp(selected){
   }
   officialWeek=week;adminWeek=week;standingsWeek=week;
   $("#weekSelect").value=week;showOnly("app");applyRoleNavigation();
-  // v472: reproduce the proven manual recovery path during initial entry.
-  // First paint the legacy Picks page, then resolve its game tab, then perform
-  // the same access refresh that works when the player presses the button.
-  // A second pass after the browser has painted covers iOS/session timing.
-  await refreshWeek();
-  showTab("picks");
-  await renderGameInstanceUI(sport);
-  // v473: invoke the exact same DOM button path that is proven to recover the
-  // page manually. This includes browser event dispatch/handler context rather
-  // than merely calling the helper function.
-  const accessBtn=$("#refreshPaymentStatus");
-  if(accessBtn){
-    accessBtn.click();
-    await new Promise(resolve=>setTimeout(resolve,350));
-    accessBtn.click();
-  }else{
-    await checkPaymentStatus({silent:true});
+
+  // v474: restore the proven v399 NFL bootstrap architecture.
+  // Picks are authoritative and load FIRST with no game-instance dependency.
+  // Commissioner game tabs are decoration/navigation layered on afterward and
+  // are never allowed to block or alter the initial NFL slate request.
+  const savedInstanceId=activeGameInstanceId;
+  activeGameInstanceId=0;
+  try{
+    await refreshWeek();
+  }finally{
+    activeGameInstanceId=savedInstanceId;
   }
+  showTab("picks");
+  renderGameInstanceUI(sport).catch(e=>console.warn("Game tabs load failed",e));
 }
 const SPECIAL_GAME_DATA={
   survivor:{title:"NFL SURVIVOR",logo:"./nfl-survivor-logo-v102.jpg",lead:"Pick one NFL team each week. Win and survive; lose and you are out.",rules:"Pick one NFL team to win each week. A team cannot be used twice. Picks lock at kickoff. Commissioner rules control lives, buy-backs and tie situations."},
