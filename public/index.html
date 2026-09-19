@@ -1488,7 +1488,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v415</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v416</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2529,6 +2529,15 @@ async function refreshPoolGames(){
     return poolGames;
   }catch(e){return poolGames}
 }
+
+// v416 protected baseline contract:
+// Do not replace the proven player-login/session handlers or the NFL Pick'em page flow
+// while restoring later special-game features. New games must route around this baseline.
+const LINKS_PROTECTED_BASELINE_V416=Object.freeze({
+  login:true,
+  nflPickem:true,
+  protectedAreas:["player-login","session-restore","nfl-picks","nfl-compare","nfl-scores","nfl-standings","nfl-projected","nfl-player-access","nfl-rules"]
+});
 async function enterMultiGameChoiceV415(gameTypes,gameType){
   // Safe additive helper only: preserves the proven v374/v381 login handlers.
   const games=savePoolGames(gameTypes,gameType||"nfl");
