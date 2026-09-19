@@ -2436,6 +2436,12 @@ export async function onRequest(context){
       const m=await DB.prepare("SELECT id FROM fantasy_matchups WHERE pool_id=? AND id=?").bind(pid,id).first();if(!m)return json({error:"Fantasy matchup not found."},404);await DB.prepare("UPDATE fantasy_matchups SET home_score=?,away_score=?,status=? WHERE pool_id=? AND id=?").bind(Number.isFinite(hs)?hs:0,Number.isFinite(as)?as:0,status,pid,id).run();return json({ok:true});
     }
 
+    if(path==="special/nfl-week"&&method==="GET"){
+      const gt=String(url.searchParams.get("gameType")||"").trim().toLowerCase(),sw=Math.max(1,Math.min(22,Number(url.searchParams.get("week")||1)));
+      if(!["survivor","confidence","playoff"].includes(gt))return json({error:"This game does not use the NFL weekly slate."},400);
+      const games=await fetchNFLWeek(sw);
+      return json({gameType:gt,week:sw,games});
+    }
     if(path==="special/state"&&method==="GET"){
       const gt=String(url.searchParams.get("gameType")||"").trim().toLowerCase();
       if(!["survivor","confidence","props","playoff","masters","nascar"].includes(gt))return json({error:"Choose a supported game."},400);
@@ -2452,6 +2458,11 @@ export async function onRequest(context){
       if(!["survivor","confidence","props","playoff","masters","nascar"].includes(gt))return json({error:"Choose a supported game."},400);
       if(!sessionCanPlay(s))return json({error:"A player account is required to submit an entry."},403);
       const entry=body.entry&&typeof body.entry==="object"&&!Array.isArray(body.entry)?body.entry:{};
+      const rawSettings=await getPoolSetting(DB,pid,`game_settings_${gt}`,"{}");let gameSettings={};try{gameSettings=JSON.parse(rawSettings||"{}")||{}}catch(e){}
+      const lockRaw=String(gameSettings.lockTime||gameSettings.deadline||gameSettings.eventDate||"").trim();
+      if(lockRaw&&Number.isFinite(Date.parse(lockRaw))&&Date.parse(lockRaw)<=Date.now())return json({error:"Entries are locked for this game."},409);
+      if(gt==="masters"){const max=Math.max(1,Number(gameSettings.lineupSize||6)),a=Array.isArray(entry.golfers)?entry.golfers:[];if(a.length!==max)return json({error:`Choose exactly ${max} golfers.`},400)}
+      if(gt==="nascar"){const max=Math.max(1,Number(gameSettings.driversPerPlayer||1)),a=Array.isArray(entry.drivers)?entry.drivers:[];if(a.length!==max)return json({error:`Choose exactly ${max} drivers.`},400)}
       const payload=JSON.stringify(entry);if(payload.length>50000)return json({error:"Entry is too large."},400);
       await DB.prepare("INSERT INTO special_game_entries(pool_id,game_type,player_name,entry_json,submitted_at) VALUES(?,?,?,?,?) ON CONFLICT(pool_id,game_type,player_name) DO UPDATE SET entry_json=excluded.entry_json,submitted_at=excluded.submitted_at").bind(pid,gt,s.player_name,payload,new Date().toISOString()).run();
       return json({ok:true});
