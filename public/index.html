@@ -2322,7 +2322,7 @@ function applyRoleNavigation(){
   // Game 33 must never leak into NFL/College pick pages.
   if(g33)g33.classList.add("hide");
   if(tabs)tabs.classList.remove("hide");
-  const wp=$("#weekPickerCard");if(wp)wp.classList.toggle("hide",!(sport==="nfl"||sport==="college"));
+  const wp=$("#weekPickerCard");if(wp)wp.classList.toggle("hide",!(sport==="nfl"||sport==="college")||name==="standings");
   const lc=$("#pickLockCard");if(lc)lc.classList.remove("hide");
   const indicator=$("#pageSportIndicator");
   if(indicator){indicator.className=`sport-page-indicator ${sport==="college"?"college":"nfl"}`;indicator.textContent=`${sport==="college"?"🎓 COLLEGE FOOTBALL PICK'EM":"🏈 NFL PICK'EM"}${isCommissioner?" • COMMISSIONER":""}`}
@@ -2542,7 +2542,7 @@ async function enterApp(selected){
   $("#appPoolName").textContent=poolName;
   $("#sportBadge").textContent=sport==="nfl"?"🏈 NFL":(sport==="college"?"🎓 COLLEGE":"3️⃣3️⃣ 33");
   $("#currentUser").textContent=currentUser;
-  $("section,div").filter(el=>/^THE 33 GAME$/i.test(el.querySelector?.("h1,h2,h3")?.textContent?.trim()||"")).forEach(el=>el.classList.toggle("hide",sport!=="33"));
+  Array.from(document.querySelectorAll("section,div")).filter(el=>/^THE 33 GAME$/i.test(el.querySelector?.("h1,h2,h3")?.textContent?.trim()||"")).forEach(el=>el.classList.toggle("hide",sport!=="33"));
   if(linksPackageNameV364!=="free")linksPaidPackageV363=true;
   updateChangeGameButtons();paintPackageBadgeV364();
   refreshPackageAccessV363().catch(()=>{});
