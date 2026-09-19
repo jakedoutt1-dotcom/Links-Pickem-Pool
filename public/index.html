@@ -1018,6 +1018,9 @@ body{
 @media(max-width:1120px){.dynasty-hero-v178{grid-template-columns:repeat(3,1fr)}.dynasty-identity-v178{grid-column:1/-1}.dynasty-dashboard-v178{grid-template-columns:1fr 1fr}.dynasty-dashboard-v178>.dynasty-panel-v178:first-child{grid-column:1/-1}}
 @media(max-width:720px){#specialGameApp[data-active-game="dynasty"]{width:calc(100vw - 8px)!important}.dynasty-nav-v178{grid-template-columns:repeat(10,124px);gap:6px}.dynasty-nav-v178 button{min-height:59px;grid-template-columns:36px 1fr;padding:6px 7px!important}.dynasty-nav-v178 .dyn-nav-logo-v178{width:34px;height:34px}.dynasty-nav-v178 svg{width:22px;height:22px}.dynasty-hero-v178{grid-template-columns:repeat(2,1fr)}.dynasty-identity-v178{grid-column:1/-1}.dynasty-identity-v178 h2{font-size:21px}.dynasty-stat-v178 b{font-size:17px}.dynasty-dashboard-v178{grid-template-columns:1fr}.dynasty-dashboard-v178>.dynasty-panel-v178:first-child{grid-column:auto}.dynasty-match-grid-v178{grid-template-columns:1fr}.dynasty-actions-v178{grid-template-columns:1fr 1fr}}
 
+
+/* v425 — consistent LINKS game artwork */
+#sportChoice .sport-choice-art{object-fit:cover!important;background:#070b0f!important}.pool-game-check .game-selector-logo{object-fit:cover!important}.links-hub-pool-v150 .game-selector-logo{object-fit:cover!important}
 </style>
 <style id="links-mobile-safe-v150">
 /* v150: app-wide mobile viewport protection preserved */
@@ -1488,7 +1491,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v424</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v425</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2450,6 +2453,9 @@ function poolGameName(gt){
     gt==="nascar"?"NASCAR Pool":
     gt==="fantasy"?"Fantasy Football":gt==="dynasty"?"Dynasty Fantasy Football":"Game 33";
 }
+function poolGameArtV425(gt){
+  const m={nfl:"./nfl-pickem-logo.png",college:"./college-page-banner.jpg",march:"./march-page-banner.jpg","33":"./game33-page-banner.jpg",squares:"./football-squares-logo-v102.png",survivor:"./survivor-page-banner-v381.svg",confidence:"./confidence-page-banner-v381.svg",props:"./props-page-banner-v381.svg",playoff:"./playoff-page-banner-v381.svg",masters:"./masters-page-banner-v381.svg",nascar:"./nascar-page-banner-v381.svg",fantasy:"./fantasy-page-banner-v381.svg",dynasty:"./dynasty-page-banner-v381.svg"};return m[gt]||poolGameLogo(gt)
+}
 function poolGameLogo(gt){
   return gt==="nfl"?"./nfl-pickem-logo.png":
     gt==="college"?"./college-pickem-logo.png":
@@ -2564,7 +2570,7 @@ async function renderCommissionerHubV150(){
     const d=await api("/api/commissioner/dashboard");
     const used=Number(d.used||0),limit=Number(d.limit||1),remaining=Math.max(0,limit-used),cp=d.currentPool||{};
     const games=normalizePoolGames(cp.games||poolGames,cp.gameType||sport||"nfl");
-    const body=`<h3 style="margin:0 0 4px">🔗 MY LINKS PACKAGE &amp; THIS POOL</h3><div class="small">Your package is tied to your commissioner email. For privacy and easy organization, this page only shows the pool you are currently managing.</div><div class="links-hub-summary-v150"><div class="links-hub-stat-v150"><b>${escapeHtml(linksPlanNameV150(d.plan))}</b><div class="small">YOUR PACKAGE</div></div><div class="links-hub-stat-v150"><b>${used} of ${limit}</b><div class="small">ACCOUNT SLOTS USED</div></div><div class="links-hub-stat-v150"><b>${d.adFree?"OFF":"SUPPORTED"}</b><div class="small">ADS</div></div></div><div class="links-hub-groups-v150"><div class="links-hub-group-v150"><b>📁 ${escapeHtml(cp.name||poolName||"CURRENT POOL")}</b><div class="small" style="margin-top:4px">Pool code: ${escapeHtml(cp.code||poolCode||"")}</div><div class="small" style="margin-top:9px"><b>GAMES IN THIS POOL</b></div>${games.map(g=>`<div class="links-hub-pool-v150"><span><img src="${poolGameLogo(g)}" class="game-selector-logo" alt=""> <b>${escapeHtml(poolGameName(g))}</b></span></div>`).join("")||'<div class="small">No active games found for this pool.</div>'}</div></div><div class="links-hub-actions-v150"><button type="button" class="green commissioner-new-pool-v150">＋ CREATE ANOTHER POOL</button>${remaining<=0?'<button type="button" class="commissioner-upgrade-v150">UNLOCK MORE LINKS</button>':`<button type="button" class="commissioner-new-pool-v150">${remaining} SLOT${remaining===1?'':'S'} AVAILABLE</button>`}</div><div class="small" style="margin-top:8px">Your FREE FOR LIFE allowance is tied to your commissioner email, so creating another pool name with the same email does not create another free account. Use LOGIN / SELECT POOL to open another pool you own.</div>`;
+    const body=`<h3 style="margin:0 0 4px">🔗 MY LINKS PACKAGE &amp; THIS POOL</h3><div class="small">Your package is tied to your commissioner email. For privacy and easy organization, this page only shows the pool you are currently managing.</div><div class="links-hub-summary-v150"><div class="links-hub-stat-v150"><b>${escapeHtml(linksPlanNameV150(d.plan))}</b><div class="small">YOUR PACKAGE</div></div><div class="links-hub-stat-v150"><b>${used} of ${limit}</b><div class="small">ACCOUNT SLOTS USED</div></div><div class="links-hub-stat-v150"><b>${d.adFree?"OFF":"SUPPORTED"}</b><div class="small">ADS</div></div></div><div class="links-hub-groups-v150"><div class="links-hub-group-v150"><b>📁 ${escapeHtml(cp.name||poolName||"CURRENT POOL")}</b><div class="small" style="margin-top:4px">Pool code: ${escapeHtml(cp.code||poolCode||"")}</div><div class="small" style="margin-top:9px"><b>GAMES IN THIS POOL</b></div>${games.map(g=>`<div class="links-hub-pool-v150"><span><img src="${poolGameArtV425(g)}" class="game-selector-logo" alt=""> <b>${escapeHtml(poolGameName(g))}</b></span></div>`).join("")||'<div class="small">No active games found for this pool.</div>'}</div></div><div class="links-hub-actions-v150"><button type="button" class="green commissioner-new-pool-v150">＋ CREATE ANOTHER POOL</button>${remaining<=0?'<button type="button" class="commissioner-upgrade-v150">UNLOCK MORE LINKS</button>':`<button type="button" class="commissioner-new-pool-v150">${remaining} SLOT${remaining===1?'':'S'} AVAILABLE</button>`}</div><div class="small" style="margin-top:8px">Your FREE FOR LIFE allowance is tied to your commissioner email, so creating another pool name with the same email does not create another free account. Use LOGIN / SELECT POOL to open another pool you own.</div>`;
     $$(".links-commissioner-hub-v150").forEach(x=>x.innerHTML=body);
     $$(".commissioner-new-pool-v150").forEach(b=>b.onclick=()=>{sessionStorage.setItem("linksCommissionerEmail",d.email||"");showOnly("createPoolPage");if($("#createPoolEmail"))$("#createPoolEmail").value=d.email||""});
     $$(".commissioner-upgrade-v150").forEach(b=>b.onclick=()=>{showOnly("home");setTimeout(()=>$("#linksPackages")?.scrollIntoView({behavior:"smooth"}),50)});
@@ -2581,7 +2587,7 @@ function renderPoolGamesManagers(){
     const active=card.querySelector(".pool-games-active"),add=card.querySelector(".pool-games-add");
     if(active)active.innerHTML=`<div class="small" style="margin:8px 0 5px"><b>ACTIVE NOW</b> — ${games.map(g=>poolGameLabel(g)).join(" • ")}</div>`;
     if(add){
-      add.innerHTML=`<div class="small" style="margin-bottom:6px"><b>GAMES FOR THIS POOL</b></div><div class="pool-game-check-grid">${choices.map(g=>`<label class="pool-game-check"><input type="checkbox" class="pool-game-check-input" data-card="${cardIndex}" value="${g}" ${games.includes(g)?"checked":""}><img class="game-selector-logo" src="${poolGameLogo(g)}" alt=""><span class="game-selector-name">${poolGameName(g)}</span></label>`).join("")}</div><button type="button" class="green pool-save-games" data-card="${cardIndex}" style="width:100%;margin-top:9px">SAVE ACTIVE GAMES</button><div class="small pool-games-save-status" style="margin-top:6px"></div>`;
+      add.innerHTML=`<div class="small" style="margin-bottom:6px"><b>GAMES FOR THIS POOL</b></div><div class="pool-game-check-grid">${choices.map(g=>`<label class="pool-game-check"><input type="checkbox" class="pool-game-check-input" data-card="${cardIndex}" value="${g}" ${games.includes(g)?"checked":""}><img class="game-selector-logo" src="${poolGameArtV425(g)}" alt=""><span class="game-selector-name">${poolGameName(g)}</span></label>`).join("")}</div><button type="button" class="green pool-save-games" data-card="${cardIndex}" style="width:100%;margin-top:9px">SAVE ACTIVE GAMES</button><div class="small pool-games-save-status" style="margin-top:6px"></div>`;
     }
     let hub=card.querySelector(".links-commissioner-hub-v150");
     if(isCommissioner){if(!hub){hub=document.createElement("div");hub.className="links-commissioner-hub-v150";card.appendChild(hub)}hub.innerHTML='<div class="small">Loading your LINKS package and current pool…</div>';}else hub?.remove();
