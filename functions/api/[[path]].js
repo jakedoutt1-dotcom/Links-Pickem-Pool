@@ -2472,7 +2472,7 @@ export async function onRequest(context){
       const now=new Date().toISOString(),lives=Math.max(1,Number(settings.lives||1));
       for(const [player,periods] of byPlayer){
         let score=0,status="OPEN",losses=0,graded=0,total=0,detail={periods:[]};
-        for(const p of periods){const games=feeds.get(p.week)||[],finals=games.filter(g=>g.completed&&g.winner),byId=new Map(finals.map((g,i)=>[String(g.eventId||g.id||g.gameIndex??i),g.winner])),byIndex=new Map(finals.map((g,i)=>[Number(g.gameIndex??i),g.winner]));
+        for(const p of periods){const games=feeds.get(p.week)||[],finals=games.filter(g=>g.completed&&g.winner),byId=new Map(finals.map((g,i)=>[String(g.eventId||g.id||(g.gameIndex??i)),g.winner])),byIndex=new Map(finals.map((g,i)=>[Number(g.gameIndex??i),g.winner]));
           if(gt==="survivor"){const team=String(p.entry.team||""),game=games.find(g=>g.away===team||g.home===team);let result="PENDING";if(game?.completed){graded++;if(game.winner===team){score++;result="WIN"}else{losses++;result="LOSS"}}detail.periods.push({week:p.week,team,result})}
           else{const picks=Array.isArray(p.entry.picks)?p.entry.picks:[];let periodScore=0,periodGraded=0;total+=picks.length;for(const x of picks){const win=byId.get(String(x.eventId||""))||byIndex.get(Number(x.gameIndex));if(!win)continue;periodGraded++;graded++;if(String(x.team)===String(win))periodScore+=gt==="confidence"?Math.max(0,Number(x.confidence||0)):Math.max(1,Number(settings[p.week===19?"wildCardPoints":p.week===20?"divisionalPoints":p.week===21?"conferencePoints":"superBowlPoints"]||1))}score+=periodScore;detail.periods.push({week:p.week,score:periodScore,graded:periodGraded,picks:picks.length})}
         }
