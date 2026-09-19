@@ -2436,6 +2436,23 @@ export async function onRequest(context){
       const m=await DB.prepare("SELECT id FROM fantasy_matchups WHERE pool_id=? AND id=?").bind(pid,id).first();if(!m)return json({error:"Fantasy matchup not found."},404);await DB.prepare("UPDATE fantasy_matchups SET home_score=?,away_score=?,status=? WHERE pool_id=? AND id=?").bind(Number.isFinite(hs)?hs:0,Number.isFinite(as)?as:0,status,pid,id).run();return json({ok:true});
     }
 
+    async function autoScoreSpecialNFLV385(gt){
+      if(!["survivor","confidence","playoff"].includes(gt))return;
+      const rows=(await DB.prepare("SELECT player_name,entry_json FROM special_game_entries WHERE pool_id=? AND game_type=?").bind(pid,gt).all()).results||[];
+      if(!rows.length)return;
+      const byWeek=new Map();
+      for(const r of rows){let e={};try{e=JSON.parse(r.entry_json||"{}")||{}}catch(x){}const wk=Math.max(1,Math.min(22,Number(e.week||1)));if(!byWeek.has(wk))byWeek.set(wk,[]);byWeek.get(wk).push({player:r.player_name,entry:e})}
+      const now=new Date().toISOString();
+      for(const [wk,players] of byWeek){
+        const games=await fetchNFLWeek(wk),finals=games.filter(g=>g.completed&&g.winner),finalBy=new Map(finals.map((g,i)=>[Number(g.gameIndex??i),g.winner]));
+        for(const p of players){
+          let score=0,status="OPEN",detail={week:wk,finalGames:finals.length,totalGames:games.length};
+          if(gt==="survivor"){const team=String(p.entry.team||"");const game=games.find(g=>g.away===team||g.home===team);if(game?.completed){score=game.winner===team?1:0;status=score?"ALIVE":"ELIMINATED";detail.team=team;detail.winner=game.winner}}
+          else{const picks=Array.isArray(p.entry.picks)?p.entry.picks:[];let graded=0;for(const x of picks){const win=finalBy.get(Number(x.gameIndex));if(!win)continue;graded++;if(String(x.team)===String(win))score+=gt==="confidence"?Math.max(0,Number(x.confidence||0)):1}status=picks.length&&graded>=picks.length?"FINAL":"OPEN";detail.graded=graded;detail.picks=picks.length}
+          await DB.prepare("INSERT INTO special_game_scores(pool_id,game_type,player_name,score,status,detail_json,updated_at) VALUES(?,?,?,?,?,?,?) ON CONFLICT(pool_id,game_type,player_name) DO UPDATE SET score=excluded.score,status=excluded.status,detail_json=excluded.detail_json,updated_at=excluded.updated_at").bind(pid,gt,p.player,score,status,JSON.stringify(detail),now).run();
+        }
+      }
+    }
     if(path==="special/nfl-week"&&method==="GET"){
       const gt=String(url.searchParams.get("gameType")||"").trim().toLowerCase(),sw=Math.max(1,Math.min(22,Number(url.searchParams.get("week")||1)));
       if(!["survivor","confidence","playoff"].includes(gt))return json({error:"This game does not use the NFL weekly slate."},400);
@@ -2446,6 +2463,7 @@ export async function onRequest(context){
       const gt=String(url.searchParams.get("gameType")||"").trim().toLowerCase();
       if(!["survivor","confidence","props","playoff","masters","nascar"].includes(gt))return json({error:"Choose a supported game."},400);
       const raw=await getPoolSetting(DB,pid,`game_settings_${gt}`,"{}");let settings={};try{settings=JSON.parse(raw||"{}")||{}}catch(e){}
+      if(["survivor","confidence","playoff"].includes(gt)){try{await autoScoreSpecialNFLV385(gt)}catch(e){}}
       const entries=(await DB.prepare("SELECT player_name,entry_json,submitted_at FROM special_game_entries WHERE pool_id=? AND game_type=? ORDER BY player_name").bind(pid,gt).all()).results||[];
       const scores=(await DB.prepare("SELECT player_name,score,status,detail_json,updated_at FROM special_game_scores WHERE pool_id=? AND game_type=? ORDER BY score DESC,player_name").bind(pid,gt).all()).results||[];
       const mine=entries.find(x=>String(x.player_name).toLowerCase()===String(s.player_name||"").toLowerCase());
