@@ -1432,15 +1432,20 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
 .links-btn-spinner-v452{display:inline-block;width:20px;height:20px;border:3px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;vertical-align:-4px;margin-right:8px;animation:linksSpinV452 .75s linear infinite}
 @keyframes linksSpinV452{to{transform:rotate(360deg)}}
 </style>
-<style id="links-v471-press-overlay">
-/* Keep every button's normal artwork/color visible while pressed.
-   iOS/touch feedback is a transparent blue overlay instead of replacing the button background. */
-button{position:relative;-webkit-tap-highlight-color:transparent}
-button:active::after{
-  content:"";position:absolute;inset:0;border-radius:inherit;
-  background:rgba(55,145,255,.20);pointer-events:none;z-index:999;
+<style id="links-v472-press-feedback">
+/* iPhone/Safari press feedback: preserve the real button artwork.
+   Disable the native blue tap flash and use only a subtle transparent overlay. */
+html,body,*{-webkit-tap-highlight-color:rgba(0,0,0,0)!important}
+button,input[type="button"],input[type="submit"],a[role="button"]{
+  -webkit-tap-highlight-color:transparent!important;
+  -webkit-appearance:none;
 }
-button:active{filter:none!important}
+button{position:relative}
+button:active{filter:none!important;opacity:1!important}
+button:active::after{
+  content:"";position:absolute!important;inset:0!important;border-radius:inherit!important;
+  background:rgba(70,150,255,.12)!important;pointer-events:none!important;z-index:2147483646!important;
+}
 </style>
 </head>
 
@@ -1550,7 +1555,7 @@ button:active{filter:none!important}
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v471</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v472</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2846,14 +2851,16 @@ async function enterApp(selected){
   }
   officialWeek=week;adminWeek=week;standingsWeek=week;
   $("#weekSelect").value=week;showOnly("app");applyRoleNavigation();
-  // v471: resolve the Admin-selected game instance BEFORE requesting Picks.
-  // The pick-page API is instance-aware. Previously the first request ran with
-  // activeGameInstanceId still unset; visiting another tab/Refresh Access worked
-  // only because the instance had been resolved by then.
-  await renderGameInstanceUI(sport);
+  // v472: reproduce the proven manual recovery path during initial entry.
+  // First paint the legacy Picks page, then resolve its game tab, then perform
+  // the same access refresh that works when the player presses the button.
+  // A second pass after the browser has painted covers iOS/session timing.
   await refreshWeek();
-  await checkPaymentStatus({silent:true});
   showTab("picks");
+  await renderGameInstanceUI(sport);
+  await checkPaymentStatus({silent:true});
+  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+  await checkPaymentStatus({silent:true});
 }
 const SPECIAL_GAME_DATA={
   survivor:{title:"NFL SURVIVOR",logo:"./nfl-survivor-logo-v102.jpg",lead:"Pick one NFL team each week. Win and survive; lose and you are out.",rules:"Pick one NFL team to win each week. A team cannot be used twice. Picks lock at kickoff. Commissioner rules control lives, buy-backs and tie situations."},
