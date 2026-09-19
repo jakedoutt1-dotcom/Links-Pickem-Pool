@@ -1488,7 +1488,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v418</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v419</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2884,6 +2884,16 @@ async function loadSpecialNFLSlateV418(kind,week){
     const d=await api(`/api/special/nfl-week?gameType=${encodeURIComponent(kind)}&week=${encodeURIComponent(week||1)}`);
     return Array.isArray(d.games)?d.games:[];
   }catch(e){console.warn("Special NFL slate",e);return []}
+}
+function renderPropsQuestionsV419(settings,myEntry){
+  const qs=String(settings?.propQuestions||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  const saved=Array.isArray(myEntry?.answers)?myEntry.answers:[];
+  if(!qs.length)return '<div class="small">The commissioner has not published the prop questions yet.</div>';
+  return qs.map((line,i)=>{const p=line.split("|").map(x=>x.trim()).filter(Boolean),q=p.shift()||`Prop ${i+1}`;return `<div class="card" style="margin:7px 0"><b>${escapeHtml(q)}</b><div style="margin-top:7px">${p.length?p.map(o=>`<label style="display:block;margin:5px 0"><input type="radio" name="propV419_${i}" value="${escapeHtml(o)}" ${String(saved[i]||"")===o?"checked":""}> ${escapeHtml(o)}</label>`).join(""):`<input class="propTextV419" data-index="${i}" value="${escapeHtml(saved[i]||"")}" placeholder="Your answer">`}</div></div>`}).join("");
+}
+function collectPropsAnswersV419(settings){
+  const qs=String(settings?.propQuestions||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  return qs.map((_,i)=>document.querySelector(`input[name="propV419_${i}"]:checked`)?.value||document.querySelector(`.propTextV419[data-index="${i}"]`)?.value||"");
 }
 function specialGameLockLabelV418(settings){
   const raw=String(settings?.lockTime||settings?.deadline||settings?.eventDate||"").trim();
