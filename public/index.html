@@ -1416,7 +1416,7 @@ table{max-width:100%}
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v365</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v366</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -3051,7 +3051,7 @@ function updatePickLockCountdownV198(lockAt,locked){
   const els=[$("#topPicksDeadline"),$("#savePicksDeadline")].filter(Boolean);if(!els.length)return;
   if(pickLockCountdownTimerV198){clearInterval(pickLockCountdownTimerV198);pickLockCountdownTimerV198=null}
   const paint=()=>{
-    if(!lockAt){for(const el of els){el.classList.remove("urgent-v198","locked-v198");el.innerHTML=`<span class="lock-title-v198">⏰ PICK DEADLINE</span><span class="lock-sub-v198">${sport==="college"?"Waiting for this week's selected games":"Schedule deadline unavailable — refresh to try again"}</span>`}return}
+    if(!lockAt){for(const el of els){el.classList.remove("urgent-v198","locked-v198");el.innerHTML=`<span class="lock-title-v198">⏰ PICK DEADLINE</span><span class="lock-sub-v198">${sport==="college"?"Waiting for this week's selected games":"First kickoff time unavailable — refresh to try again"}</span>`}return}
     const ms=Date.parse(lockAt)-Date.now();
     if(locked||ms<=0){
       for(const el of els){el.classList.remove("urgent-v198");el.classList.add("locked-v198");el.innerHTML=`<span class="lock-title-v198">🔒 PICKS ARE LOCKED</span><span class="lock-sub-v198">Deadline: ${fmtKickoff(lockAt)}</span>`}
@@ -3069,7 +3069,8 @@ function renderPicks(){
   const g=gamesNow();
   const p=normalizedPicksForGames(me?.picks||{},g);
   if(me)me.picks=p;
-  const lockAt=boot?.locks?.[week],locked=lockAt&&Date.now()>=new Date(lockAt).getTime();
+  const kickoffTimes=g.map(x=>x?.kickoff).filter(Boolean).map(x=>({raw:x,ms:Date.parse(x)})).filter(x=>Number.isFinite(x.ms)).sort((a,b)=>a.ms-b.ms);
+  const lockAt=boot?.locks?.[week]||kickoffTimes[0]?.raw||null,locked=!!(lockAt&&Date.now()>=new Date(lockAt).getTime());
   const paymentLocked=role==="player"&&!boot?.paid;
   $("#paymentGate").classList.toggle("hide",!paymentLocked);
   if(paymentLocked){
@@ -4699,6 +4700,9 @@ $("#chooseSquares").onclick=()=>enterSquares();
 .tabs .player-tab.active{border:2px solid #4db8ff!important;box-shadow:0 0 9px rgba(77,184,255,.95),0 0 20px rgba(35,139,255,.68),inset 0 0 0 1px rgba(255,255,255,.22)!important}
 .tabs .player-tab.active img.links-nav-art-v174{filter:none!important;opacity:1!important}
 #pickCacheStatusV194{min-height:14px}
+</style>
+<style id="links-v366-week-selector-fix">
+#weekPickerCard:not(.hide){display:grid!important}
 </style>
 
 <style id="links-v197-standings-color-fix">
