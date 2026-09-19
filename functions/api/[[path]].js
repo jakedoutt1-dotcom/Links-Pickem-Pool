@@ -2534,7 +2534,7 @@ export async function onRequest(context){
       const mine=entries.find(x=>String(x.player_name).toLowerCase()===String(s.player_name||"").toLowerCase());
       let myEntry={};try{myEntry=JSON.parse(mine?.entry_json||"{}")||{}}catch(e){}
       const publicEntries=entries.map(x=>{let entry={};try{entry=JSON.parse(x.entry_json||"{}")||{}}catch(e){}return {playerName:x.player_name,entry,submittedAt:x.submitted_at}});
-      return json({gameType:gt,settings,myEntry,mySubmittedAt:mine?.submitted_at||null,entries:s.role==="admin"||String(settings.revealPicks||"").toLowerCase()==="true"?publicEntries:[],entryCount:entries.length,history:history.map(x=>{let entry={};try{entry=JSON.parse(x.entry_json||"{}")||{}}catch(e){}return {playerName:x.player_name,periodKey:x.period_key,entry,submittedAt:x.submitted_at}}),scores:scores.map(x=>({playerName:x.player_name,score:Number(x.score||0),status:x.status,updatedAt:x.updated_at}))});
+      return json({gameType:gt,settings,myEntry,mySubmittedAt:mine?.submitted_at||null,entries:s.role==="admin"||String(settings.revealPicks||"").toLowerCase()==="true"?publicEntries:[],entryCount:entries.length,history:history.map(x=>{let entry={};try{entry=JSON.parse(x.entry_json||"{}")||{}}catch(e){}return {playerName:x.player_name,periodKey:x.period_key,entry,submittedAt:x.submitted_at}}),scores:scores.map(x=>{let detail={};try{detail=JSON.parse(x.detail_json||"{}")||{}}catch(e){}return {playerName:x.player_name,score:Number(x.score||0),status:x.status,updatedAt:x.updated_at,manualOverride:!!detail.manualOverride}})});
     }
     if(path==="special/entry"&&method==="POST"){
       const gt=String(body.gameType||"").trim().toLowerCase();
