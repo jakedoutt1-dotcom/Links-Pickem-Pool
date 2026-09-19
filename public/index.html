@@ -1539,7 +1539,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v456</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v457</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -3036,9 +3036,10 @@ function bindSpecialScoreAdminV424(kind,rows){
 function populateSpecialUtilityPanes(kind){
   const d=SPECIAL_GAME_DATA[kind]||SPECIAL_GAME_DATA.survivor,name=d.title;
   const cmp=$("#specialCompareBody"),scores=$("#specialScoresBody"),stand=$("#specialStandingsBody"),proj=$("#specialProjectedBody"),access=$("#specialAccessBody");
-  if(cmp)cmp.innerHTML=`Compare Picks is ready as the comparison area for <b>${escapeHtml(name)}</b>. Player selections stay private until the game's commissioner lock/deadline.`;
-  if(scores)scores.innerHTML=`This is the results area for <b>${escapeHtml(name)}</b>. Results and official answers are controlled by the saved game setup and commissioner controls.`;
-  if(stand)stand.innerHTML=`Standings for <b>${escapeHtml(name)}</b> will be shown here as player results are finalized. Final winners belong on this Standings page.`;
+  const rows=[...(specialStateV383?.scores||[])].sort((a,b)=>Number(b.score||0)-Number(a.score||0));
+  if(cmp)cmp.innerHTML=rows.length?`<table><thead><tr><th>PLAYER</th><th>SCORE</th><th>STATUS</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${escapeHtml(x.playerName)}</td><td>${Number(x.score||0)}</td><td>${escapeHtml(x.status||"OPEN")}</td></tr>`).join("")}</tbody></table>`:`Player selections stay private until the <b>${escapeHtml(name)}</b> lock/deadline.`;
+  if(scores){scores.innerHTML=rows.length?`<table><thead><tr><th>PLAYER</th><th>SCORE</th><th>STATUS</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${escapeHtml(x.playerName)}</td><td>${Number(x.score||0)}</td><td>${escapeHtml(x.status||"OPEN")}</td></tr>`).join("")}</tbody></table>`:`No finalized <b>${escapeHtml(name)}</b> results yet.`;loadLiveEventResultsV420(kind,scores)}
+  if(stand)stand.innerHTML=rows.length?`<table><thead><tr><th>#</th><th>PLAYER</th><th>SCORE</th><th>STATUS</th></tr></thead><tbody>${rows.map((x,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(x.playerName)}</td><td>${Number(x.score||0)}</td><td>${escapeHtml(x.status||"OPEN")}</td></tr>`).join("")}</tbody></table>`:`No <b>${escapeHtml(name)}</b> standings yet.`;
   if(proj)proj.innerHTML=`Projected results for <b>${escapeHtml(name)}</b> appear here when enough live or commissioner-entered result data is available.`;
   if(access)access.innerHTML=isCommissioner?`Commissioner access controls are managed from the pool's main <b>Player Access</b> controls. Players marked ACTIVE can participate; PENDING players remain locked.`:`Your commissioner controls whether your player access is ACTIVE or PENDING for this pool.`;
 }
