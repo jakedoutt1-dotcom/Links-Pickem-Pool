@@ -1416,7 +1416,7 @@ table{max-width:100%}
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v366</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v367</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -1885,8 +1885,8 @@ table{max-width:100%}
     </div>
     <div class="app-head-right">
       <b id="currentUser"></b><br>
-      <button id="signOut" class="red" style="margin-top:5px;padding:7px 9px">Sign Out</button>
-      <button id="changeSport" class="hide" style="margin-top:5px;padding:7px 9px">🎮 Change Game</button>
+      <button id="signOut" class="red" style="margin-top:5px;padding:7px 9px">Sign Out</button><br>
+      <button id="changeSport" class="hide" style="margin-top:7px;padding:7px 9px">🎮 CHANGE GAME</button>
     </div>
   </div>
   <div class="v180-pool-game-tabs-wrap"><div class="v180-pool-game-tabs-label">Pool tabs</div><div id="mainGameInstanceTabs" class="game-instance-tabs-v180"></div></div>
@@ -2394,11 +2394,11 @@ function savePoolGames(list,fallback="nfl"){
   return poolGames;
 }
 function updateChangeGameButtons(){
-  // v363: CHANGE GAME belongs to the whole pool, not just the commissioner.
-  // Show it to commissioner + players only when the pool is on a paid/multi-slot package.
   const show=!!linksPaidPackageV363;
   ["#changeSport","#specialChangeGame","#squaresChangeGame","#marchChangeGame","#adminChangeGame"].forEach(sel=>{
-    const el=$(sel);if(el)el.classList.toggle("hide",!show);
+    const el=$(sel);if(!el)return;
+    el.classList.toggle("hide",!show);
+    if(sel==="#changeSport")el.style.setProperty("display",show?"inline-block":"none","important");
   });
 }
 async function refreshPackageAccessV363(){
@@ -2549,6 +2549,7 @@ async function enterApp(selected){
   $("#appPoolName").textContent=poolName;
   $("#sportBadge").textContent=sport==="nfl"?"🏈 NFL":(sport==="college"?"🎓 COLLEGE":"3️⃣3️⃣ 33");
   $("#currentUser").textContent=currentUser;
+  if(linksPackageNameV364!=="free")linksPaidPackageV363=true;
   updateChangeGameButtons();paintPackageBadgeV364();
   refreshPackageAccessV363().catch(()=>{});
   if(isCommissioner)setTimeout(()=>{try{renderPoolGamesManagers()}catch(e){}},0);
@@ -3003,6 +3004,11 @@ function applyPickPageDataV194(first,{cache=false}={}){
   loadVenmoGate();
   $("#feeLine").textContent="";
   $("#feeLine").classList.add("hide");
+  if(!boot.locks)boot.locks={};
+  if(!boot.locks[week]){
+    const first=(boot.liveGames||[]).map(x=>x?.kickoff).filter(Boolean).map(x=>({raw:x,ms:Date.parse(x)})).filter(x=>Number.isFinite(x.ms)).sort((a,b)=>a.ms-b.ms)[0];
+    if(first)boot.locks[week]=first.raw;
+  }
   renderPicks();
   const marker=$("#pickCacheStatusV194");if(marker)marker.textContent=cache?"Loaded instantly • checking for updates…":"Up to date";
 }
@@ -3070,7 +3076,9 @@ function renderPicks(){
   const p=normalizedPicksForGames(me?.picks||{},g);
   if(me)me.picks=p;
   const kickoffTimes=g.map(x=>x?.kickoff).filter(Boolean).map(x=>({raw:x,ms:Date.parse(x)})).filter(x=>Number.isFinite(x.ms)).sort((a,b)=>a.ms-b.ms);
-  const lockAt=boot?.locks?.[week]||kickoffTimes[0]?.raw||null,locked=!!(lockAt&&Date.now()>=new Date(lockAt).getTime());
+  const derivedKickoff=kickoffTimes[0]?.raw||sessionStorage.getItem(`linksFirstKickoff:${sport}:${week}`)||null;
+  if(kickoffTimes[0]?.raw)sessionStorage.setItem(`linksFirstKickoff:${sport}:${week}`,kickoffTimes[0].raw);
+  const lockAt=boot?.locks?.[week]||derivedKickoff,locked=!!(lockAt&&Date.now()>=new Date(lockAt).getTime());
   const paymentLocked=role==="player"&&!boot?.paid;
   $("#paymentGate").classList.toggle("hide",!paymentLocked);
   if(paymentLocked){
