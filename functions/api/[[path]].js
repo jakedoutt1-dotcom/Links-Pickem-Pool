@@ -1719,6 +1719,9 @@ async function marchAutoSync(DB,pid,force=false){
   const now=new Date().toISOString(),status=teams.length===64?`Live NCAA tournament sync • ${Object.keys(results).length}/63 finals recorded${imported?" • field imported":""}`:(pending?`Waiting for the ${marchYear} NCAA tournament field. Links will load the teams automatically when the official bracket is published.`:`Waiting for the official ${marchYear} 64-team bracket. ${events.length} tournament games found so far.`);
   await DB.prepare("INSERT INTO march_sync(pool_id,last_sync,source,status) VALUES(?,?,?,?) ON CONFLICT(pool_id) DO UPDATE SET last_sync=excluded.last_sync,source=excluded.source,status=excluded.status").bind(pid,now,marchSource,status).run();return{ok:true,status,lastSync:now,teams:teams.length,results:Object.keys(results).length,source:marchSource};
 }
+async function marchChampionshipTotalV390(){
+  try{const feed=await marchFetchTournamentEvents(),ev=(feed.events||[]).filter(e=>marchEventRound(e)===5&&e?.status?.type?.completed).sort((a,b)=>Date.parse(b.date)-Date.parse(a.date))[0],cs=ev?.competitions?.[0]?.competitors||[];if(cs.length<2)return null;const vals=cs.map(x=>Number(x.score)).filter(Number.isFinite);return vals.length===2?vals[0]+vals[1]:null}catch(e){return null}
+}
 async function marchState(DB,pid,player,role){
   const config=await DB.prepare("SELECT lock_time AS lockTime FROM march_config WHERE pool_id=?").bind(pid).first()||{lockTime:null};
   const teams=(await DB.prepare("SELECT slot,seed,team,region FROM march_teams WHERE pool_id=? ORDER BY slot").bind(pid).all()).results||[];
@@ -1732,9 +1735,10 @@ async function marchState(DB,pid,player,role){
   const allP=(await DB.prepare("SELECT player_name,game_id,team_slot FROM march_picks WHERE pool_id=?").bind(pid).all()).results||[];
   const allT=(await DB.prepare("SELECT player_name,guess FROM march_ties WHERE pool_id=?").bind(pid).all()).results||[];
   const byPlayer={};for(const x of allP){(byPlayer[x.player_name]??={})[x.game_id]=x.team_slot}const ties=Object.fromEntries(allT.map(x=>[x.player_name,x.guess]));
-  const standings=players.map(p=>{let points=0,correct=0;const bp=byPlayer[p.name]||{};for(const [k,v] of Object.entries(results)){const g=Number(k);if(Number(bp[g])===Number(v)){const ri=marchRoundForGame(g);points+=MARCH_ROUND_DEF[ri]?.points||0;correct++}}return{player:p.name,points,correct,tie:ties[p.name]??null,saved:Object.keys(bp).length}}).filter(x=>x.saved>0).sort((a,b)=>b.points-a.points||b.correct-a.correct||a.player.localeCompare(b.player));
+  const champion=results[62],champComplete=Number.isInteger(Number(champion)),champEventTotal=champComplete?await marchChampionshipTotalV390():null;
+  const standings=players.map(p=>{let points=0,correct=0;const bp=byPlayer[p.name]||{};for(const [k,v] of Object.entries(results)){const g=Number(k);if(Number(bp[g])===Number(v)){const ri=marchRoundForGame(g);points+=MARCH_ROUND_DEF[ri]?.points||0;correct++}}const tie=ties[p.name]??null,tieDiff=champEventTotal!=null&&tie!=null?Math.abs(Number(tie)-Number(champEventTotal)):null;return{player:p.name,points,correct,tie,tieDiff,saved:Object.keys(bp).length}}).filter(x=>x.saved>0).sort((a,b)=>b.points-a.points||((a.tieDiff??9999)-(b.tieDiff??9999))||b.correct-a.correct||a.player.localeCompare(b.player));
   const sync=await DB.prepare("SELECT last_sync AS lastSync,source,status FROM march_sync WHERE pool_id=?").bind(pid).first()||{};
-  return{config,teams,picks,tie,results,standings,sync};
+  return{config,teams,picks,tie,results,standings,sync,championshipTotal:champEventTotal,complete:champComplete};
 }
 
 
