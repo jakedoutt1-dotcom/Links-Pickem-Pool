@@ -1494,7 +1494,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v406</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v407</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -4527,7 +4527,7 @@ async function restore(){
   if(inviteParam){await openInviteJoin(inviteParam);return;}
   if(token){
     try{
-      const d=await api("/api/session");isCommissioner=!!d.isCommissioner;role="player";currentUser=d.name;poolCode=d.poolCode;poolName=d.poolName;applyPoolAdMode(!!d.access?.adFree);
+      const d=await api("/api/session");try{sessionStorage.removeItem("linksLoginRecoveryV407")}catch(e){}isCommissioner=!!d.isCommissioner;role="player";currentUser=d.name;poolCode=d.poolCode;poolName=d.poolName;applyPoolAdMode(!!d.access?.adFree);
       Object.entries({poolRole:role,poolUser:currentUser,poolCode,poolName,poolIsCommissioner:isCommissioner?"1":"0"}).forEach(([k,v])=>sessionStorage.setItem(k,v));
       await enterAfterPlayerLoginV382(d.games,d.gameType);return;
     }catch(e){token="";sessionStorage.removeItem("poolToken")}
@@ -4903,26 +4903,12 @@ $("#chooseSquares").onclick=()=>enterSquares();
           if(typeof poolGames!=="undefined")poolGames=Array.isArray(d.games)&&d.games.length?d.games:[d.gameType||"nfl"];
         }catch(e){}
         var games=Array.isArray(d.games)&&d.games.length?d.games:[d.gameType||"nfl"];
-        // Hand the authenticated session back to the complete app initializer.
-        // Do not manually expose #app: doing so bypasses enterApp/refreshWeek and
-        // leaves the NFL page empty with the generic app-logo artwork.
-        try{
-          if(typeof enterAfterPlayerLoginV382==="function"){
-            Promise.resolve(enterAfterPlayerLoginV382(games,d.gameType||games[0]||"nfl")).catch(function(routeErr){
-              console.warn("Post-login route failed",routeErr);
-              if(err)err.textContent="Signed in, but the pool page could not finish loading. Tap SIGN IN once more.";
-            });
-          }else if(typeof enterPoolGames==="function"){
-            Promise.resolve(enterPoolGames(games,d.gameType||games[0]||"nfl")).catch(function(routeErr){
-              if(err)err.textContent="Signed in, but the pool page could not finish loading. Tap SIGN IN once more.";
-            });
-          }else{
-            throw new Error("Pool page initializer is not ready.");
-          }
-        }catch(routeErr){
-          if(err)err.textContent=routeErr.message||"Signed in, but the pool page could not finish loading.";
-        }
-        if(btn){btn.disabled=false;btn.textContent=old}
+        // The recovery script is intentionally isolated from the main app script.
+        // After a successful API login, persist the session and let the normal app
+        // bootstrap restore it on the next page load.
+        try{sessionStorage.setItem("linksLoginRecoveryV407","1")}catch(e){}
+        location.reload();
+        return;
       })
       .catch(function(e){if(err)err.textContent=e.message||"Could not sign in. Please try again.";if(btn){btn.disabled=false;btn.textContent=old}});
   }
