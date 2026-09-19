@@ -1416,7 +1416,7 @@ table{max-width:100%}
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v370</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v371</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -1991,15 +1991,6 @@ table{max-width:100%}
         <b id="adminAssignedGame" class="hide">Loading…</b>
         <label class="small">Commissioner email</label><input id="commissionerEmailInput" type="email" placeholder="commissioner@example.com" style="width:100%;margin:4px 0 8px">
         <div class="small" style="margin:-2px 0 10px">Used in player invites, welcome emails and Contact Commissioner links.</div>
-        <label class="small" for="displayTimezone"><b>GAME TIME DISPLAY</b></label>
-        <select id="displayTimezone" style="width:100%;margin:4px 0 6px">
-          <option value="auto">Auto — each player’s local time</option>
-          <option value="America/New_York">Eastern Time</option>
-          <option value="America/Chicago">Central Time</option>
-          <option value="America/Denver">Mountain Time</option>
-          <option value="America/Los_Angeles">Pacific Time</option>
-        </select>
-        <div class="small" style="margin-bottom:10px">Auto is recommended. Every player sees kickoff times in the time zone of their own phone or computer.</div>
         <label class="small" for="poolRules" style="display:block;margin-top:10px">POOL RULES / PLAYER INSTRUCTIONS</label>
         <textarea id="poolRules" maxlength="4000" placeholder="Example: Picks must be saved before the first kickoff. Tiebreaker is the combined score of the final game. Commissioner decisions are final." style="width:100%;min-height:130px;margin-top:4px;resize:vertical"></textarea>
         <div class="small" style="margin-top:5px">These rules are included automatically in player invite and welcome emails.</div>
@@ -2178,7 +2169,7 @@ window.addEventListener("popstate",e=>{
 });
 function msg(html,good=false){const m=$("#message");m.classList.remove("hide");m.style.background=good?"#083821":"#392908";m.style.border=good?"2px solid #3bdd86":"2px solid #e4b72c";m.innerHTML=html}
 function toLocalInput(iso){if(!iso)return"";let d=new Date(iso),z=n=>String(n).padStart(2,"0");return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`}
-function fmtKickoff(iso){if(!iso)return"";const opt={weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit",timeZoneName:"short"};if(poolDisplayTimezone&&poolDisplayTimezone!=="auto")opt.timeZone=poolDisplayTimezone;return new Intl.DateTimeFormat("en-US",opt).format(new Date(iso))}
+function fmtKickoff(iso){if(!iso)return"";const opt={weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit",timeZoneName:"short"};return new Intl.DateTimeFormat("en-US",opt).format(new Date(iso))}
 function statusLooksLikeKickoffTime(status){const s=String(status||"").trim();return !!s&&(/\b(?:AM|PM)\b/i.test(s)&&( /\b(?:EST|EDT|CST|CDT|MST|MDT|PST|PDT)\b/i.test(s)||/^\d{1,2}\/\d{1,2}\s*[-–—•]/.test(s)));}
 function cleanGameStatus(status){const s=String(status||"").trim();return (!s||statusLooksLikeKickoffTime(s)||/^scheduled$/i.test(s))?"":s;}
 function gameDisplayState(g){if(g?.completed)return"FINAL";const st=cleanGameStatus(g?.status);if(g?.clock&&g?.period)return `${st?`${st} • `:""}${g.clock}`;if(g?.kickoff)return fmtKickoff(g.kickoff);return st||"Scheduled";}
@@ -3912,7 +3903,7 @@ $("#savePicks").onclick=async()=>{
   const missing=gamesNow().length-Object.keys(me.picks||{}).length;if(missing)return msg(`⚠️ <b>You forgot a pick dumbass.</b><br>${missing} pick${missing===1?"":"s"} missing`);
   try{await api(q("/api/picks"),{method:"POST",body:JSON.stringify({sport,week,picks:me.picks,tie:$("#tieInput").value})});me.tie=$("#tieInput").value;writePickPageCacheV194({boot,me});msg("✅ <b>Good luck! Your picks are saved.</b>",true)}catch(e){msg(e.message)}
 };
-$("#saveSettings").onclick=async()=>{await api(aq("/api/admin/settings"),{method:"POST",body:JSON.stringify({sport,week:adminWeek,commissionerEmail:$("#commissionerEmailInput").value,displayTimezone:$("#displayTimezone")?.value||"auto",rules:$("#poolRules")?.value||""})});await keepScroll(()=>renderAdmin());msg("✅ Pool settings, time display, commissioner email and rules saved.",true)};
+$("#saveSettings").onclick=async()=>{await api(aq("/api/admin/settings"),{method:"POST",body:JSON.stringify({sport,week:adminWeek,commissionerEmail:$("#commissionerEmailInput").value,displayTimezone:"auto",rules:$("#poolRules")?.value||""})});poolDisplayTimezone="auto";await keepScroll(()=>renderAdmin());msg("✅ Commissioner email and pool rules saved.",true)};
 $("#saveLockSettings").onclick=async()=>{
   const btn=$("#saveLockSettings"),input=$("#lockInput");
   const raw=String(input?.value||"").trim();
@@ -4726,7 +4717,7 @@ $("#chooseSquares").onclick=()=>enterSquares();
 #adminControls:not(.admin-tool-active-v185)>.commissioner-settings-card,#adminControls:not(.admin-tool-active-v185)>.commissioner-lock-card-v132,#adminControls:not(.admin-tool-active-v185)>.commissioner-finalize-card-v196{min-height:0}
 #adminControls:not(.admin-tool-active-v185)>.commissioner-settings-card{grid-column:1/-1}
 #adminControls:not(.admin-tool-active-v185)>.commissioner-settings-card>label,#adminControls:not(.admin-tool-active-v185)>.commissioner-settings-card>input,#adminControls:not(.admin-tool-active-v185)>.commissioner-settings-card>select,#adminControls:not(.admin-tool-active-v185)>.commissioner-settings-card>textarea,#adminControls:not(.admin-tool-active-v185)>.commissioner-settings-card>#saveSettings,#adminControls:not(.admin-tool-active-v185)>.commissioner-settings-card>.small{display:none}
-#adminControls:not(.admin-tool-active-v185)>.commissioner-settings-card:after{content:"Email, time zone, pool rules and player instructions";display:block;color:#aeb8c4;font-size:13px;margin:5px 0 12px}
+#adminControls:not(.admin-tool-active-v185)>.commissioner-settings-card:after{content:"Email, pool rules and player instructions";display:block;color:#aeb8c4;font-size:13px;margin:5px 0 12px}
 #adminControls:not(.admin-tool-active-v185)>.commissioner-settings-card:before{content:"OPEN POOL SETTINGS";display:block;order:9;text-align:center;font-weight:950;font-size:15px;padding:13px;border:1px solid #526475;border-radius:12px;background:#18232d;margin-top:10px}
 #adminControls:not(.admin-tool-active-v185)>.commissioner-settings-card.admin-open-v368>label,#adminControls:not(.admin-tool-active-v185)>.commissioner-settings-card.admin-open-v368>input,#adminControls:not(.admin-tool-active-v185)>.commissioner-settings-card.admin-open-v368>select,#adminControls:not(.admin-tool-active-v185)>.commissioner-settings-card.admin-open-v368>textarea,#adminControls:not(.admin-tool-active-v185)>.commissioner-settings-card.admin-open-v368>#saveSettings,#adminControls:not(.admin-tool-active-v185)>.commissioner-settings-card.admin-open-v368>.small{display:block}
 #adminControls:not(.admin-tool-active-v185)>.commissioner-settings-card.admin-open-v368:before{content:"CLOSE POOL SETTINGS"}
