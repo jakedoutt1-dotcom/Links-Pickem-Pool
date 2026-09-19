@@ -1416,7 +1416,7 @@ table{max-width:100%}
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v371</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v372</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -1905,6 +1905,7 @@ table{max-width:100%}
     <button data-tab="admin" class="admin-tab commissioner-admin-tab-v118 hide">⚙️ ADMIN</button>
   </div>
 
+  <div id="adminModeBarV372" class="hide"><button id="adminBackToPoolV372" type="button">← BACK TO POOL</button><div><b id="adminModeTitleV372">🏈 NFL ADMIN</b><span id="adminModeMetaV372">WEEK 1</span></div></div>
   <div id="weekPickerCard" class="card row"><b>SELECT WEEK</b><select id="weekSelect"></select></div>
 
   <section id="picks" class="links-interactive-zone">
@@ -3391,6 +3392,7 @@ async function renderAdmin(){
   if(adminOnly){adminOnly.classList.remove("hide");adminOnly.classList.add("admin-loading-v191");adminOnly.innerHTML=`<h3>⚙️ LOADING ADMIN</h3><div class="small">Loading commissioner controls…</div>`;}
   $("#commissionerSportTitle").textContent=sport==="college"?"🎓 COLLEGE FOOTBALL ADMIN":"🏈 NFL ADMIN";
   const aw=Number(adminWeek||officialWeek||week||1);
+  if($("#app")?.classList.contains("admin-mode-v372")){const meta=$("#adminModeMetaV372");if(meta)meta.textContent=`${weekOptionLabel(aw).toUpperCase()} • ${packageLabelV364(linksPackageNameV364)}`}
   const adminHeadV368=$("#commissionerSportTitle")?.closest(".commissioner-sport-card");
   if(adminHeadV368){adminHeadV368.dataset.adminWeek=weekOptionLabel(aw).replace(/^Week\s*/i,"");adminHeadV368.dataset.adminPackage=packageLabelV364(linksPackageNameV364)}
   const settingsCardV368=$("#commissionerSettingsCardV368");
@@ -3559,9 +3561,27 @@ async function renderRules(){
   }
 }
 
+function enterAdminModeV372(){
+  const app=$("#app");if(!app)return;
+  app.classList.add("admin-mode-v372");
+  const aw=Number(adminWeek||officialWeek||week||1);
+  const title=$("#adminModeTitleV372"),meta=$("#adminModeMetaV372");
+  if(title)title.textContent=sport==="college"?"🎓 COLLEGE ADMIN":"🏈 NFL ADMIN";
+  if(meta)meta.textContent=`${weekOptionLabel(aw).toUpperCase()} • ${packageLabelV364(linksPackageNameV364)}`;
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function exitAdminModeV372(){
+  $("#app")?.classList.remove("admin-mode-v372");
+  showTab("picks");
+  loadTabData("picks");
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+$("#adminBackToPoolV372")?.addEventListener("click",exitAdminModeV372);
+
 function showTab(name){
   setTimeout(()=>ensureSectionAd(name),350);
   if(name==="admin"&&!isCommissioner)name="picks";
+  if(name==="admin")enterAdminModeV372(); else $("#app")?.classList.remove("admin-mode-v372");
   setLinksRoute(routeForTab(name));
   ["picks","compare","scores","standings","projected","paid","rules","admin"].forEach(x=>$("#"+x).classList.toggle("hide",x!==name));
   const lockCard=$("#pickLockCard");if(lockCard)lockCard.classList.toggle("hide",name!=="picks");
@@ -4786,6 +4806,30 @@ $("#chooseSquares").onclick=()=>enterSquares();
 #adminControls.admin-section-active-v186 .commissioner-settings-card.admin-section-expanded-v186 input,
 #adminControls.admin-section-active-v186 .commissioner-settings-card.admin-section-expanded-v186 select,
 #adminControls.admin-section-active-v186 .commissioner-settings-card.admin-section-expanded-v186 textarea{box-sizing:border-box}
+</style>
+<style id="links-v372-admin-mode">
+#adminModeBarV372{position:sticky;top:0;z-index:80;margin:0 0 12px;padding:10px;display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;border:1px solid #ff7a2d;border-radius:14px;background:linear-gradient(180deg,rgba(18,28,37,.98),rgba(5,9,13,.98));box-shadow:0 8px 24px #0009}
+#adminModeBarV372.hide{display:none!important}
+#adminModeBarV372 button{width:auto;padding:10px 12px;border-color:#536676;background:#16212b;font-size:13px;font-weight:950}
+#adminModeBarV372>div{text-align:right;line-height:1.15}
+#adminModeTitleV372{display:block;font-size:17px}
+#adminModeMetaV372{display:block;margin-top:3px;color:#ff9b58;font-size:11px;font-weight:950}
+#app.admin-mode-v372>#appHeroImage,
+#app.admin-mode-v372>.app-head,
+#app.admin-mode-v372>.v180-pool-game-tabs-wrap,
+#app.admin-mode-v372>#pageSportIndicator,
+#app.admin-mode-v372>#pickLockCard,
+#app.admin-mode-v372>.tabs,
+#app.admin-mode-v372>#weekPickerCard{display:none!important}
+#app.admin-mode-v372>#adminModeBarV372{display:grid!important}
+#app.admin-mode-v372{padding-top:8px}
+#app.admin-mode-v372 #admin{margin-top:0}
+#app.admin-mode-v372 #adminControls>.commissioner-sport-card{margin-top:0!important}
+@media(max-width:520px){
+ #adminModeBarV372{grid-template-columns:auto 1fr;padding:8px}
+ #adminModeBarV372 button{font-size:11px;padding:9px 10px}
+ #adminModeTitleV372{font-size:15px}
+}
 </style>
 <style id="links-v366-week-selector-fix">
 #weekPickerCard:not(.hide){display:grid!important}
