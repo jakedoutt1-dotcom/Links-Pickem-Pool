@@ -2025,7 +2025,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v554</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v555</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -5452,16 +5452,16 @@ button.links-v480-pressed[data-march-tab],
   fantasy:{title:"REDRAFT & DYNASTY",lead:"Build and manage a fantasy football league with the Links tools for your format.",games:["fantasy","dynasty"]}
  };
  const fallback={
-  survivor:["NFL SURVIVOR","./nfl-pickem-logo.png","Stay alive by making the required NFL survivor selection each week."],
-  confidence:["NFL CONFIDENCE","./nfl-pickem-logo.png","Rank NFL picks by confidence and compete on points."],
-  props:["NFL PROPS","./nfl-pickem-logo.png","Compete on selected NFL proposition questions."],
-  playoff:["NFL PLAYOFFS","./nfl-pickem-logo.png","Run a pool built around the NFL postseason."],
+  survivor:["NFL SURVIVOR","./nfl-survivor-logo-v102.jpg","Stay alive by making the required NFL survivor selection each week."],
+  confidence:["NFL CONFIDENCE","./confidence-pool-logo-v102.jpg","Rank NFL picks by confidence and compete on points."],
+  props:["NFL PROPS","./super-bowl-props-logo-v102.jpg","Compete on selected NFL proposition questions."],
+  playoff:["NFL PLAYOFFS","./nfl-playoff-challenge-logo-v102.jpg","Run a pool built around the NFL postseason."],
   march:["MARCH MADNESS","./march-madness-logo.png","Tournament bracket play with automatic result tracking."],
   "33":["GAME 33","./game-33-logo.png","A weekly NFL pool with the Links Game 33 format."],
-  masters:["MASTERS GOLF","./masters-logo.png","Run a golf pool around the Masters."],
-  nascar:["NASCAR","./nascar-logo.png","Run a NASCAR pool with selected drivers."],
+  masters:["MASTERS GOLF","./masters-golf-pool-logo-v102.jpg","Run a golf pool around the Masters."],
+  nascar:["NASCAR","./nascar-pool-logo-v102.jpg","Run a NASCAR pool with selected drivers."],
   fantasy:["FANTASY FOOTBALL","./fantasy-football-logo.png","Redraft fantasy football league tools."],
-  dynasty:["DYNASTY FANTASY FOOTBALL","./dynasty-football-logo.png","Long-term dynasty rosters, contracts, trades and draft tools."]
+  dynasty:["DYNASTY FANTASY FOOTBALL","./dynasty-fantasy-football-logo-v157.png","Long-term dynasty rosters, contracts, trades and draft tools."]
  };
  function dataFor(k){const d=window.GAME_INFO?.[k]||GAME_INFO?.[k];if(d)return [d.title,d.logo||d.banner,d.lead];return fallback[k]||[k.toUpperCase(),"./links-login-banner-v121.png","Open this game to learn more."]}
  function openCategory(k){const g=groups[k];if(!g)return;document.getElementById("categoryInfoTitleV554").textContent=g.title;document.getElementById("categoryInfoLeadV554").textContent=g.lead;document.getElementById("categoryInfoGamesV554").innerHTML=g.games.map(game=>{const d=dataFor(game);return '<button type="button" class="links-category-game-v554" data-open-game-v554="'+game+'"><img src="'+d[1]+'" alt=""><span><b>'+d[0]+'</b><span>'+d[2]+'</span></span></button>'}).join("");showOnly("categoryInfoPageV554");window.scrollTo({top:0,behavior:"smooth"});}
