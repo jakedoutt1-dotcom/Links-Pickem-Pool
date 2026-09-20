@@ -1938,7 +1938,11 @@ export async function onRequest(context){
       const pool=await poolLookup(DB,url.searchParams.get("code"));if(!pool)return json({error:"Pool not found."},404);
       const players=(await DB.prepare("SELECT name FROM pool_players WHERE pool_id=? ORDER BY rowid").bind(pool.id).all()).results.map(x=>x.name);
       const svc=await DB.prepare("SELECT plan,status,price_cents,paid_at FROM pool_service WHERE pool_id=?").bind(pool.id).first();
-      return json({code:pool.code,name:pool.name,players,service:svc||null,access:await poolAccessFor(DB,pool.id)});
+      // v564: pool selection must not fail just because optional commissioner entitlement/service metadata has a problem.
+      // The login chooser only needs the pool and player list; access metadata is best-effort here.
+      let access={adFree:false,commissionerPlan:"free"};
+      try{access=await poolAccessFor(DB,pool.id)}catch(e){}
+      return json({code:pool.code,name:pool.name,players,service:svc||null,access});
     }
     if(path==="public-scores"&&method==="GET"){
       const publicSport=String(url.searchParams.get("sport")||"nfl").toLowerCase()==="college"?"college":"nfl";
