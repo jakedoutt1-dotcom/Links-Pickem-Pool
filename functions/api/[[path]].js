@@ -3036,7 +3036,9 @@ export async function onRequest(context){
 
     if(path==="lock-status"&&method==="GET"){
       const row=await DB.prepare("SELECT lock_time FROM pool_week_meta WHERE pool_id=? AND sport=? AND week=?").bind(pid,sport,w).first();
-      const lockTime=row?.lock_time||null;
+      // v533: automatic NFL pools must still lock at the first kickoff even when a new
+      // pool has no pool_week_meta row yet. Use the official week fallback as the lock.
+      const lockTime=row?.lock_time||(sport==="nfl"?OFFICIAL_FIRST_KICKOFF_FALLBACK[w]:null)||null;
       return json({lockTime,locked:!!(lockTime&&Date.parse(lockTime)<=Date.now()),sport,week:w});
     }
     if(path==="pick-page"&&method==="GET"){
