@@ -2262,7 +2262,8 @@ export async function onRequest(context){
         DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,'commissioner_player_name',?) ON CONFLICT(pool_id,key) DO UPDATE SET value=excluded.value").bind(pid,commissioner),
         DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,'game_type','33') ON CONFLICT(pool_id,key) DO UPDATE SET value='33'").bind(pid),
         DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,'active_games_exact','[\"33\"]') ON CONFLICT(pool_id,key) DO UPDATE SET value='[\"33\"]'").bind(pid),
-        DB.prepare("INSERT INTO pool_active_games(pool_id,game_type,is_primary,active,added_at) VALUES(?,'33',1,1,?) ON CONFLICT(pool_id,game_type) DO UPDATE SET active=1,is_primary=1").bind(pid,now)
+        DB.prepare("INSERT INTO pool_active_games(pool_id,game_type,is_primary,active,added_at) VALUES(?,'33',1,1,?) ON CONFLICT(pool_id,game_type) DO UPDATE SET active=1,is_primary=1").bind(pid,now),
+        DB.prepare("INSERT INTO pool_service(pool_id,plan,status,price_cents,paid_at,notes) VALUES(?,'all_access','ACTIVE',0,?,'G3326 isolated test override') ON CONFLICT(pool_id) DO UPDATE SET plan='all_access',status='ACTIVE',price_cents=0,notes='G3326 isolated test override'").bind(pid,now)
       ]);
       await DB.prepare("DELETE FROM pool_players WHERE pool_id=?").bind(pid).run();
       const players=[];
@@ -2273,7 +2274,7 @@ export async function onRequest(context){
       await DB.batch(board.map(([name,team])=>DB.prepare("INSERT INTO pool_33_assignments(pool_id,player_name,team,assigned_at,source) VALUES(?,?,?,?,?)").bind(pid,name,team,now,"manual")));
       await DB.batch(board.map(([name,team,paid])=>DB.prepare("INSERT INTO pool_33_entries(pool_id,player_name,paid) VALUES(?,?,?)").bind(pid,name,paid)));
       await DB.prepare("INSERT INTO pool_33_state(pool_id,draw_locked,draw_source,draw_at) VALUES(?,1,'manual',?) ON CONFLICT(pool_id) DO UPDATE SET draw_locked=1,draw_source='manual',draw_at=excluded.draw_at").bind(pid,now).run();
-      return json({ok:true,code:poolCode,name:poolName,players:board.length});
+      return json({ok:true,code:poolCode,name:poolName,players:board.length,testOverride:true});
     }
     if(path==="login"&&method==="POST"){
       const pool=await poolByCode(DB,body.poolCode);if(!pool)return json({error:"Pool not found."},404);
