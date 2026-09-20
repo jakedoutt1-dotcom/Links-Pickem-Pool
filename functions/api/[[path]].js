@@ -978,10 +978,6 @@ async function getCommissionerPlayerName(DB,pid){
 function sessionCanPlay(s){return !!s&&(s.role==="player"||(s.role==="admin"&&s.player_name&&s.player_name!=="Commissioner"));}
 
 async function getPoolGameTypes(DB,pid,code=""){
-  // v566: isolated Game 33 test pool. This is deliberately handled here so
-  // login/session routing cannot fall back to NFL, while all other pools keep
-  // the existing protected game-selection behavior unchanged.
-  if(String(code||"").trim().toUpperCase()==="G3326")return ["33"];
   // v111: active_games_exact is authoritative whenever it exists.  Older builds
   // could leave stale pool_active_games rows active; reconcile those flags to the
   // exact commissioner-selected list without deleting any game history or picks.
@@ -2250,47 +2246,6 @@ export async function onRequest(context){
       }
       const first=createdPools[0];
       return json({ok:true,code:first.code,name:first.name,playerName,token:first.token,isCommissioner:true,gameType,games:gameTypes,createdPools,commissionerWelcomeEmailSent:allWelcomeOk,commissionerWelcomeEmailError:firstWelcomeError,service:{plan:createAccess.plan||"free",status:createAccess.plan==="free"?"FREE":"ACTIVE",adFree:!!createAccess.adFree}});
-    }
-    if(path==="test-pools/game33-2026"&&method==="POST"){
-      const poolCode="G3326",poolName="33 2026",commissioner="Michael Demeza",email="michaeldemeza@yahoo.com",now=new Date().toISOString();
-      let pool=await poolByCode(DB,poolCode);
-      if(!pool){
-        const salt=newSalt(),hash=await hashPassword("1234",salt);
-        await DB.prepare("INSERT INTO pools(code,name,admin_salt,admin_hash,created_at) VALUES(?,?,?,?,?)").bind(poolCode,poolName,salt,hash,now).run();
-        pool=await poolByCode(DB,poolCode);
-      }
-      const pid=pool.id;
-      const board=[["Tailgate Trey","LAC",1],["Jack","DET",1],["Fred","PHI",0],["TD","TB",1],["TD2","HOU",1],["Robb","MIN",1],["Karen","NYJ",1],["Randy","JAX",1],["Lockman","NYG",0],["Bill A","CHI",1],["Cindy A","TEN",1],["Almarode","CIN",1],["B-man","ATL",1],["Kelly","NO",1],["Taylor","NE",0],["Daniel","KC",0],[commissioner,"BAL",0],["Katie","LV",1],["Thad","BUF",1],["Cristen","DEN",1],["Grizzo","LAR",0],["Jake","ARZ",0],["Amanda","DAL",0],["Austin Hale","CLE",1],["Lee","WAS",1],["Kirsten","SF",1],["Mark","GB",1],["Franklin","MIA",1],["Laura Hale 1","SEA",1],["Laura Hale 2","CAR",1],["Codie","PIT",1],["Rob","IND",1]];
-      await DB.batch([
-        DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,'commissioner_email',?) ON CONFLICT(pool_id,key) DO UPDATE SET value=excluded.value").bind(pid,email),
-        DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,'commissioner_player_name',?) ON CONFLICT(pool_id,key) DO UPDATE SET value=excluded.value").bind(pid,commissioner),
-        DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,'game_type','33') ON CONFLICT(pool_id,key) DO UPDATE SET value='33'").bind(pid),
-        DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,'active_games_exact','[\"33\"]') ON CONFLICT(pool_id,key) DO UPDATE SET value='[\"33\"]'").bind(pid),
-        DB.prepare("INSERT INTO pool_active_games(pool_id,game_type,is_primary,active,added_at) VALUES(?,'33',1,1,?) ON CONFLICT(pool_id,game_type) DO UPDATE SET active=1,is_primary=1").bind(pid,now),
-        DB.prepare("INSERT INTO pool_service(pool_id,plan,status,price_cents,paid_at,notes) VALUES(?,'all_access','ACTIVE',0,?,'G3326 isolated test override') ON CONFLICT(pool_id) DO UPDATE SET plan='all_access',status='ACTIVE',price_cents=0,notes='G3326 isolated test override'").bind(pid,now)
-      ]);
-      await DB.prepare("DELETE FROM pool_players WHERE pool_id=?").bind(pid).run();
-      const players=[];
-      for(const [name] of board){const salt=newSalt(),hash=await hashPassword(name===commissioner?"1234":crypto.randomUUID(),salt);players.push(DB.prepare("INSERT INTO pool_players(pool_id,name,password_hash,salt) VALUES(?,?,?,?)").bind(pid,name,hash,salt))}
-      await DB.batch(players);
-      await DB.prepare("DELETE FROM pool_33_assignments WHERE pool_id=?").bind(pid).run();
-      await DB.prepare("DELETE FROM pool_33_entries WHERE pool_id=?").bind(pid).run();
-      await DB.batch(board.map(([name,team])=>DB.prepare("INSERT INTO pool_33_assignments(pool_id,player_name,team,assigned_at,source) VALUES(?,?,?,?,?)").bind(pid,name,team,now,"manual")));
-      await DB.batch(board.map(([name,team,paid])=>DB.prepare("INSERT INTO pool_33_entries(pool_id,player_name,paid) VALUES(?,?,?)").bind(pid,name,paid)));
-      await DB.prepare("INSERT INTO pool_33_state(pool_id,draw_locked,draw_source,draw_at) VALUES(?,1,'manual',?) ON CONFLICT(pool_id) DO UPDATE SET draw_locked=1,draw_source='manual',draw_at=excluded.draw_at").bind(pid,now).run();
-      return json({ok:true,code:poolCode,name:poolName,players:board.length,testOverride:true});
-    }
-    if(path==="test-pools/game33-2026/fix"&&method==="POST"){
-      const pool=await poolByCode(DB,"G3326");if(!pool)return json({error:"G3326 test pool has not been created yet."},404);
-      const now=new Date().toISOString();
-      await DB.batch([
-        DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,'game_type','33') ON CONFLICT(pool_id,key) DO UPDATE SET value='33'").bind(pool.id),
-        DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,'active_games_exact','[\"33\"]') ON CONFLICT(pool_id,key) DO UPDATE SET value='[\"33\"]'").bind(pool.id),
-        DB.prepare("UPDATE pool_active_games SET active=0,is_primary=0 WHERE pool_id=?").bind(pool.id),
-        DB.prepare("INSERT INTO pool_active_games(pool_id,game_type,is_primary,active,added_at) VALUES(?,'33',1,1,?) ON CONFLICT(pool_id,game_type) DO UPDATE SET active=1,is_primary=1").bind(pool.id,now)
-      ]);
-      const games=await getPoolGameTypes(DB,pool.id,pool.code);
-      return json({ok:true,code:pool.code,gameType:await getPoolGameType(DB,pool.id,pool.code),games});
     }
     if(path==="login"&&method==="POST"){
       const pool=await poolByCode(DB,body.poolCode);if(!pool)return json({error:"Pool not found."},404);
