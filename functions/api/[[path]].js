@@ -978,6 +978,10 @@ async function getCommissionerPlayerName(DB,pid){
 function sessionCanPlay(s){return !!s&&(s.role==="player"||(s.role==="admin"&&s.player_name&&s.player_name!=="Commissioner"));}
 
 async function getPoolGameTypes(DB,pid,code=""){
+  // v566: isolated Game 33 test pool. This is deliberately handled here so
+  // login/session routing cannot fall back to NFL, while all other pools keep
+  // the existing protected game-selection behavior unchanged.
+  if(String(code||"").trim().toUpperCase()==="G3326")return ["33"];
   // v111: active_games_exact is authoritative whenever it exists.  Older builds
   // could leave stale pool_active_games rows active; reconcile those flags to the
   // exact commissioner-selected list without deleting any game history or picks.
