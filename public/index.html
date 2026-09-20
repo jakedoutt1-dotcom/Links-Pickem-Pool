@@ -2038,7 +2038,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v567</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v568</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2784,7 +2784,11 @@ function showOnly(id,opts={}){
   if(!opts.fromHistory && id!==currentScreen){
     try{history.pushState({linksScreen:id},"",location.href)}catch(e){}
   }
-  currentScreen=id;forceTop();
+  currentScreen=id;
+  // v568: do not force-scroll the page while the pool login modal is open.
+  // iOS treats these programmatic scrolls as competing with keyboard/viewport movement,
+  // which made the login UI visibly jump.
+  if(!$("#poolLoginModalV150") || $("#poolLoginModalV150").classList.contains("hide")) forceTop();
   const screen=$("#"+id);
   if(screen)setTimeout(()=>screen.querySelectorAll(".links-fixed-ad,.links-manual-ad-zone").forEach(ad=>requestAdIn(ad)),250);
   if(id==="home")setTimeout(ensureHomeAd,250);
@@ -2898,13 +2902,16 @@ function selectHomePool(p){
   homePools=[p];rememberPool(p);updateLinksServiceStatus(homePools);if(box)box.classList.remove("show");
   $("#homePortalErr").textContent="";
 }
+let poolSearchRequestV568=0;
 async function searchPools(q){
-  const text=String(q||"").trim();
+  const text=String(q||"").trim(),requestId=++poolSearchRequestV568;
   if(text.length<1){renderPoolSearchResults(recentPools(),{recent:true});return}
   try{
     const d=await api(`/api/pool-search?q=${encodeURIComponent(text)}`);
+    // Ignore older responses arriving after the player has typed more characters.
+    if(requestId!==poolSearchRequestV568)return;
     renderPoolSearchResults(d.pools||[]);
-  }catch(e){$("#homePortalErr").textContent=e.message||"Could not search pools."}
+  }catch(e){if(requestId===poolSearchRequestV568)$("#homePortalErr").textContent=e.message||"Could not search pools."}
 }
 async function loadPoolMenu(preferred=""){
   const input=$("#poolCodeInput");if(!input)return;
@@ -4466,7 +4473,7 @@ $("#linksAdminRefresh").onclick=loadLinksAdminPools;
 $("#linksAdminLogout").onclick=async()=>{try{await linksMasterApi("/api/links-admin/logout",{method:"POST"})}catch(e){}linksMasterToken="";sessionStorage.removeItem("linksMasterToken");$("#linksAdminDashboard").classList.add("hide");$("#linksAdminLoginCard").classList.remove("hide")};
 
 
-$("#poolCodeInput").addEventListener("focus",()=>searchPools($("#poolCodeInput").dataset.selectedCode?"":$("#poolCodeInput").value));
+$("#poolCodeInput").addEventListener("focus",()=>{const input=$("#poolCodeInput");if(!input.dataset.selectedCode && !input.value.trim())renderPoolSearchResults(recentPools(),{recent:true});});
 $("#poolCodeInput").addEventListener("input",e=>{
   selectedHomePoolCode="";e.target.dataset.selectedCode="";homePools=[];updateLinksServiceStatus([]);
   clearTimeout(poolSearchTimer);poolSearchTimer=setTimeout(()=>searchPools(e.target.value),180);
@@ -5523,9 +5530,9 @@ document.addEventListener("DOMContentLoaded",()=>{
 });
 </script>
 
-<script id="links-version-check-v565">
+<script id="links-version-check-v568">
 (()=>{
-  const CURRENT_BUILD="v565";
+  const CURRENT_BUILD="v568";
   let checking=false;
   async function checkForLinksUpdate(){
     if(checking) return;
