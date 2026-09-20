@@ -2025,7 +2025,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v566</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v567</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -3047,6 +3047,12 @@ async function enterSportChoice(){
   showOnly("sportChoice");
 }
 async function enterPoolGames(gameTypes,gameType){
+  // v567: G3326 is an isolated Game 33 test pool. Route it before any saved
+  // NFL game/session value can be reused on the device.
+  if(String(poolCode||"").trim().toUpperCase()==="G3326"){
+    savePoolGames(["33"],"33");
+    return enterApp("33");
+  }
   const games=savePoolGames(gameTypes,gameType||"nfl");
   if(games.length>1)return enterSportChoice();
   const assigned=games[0];
