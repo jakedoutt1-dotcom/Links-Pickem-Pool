@@ -1488,7 +1488,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v493</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v494</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -3383,7 +3383,7 @@ async function renderProjectedStandings(){
     return {player,order,picked,pending,actualCorrect,expectedRemaining,projected:actualCorrect+expectedRemaining};
   }).sort((a,b)=>b.projected-a.projected || b.actualCorrect-a.actualCorrect || a.order-b.order);
 
-  $("#projectedNote").textContent="Projection = games already correct plus a neutral 50/50 estimate for each remaining saved pick. Official standings use final results only.";
+  $("#projectedNote").innerHTML=`<div class="links-projection-source-v494">● LIVE PROJECTION • ESPN LIVE DATA</div><div class="links-projection-copy-v494">Projection uses live ESPN game data and current results to estimate where each player may finish. Official standings use final game results only.</div>`;
 
   $("#projectedBody").innerHTML=`<table>
     <thead><tr><th>#</th><th>Player</th><th>Projected</th><th>Correct Now</th><th>Pick Outlook</th></tr></thead>
@@ -4853,6 +4853,11 @@ button.links-v480-pressed[data-march-tab],
 .links-v491-back{position:sticky;top:8px;z-index:50;margin:8px 0 10px;padding:10px 14px;background:#101820;border:1px solid #ff7a2f;color:#fff;font-weight:950;box-shadow:0 0 12px rgba(255,106,26,.32)}
 .links-v491-package-actions{position:relative;width:100%}
 @media(max-width:560px){#plansPageV201{padding:0 5px 24px}.links-v491-package-art img{border-radius:8px}.links-v491-back{font-size:12px;padding:9px 11px}}
+</style>
+
+<style id="links-v494-projection-source-style">
+.links-projection-source-v494{display:inline-flex;align-items:center;margin:2px 0 8px;padding:6px 10px;border:1px solid #425b70;border-radius:999px;background:#17232d;color:#e9f4ff;font-size:11px;font-weight:950;letter-spacing:.07em;text-transform:uppercase;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04)}
+.links-projection-source-v494::first-letter{color:#38e887}.links-projection-copy-v494{color:#c6d0d9;line-height:1.45}
 </style>
 </body></html>
 
