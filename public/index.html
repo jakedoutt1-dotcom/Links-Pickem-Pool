@@ -2025,7 +2025,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v556</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v557</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2766,7 +2766,7 @@ function ensureSectionAd(id){const el=document.getElementById(id);if(!el)return;
 function tryInitManualAd(id){const el=document.getElementById(id);if(el)requestAdIn(el)}
 window.addEventListener("load",()=>setTimeout(ensureHomeAd,600));
 function showOnly(id,opts={}){
-  const screens=["home","demoPage","commissionerWelcome","createPoolPage","linksAdmin","publicScoresPage","gameInfoPage","inviteJoinPage","playerSetupPage","login","sportChoice","specialGameApp","squaresApp","marchApp","app"];
+  const screens=["home","demoPage","commissionerWelcome","createPoolPage","linksAdmin","publicScoresPage","categoryInfoPageV554","gameInfoPage","inviteJoinPage","playerSetupPage","login","sportChoice","specialGameApp","squaresApp","marchApp","app"];
   screens.forEach(x=>$("#"+x).classList.toggle("hide",x!==id));
   if(!opts.fromHistory && id!==currentScreen){
     try{history.pushState({linksScreen:id},"",location.href)}catch(e){}
