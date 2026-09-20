@@ -2025,7 +2025,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v563</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v564</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -4479,6 +4479,8 @@ const openLoginV150=()=>{$("#poolLoginModalV150")?.classList.remove("hide");setT
 const closeLoginV150=()=>$("#poolLoginModalV150")?.classList.add("hide");
 $("#openPoolLoginV150")?.addEventListener("click",openLoginV150);$("#closePoolLoginV150")?.addEventListener("click",closeLoginV150);$("#poolLoginModalV150")?.addEventListener("click",e=>{if(e.target.id==="poolLoginModalV150")closeLoginV150()});
 $("#enterPoolBtn").onclick=async()=>{
+  const enterBtn=$("#enterPoolBtn"),enterOld=enterBtn?.textContent||"CONTINUE TO LOGIN";
+  if(enterBtn){enterBtn.disabled=true;enterBtn.textContent="SIGNING IN…";enterBtn.classList.add("links-action-loading-v511")}
   let code=$("#poolCodeInput").dataset.selectedCode||selectedHomePoolCode||"";
   const typed=$("#poolCodeInput").value.trim();
   if(!code&&typed){
@@ -4490,8 +4492,9 @@ $("#enterPoolBtn").onclick=async()=>{
       else {renderPoolSearchResults(rows);$("#homePortalErr").textContent=rows.length?"Choose your pool from the matching results.":"Pool not found.";return}
     }catch(e){$("#homePortalErr").textContent=e.message;return}
   }
-  if(!code){$("#homePortalErr").textContent="Type your pool name or pool code first.";return}
-  await openPool(code);
+  if(!code){$("#homePortalErr").textContent="Type your pool name or pool code first.";if(enterBtn){enterBtn.disabled=false;enterBtn.textContent=enterOld;enterBtn.classList.remove("links-action-loading-v511")}return}
+  try{await openPool(code)}
+  finally{if(enterBtn){enterBtn.disabled=false;enterBtn.textContent=enterOld;enterBtn.classList.remove("links-action-loading-v511")}}
 };
 $("#showCreatePool").onclick=()=>showOnly("createPoolPage");
 $("#createPoolBtn").onclick=async()=>{
