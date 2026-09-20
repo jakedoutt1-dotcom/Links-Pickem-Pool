@@ -1921,6 +1921,15 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
 #signOut:active,#sportSignOut:active,#squaresSignOut:active,#marchSignOut:active,.links-signout-v550:active{transform:scale(.94)!important;filter:brightness(1.25)!important}
 .links-signing-out-v550{transform:scale(.96)!important;filter:brightness(1.25)!important;opacity:.85!important;cursor:wait!important}
 </style>
+<style id="links-v554-category-info">
+.links-category-hit-v554{position:absolute!important;z-index:6!important;background:transparent!important;border:0!important;border-radius:14px!important;padding:0!important;box-shadow:none!important}
+.links-category-hit-v554.nfl{left:2%;top:27%;width:47%;height:32%}.links-category-hit-v554.college{left:51%;top:27%;width:47%;height:32%}.links-category-hit-v554.other{left:2%;top:61%;width:47%;height:32%}.links-category-hit-v554.fantasy{left:51%;top:61%;width:47%;height:32%}
+.links-category-hit-v554:active{background:rgba(255,106,26,.12)!important;box-shadow:inset 0 0 0 2px #ff6a1a!important}
+.links-category-games-v554{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0}
+.links-category-game-v554{display:flex!important;align-items:center!important;gap:12px!important;text-align:left!important;padding:12px!important;background:#0d1720!important;border:1px solid #344955!important;border-radius:12px!important;color:#fff!important;min-height:84px!important}
+.links-category-game-v554 img{width:70px;height:70px;object-fit:contain;border-radius:9px;background:#070b0f;flex:0 0 70px}.links-category-game-v554 b{display:block;font-size:15px}.links-category-game-v554 span{display:block;color:#bdc9d4;font-size:11px;margin-top:4px;line-height:1.35}
+@media(max-width:600px){.links-category-games-v554{grid-template-columns:1fr}.links-category-game-v554{min-height:76px}.links-category-game-v554 img{width:60px;height:60px;flex-basis:60px}}
+</style>
 </head>
 
 <body><div id="top"></div><div class="wrap">
@@ -1932,9 +1941,12 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./links-home-hero-stadium-v109.png" class="links-home-full-hero" alt="Links Pickem Pools — You Pick, We Track, You Win">
   </section>
   <div class="links-top-login-v150 links-home-primary-actions-v339"><button id="openPoolLoginV150" type="button">🔐 LOGIN / SELECT POOL</button><button id="createFreePoolTopV339" type="button">＋ CREATE MY FREE POOL</button></div>
-  <section class="links-home-under-create-v348" style="position:relative;width:min(100%,760px);margin:14px auto 18px" aria-label="Choose a Links pool category">
+  <section class="links-home-under-create-v348 links-category-map-v554" style="position:relative;width:min(100%,760px);margin:14px auto 18px" aria-label="Choose a Links pool category">
     <img src="./IMG_5803.jpeg?v=348" alt="Choose a Links pool category" style="display:block;width:100%;height:auto;border-radius:14px">
-    <button id="homeNflInfoV348" type="button" aria-label="NFL Pick’em information" style="position:absolute;left:34.2%;top:58.2%;transform:translate(-50%,-50%);z-index:5;width:auto;min-width:46px;padding:6px 11px;border:1px solid #a94b20;border-radius:7px;background:linear-gradient(#3a2115,#160c08);color:#f4eadc;font-family:Arial Black,Arial,sans-serif;font-weight:900;font-size:clamp(10px,2.2vw,14px);letter-spacing:.4px;text-shadow:0 1px 2px #000;box-shadow:inset 0 0 0 1px #6b351d,0 2px 5px #000;cursor:pointer">NFL</button>
+    <button class="links-category-hit-v554 nfl" type="button" data-category-info-v554="nfl" aria-label="View NFL pool games and information"></button>
+    <button class="links-category-hit-v554 college" type="button" data-category-info-v554="college" aria-label="View college and tournament games"></button>
+    <button class="links-category-hit-v554 other" type="button" data-category-info-v554="other" aria-label="View other sports games"></button>
+    <button class="links-category-hit-v554 fantasy" type="button" data-category-info-v554="fantasy" aria-label="View redraft and dynasty fantasy games"></button>
   </section>
 
 
@@ -2013,7 +2025,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v553</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v554</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2214,6 +2226,15 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
   <button id="publicScoresHome" type="button" style="width:100%;margin-top:8px">← BACK TO HOME</button>
 </div>
 
+
+<div id="categoryInfoPageV554" class="login hide game-info-shell">
+  <img src="./IMG_5803.jpeg?v=348" class="game-info-banner" alt="Links game categories">
+  <div class="game-info-kicker">EXPLORE LINKS GAMES</div>
+  <h1 id="categoryInfoTitleV554" class="game-info-title">LINKS GAMES</h1>
+  <div id="categoryInfoLeadV554" class="game-info-lead"></div>
+  <div id="categoryInfoGamesV554" class="links-category-games-v554"></div>
+  <div class="game-info-actions"><button id="categoryInfoBackV554" type="button">← BACK TO HOME</button></div>
+</div>
 
 <div id="gameInfoPage" class="login hide game-info-shell">
 <img id="gameInfoBanner" class="game-info-banner" src="./nfl-page-banner.jpg" alt="Links game">
@@ -5422,6 +5443,33 @@ button.links-v480-pressed[data-march-tab],
 .links-projection-source-v494{display:inline-flex;align-items:center;margin:2px 0 8px;padding:6px 10px;border:1px solid #425b70;border-radius:999px;background:#17232d;color:#e9f4ff;font-size:11px;font-weight:950;letter-spacing:.07em;text-transform:uppercase;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04)}
 .links-projection-source-v494::first-letter{color:#38e887}.links-projection-copy-v494{color:#c6d0d9;line-height:1.45}
 </style>
+<script id="links-v554-category-info-js">
+(()=>{
+ const groups={
+  nfl:{title:"NFL POOLS",lead:"Choose an NFL game style below to see how it works, the rules and what players and commissioners can do.",games:["nfl","survivor","confidence","props","playoff","squares"]},
+  college:{title:"COLLEGE & TOURNAMENTS",lead:"Explore the college and tournament games available on Links.",games:["college","march","33"]},
+  other:{title:"OTHER SPORTS",lead:"Explore Links pools beyond football, including golf and racing.",games:["masters","nascar"]},
+  fantasy:{title:"REDRAFT & DYNASTY",lead:"Build and manage a fantasy football league with the Links tools for your format.",games:["fantasy","dynasty"]}
+ };
+ const fallback={
+  survivor:["NFL SURVIVOR","./nfl-pickem-logo.png","Stay alive by making the required NFL survivor selection each week."],
+  confidence:["NFL CONFIDENCE","./nfl-pickem-logo.png","Rank NFL picks by confidence and compete on points."],
+  props:["NFL PROPS","./nfl-pickem-logo.png","Compete on selected NFL proposition questions."],
+  playoff:["NFL PLAYOFFS","./nfl-pickem-logo.png","Run a pool built around the NFL postseason."],
+  march:["MARCH MADNESS","./march-madness-logo.png","Tournament bracket play with automatic result tracking."],
+  "33":["GAME 33","./game-33-logo.png","A weekly NFL pool with the Links Game 33 format."],
+  masters:["MASTERS GOLF","./masters-logo.png","Run a golf pool around the Masters."],
+  nascar:["NASCAR","./nascar-logo.png","Run a NASCAR pool with selected drivers."],
+  fantasy:["FANTASY FOOTBALL","./fantasy-football-logo.png","Redraft fantasy football league tools."],
+  dynasty:["DYNASTY FANTASY FOOTBALL","./dynasty-football-logo.png","Long-term dynasty rosters, contracts, trades and draft tools."]
+ };
+ function dataFor(k){const d=window.GAME_INFO?.[k]||GAME_INFO?.[k];if(d)return [d.title,d.logo||d.banner,d.lead];return fallback[k]||[k.toUpperCase(),"./links-login-banner-v121.png","Open this game to learn more."]}
+ function openCategory(k){const g=groups[k];if(!g)return;document.getElementById("categoryInfoTitleV554").textContent=g.title;document.getElementById("categoryInfoLeadV554").textContent=g.lead;document.getElementById("categoryInfoGamesV554").innerHTML=g.games.map(game=>{const d=dataFor(game);return '<button type="button" class="links-category-game-v554" data-open-game-v554="'+game+'"><img src="'+d[1]+'" alt=""><span><b>'+d[0]+'</b><span>'+d[2]+'</span></span></button>'}).join("");showOnly("categoryInfoPageV554");window.scrollTo({top:0,behavior:"smooth"});}
+ document.querySelectorAll("[data-category-info-v554]").forEach(b=>b.addEventListener("click",e=>{e.preventDefault();openCategory(b.dataset.categoryInfoV554)}));
+ document.getElementById("categoryInfoGamesV554")?.addEventListener("click",e=>{const b=e.target.closest("[data-open-game-v554]");if(b&&typeof openGameInfo==="function")openGameInfo(b.dataset.openGameV554)});
+ document.getElementById("categoryInfoBackV554")?.addEventListener("click",()=>{showOnly("home");document.querySelector(".links-home-under-create-v348")?.scrollIntoView({behavior:"smooth",block:"center"})});
+})();
+</script>
 </body></html>
 
 <!-- v139 local audio caching + one Games in This Pool control at bottom of each commissioner admin page -->
