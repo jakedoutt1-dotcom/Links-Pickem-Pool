@@ -1488,7 +1488,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v488</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v489</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -4832,20 +4832,27 @@ button.links-v480-pressed[data-march-tab],
   opacity:1!important;
 }
 </style>
-<script id="links-v488-add-to-packages">
-document.addEventListener("click",function(e){
-  const add=e.target.closest("[data-instance-add]");
-  if(!add)return;
-  e.preventDefault();
-  e.stopImmediatePropagation();
-  const home=document.getElementById("home"), plans=document.getElementById("plansPageV201");
-  document.querySelectorAll("body > div, body > section").forEach(el=>{
-    if(el===plans)return;
-    if(el.id==="home" || !el.closest("#plansPageV201")) el.classList.add("hide");
-  });
-  if(home)home.classList.add("hide");
-  if(plans){plans.classList.remove("hide");window.scrollTo(0,0);}
-},true);
+<script id="links-v489-add-to-packages">
+(()=>{
+  let returnView=null;
+  document.addEventListener("click",function(e){
+    const add=e.target.closest("[data-instance-add]");
+    if(!add)return;
+    e.preventDefault();e.stopImmediatePropagation();
+    const plans=document.getElementById("plansPageV201");
+    if(!plans)return;
+    returnView=[...document.querySelectorAll("body > div")].find(el=>el!==plans&&!el.classList.contains("hide"))||document.getElementById("home");
+    document.querySelectorAll("body > div").forEach(el=>{if(el!==plans)el.classList.add("hide")});
+    plans.classList.remove("hide");window.scrollTo(0,0);
+  },true);
+  document.addEventListener("click",function(e){
+    const back=e.target.closest("#plansBackV201"); if(!back)return;
+    e.preventDefault();e.stopImmediatePropagation();
+    const plans=document.getElementById("plansPageV201"); if(plans)plans.classList.add("hide");
+    const dest=returnView||document.getElementById("home"); if(dest)dest.classList.remove("hide");
+    window.scrollTo(0,0);
+  },true);
+})();
 </script>
 </body></html>
 
