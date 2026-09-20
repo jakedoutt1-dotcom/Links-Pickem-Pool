@@ -2025,7 +2025,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v557</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v558</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -4548,20 +4548,22 @@ async function commissionerChangeGameV358(){
 }
 $("#changeSport").onclick=commissionerChangeGameV358;
 $("#adminChangeGame").onclick=commissionerChangeGameV358;
+function resetSignOutButtonsV558(){
+  ["signOut","sportSignOut","squaresSignOut","marchSignOut","specialSignOut"].forEach(id=>{
+    const b=document.getElementById(id);if(!b)return;
+    b.disabled=false;b.classList.remove("links-signing-out-v550");
+    if(b.dataset.linksOldText){b.textContent=b.dataset.linksOldText;delete b.dataset.linksOldText}
+    else if(/SIGNING OUT/i.test(b.textContent||""))b.textContent="Sign Out";
+  });
+}
 async function signOut(){
-  const clicked=document.activeElement&&document.activeElement.tagName==="BUTTON"?document.activeElement:null;
-  if(clicked){
-    clicked.disabled=true;
-    clicked.dataset.linksOldText=clicked.textContent;
-    clicked.textContent="SIGNING OUT…";
-    clicked.classList.add("links-signing-out-v550");
-  }
   try{await api("/api/logout",{method:"POST"})}catch(e){}
-  ["poolToken","poolRole","poolUser","poolSport","poolGames","poolIsCommissioner","linksPoolAdFree","linksPaidPackageV363","linksPackageNameV364"].forEach(k=>sessionStorage.removeItem(k));token=role=currentUser=sport="";isCommissioner=false;poolGames=[];applyPoolAdMode(false);await loadPoolMenu(poolCode);showOnly("home");
+  ["poolToken","poolRole","poolUser","poolSport","poolGames","poolIsCommissioner","linksPoolAdFree","linksPaidPackageV363","linksPackageNameV364"].forEach(k=>sessionStorage.removeItem(k));token=role=currentUser=sport="";isCommissioner=false;poolGames=[];applyPoolAdMode(false);resetSignOutButtonsV558();await loadPoolMenu(poolCode);showOnly("home");
 }
 function linksSignOutClickV551(e){
   const b=e?.currentTarget;
   if(b){
+    b.dataset.linksOldText=b.textContent||"Sign Out";
     b.disabled=true;
     b.textContent="SIGNING OUT…";
     b.classList.add("links-signing-out-v550");
