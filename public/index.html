@@ -2025,7 +2025,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v560</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v561</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -5346,7 +5346,7 @@ $("#chooseSquares").onclick=()=>enterSquares();
 (()=>{const b=document.getElementById('homeNflInfoV348');b?.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();if(typeof openGameInfo==='function'){openGameInfo('nfl');return;}const page=document.getElementById('gameInfoPage');if(page&&typeof showOnly==='function'){showOnly('gameInfoPage');}});})();
 </script>
 <script id="links-v339-home-js">
-(()=>{const by=id=>document.getElementById(id);by('createFreePoolTopV339')?.addEventListener('click',()=>by('createFreePoolHome')?.click());const modal=by('nflPickemInfoModalV339'),info=by('nflPickemInfoV339');info?.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();modal?.classList.add('open')});modal?.querySelector('.links-nfl-info-close-v339')?.addEventListener('click',()=>modal.classList.remove('open'));modal?.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('open')})})();
+(()=>{const by=id=>document.getElementById(id);by('createFreePoolTopV339')?.addEventListener('click',e=>{e.preventDefault();if(typeof showOnly==='function')showOnly('createPoolPage');else by('createPoolPage')?.classList.remove('hide');});const modal=by('nflPickemInfoModalV339'),info=by('nflPickemInfoV339');info?.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();modal?.classList.add('open')});modal?.querySelector('.links-nfl-info-close-v339')?.addEventListener('click',()=>modal.classList.remove('open'));modal?.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('open')})})();
 </script>
 <script id="links-v480-button-feedback">
 (()=>{
