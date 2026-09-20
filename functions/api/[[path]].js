@@ -2224,6 +2224,15 @@ export async function onRequest(context){
         ]);
         await DB.prepare("UPDATE pool_active_games SET active=0,is_primary=0 WHERE pool_id=?").bind(p.id).run();
         await DB.batch(gameTypes.map((gt,i)=>DB.prepare("INSERT INTO pool_active_games(pool_id,game_type,is_primary,active,added_at) VALUES(?,?,?,1,?) ON CONFLICT(pool_id,game_type) DO UPDATE SET active=1,is_primary=excluded.is_primary,added_at=excluded.added_at").bind(p.id,gt,i===0?1:0,now)));
+        // v534: seed automatic NFL lock deadlines when every new pool is created.
+        // This makes a fresh pool behave like established pools immediately, while
+        // later commissioner overrides can still replace the saved deadline.
+        if(gameTypes.includes("nfl")){
+          const lockRows=Object.entries(OFFICIAL_FIRST_KICKOFF_FALLBACK).map(([wk,lockTime])=>
+            DB.prepare("INSERT INTO pool_week_meta(pool_id,sport,week,lock_time) VALUES(?,'nfl',?,?) ON CONFLICT(pool_id,sport,week) DO NOTHING").bind(p.id,Number(wk),lockTime)
+          );
+          if(lockRows.length)await DB.batch(lockRows);
+        }
         await DB.prepare("INSERT OR REPLACE INTO pool_service(pool_id,plan,status,price_cents,paid_at,notes) VALUES(?,?,?,?,?,?)")
           .bind(p.id,createAccess.plan||'free',createAccess.plan==='free'?'FREE':'ACTIVE',createAccess.plan==='free'?0:(LINKS_PLANS[createAccess.plan]?.amount||0),createAccess.plan==='free'?null:now,createAccess.plan==='free'?'LINKS first pool free for life — ad supported':'LINKS commissioner package — ad free').run();
         const base=String(env.LINKS_BASE_URL||originOf(request)).replace(/\/$/,"");
