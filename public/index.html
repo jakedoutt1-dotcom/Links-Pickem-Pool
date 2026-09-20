@@ -2025,7 +2025,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v555</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v556</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -5443,8 +5443,9 @@ button.links-v480-pressed[data-march-tab],
 .links-projection-source-v494{display:inline-flex;align-items:center;margin:2px 0 8px;padding:6px 10px;border:1px solid #425b70;border-radius:999px;background:#17232d;color:#e9f4ff;font-size:11px;font-weight:950;letter-spacing:.07em;text-transform:uppercase;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04)}
 .links-projection-source-v494::first-letter{color:#38e887}.links-projection-copy-v494{color:#c6d0d9;line-height:1.45}
 </style>
-<script id="links-v554-category-info-js">
-(()=>{
+
+<script id="links-v556-category-info-js">
+document.addEventListener("DOMContentLoaded",()=>{
  const groups={
   nfl:{title:"NFL POOLS",lead:"Choose an NFL game style below to see how it works, the rules and what players and commissioners can do.",games:["nfl","survivor","confidence","props","playoff","squares"]},
   college:{title:"COLLEGE & TOURNAMENTS",lead:"Explore the college and tournament games available on Links.",games:["college","march","33"]},
@@ -5452,23 +5453,33 @@ button.links-v480-pressed[data-march-tab],
   fantasy:{title:"REDRAFT & DYNASTY",lead:"Build and manage a fantasy football league with the Links tools for your format.",games:["fantasy","dynasty"]}
  };
  const fallback={
+  nfl:["NFL PICK'EM","./nfl-pickem-logo.png","Weekly NFL picks, automatic locks, scoring and standings."],
   survivor:["NFL SURVIVOR","./nfl-survivor-logo-v102.jpg","Stay alive by making the required NFL survivor selection each week."],
   confidence:["NFL CONFIDENCE","./confidence-pool-logo-v102.jpg","Rank NFL picks by confidence and compete on points."],
   props:["NFL PROPS","./super-bowl-props-logo-v102.jpg","Compete on selected NFL proposition questions."],
   playoff:["NFL PLAYOFFS","./nfl-playoff-challenge-logo-v102.jpg","Run a pool built around the NFL postseason."],
+  squares:["FOOTBALL SQUARES","./football-squares-logo-v102.png","Run a 100-square board for an NFL matchup."],
+  college:["COLLEGE FOOTBALL PICK'EM","./college-pickem-logo.png","Commissioner-selected college matchups with Links scoring and standings."],
   march:["MARCH MADNESS","./march-madness-logo.png","Tournament bracket play with automatic result tracking."],
   "33":["GAME 33","./game-33-logo.png","A weekly NFL pool with the Links Game 33 format."],
   masters:["MASTERS GOLF","./masters-golf-pool-logo-v102.jpg","Run a golf pool around the Masters."],
   nascar:["NASCAR","./nascar-pool-logo-v102.jpg","Run a NASCAR pool with selected drivers."],
-  fantasy:["FANTASY FOOTBALL","./fantasy-football-logo.png","Redraft fantasy football league tools."],
+  fantasy:["FANTASY FOOTBALL","./fantasy-football-logo-v154.png","Redraft fantasy football league tools."],
   dynasty:["DYNASTY FANTASY FOOTBALL","./dynasty-fantasy-football-logo-v157.png","Long-term dynasty rosters, contracts, trades and draft tools."]
  };
- function dataFor(k){const d=window.GAME_INFO?.[k]||GAME_INFO?.[k];if(d)return [d.title,d.logo||d.banner,d.lead];return fallback[k]||[k.toUpperCase(),"./links-login-banner-v121.png","Open this game to learn more."]}
- function openCategory(k){const g=groups[k];if(!g)return;document.getElementById("categoryInfoTitleV554").textContent=g.title;document.getElementById("categoryInfoLeadV554").textContent=g.lead;document.getElementById("categoryInfoGamesV554").innerHTML=g.games.map(game=>{const d=dataFor(game);return '<button type="button" class="links-category-game-v554" data-open-game-v554="'+game+'"><img src="'+d[1]+'" alt=""><span><b>'+d[0]+'</b><span>'+d[2]+'</span></span></button>'}).join("");showOnly("categoryInfoPageV554");window.scrollTo({top:0,behavior:"smooth"});}
- document.querySelectorAll("[data-category-info-v554]").forEach(b=>b.addEventListener("click",e=>{e.preventDefault();openCategory(b.dataset.categoryInfoV554)}));
- document.getElementById("categoryInfoGamesV554")?.addEventListener("click",e=>{const b=e.target.closest("[data-open-game-v554]");if(b&&typeof openGameInfo==="function")openGameInfo(b.dataset.openGameV554)});
- document.getElementById("categoryInfoBackV554")?.addEventListener("click",()=>{showOnly("home");document.querySelector(".links-home-under-create-v348")?.scrollIntoView({behavior:"smooth",block:"center"})});
-})();
+ function getData(k){try{if(typeof GAME_INFO!=="undefined"&&GAME_INFO[k]){const d=GAME_INFO[k];return[d.title,d.logo||d.banner,d.lead]}}catch(e){}return fallback[k]||[k.toUpperCase(),"./links-login-banner-v121.png","Open this game to learn more."]}
+ function openCategory(k){
+  const g=groups[k],page=document.getElementById("categoryInfoPageV554"); if(!g||!page)return;
+  document.getElementById("categoryInfoTitleV554").textContent=g.title;
+  document.getElementById("categoryInfoLeadV554").textContent=g.lead;
+  document.getElementById("categoryInfoGamesV554").innerHTML=g.games.map(game=>{const d=getData(game);return '<button type="button" class="links-category-game-v554" data-open-game-v554="'+game+'"><img src="'+d[1]+'" alt=""><span><b>'+d[0]+'</b><span>'+d[2]+'</span></span></button>'}).join("");
+  if(typeof showOnly==="function")showOnly("categoryInfoPageV554"); else {document.querySelectorAll("body>.wrap>div,body>.wrap>section").forEach(x=>x.classList.add("hide"));page.classList.remove("hide")}
+  window.scrollTo(0,0);
+ }
+ document.querySelectorAll("[data-category-info-v554]").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();openCategory(b.getAttribute("data-category-info-v554"))});
+ document.getElementById("categoryInfoGamesV554")?.addEventListener("click",e=>{const b=e.target.closest("[data-open-game-v554]");if(!b)return;const k=b.getAttribute("data-open-game-v554");if(typeof openGameInfo==="function")openGameInfo(k)});
+ document.getElementById("categoryInfoBackV554")?.addEventListener("click",()=>{if(typeof showOnly==="function")showOnly("home");else location.reload()});
+});
 </script>
 </body></html>
 
