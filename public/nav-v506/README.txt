@@ -1,0 +1,1 @@
+LINKS approved navigation artwork v506. Upload the approved PNG files into this folder.
