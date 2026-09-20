@@ -1930,19 +1930,6 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
 .links-category-game-v554 img{width:70px;height:70px;object-fit:contain;border-radius:9px;background:#070b0f;flex:0 0 70px}.links-category-game-v554 b{display:block;font-size:15px}.links-category-game-v554 span{display:block;color:#bdc9d4;font-size:11px;margin-top:4px;line-height:1.35}
 @media(max-width:600px){.links-category-games-v554{grid-template-columns:1fr}.links-category-game-v554{min-height:76px}.links-category-game-v554 img{width:60px;height:60px;flex-basis:60px}}
 </style>
-<style id="links-v567-login-stability">
-/* v567: keep the mobile login card stationary while the keyboard/search results change. */
-.links-login-modal-v150{align-items:flex-start!important;overflow-y:auto!important;overscroll-behavior:contain!important}
-.links-login-modal-card-v150{margin-top:max(12px,env(safe-area-inset-top))!important;overflow:visible!important;max-height:none!important}
-.links-login-modal-v150 .portal-main-v2{min-height:255px!important}
-#poolSearchResults{min-height:0!important;max-height:210px!important;overflow-y:auto!important;overflow-anchor:none!important}
-#poolSearchResults.show{min-height:44px!important}
-@media(max-width:620px){
-  .links-login-modal-v150{padding:8px!important;justify-content:center!important}
-  .links-login-modal-card-v150{width:100%!important;padding:12px!important}
-  .links-login-modal-v150 .portal-main-v2{min-height:270px!important}
-}
-</style>
 </head>
 
 <body><div id="top"></div><div class="wrap">
@@ -2038,7 +2025,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v568</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v565</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2784,11 +2771,7 @@ function showOnly(id,opts={}){
   if(!opts.fromHistory && id!==currentScreen){
     try{history.pushState({linksScreen:id},"",location.href)}catch(e){}
   }
-  currentScreen=id;
-  // v568: do not force-scroll the page while the pool login modal is open.
-  // iOS treats these programmatic scrolls as competing with keyboard/viewport movement,
-  // which made the login UI visibly jump.
-  if(!$("#poolLoginModalV150") || $("#poolLoginModalV150").classList.contains("hide")) forceTop();
+  currentScreen=id;forceTop();
   const screen=$("#"+id);
   if(screen)setTimeout(()=>screen.querySelectorAll(".links-fixed-ad,.links-manual-ad-zone").forEach(ad=>requestAdIn(ad)),250);
   if(id==="home")setTimeout(ensureHomeAd,250);
@@ -2902,16 +2885,13 @@ function selectHomePool(p){
   homePools=[p];rememberPool(p);updateLinksServiceStatus(homePools);if(box)box.classList.remove("show");
   $("#homePortalErr").textContent="";
 }
-let poolSearchRequestV568=0;
 async function searchPools(q){
-  const text=String(q||"").trim(),requestId=++poolSearchRequestV568;
+  const text=String(q||"").trim();
   if(text.length<1){renderPoolSearchResults(recentPools(),{recent:true});return}
   try{
     const d=await api(`/api/pool-search?q=${encodeURIComponent(text)}`);
-    // Ignore older responses arriving after the player has typed more characters.
-    if(requestId!==poolSearchRequestV568)return;
     renderPoolSearchResults(d.pools||[]);
-  }catch(e){if(requestId===poolSearchRequestV568)$("#homePortalErr").textContent=e.message||"Could not search pools."}
+  }catch(e){$("#homePortalErr").textContent=e.message||"Could not search pools."}
 }
 async function loadPoolMenu(preferred=""){
   const input=$("#poolCodeInput");if(!input)return;
@@ -4473,7 +4453,7 @@ $("#linksAdminRefresh").onclick=loadLinksAdminPools;
 $("#linksAdminLogout").onclick=async()=>{try{await linksMasterApi("/api/links-admin/logout",{method:"POST"})}catch(e){}linksMasterToken="";sessionStorage.removeItem("linksMasterToken");$("#linksAdminDashboard").classList.add("hide");$("#linksAdminLoginCard").classList.remove("hide")};
 
 
-$("#poolCodeInput").addEventListener("focus",()=>{const input=$("#poolCodeInput");if(!input.dataset.selectedCode && !input.value.trim())renderPoolSearchResults(recentPools(),{recent:true});});
+$("#poolCodeInput").addEventListener("focus",()=>searchPools($("#poolCodeInput").dataset.selectedCode?"":$("#poolCodeInput").value));
 $("#poolCodeInput").addEventListener("input",e=>{
   selectedHomePoolCode="";e.target.dataset.selectedCode="";homePools=[];updateLinksServiceStatus([]);
   clearTimeout(poolSearchTimer);poolSearchTimer=setTimeout(()=>searchPools(e.target.value),180);
@@ -4503,7 +4483,7 @@ $("#createPoolGames")?.addEventListener("change",()=>{const st=$("#createPlanSta
 $("#createPoolCopies")?.addEventListener("change",()=>$("#createPoolGames input[type=checkbox]")?.dispatchEvent(new Event("change",{bubbles:true})));
 
 // v154 top login / pool selector modal
-const openLoginV150=()=>{const modal=$("#poolLoginModalV150"),card=modal?.querySelector(".links-login-modal-card-v150");modal?.classList.remove("hide");if(modal)modal.scrollTop=0;if(card)card.scrollTop=0;/* v567: do not auto-focus on iPhone; opening the keyboard was moving the modal before the user touched the field. */};
+const openLoginV150=()=>{$("#poolLoginModalV150")?.classList.remove("hide");setTimeout(()=>$("#poolCodeInput")?.focus(),40)};
 const closeLoginV150=()=>$("#poolLoginModalV150")?.classList.add("hide");
 $("#openPoolLoginV150")?.addEventListener("click",openLoginV150);$("#closePoolLoginV150")?.addEventListener("click",closeLoginV150);$("#poolLoginModalV150")?.addEventListener("click",e=>{if(e.target.id==="poolLoginModalV150")closeLoginV150()});
 $("#enterPoolBtn").onclick=async()=>{
@@ -5530,9 +5510,9 @@ document.addEventListener("DOMContentLoaded",()=>{
 });
 </script>
 
-<script id="links-version-check-v568">
+<script id="links-version-check-v565">
 (()=>{
-  const CURRENT_BUILD="v568";
+  const CURRENT_BUILD="v565";
   let checking=false;
   async function checkForLinksUpdate(){
     if(checking) return;
