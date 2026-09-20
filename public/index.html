@@ -1916,6 +1916,11 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
 #app>.tabs>button[data-tab="matter-v505"]>.links-nav-art-v174{display:block!important;width:100%!important;height:100%!important;object-fit:cover!important;margin:0!important}
 #app>.tabs>button[data-tab="admin"]{background:#0d1015!important;border:1px solid #252d36!important;border-radius:4px!important;color:#fff!important;font-size:14px!important;font-weight:950!important;padding:7px 10px!important;box-shadow:none!important}
 </style>
+<style id="links-v550-signout-feedback">
+#signOut,#sportSignOut,#squaresSignOut,#marchSignOut,.links-signout-v550{transition:transform .12s ease,filter .12s ease,opacity .12s ease!important}
+#signOut:active,#sportSignOut:active,#squaresSignOut:active,#marchSignOut:active,.links-signout-v550:active{transform:scale(.94)!important;filter:brightness(1.25)!important}
+.links-signing-out-v550{transform:scale(.96)!important;filter:brightness(1.25)!important;opacity:.85!important;cursor:wait!important}
+</style>
 </head>
 
 <body><div id="top"></div><div class="wrap">
@@ -2024,7 +2029,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v549</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v550</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -4539,6 +4544,13 @@ async function commissionerChangeGameV358(){
 $("#changeSport").onclick=commissionerChangeGameV358;
 $("#adminChangeGame").onclick=commissionerChangeGameV358;
 async function signOut(){
+  const clicked=document.activeElement&&document.activeElement.tagName==="BUTTON"?document.activeElement:null;
+  if(clicked){
+    clicked.disabled=true;
+    clicked.dataset.linksOldText=clicked.textContent;
+    clicked.textContent="SIGNING OUT…";
+    clicked.classList.add("links-signing-out-v550");
+  }
   try{await api("/api/logout",{method:"POST"})}catch(e){}
   ["poolToken","poolRole","poolUser","poolSport","poolGames","poolIsCommissioner","linksPoolAdFree","linksPaidPackageV363","linksPackageNameV364"].forEach(k=>sessionStorage.removeItem(k));token=role=currentUser=sport="";isCommissioner=false;poolGames=[];applyPoolAdMode(false);await loadPoolMenu(poolCode);showOnly("home");
 }
