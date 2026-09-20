@@ -1488,7 +1488,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v498</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v499</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -3245,31 +3245,6 @@ async function renderCompare(){
     }).join("");
     return `<div class="compare-player"><h4>${p.player}</h4><div class="compare-grid">${cells}</div><div class="compare-tie"><b>Tiebreaker:</b> ${p.tie??"—"}</div></div>`;
   }).join("");
-
-  // v498: additive mobile head-to-head tester. Existing Compare Picks stays untouched above.
-  const playersV498=d.players||[];
-  if(playersV498.length>=2){
-    const host=document.createElement("div");
-    host.id="headToHeadV498";host.className="card links-h2h-v498";
-    const opts=playersV498.map((p,i)=>\`<option value="${i}">${escapeHtml(p.player||("Player "+(i+1)))}</option>\`).join("");
-    host.innerHTML=\`<div class="links-h2h-title-v498">HEAD-TO-HEAD COMPARE <span>TEST</span></div>
-      <div class="links-h2h-sub-v498">Pick two players. LINKS will show only the games where their picks are different.</div>
-      <div class="links-h2h-selects-v498"><label>PLAYER 1<select id="h2hP1V498">${opts}</select></label><label>PLAYER 2<select id="h2hP2V498">${opts}</select></label></div>
-      <div id="h2hSummaryV498"></div><div id="h2hRowsV498"></div>\`;
-    $("#compareBody").appendChild(host);
-    const a=$("#h2hP1V498"),b=$("#h2hP2V498");b.value=String(Math.min(1,playersV498.length-1));
-    const draw=()=>{
-      const p1=playersV498[Number(a.value)],p2=playersV498[Number(b.value)];if(!p1||!p2)return;
-      let same=0,diff=0;const rows=[];
-      games.forEach((g,i)=>{const x=p1.picks?.[i]||"",y=p2.picks?.[i]||"";if(x===y){same++;return}diff++;
-        const win=outcomes[i]??outcomes[String(i)]??null;
-        const cell=(t)=>{const logo=t?teamLogo(t,g):"";const cls=win?(t===win?" h2h-win-v498":" h2h-loss-v498"):"";return \`<div class="h2h-team-v498${cls}">${logo?\`<img src="${logo}" alt="">\`:""}<b>${t?teamName(t,g):"—"}</b></div>\`};
-        rows.push(\`<div class="h2h-row-v498"><span class="h2h-game-v498">G${i+1}</span>${cell(x)}${cell(y)}</div>\`)});
-      $("#h2hSummaryV498").innerHTML=\`<div class="h2h-counts-v498"><b>Different: ${diff}</b><span>Same: ${same}</span></div><div class="h2h-ties-v498"><span>${escapeHtml(p1.player)} tiebreaker: <b>${p1.tie??"—"}</b></span><span>${escapeHtml(p2.player)} tiebreaker: <b>${p2.tie??"—"}</b></span></div>\`;
-      $("#h2hRowsV498").innerHTML=rows.length?rows.join(""):\`<div class="h2h-all-same-v498">These players made the same picks.</div>\`;
-    };
-    a.onchange=draw;b.onchange=draw;draw();
-  }
 }
 
 async function renderScores(){
@@ -4888,10 +4863,6 @@ button.links-v480-pressed[data-march-tab],
 <style id="links-v494-projection-source-style">
 .links-projection-source-v494{display:inline-flex;align-items:center;margin:2px 0 8px;padding:6px 10px;border:1px solid #425b70;border-radius:999px;background:#17232d;color:#e9f4ff;font-size:11px;font-weight:950;letter-spacing:.07em;text-transform:uppercase;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04)}
 .links-projection-source-v494::first-letter{color:#38e887}.links-projection-copy-v494{color:#c6d0d9;line-height:1.45}
-</style>
-
-<style id="links-v498-h2h-style">
-.links-h2h-v498{margin-top:18px!important;border:1px solid #34485a!important;background:#101922!important}.links-h2h-title-v498{font-weight:1000;font-size:18px;letter-spacing:.03em}.links-h2h-title-v498 span{font-size:10px;color:#ff8a4a;border:1px solid #ff6a1a;border-radius:999px;padding:3px 6px;margin-left:5px}.links-h2h-sub-v498{color:#aebbc7;font-size:12px;margin:5px 0 12px}.links-h2h-selects-v498{display:grid;grid-template-columns:1fr 1fr;gap:8px}.links-h2h-selects-v498 label{font-size:10px;font-weight:900;color:#9eabb8}.links-h2h-selects-v498 select{width:100%;margin-top:4px;padding:10px 7px;background:#0b1118;color:#fff;border:1px solid #ff6a1a;border-radius:10px;font-weight:800}.h2h-counts-v498{display:flex;justify-content:space-between;margin:12px 0 7px;padding:8px 10px;border-radius:10px;background:#182530}.h2h-counts-v498 b{color:#ff9a5f}.h2h-ties-v498{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;color:#c4ced7;margin-bottom:9px}.h2h-row-v498{display:grid;grid-template-columns:34px 1fr 1fr;gap:6px;align-items:stretch;margin:6px 0}.h2h-game-v498{display:flex;align-items:center;justify-content:center;color:#9ca8b4;font-weight:900}.h2h-team-v498{min-height:52px;display:flex;align-items:center;gap:6px;padding:7px;background:#192731;border-radius:9px;font-size:12px;line-height:1.1}.h2h-team-v498 img{width:28px;height:28px;object-fit:contain;flex:0 0 auto}.h2h-win-v498{border:1px solid #2a9d62;color:#45e58d}.h2h-loss-v498{border:1px solid #9d3b42;color:#ff737c}.h2h-all-same-v498{text-align:center;padding:16px;color:#b9c5cf;font-weight:800}@media(max-width:390px){.h2h-team-v498{font-size:11px;padding:6px}.links-h2h-selects-v498{grid-template-columns:1fr}.h2h-ties-v498{grid-template-columns:1fr}}
 </style>
 </body></html>
 
