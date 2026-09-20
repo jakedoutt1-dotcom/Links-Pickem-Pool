@@ -1723,6 +1723,61 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
 #app .app-head-right #linksMyProfileV260:hover{filter:brightness(1.08)}
 @media(max-width:760px){#app .app-head-right #linksMyProfileV260{width:132px!important;height:40px!important}}
 </style>
+<style id="links-v537-admin-cleanup">
+/* v537 — visual-only Admin cleanup. Preserve all existing controls and click handlers. */
+#adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186){
+ display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important;align-items:stretch!important;
+}
+#adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>.card{
+ margin:0!important;width:auto!important;min-width:0!important;border-radius:15px!important;overflow:hidden!important;
+ background:linear-gradient(180deg,#121a21,#0a1015)!important;border:1px solid #344756!important;
+ box-shadow:0 7px 18px rgba(0,0,0,.25)!important;
+}
+#adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>.commissioner-sport-card,
+#adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>.commissioner-settings-card,
+#adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>#collegeSetup{
+ grid-column:1/-1!important;
+}
+/* Graphic launcher cards: artwork + one clean action only. */
+#adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>.commissioner-lock-card-v132,
+#adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>.commissioner-finalize-card-v196,
+#adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>.admin-tool-launch-card-v185{
+ min-height:0!important;padding:104px 16px 16px!important;position:relative!important;
+}
+#adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>.commissioner-lock-card-v132:before,
+#adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>.commissioner-finalize-card-v196:before,
+#adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>.admin-tool-launch-card-v185:before{
+ content:""!important;display:block!important;position:absolute!important;left:16px!important;right:16px!important;top:12px!important;
+ height:82px!important;border-radius:12px!important;background-position:center!important;background-size:contain!important;background-repeat:no-repeat!important;opacity:1!important;
+}
+#adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>.commissioner-lock-card-v132>h3,
+#adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>.commissioner-finalize-card-v196>h3,
+#adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>.admin-tool-launch-card-v185>h3,
+#adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>.commissioner-lock-card-v132>.small,
+#adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>.commissioner-finalize-card-v196>.small,
+#adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>.admin-tool-launch-card-v185>.small{display:none!important}
+#adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>.admin-tool-launch-card-v185>button,
+#adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>.commissioner-lock-card-v132>button,
+#adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>.commissioner-finalize-card-v196>button{
+ width:100%!important;min-height:52px!important;margin:0!important;border-radius:11px!important;
+}
+/* Plain expandable sections get the same compact launcher height. */
+#adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>.admin-section-card-v186{
+ min-height:126px!important;padding:18px 16px!important;display:flex!important;flex-direction:column!important;justify-content:space-between!important;
+}
+#adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>.admin-section-card-v186>h3{margin:0 0 10px!important}
+#adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>.admin-section-card-v186>.admin-section-open-v186{margin-top:auto!important;min-height:50px!important}
+@media(max-width:700px){
+ #adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186){grid-template-columns:1fr!important;gap:10px!important}
+ #adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>*{grid-column:1!important}
+ #adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>.commissioner-lock-card-v132,
+ #adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>.commissioner-finalize-card-v196,
+ #adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>.admin-tool-launch-card-v185{padding-top:94px!important}
+ #adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>.commissioner-lock-card-v132:before,
+ #adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>.commissioner-finalize-card-v196:before,
+ #adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>.admin-tool-launch-card-v185:before{height:72px!important}
+}
+</style>
 </head>
 
 <body><div id="top"></div><div class="wrap">
@@ -1831,7 +1886,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v536</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v537</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
