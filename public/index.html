@@ -2025,7 +2025,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v564</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v565</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -5500,6 +5500,34 @@ document.addEventListener("DOMContentLoaded",()=>{
  document.getElementById("categoryInfoGamesV554")?.addEventListener("click",e=>{const b=e.target.closest("[data-open-game-v554]");if(!b)return;const k=b.getAttribute("data-open-game-v554");if(typeof openGameInfo==="function")openGameInfo(k)});
  document.getElementById("categoryInfoBackV554")?.addEventListener("click",()=>{if(typeof showOnly==="function")showOnly("home");else location.reload()});
 });
+</script>
+
+<script id="links-version-check-v565">
+(()=>{
+  const CURRENT_BUILD="v565";
+  let checking=false;
+  async function checkForLinksUpdate(){
+    if(checking) return;
+    checking=true;
+    try{
+      const r=await fetch("/version.json?t="+Date.now(),{cache:"no-store"});
+      if(!r.ok) return;
+      const data=await r.json();
+      const latest=String(data.version||"").trim();
+      if(latest && latest!==CURRENT_BUILD){
+        if("serviceWorker" in navigator){
+          const regs=await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map(reg=>reg.update().catch(()=>{})));
+        }
+        location.reload();
+      }
+    }catch(e){}finally{checking=false;}
+  }
+  window.addEventListener("pageshow",checkForLinksUpdate);
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")checkForLinksUpdate();});
+  window.addEventListener("online",checkForLinksUpdate);
+  setTimeout(checkForLinksUpdate,1500);
+})();
 </script>
 </body></html>
 
