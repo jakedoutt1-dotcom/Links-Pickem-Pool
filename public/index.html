@@ -1511,6 +1511,14 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
   }
 }
 </style>
+<style id="links-v521-nav-source-spinner">
+/* v521 — force the new individual artwork; visual feedback only. */
+#app>.tabs [data-tab="standings"] img.links-nav-art-v174{content:url("./nav-v514-upload/05-standings.png")!important}
+#linksTabSpinnerV521{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:100000;display:none;align-items:center;gap:9px;padding:10px 15px;border:1px solid #ff7a2d;border-radius:999px;background:#0b1118ee;color:#fff;font-weight:900;box-shadow:0 5px 22px #000a}
+#linksTabSpinnerV521.show{display:flex}
+#linksTabSpinnerV521 i{display:block;width:20px;height:20px;border:3px solid #485561;border-top-color:#ff7a2d;border-radius:50%;animation:linksSpinV521 .7s linear infinite}
+@keyframes linksSpinV521{to{transform:rotate(360deg)}}
+</style>
 </head>
 
 <body><div id="top"></div><div class="wrap">
@@ -1619,7 +1627,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v520</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v521</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2064,7 +2072,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
 </section>
 </div>
 
-<div id="app" class="hide">
+<div id="linksTabSpinnerV521" role="status" aria-live="polite"><i></i><span>LOADING DATA…</span></div>\n<div id="app" class="hide">
   <img id="appHeroImage" class="pool-logo" src="./app-logo.png" alt="Football Pickem">
   <div class="app-head">
     <div>
@@ -3831,7 +3839,9 @@ $$(".tabs button").forEach(b=>b.onclick=async()=>{
   // Switch the screen immediately so the tap/click always feels responsive,
   // then load only the data that this tab actually needs.
   showTab(tab);
-  await loadTabData(tab);
+  const spinner=document.getElementById("linksTabSpinnerV521");
+  if(spinner)spinner.classList.add("show");
+  try{await loadTabData(tab)}finally{if(spinner)spinner.classList.remove("show")}
 });
 
 
