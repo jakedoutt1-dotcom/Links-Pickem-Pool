@@ -1457,6 +1457,26 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
 #app>.tabs [data-tab="projected"]{background:transparent!important}
 @media(max-width:760px){#app>.tabs>button{aspect-ratio:3.30/1!important}}
 </style>
+<style id="links-v519-admin-banner-fit">
+/* v519 — admin-card artwork only. Show the new individual nav art uncropped. */
+#adminControls:not(.admin-tool-active-v185)>.commissioner-lock-card-v132,
+#adminControls:not(.admin-tool-active-v185)>.commissioner-finalize-card-v196,
+#adminControls:not(.admin-tool-active-v185)>.admin-tool-launch-card-v185{
+  padding-top:calc((100% - 20px)/3.3 + 18px)!important;
+}
+#adminControls:not(.admin-tool-active-v185)>.commissioner-lock-card-v132:before,
+#adminControls:not(.admin-tool-active-v185)>.commissioner-finalize-card-v196:before,
+#adminControls:not(.admin-tool-active-v185)>.admin-tool-launch-card-v185:before{
+  left:10px!important;right:10px!important;top:9px!important;height:auto!important;
+  aspect-ratio:3.3/1!important;background-size:contain!important;background-position:center!important;
+  background-repeat:no-repeat!important;background-color:transparent!important;border-radius:10px!important;
+}
+#adminControls:not(.admin-tool-active-v185)>.commissioner-lock-card-v132:before{background-image:url("./nav-v514-upload/01-nfl-pickem.png")!important}
+#adminControls:not(.admin-tool-active-v185)>.commissioner-finalize-card-v196:before{background-image:url("./nav-v514-upload/05-standings.png")!important}
+#adminControls:not(.admin-tool-active-v185)>.admin-tool-launch-card-v185:has(#openPlayerAccessTool):before{background-image:url("./nav-v514-upload/07-player-access.png")!important}
+#adminControls:not(.admin-tool-active-v185)>.admin-tool-launch-card-v185:has(#openScoreCorrectionTool):before{background-image:url("./nav-v514-upload/04-live-scores.png")!important}
+#adminControls:not(.admin-tool-active-v185)>.admin-tool-launch-card-v185:has(#openPickCorrectionTool):before{background-image:url("./nav-v514-upload/02-compare-picks.png")!important}
+</style>
 </head>
 
 <body><div id="top"></div><div class="wrap">
@@ -1565,7 +1585,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v518</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v519</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
