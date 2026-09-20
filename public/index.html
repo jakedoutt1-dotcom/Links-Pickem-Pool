@@ -3923,14 +3923,22 @@ async function renderProjectedStandings(){
         if(finalWinner===team)actualCorrect++;
       }else{
         pending++;
-        expectedRemaining+=0.5;
+        // Use the ESPN market/predictor probability attached by /api/compare.
+        // If ESPN has no usable probability for this matchup, fall back to 50/50.
+        const awayPct=Number(g?.market?.awayPct),homePct=Number(g?.market?.homePct);
+        let pickProb=0.5;
+        if(Number.isFinite(awayPct)&&Number.isFinite(homePct)){
+          if(team===g.away)pickProb=awayPct/100;
+          else if(team===g.home)pickProb=homePct/100;
+        }
+        expectedRemaining+=Math.max(0,Math.min(1,pickProb));
       }
     }
 
     return {player,order,picked,pending,actualCorrect,expectedRemaining,projected:actualCorrect+expectedRemaining};
   }).sort((a,b)=>b.projected-a.projected || b.actualCorrect-a.actualCorrect || a.order-b.order);
 
-  $("#projectedNote").innerHTML=`<div class="links-projection-source-v494">● LIVE PROJECTION • ESPN LIVE DATA</div><div class="links-projection-copy-v494">Projection uses live ESPN game data and current results to estimate where each player may finish. Official standings use final game results only.</div>`;
+  $("#projectedNote").innerHTML=`<div class="links-projection-source-v494">● LIVE PROJECTION • ESPN LIVE DATA</div><div class="links-projection-copy-v494">Projection uses ESPN game probabilities plus current final results to estimate where each player may finish. If ESPN has no probability for a game, that unfinished pick is treated as 50/50. Official standings use final game results only.</div>`;
 
   $("#projectedBody").innerHTML=`<table>
     <thead><tr><th>#</th><th>Player</th><th>Projected</th><th>Correct Now</th><th>Pick Outlook</th></tr></thead>
