@@ -1156,21 +1156,10 @@ async function refreshNFLGameDetail(g){
   }catch(e){return g}
 }
 async function refreshNFLLiveGames(games){
-  // v562 resource guard: the weekly ESPN scoreboard already carries scores/status.
-  // Only request per-game summaries for games that have actually kicked off and
-  // are still missing score data. Never fan out 14-16 ESPN summary requests for
-  // future games; that can exceed Cloudflare Worker resource limits.
-  const now=Date.now(),rows=games||[],targets=[];
-  for(let i=0;i<rows.length;i++){
-    const g=rows[i],k=Date.parse(g?.kickoff||0);
-    if(g?.completed||!k||k>now+5*60000)continue;
-    if(g.awayScore==null||g.homeScore==null)targets.push(i);
-  }
-  if(!targets.length)return rows;
-  const out=rows.slice();
-  // Keep the fallback small even if the provider scoreboard is having trouble.
-  for(const i of targets.slice(0,3))out[i]=await refreshNFLGameDetail(out[i]);
-  return out;
+  // v563 emergency stability mode: use the weekly ESPN scoreboard response only.
+  // Per-game summary fan-out is disabled so normal page/API requests stay well
+  // below Cloudflare Worker resource limits.
+  return games||[];
 }
 
 async function fetchCollegeTop25(){
