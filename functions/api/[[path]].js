@@ -526,7 +526,6 @@ async function ensureV2(DB){
   await ensureBarnesNFLGameType(DB);
   await ensureBarnesLinksServicePaid(DB);
   await ensureBarnesCommissionerV118(DB);
-  await seedMichaelGame33V566(DB);
 }
 
 async function migrateLinks(DB){
@@ -595,66 +594,6 @@ async function ensureBarnesCommissionerV118(DB){
   await DB.prepare("UPDATE pool_sessions SET role='player' WHERE pool_id=? AND role='admin'").bind(pool.id).run();
   await DB.prepare("UPDATE pool_sessions SET role='admin' WHERE pool_id=? AND lower(player_name)=lower(?)").bind(pool.id,target.name).run();
   await DB.prepare("INSERT INTO app_meta(key,value) VALUES('barnes_commissioner_j_barnes_v118','1') ON CONFLICT(key) DO UPDATE SET value='1'").run();
-}
-
-
-async function seedMichaelGame33V566(DB){
-  const marker="michael_game33_2026_v566";
-  const done=await DB.prepare("SELECT value FROM app_meta WHERE key=?").bind(marker).first();
-  if(done?.value==="1")return;
-
-  const poolCode="G3326",poolName="33 2026",commissioner="Michael Demeza",email="michaeldemeza@yahoo.com";
-  let pool=await DB.prepare("SELECT * FROM pools WHERE code=?").bind(poolCode).first();
-  if(!pool){
-    const salt=newSalt(),hash=await hashPassword("1234",salt),now=new Date().toISOString();
-    await DB.prepare("INSERT INTO pools(code,name,admin_salt,admin_hash,created_at) VALUES(?,?,?,?,?)").bind(poolCode,poolName,salt,hash,now).run();
-    pool=await DB.prepare("SELECT * FROM pools WHERE code=?").bind(poolCode).first();
-  }
-  const pid=pool.id,now=new Date().toISOString();
-
-  const board=[
-    ["Tailgate Trey","LAC",1],["Jack","DET",1],["Fred","PHI",0],["TD","TB",1],
-    ["TD2","HOU",1],["Robb","MIN",1],["Karen","NYJ",1],["Randy","JAX",1],
-    ["Lockman","NYG",0],["Bill A","CHI",1],["Cindy A","TEN",1],["Almarode","CIN",1],
-    ["B-man","ATL",1],["Kelly","NO",1],["Taylor","NE",0],["Daniel","KC",0],
-    [commissioner,"BAL",0],["Katie","LV",1],["Thad","BUF",1],["Cristen","DEN",1],
-    ["Grizzo","LAR",0],["Jake","ARZ",0],["Amanda","DAL",0],["Austin Hale","CLE",1],
-    ["Lee","WAS",1],["Kirsten","SF",1],["Mark","GB",1],["Franklin","MIA",1],
-    ["Laura Hale 1","SEA",1],["Laura Hale 2","CAR",1],["Codie","PIT",1],["Rob","IND",1]
-  ];
-
-  // This is a dedicated 32-entry Game 33 test pool. Re-running the migration is idempotent.
-  await DB.batch([
-    DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,'commissioner_email',?) ON CONFLICT(pool_id,key) DO UPDATE SET value=excluded.value").bind(pid,email),
-    DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,'commissioner_player_name',?) ON CONFLICT(pool_id,key) DO UPDATE SET value=excluded.value").bind(pid,commissioner),
-    DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,'game_type','33') ON CONFLICT(pool_id,key) DO UPDATE SET value='33'").bind(pid),
-    DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,'active_games_exact','[\"33\"]') ON CONFLICT(pool_id,key) DO UPDATE SET value='[\"33\"]'").bind(pid),
-    DB.prepare("INSERT INTO pool_active_games(pool_id,game_type,is_primary,active,added_at) VALUES(?,'33',1,1,?) ON CONFLICT(pool_id,game_type) DO UPDATE SET active=1,is_primary=1").bind(pid,now),
-    DB.prepare("INSERT OR REPLACE INTO pool_service(pool_id,plan,status,price_cents,paid_at,notes) VALUES(?,'free','FREE',0,NULL,'Game 33 2026 test pool')").bind(pid)
-  ]);
-
-  // Keep exactly the supplied 32-entry board so Game 33's one-team-per-player rule remains valid.
-  await DB.prepare("DELETE FROM pool_players WHERE pool_id=?").bind(pid).run();
-  const playerRows=[];
-  for(const [name] of board){
-    const salt=newSalt();
-    const password=name===commissioner?"1234":crypto.randomUUID();
-    const hash=await hashPassword(password,salt);
-    playerRows.push(DB.prepare("INSERT INTO pool_players(pool_id,name,password_hash,salt) VALUES(?,?,?,?)").bind(pid,name,hash,salt));
-  }
-  if(playerRows.length)await DB.batch(playerRows);
-
-  await DB.prepare("DELETE FROM pool_33_assignments WHERE pool_id=?").bind(pid).run();
-  await DB.prepare("DELETE FROM pool_33_entries WHERE pool_id=?").bind(pid).run();
-  const assignmentRows=[],entryRows=[];
-  for(const [name,team,paid] of board){
-    assignmentRows.push(DB.prepare("INSERT INTO pool_33_assignments(pool_id,player_name,team,assigned_at,source) VALUES(?,?,?,?,?)").bind(pid,name,team,now,"manual"));
-    entryRows.push(DB.prepare("INSERT INTO pool_33_entries(pool_id,player_name,paid) VALUES(?,?,?)").bind(pid,name,paid));
-  }
-  await DB.batch(assignmentRows);
-  await DB.batch(entryRows);
-  await DB.prepare("INSERT INTO pool_33_state(pool_id,draw_locked,draw_source,draw_at) VALUES(?,1,'manual',?) ON CONFLICT(pool_id) DO UPDATE SET draw_locked=1,draw_source='manual',draw_at=excluded.draw_at").bind(pid,now).run();
-  await DB.prepare("INSERT INTO app_meta(key,value) VALUES(?, '1') ON CONFLICT(key) DO UPDATE SET value='1'").bind(marker).run();
 }
 
 async function poolByCode(DB,code){return DB.prepare("SELECT * FROM pools WHERE code=?").bind(safeCode(code)).first()}
