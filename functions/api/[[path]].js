@@ -2276,6 +2276,18 @@ export async function onRequest(context){
       await DB.prepare("INSERT INTO pool_33_state(pool_id,draw_locked,draw_source,draw_at) VALUES(?,1,'manual',?) ON CONFLICT(pool_id) DO UPDATE SET draw_locked=1,draw_source='manual',draw_at=excluded.draw_at").bind(pid,now).run();
       return json({ok:true,code:poolCode,name:poolName,players:board.length,testOverride:true});
     }
+    if(path==="test-pools/game33-2026/fix"&&method==="POST"){
+      const pool=await poolByCode(DB,"G3326");if(!pool)return json({error:"G3326 test pool has not been created yet."},404);
+      const now=new Date().toISOString();
+      await DB.batch([
+        DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,'game_type','33') ON CONFLICT(pool_id,key) DO UPDATE SET value='33'").bind(pool.id),
+        DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,'active_games_exact','[\"33\"]') ON CONFLICT(pool_id,key) DO UPDATE SET value='[\"33\"]'").bind(pool.id),
+        DB.prepare("UPDATE pool_active_games SET active=0,is_primary=0 WHERE pool_id=?").bind(pool.id),
+        DB.prepare("INSERT INTO pool_active_games(pool_id,game_type,is_primary,active,added_at) VALUES(?,'33',1,1,?) ON CONFLICT(pool_id,game_type) DO UPDATE SET active=1,is_primary=1").bind(pool.id,now)
+      ]);
+      const games=await getPoolGameTypes(DB,pool.id,pool.code);
+      return json({ok:true,code:pool.code,gameType:await getPoolGameType(DB,pool.id,pool.code),games});
+    }
     if(path==="login"&&method==="POST"){
       const pool=await poolByCode(DB,body.poolCode);if(!pool)return json({error:"Pool not found."},404);
       const p=await DB.prepare("SELECT * FROM pool_players WHERE pool_id=? AND name=?").bind(pool.id,body.name).first();
