@@ -1863,6 +1863,20 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
 #app[data-sport="college"] #adminControls #collegeSetup,
 body[data-active-sport="college"] #adminControls #collegeSetup{display:block!important}
 </style>
+<style id="links-v544-old-extra-tabs">
+/* v544 — return the two later-added tabs to the older simple control style; no new artwork. */
+#app>.tabs>button[data-tab="admin"],
+#app>.tabs>button[data-tab="matter-v505"]{
+ color:#fff!important;font-size:14px!important;line-height:1.05!important;font-weight:950!important;
+ background:linear-gradient(180deg,#1b2631,#101820)!important;
+ border:1px solid #44566c!important;border-radius:10px!important;padding:6px!important;
+ text-transform:uppercase!important;letter-spacing:.2px!important;
+}
+#app>.tabs>button[data-tab="admin"]{border-color:#c76a2a!important}
+#app>.tabs>button[data-tab="matter-v505"]{border-color:#8c4b27!important}
+#app>.tabs>button[data-tab="admin"].active,
+#app>.tabs>button[data-tab="matter-v505"].active{outline:2px solid #ff7a2f!important;outline-offset:0!important}
+</style>
 </head>
 
 <body><div id="top"></div><div class="wrap">
@@ -1971,7 +1985,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v543</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v544</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2444,7 +2458,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <button data-tab="projected" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/projected.png" alt="">Projected</button>
     <button data-tab="paid" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/access.png" alt="">Player Access</button>
     <button data-tab="rules" class="player-tab"><img class="links-nav-art-v174" src="./nav-v174/rules.png" alt="">Rules</button>
-    <button data-tab="admin" class="admin-tab commissioner-admin-tab-v118 hide"><img class="links-nav-art-v174" src="./nav-v506/admin.png" alt="">Admin</button>
+    <button data-tab="admin" class="admin-tab commissioner-admin-tab-v118 hide">ADMIN</button>
   </div>
 
   <div id="adminModeBarV372" class="hide"><button id="adminBackToPoolV372" type="button">← BACK TO POOL</button><div><b id="adminModeTitleV372">🏈 NFL ADMIN</b><span id="adminModeMetaV372">WEEK 1</span></div></div>
