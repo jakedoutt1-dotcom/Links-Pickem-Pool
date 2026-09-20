@@ -1488,7 +1488,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v496</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v497</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -3317,22 +3317,6 @@ async function renderStandings(){
   $("#standingsTitle").textContent="Standings";$("#potBadge").textContent="";$("#potBadge").classList.add("hide");
   $("#autoTieStatus").textContent=d.actualTie!=null?`Final-game combined score: ${d.actualTie}`:"Wins and losses count only after a game is FINAL. Tiebreaker settles equal win totals after the final game.";
   const hasOfficialWinner=!!d.finalizedWinner;
-  let standingsLockedV496=false;
-  try{
-    const lockStateV496=await api(qForWeek(\`/api/compare?_=1789874175269\`,sw));
-    standingsLockedV496=!!lockStateV496.locked;
-  }catch(e){}
-  let lockNoticeV496=$("#linksStandingsLockNotice");
-  if(!lockNoticeV496){
-    lockNoticeV496=document.createElement("div");
-    lockNoticeV496.id="linksStandingsLockNotice";
-    lockNoticeV496.className="card links-standings-lock-notice";
-    $("#standingsBody")?.insertAdjacentElement("beforebegin",lockNoticeV496);
-  }
-  if(lockNoticeV496){
-    lockNoticeV496.classList.toggle("hide",standingsLockedV496);
-    lockNoticeV496.innerHTML=standingsLockedV496?"":\`🔒 <b>Week ${sw} standings will appear after Week ${sw} picks lock.</b>\`;
-  }
   $("#standingsWinnerAdmin")?.classList.toggle("hide",role!=="admin");
   $("#standingsBody").innerHTML=`
     <div class="standings-week-picker-v184">
