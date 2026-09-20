@@ -2025,7 +2025,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v558</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v559</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -4495,10 +4495,16 @@ $("#enterPoolBtn").onclick=async()=>{
 };
 $("#showCreatePool").onclick=()=>showOnly("createPoolPage");
 $("#createPoolBtn").onclick=async()=>{
+  const createBtn=$("#createPoolBtn"),oldText=createBtn?.textContent||"CREATE FREE POOL";
   $("#homeErr").textContent="";
+  const name=$("#createPoolName").value.trim(),email=$("#createPoolEmail").value.trim(),playerName=$("#createPoolPlayerName").value.trim(),password=$("#createPoolPass").value;
+  const gameTypes=$(`#createPoolGames input[type="checkbox"]:checked`).map(x=>x.value);
+  if(!name||!email||!playerName||!password){$("#homeErr").textContent="Enter the pool name, your email, your player name and a password.";return}
+  if(!gameTypes.length){$("#homeErr").textContent="Choose at least one game for this pool.";return}
+  if(createBtn){createBtn.disabled=true;createBtn.textContent="CREATING POOL…";createBtn.classList.add("links-action-loading-v511")}
   try{
     applyOwnerGameAccessV357();
-    const d=await api("/api/pool/create",{method:"POST",body:JSON.stringify({name:$("#createPoolName").value,email:$("#createPoolEmail").value,playerName:$("#createPoolPlayerName").value,password:$("#createPoolPass").value,gameTypes:$$(`#createPoolGames input[type="checkbox"]:checked`).map(x=>x.value),copies:Number($("#createPoolCopies")?.value||1),plan:$("#createPoolPlan")?.value||"free"})});
+    const d=await api("/api/pool/create",{method:"POST",body:JSON.stringify({name,email,playerName,password,gameTypes,copies:Number($("#createPoolCopies")?.value||1),plan:$("#createPoolPlan")?.value||"free"})});
     sessionStorage.removeItem("linksWelcomeSeen");
     token=d.token; role="player"; isCommissioner=true; currentUser=d.playerName; poolName=d.name; poolCode=d.code;applyPoolAdMode(!!d.service?.adFree);
     Object.entries({poolToken:token,poolRole:role,poolUser:currentUser,poolName,poolCode,poolIsCommissioner:"1"}).forEach(([k,v])=>sessionStorage.setItem(k,v));
@@ -4506,7 +4512,8 @@ $("#createPoolBtn").onclick=async()=>{
     const created=Array.isArray(d.createdPools)?d.createdPools:[];const emailNote=d.commissionerWelcomeEmailSent?` Welcome email${created.length>1?"s":""} sent to <b>${escapeHtml($("#createPoolEmail").value)}</b>.`:` <span style="color:#ffd166">Welcome email was NOT sent${d.commissionerWelcomeEmailError?`: ${escapeHtml(d.commissionerWelcomeEmailError)}`:""}.</span>`;
     const copiesNote=created.length>1?` Created <b>${created.length} separate game pools</b>: ${created.map(x=>`<b>${escapeHtml(x.name)}</b> — ${escapeHtml(x.code)}`).join(" • ")}. You are signed into the first one.`:` Pool code: <b>${escapeHtml(poolCode)}</b>.`;
     msg(`✅ ${created.length>1?"Pools":"Pool"} created. You have commissioner ADMIN access.${copiesNote}${emailNote}`,true);
-  }catch(e){$("#homeErr").innerHTML=`${escapeHtml(e.message)}${/upgrade|free for life|package/i.test(e.message)?' <a href="#" id="createUpgradeLink" style="color:#ff9a57;font-weight:900">View commissioner packages</a>':''}`;$("#createUpgradeLink")?.addEventListener("click",ev=>{ev.preventDefault();showOnly("home");setTimeout(()=>$("#linksPackages")?.scrollIntoView({behavior:"smooth"}),50);});}
+  }catch(e){$("#homeErr").innerHTML=`${escapeHtml(e.message||"Pool could not be created. Please try again.")}${/upgrade|free for life|package/i.test(e.message||"")?' <a href="#" id="createUpgradeLink" style="color:#ff9a57;font-weight:900">View commissioner packages</a>':''}`;$("#createUpgradeLink")?.addEventListener("click",ev=>{ev.preventDefault();showOnly("home");setTimeout(()=>$("#linksPackages")?.scrollIntoView({behavior:"smooth"}),50);});}
+  finally{if(createBtn){createBtn.disabled=false;createBtn.textContent=oldText;createBtn.classList.remove("links-action-loading-v511")}}
 };
 $("#backHomeBtn").onclick=async()=>{await loadPoolMenu(poolCode);showOnly("home")};
 $("#signIn").onclick=async()=>{
