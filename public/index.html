@@ -1673,6 +1673,27 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
  }
 }
 </style>
+<style id="links-v530-hero-existing-image-fix">
+/* v530 — existing uploaded hero only: full image on PC and force same source on mobile. */
+#app>#appHeroImage.pool-logo{
+ content:url("./nav-v514-upload/links-nfl-hero-new.png?v=530")!important;
+ object-position:center!important;
+}
+@media(min-width:761px){
+ #app>#appHeroImage.pool-logo{
+   width:min(100%,980px)!important;height:auto!important;max-height:none!important;
+   object-fit:contain!important;margin:0 auto 12px!important;border-radius:14px!important;
+ }
+}
+@media(max-width:760px){
+ #app>#appHeroImage.pool-logo{
+   content:url("./nav-v514-upload/links-nfl-hero-new.png?v=530")!important;
+   width:100%!important;height:auto!important;max-height:118px!important;
+   object-fit:contain!important;object-position:center!important;
+   margin:0 auto 4px!important;border-radius:9px!important;
+ }
+}
+</style>
 </head>
 
 <body><div id="top"></div><div class="wrap">
@@ -1781,7 +1802,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v529</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v530</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
