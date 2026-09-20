@@ -1820,7 +1820,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v532</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v533</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -3488,7 +3488,7 @@ function renderPicks(){
   const p=normalizedPicksForGames(me?.picks||{},g);
   if(me)me.picks=p;
   const kickoffTimes=g.map(x=>x?.kickoff).filter(Boolean).map(x=>({raw:x,ms:Date.parse(x)})).filter(x=>Number.isFinite(x.ms)).sort((a,b)=>a.ms-b.ms);
-  const derivedKickoff=kickoffTimes[0]?.raw||sessionStorage.getItem(`linksFirstKickoff:${sport}:${week}`)||null;
+  const derivedKickoff=kickoffTimes[0]?.raw||boot?.sourceKickoff||sessionStorage.getItem(`linksFirstKickoff:${sport}:${week}`)||null;
   if(kickoffTimes[0]?.raw)sessionStorage.setItem(`linksFirstKickoff:${sport}:${week}`,kickoffTimes[0].raw);
   const lockAt=boot?.locks?.[week]||derivedKickoff,locked=!!(lockAt&&Date.now()>=new Date(lockAt).getTime());
   const paymentLocked=role==="player"&&!boot?.paid;
