@@ -3138,9 +3138,14 @@ export async function onRequest(context){
       for(const r of (tr.results||[]))tieMap[r.player_name]=r.guess;
       const out=players.map(p=>({player:p,picks:pickMap[p]||{},tie:tieMap[p]??null}));
       const sync=await syncWeek(DB,pid,sport,w);
+      // Projected standings consumes Compare data too. Enrich unfinished games
+      // with the existing ESPN market/predictor feed; saved values are used as
+      // a fallback so projections remain useful if ESPN temporarily omits odds.
+      let compareGames=sync.liveGames;
+      try{compareGames=await attachMarketOdds(DB,env,pid,sport,w,sync.liveGames)}catch(e){}
       const resultRows=(await DB.prepare("SELECT game_index,winner FROM pool_results WHERE pool_id=? AND sport=? AND week=? ORDER BY game_index").bind(pid,sport,w).all()).results||[];
       const results=Object.fromEntries(resultRows.map(r=>[Number(r.game_index),r.winner]));
-      return json({locked:isLocked,players:out,games:sync.liveGames,results,finalGames:resultRows.length});
+      return json({locked:isLocked,players:out,games:compareGames,results,finalGames:resultRows.length});
     }
     if(path==="college-top25-scores"&&method==="GET"){
       if(sport!=="college")return json({games:[],source:"ESPN College Football"});
