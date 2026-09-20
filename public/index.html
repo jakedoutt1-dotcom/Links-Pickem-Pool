@@ -1856,6 +1856,13 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
 #adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>.commissioner-finalize-card-v196>.small,
 #adminControls:not(.admin-tool-active-v185):not(.admin-section-active-v186)>.admin-tool-launch-card-v185>.small{display:block!important;min-height:0!important;margin:0 0 12px!important;line-height:1.45!important;color:#b9c3cb!important}
 </style>
+<style id="links-v540-nfl-admin-scope">
+/* v540 — College Week Setup belongs only on the College admin page, never NFL. */
+#adminControls #collegeSetup{display:none!important}
+#app[data-active-sport="college"] #adminControls #collegeSetup,
+#app[data-sport="college"] #adminControls #collegeSetup,
+body[data-active-sport="college"] #adminControls #collegeSetup{display:block!important}
+</style>
 </head>
 
 <body><div id="top"></div><div class="wrap">
@@ -1964,7 +1971,7 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v539</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v540</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
