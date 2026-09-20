@@ -2252,10 +2252,18 @@ export async function onRequest(context){
       const p=await DB.prepare("SELECT * FROM pool_players WHERE pool_id=? AND name=?").bind(pool.id,body.name).first();
       if(!p||await hashPassword(body.password||"",p.salt)!==p.password_hash)return json({error:"Incorrect name or password."},401);
       const commissionerPlayer=await getCommissionerPlayerName(DB,pool.id),isCommissioner=!!commissionerPlayer&&commissionerPlayer.toLowerCase()===String(p.name).toLowerCase();
-      const loginAt=new Date().toISOString();
-      await DB.prepare("INSERT INTO pool_login_activity(pool_id,player_name,login_count,first_login_at,last_login_at) VALUES(?,?,1,?,?) ON CONFLICT(pool_id,player_name) DO UPDATE SET login_count=pool_login_activity.login_count+1,last_login_at=excluded.last_login_at")
-        .bind(pool.id,p.name,loginAt,loginAt).run();
-      return json({token:await makeSession(DB,pool.id,p.name,isCommissioner?"admin":"player"),name:p.name,isCommissioner,poolCode:pool.code,poolName:pool.name,gameType:await getPoolGameType(DB,pool.id,pool.code),games:await getPoolGameTypes(DB,pool.id,pool.code),access:await poolAccessFor(DB,pool.id)});
+      // Login activity is telemetry only. Never block a player's sign-in if
+      // an older production database is missing this table or its schema differs.
+      try{
+        const loginAt=new Date().toISOString();
+        await DB.prepare("INSERT INTO pool_login_activity(pool_id,player_name,login_count,first_login_at,last_login_at) VALUES(?,?,1,?,?) ON CONFLICT(pool_id,player_name) DO UPDATE SET login_count=pool_login_activity.login_count+1,last_login_at=excluded.last_login_at")
+          .bind(pool.id,p.name,loginAt,loginAt).run();
+      }catch(e){}
+      const token=await makeSession(DB,pool.id,p.name,isCommissioner?"admin":"player");
+      const games=await getPoolGameTypes(DB,pool.id,pool.code);
+      let access={adFree:false,commissionerPlan:"free"};
+      try{access=await poolAccessFor(DB,pool.id)}catch(e){}
+      return json({token,name:p.name,isCommissioner,poolCode:pool.code,poolName:pool.name,gameType:games[0]||"nfl",games,access});
     }
     if(path==="admin-login"&&method==="POST"){
       const pool=await poolByCode(DB,body.poolCode);if(!pool)return json({error:"Pool not found."},404);
