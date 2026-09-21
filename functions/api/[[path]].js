@@ -3070,6 +3070,16 @@ export async function onRequest(context){
       await DB.prepare("INSERT INTO pool_33_state(pool_id,draw_locked,draw_source,draw_at) VALUES(?,1,'manual',?) ON CONFLICT(pool_id) DO UPDATE SET draw_locked=1,draw_source='manual',draw_at=excluded.draw_at").bind(pid,new Date().toISOString()).run();
       return json({ok:true});
     }
+    if(path==="33/access"&&method==="POST"){
+      if(s.role!=="admin")return json({error:"Commissioner only."},403);
+      const updates=Array.isArray(body.players)?body.players:[];
+      const poolPlayers=(await DB.prepare("SELECT name FROM pool_players WHERE pool_id=? ORDER BY rowid").bind(pid).all()).results||[];
+      if(poolPlayers.length>32)return json({error:"Game 33 supports a maximum of 32 players."},409);
+      const valid=new Set(poolPlayers.map(x=>x.name));
+      for(const x of updates)if(!valid.has(String(x.player||"").trim()))return json({error:"Unknown Game 33 player."},400);
+      if(updates.length){await DB.batch(updates.map(x=>DB.prepare("INSERT INTO pool_33_entries(pool_id,player_name,paid) VALUES(?,?,?) ON CONFLICT(pool_id,player_name) DO UPDATE SET paid=excluded.paid").bind(pid,String(x.player||"").trim(),x.active?1:0)));}
+      return json({ok:true});
+    }
     if(path==="33/payment"&&method==="POST"){
       if(s.role!=="admin")return json({error:"Commissioner only."},403);
       const player=String(body.player||"").trim();
