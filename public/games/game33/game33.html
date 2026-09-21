@@ -1,24 +1,21 @@
-<!-- v594 migration mirror. Live markup remains inline until routing-safe activation. -->
-<section id="game33" class="links-interactive-zone hide">
-    <div class="card game33-hero">
-      <div class="game33-big">33</div>
-      <div><h2 style="margin:0">THE 33 GAME</h2><div class="small">Up to <b>32 players</b> can play because the NFL has 32 teams. Each player gets <b>one NFL team for the whole 18-week regular season</b>. If a team finishes a week with exactly <b>33 points</b>, win or lose, that player wins that week. If nobody hits 33, the rollover streak continues into the next week.</div></div>
-    </div>
-    <div class="card"><h3 style="margin-top:0">3️⃣3️⃣ How Game 33 Works</h3><div class="small" style="line-height:1.7">• Maximum <b>32 players</b> — one player per NFL team.<br>• Each player keeps the same assigned NFL team for all 18 regular-season weeks.<br>• If an assigned team finishes a week with exactly <b>33 points</b>, that player is a weekly winner.<br>• If nobody hits 33, the rollover streak continues into the next week.<br>• If multiple eligible players hit 33 in the same week, they are all shown as winners.</div></div>
-    <div id="g33PlayerPayment" class="card hide"><h3 style="margin-top:0">👥 PLAYER ACCESS</h3><div id="g33PaymentStatus"></div><div id="g33PayButtons" style="margin-top:8px"></div><div class="small" style="margin-top:7px">Player access is controlled by your pool commissioner.</div></div>
-    <div class="card"><div class="row"><b>33 Week</b><select id="g33WeekSelect"></select></div></div>
-    <div class="card"><div class="row"><h3 id="g33WeekTitle" style="margin:0">Week 1</h3><span id="g33CarryBadge" class="badge"></span></div><div id="g33MyTeam"></div><div id="g33WeekResult" class="small" style="margin-top:10px"></div></div>
-    <div class="card"><h3 style="margin-top:0">🏈 Teams & Scores</h3><div id="g33ScoreBoard"></div></div>
-    <div class="card"><h3 style="margin-top:0">🏆 33 Winner History</h3><div id="g33History"></div></div>
-    <div id="g33Admin" class="hide">
-      <div class="card g33-admin-head-v379"><h2 style="margin:0">⚙️ GAME 33 ADMIN</h2><div class="small">Commissioner controls for Game 33 only. NFL Pick’em and College Pick’em controls are unchanged.</div></div>
-      <div class="g33-admin-grid-v379"><div class="card g33-admin-card-v379 g33-player-manager-v591"><h3>👥 Add & Manage Players</h3><div class="small">Invite players to this Game 33 pool and manage the pool roster.</div><button type="button" id="g33OpenPlayerManagerV591" class="green">ADD / MANAGE PLAYERS</button></div>
-        <div class="card g33-admin-card-v379"><h3>🎲 Yearly Team Draw</h3><div class="small">Run the one-time random draw. Each player keeps the assigned NFL team for all 18 regular-season weeks.</div><div id="g33DrawStatus" class="msg" style="margin-top:10px"></div><button id="g33RandomDraw" class="green">RANDOM DRAW — ASSIGN YEARLY TEAMS</button></div>
-        <div class="card g33-admin-card-v379"><h3>📝 Manual Team Assignments</h3><div class="small">Use this when your group draws teams in person. Maximum 32 players, one NFL team per player.</div><div id="g33ManualAssignments"></div><button id="g33SaveManual" class="gold">SAVE YEARLY TEAM ASSIGNMENTS</button></div>
-        <div class="card g33-admin-card-v379"><h3>👥 Player Access</h3><div class="small">Set each Game 33 player ACTIVE or PENDING for the season.</div><div id="g33PaymentAdmin"></div></div>
-        <div class="card g33-admin-card-v379 g33-finalize-v379"><h3>🏁 Finalize Week & Rollover</h3><div class="small">After all NFL games are final, check active assigned teams for exactly 33 points. If nobody hits 33, carry the rollover into the next week.</div><button id="g33Finalize" class="green">FINALIZE GAME 33 WEEK</button><button id="g33Payout">WINNER STATUS — COMPLETE / OPEN</button></div>
-        <div class="card pool-games-manager links-games-manager-bottom g33-admin-card-v379"><h3>🎮 Games in This Pool</h3><div class="small">Add another Links game to this pool. Game 33 keeps its own controls when selected.</div><div class="pool-games-active" style="margin-top:10px"></div><div class="pool-games-add" style="margin-top:10px"></div></div>
-      </div>
-    </div>
-    <div class="links-fixed-ad" aria-label="Advertisement" style="margin:18px auto;max-width:1100px;display:none"><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-2654873707790051" data-ad-slot="9269292379" data-ad-format="auto" data-full-width-responsive="true"></ins></div>
-  </section>
+<section id="game33NewV595" class="game33-new-v595">
+  <div class="game33-new-top-v595">
+    <img src="../../game33-page-banner.jpg" alt="Links Game 33" class="game33-new-banner-v595">
+    <button type="button" id="g33NewAdminV595" class="game33-new-admin-v595">⚙️ ADMIN</button>
+  </div>
+  <div class="card game33-hero"><div class="game33-big">33</div><div><h2 style="margin:0">THE 33 GAME</h2><div class="small">Up to <b>32 players</b>. Each player gets one NFL team for the 18-week regular season. Exactly <b>33 points</b> wins the week; otherwise the rollover continues.</div></div></div>
+  <div class="card"><h3 style="margin-top:0">3️⃣3️⃣ How Game 33 Works</h3><div class="small" style="line-height:1.7">• Maximum <b>32 players</b> — one player per NFL team.<br>• Each player keeps the same assigned NFL team for all 18 regular-season weeks.<br>• Exactly <b>33 points</b>, win or lose, wins that week.<br>• No 33 means the rollover continues.<br>• Multiple eligible 33s are all shown as winners.</div></div>
+  <div id="g33NewPlayerPaymentV595" class="card hide"><h3>👥 PLAYER ACCESS</h3><div id="g33NewPaymentStatusV595"></div></div>
+  <div class="card"><div class="row"><b>33 Week</b><select id="g33NewWeekSelectV595"></select></div></div>
+  <div class="card"><div class="row"><h3 id="g33NewWeekTitleV595" style="margin:0">NFL Week 1</h3><span id="g33NewCarryBadgeV595" class="badge"></span></div><div id="g33NewMyTeamV595"></div><div id="g33NewWeekResultV595" class="small"></div></div>
+  <div class="card"><h3>🏈 Teams &amp; Scores</h3><div id="g33NewScoreBoardV595"></div></div>
+  <div class="card"><h3>🏆 33 Winner History</h3><div id="g33NewHistoryV595"></div></div>
+  <div id="g33NewAdminPanelV595" class="hide">
+    <div class="card"><h2>⚙️ GAME 33 ADMIN</h2><div class="small">Game 33 commissioner controls only.</div></div>
+    <div class="card"><h3>👥 Add &amp; Manage Players</h3><button type="button" id="g33NewManagePlayersV595" class="green">ADD / MANAGE PLAYERS</button></div>
+    <div class="card"><h3>🎲 Yearly Team Draw</h3><div id="g33NewDrawStatusV595"></div><button id="g33NewRandomDrawV595" class="green">RANDOM DRAW — ASSIGN YEARLY TEAMS</button></div>
+    <div class="card"><h3>📝 Manual Team Assignments</h3><div id="g33NewManualAssignmentsV595"></div><button id="g33NewSaveManualV595" class="gold">SAVE YEARLY TEAM ASSIGNMENTS</button></div>
+    <div class="card"><h3>👥 Player Access</h3><div id="g33NewPaymentAdminV595"></div></div>
+    <div class="card"><h3>🏁 Finalize Week &amp; Rollover</h3><button id="g33NewFinalizeV595" class="green">FINALIZE GAME 33 WEEK</button><button id="g33NewPayoutV595">WINNER STATUS — COMPLETE / OPEN</button></div>
+  </div>
+</section>
