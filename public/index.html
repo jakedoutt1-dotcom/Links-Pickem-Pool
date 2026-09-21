@@ -2034,7 +2034,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#ff8a32"><span style="color:#59c7ff">LINKS PICK’EM POOLS — v592</span></span></footer>
+  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#ff8a32"><span style="color:#59c7ff">LINKS PICK’EM POOLS — v593</span></span></footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -3200,9 +3200,12 @@ async function enterApp(selected){
     week=1;
     $("#feeLine").textContent="";
     $("#feeLine").classList.add("hide");
+    // Game 33 owns this screen: hide NFL Pick'em-only chrome/navigation.
+    document.body.classList.add("links-game33-active-v593");
     try{const d=await api(q("/api/33/default-week"));week=Math.max(1,Math.min(18,Number(d?.week||1)))}catch(e){}
     showOnly("app");setLinksRoute(LINKS_ROUTES.game33);applyRoleNavigation();await render33();return;
   }
+  document.body.classList.remove("links-game33-active-v593");
   $("#feeLine").classList.add("hide");
 
   const n=sport==="nfl"?22:15;
@@ -5621,6 +5624,17 @@ document.addEventListener("DOMContentLoaded",()=>{
  },true);
 })();
 </script>
+
+<style id="links-v593-game33-shell">
+body.links-game33-active-v593 #appHeroImage{content:url("./game33-page-banner.jpg")!important}
+body.links-game33-active-v593 #app .tabs,
+body.links-game33-active-v593 #mainGameInstanceTabs,
+body.links-game33-active-v593 .v180-pool-game-tabs-wrap,
+body.links-game33-active-v593 #pickLockCard,
+body.links-game33-active-v593 #weekPickerCard,
+body.links-game33-active-v593 #pageSportIndicator{display:none!important}
+body.links-game33-active-v593 #game33{display:block!important}
+</style>
 </body></html>
 
 <!-- v139 local audio caching + one Games in This Pool control at bottom of each commissioner admin page -->
