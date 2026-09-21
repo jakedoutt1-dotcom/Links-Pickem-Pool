@@ -2034,7 +2034,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#ff8a32">LINKS PICK’EM POOLS — v587</span></footer>
+  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#ff8a32">LINKS PICK’EM POOLS — v588</span></footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -4522,7 +4522,7 @@ $("#enterPoolBtn").onclick=async()=>{
 };
 $("#showCreatePool").onclick=()=>showOnly("createPoolPage");
 // v580 isolated Create Pool flow. Login code below is intentionally untouched.
-const createV580Selected=()=>window.linksCreatePoolSelectedGamesV585?window.linksCreatePoolSelectedGamesV585():Array.from(document.querySelectorAll('#createPoolGames input[type="checkbox"]:checked')).map(x=>x.value);
+const createV580Selected=()=>Array.from(document.querySelectorAll('#createPoolGames .create-v580-game.links-create-game-selected-v585 input[type="checkbox"]')).map(x=>x.value);
 function createV580Refresh(){
  const count=createV580Selected().length,notice=document.getElementById("createPackageNoticeV580"),status=document.getElementById("createPlanStatus"),btn=document.getElementById("createPoolBtn");
  if(notice)notice.classList.toggle("hide",count<=1);
