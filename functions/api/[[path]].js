@@ -1141,6 +1141,34 @@ function parseEvents(all,kind){
     };
   }).filter(x=>x.away&&x.home);
 }
+async function fetchNFLStandingsRecords(){
+  // Fallback for the occasional ESPN scoreboard event that omits one team's
+  // record (for example Washington). One standings request fills only missing
+  // NFL records; normal scoreboard data remains authoritative.
+  const season=currentFootballSeason();
+  const j=await getJSON(`https://site.api.espn.com/apis/v2/sports/football/nfl/standings?season=${season}&type=0&level=2&_=${Date.now()}`);
+  const out={};
+  function walk(x){
+    if(!x||typeof x!=="object")return;
+    if(Array.isArray(x)){for(const v of x)walk(v);return;}
+    const team=x.team;
+    const stats=Array.isArray(x.stats)?x.stats:null;
+    if(team&&stats){
+      const code=normTeam(String(team.abbreviation||team.shortDisplayName||"").toUpperCase());
+      const get=n=>stats.find(st=>String(st.name||st.abbreviation||"").toLowerCase()===n);
+      const wins=Number(get("wins")?.value??get("w")?.value);
+      const losses=Number(get("losses")?.value??get("l")?.value);
+      const ties=Number(get("ties")?.value??get("t")?.value);
+      if(code&&Number.isFinite(wins)&&Number.isFinite(losses)){
+        out[code]=ties>0?`${wins}-${losses}-${ties}`:`${wins}-${losses}`;
+      }
+    }
+    for(const v of Object.values(x))walk(v);
+  }
+  walk(j);
+  return out;
+}
+
 async function fetchNFLWeek(w){
   const post=w>18,apiWeek=post?(POST_MAP[w]||1):w,seasonType=post?3:2,bust=Date.now();
   const season=currentFootballSeason();
@@ -1378,6 +1406,16 @@ async function syncWeek(DB,pid,sport,w){
     }
   }
   const records={};for(const x of feed)Object.assign(records,x.records||{});
+  if(sport==="nfl"){
+    const needed=new Set();
+    for(const g of base){if(g?.away&&!records[g.away])needed.add(g.away);if(g?.home&&!records[g.home])needed.add(g.home);}
+    if(needed.size){
+      try{
+        const fallback=await fetchNFLStandingsRecords();
+        for(const t of needed)if(fallback[t])records[t]=fallback[t];
+      }catch(e){}
+    }
+  }
   return {liveGames,records,sourceKickoff,source:sport==="nfl"?"ESPN NFL":"ESPN College Football"};
 }
 
