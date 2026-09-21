@@ -2035,7 +2035,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#ff8a32"><span style="color:#59c7ff">LINKS PICK’EM POOLS — v594</span></span></footer>
+  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#ff8a32"><span style="color:#59c7ff">LINKS PICK’EM POOLS — v595</span></span></footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -3177,13 +3177,17 @@ async function enterApp(selected){
 
   if(sport==="33"){
     await window.ensureGame33ModuleV593();
+    // v595: the module is injected after login; re-apply Game 33 role/navigation now that its DOM exists.
+    document.body.classList.add("links-game33-active-v373","links-game33-active-v593");
     week=1;
     $("#feeLine").textContent="";
     $("#feeLine").classList.add("hide");
     // Game 33 owns this screen: hide NFL Pick'em-only chrome/navigation.
     document.body.classList.add("links-game33-active-v593");
     try{const d=await api(q("/api/33/default-week"));week=Math.max(1,Math.min(18,Number(d?.week||1)))}catch(e){}
-    showOnly("app");setLinksRoute(LINKS_ROUTES.game33);applyRoleNavigation();await render33();return;
+    showOnly("app");setLinksRoute(LINKS_ROUTES.game33);applyRoleNavigation();
+    const g33AdminBtn=document.getElementById("g33AdminButtonV594");if(g33AdminBtn)g33AdminBtn.classList.toggle("links-g33-commissioner",!!isCommissioner);
+    await render33();return;
   }
   document.body.classList.remove("links-game33-active-v593");
   $("#feeLine").classList.add("hide");
