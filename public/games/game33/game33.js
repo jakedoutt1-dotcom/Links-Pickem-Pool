@@ -1,4 +1,4 @@
-/* LINKS Game 33 v605 — batch player access + 32-entry guard. */
+/* LINKS Game 33 v608 — isolated folder-based Game 33 renderer. */
 window.LinksGame33=(()=>{
  let loaded=false,data=null,currentView="home",busy=false;
  const el=id=>document.getElementById(id), esc=s=>typeof escapeHtml==="function"?escapeHtml(String(s??"")):String(s??"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
@@ -16,7 +16,7 @@ window.LinksGame33=(()=>{
  }
  async function mount(){
    let host=el("game33NewHostV596");if(!host){host=document.createElement("div");host.id="game33NewHostV596";const old=el("game33");old?.parentNode?.insertBefore(host,old)}
-   if(!loaded){const r=await fetch("./games/game33/game33.html?v=601",{cache:"no-store"});if(!r.ok)throw new Error("Could not load Game 33");host.innerHTML=await r.text();bind();loaded=true}
+   if(!loaded){const r=await fetch("./games/game33/game33.html?v=608",{cache:"no-store"});if(!r.ok)throw new Error("Could not load Game 33");host.innerHTML=await r.text();bind();loaded=true}
    el("game33")?.classList.add("hide");host.classList.remove("hide");document.body.classList.add("links-game33-standalone-v596");
    // Game 33 owns its week state. On entry, ask its own API for the active week instead of inheriting NFL Pick’em week state.
    try{const dw=await call(path33("/api/33/default-week?_="+Date.now()));window.game33Week=Math.max(1,Math.min(18,Number(dw.week)||1));}catch(e){window.game33Week=window.game33Week||1}
