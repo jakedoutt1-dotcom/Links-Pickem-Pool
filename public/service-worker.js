@@ -1,4 +1,4 @@
-const CACHE_NAME = "links-pickem-pwa-v495";
+const CACHE_NAME = "links-pickem-pwa-v589";
 const OFFLINE_ASSETS = [
   "/manifest.webmanifest",
   "/icon-192.png",
@@ -49,10 +49,9 @@ self.addEventListener("fetch", event => {
       return fresh;
     }
     try {
-      // iOS standalone PWAs are especially aggressive about reusing navigation
-      // responses. Force a network revalidation for documents/app shell.
-      const fresh = await fetch(req, req.mode === "navigate" ? {cache:"no-store"} : undefined);
-      if (fresh && fresh.ok) (await caches.open(CACHE_NAME)).put(req, fresh.clone()).catch(()=>{});
+      // v589: app shell/code always comes from the network. Never save HTML/JS/JSON
+      // into the service-worker cache; only image/font assets above are cached.
+      const fresh = await fetch(req, {cache:"no-store"});
       return fresh;
     } catch (err) {
       const cached = await caches.match(req);
