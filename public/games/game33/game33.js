@@ -1,7 +1,4 @@
-/* LINKS Game 33 v601 — self-contained game UI. Shared login/API stay outside this folder. */
-window.LINKS_GAME33_2026_ASSIGNMENTS=Object.freeze([
-["Tailgate Trey","LAC",true],["Jack","DET",true],["Fred","PHI",false],["TD","TB",true],["TD2","HOU",true],["Robb","MIN",true],["Karen","NYJ",true],["Randy","JAX",true],["Lockman","NYG",false],["Bill A","CHI",true],["Cindy A","TEN",true],["Almarode","CIN",true],["B-man","ATL",true],["Kelly","NO",true],["Taylor","NE",false],["Daniel","KC",false],["Mike D","BAL",false],["Katie","LV",true],["Thad","BUF",true],["Cristen","DEN",true],["Grizzo","LAR",false],["Jake","ARZ",false],["Amanda","DAL",false],["Austin Hale","CLE",true],["Lee","WAS",true],["Kirsten","SF",true],["Mark","GB",true],["Franklin","MIA",true],["Laura Hale 1","SEA",true],["Laura Hale 2","CAR",true],["Codie","PIT",true],["Rob","IND",true]
-]);
+/* LINKS Game 33 v602 — clean self-contained game UI. Shared login/API stay outside this folder. */
 window.LinksGame33=(()=>{
  let loaded=false,data=null,currentView="home",busy=false;
  const el=id=>document.getElementById(id), esc=s=>typeof escapeHtml==="function"?escapeHtml(String(s??"")):String(s??"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
@@ -28,7 +25,6 @@ window.LinksGame33=(()=>{
    el("g33NavV601")?.addEventListener("click",e=>{const b=e.target.closest("[data-g33-view]");if(b)show(b.dataset.g33View)});
    el("g33WeekV601")?.addEventListener("change",async e=>{window.week=Number(e.target.value)||1;await render()});
    el("g33AddPlayerV601")?.addEventListener("click",addPlayer);
-   el("g33Load2026V601")?.addEventListener("click",load2026);
    el("g33RandomV601")?.addEventListener("click",randomDraw);
    el("g33SaveAssignmentsV601")?.addEventListener("click",saveManual);
    el("g33FinalizeV601")?.addEventListener("click",finalize);
@@ -50,7 +46,7 @@ window.LinksGame33=(()=>{
      const sorted=[...(data.assignments||[])].sort((a,b)=>Math.abs(Number(a.score??999)-33)-Math.abs(Number(b.score??999)-33));
      if(el("g33WatchV601"))el("g33WatchV601").innerHTML=sorted.filter(a=>a.score!=null).slice(0,5).map(row).join("")||'<div class="small">Scores will appear when games begin.</div>';
      if(el("g33ScoresV601"))el("g33ScoresV601").innerHTML=(data.assignments||[]).map(row).join("")||'<div class="small">No assignments yet.</div>';
-     if(el("g33TeamsV601"))el("g33TeamsV601").innerHTML=(data.assignments?.length?data.assignments.map(a=>[a.player,a.team,!!a.paid]):window.LINKS_GAME33_2026_ASSIGNMENTS).map(x=>'<div class="g33-player-v601"><b>'+esc(x[0]??x.player)+'</b><span>'+esc(x[1]??x.team)+'</span><span>'+((x[2]??x.paid)?"💯":"—")+'</span></div>').join("");
+     if(el("g33TeamsV601"))el("g33TeamsV601").innerHTML=(data.assignments||[]).map(a=>'<div class="g33-player-v601"><b>'+esc(a.player)+'</b><span>'+esc(a.team)+'</span><span>'+(data.paid?.[a.player]?"ACTIVE":"PENDING")+'</span></div>').join("")||'<div class="small">No yearly team assignments yet.</div>';
      if(el("g33HistoryV601"))el("g33HistoryV601").innerHTML=(data.history||[]).filter(x=>x.finalized).map(h=>'<div class="g33-player-v601"><b>Week '+h.week+'</b><span>'+(h.winners?.length?esc(h.winners.map(x=>x.player).join(", ")):"Rollover")+'</span><span>'+(h.payoutPaid?"✓":"")+'</span></div>').join("")||'<div class="small">No finalized weeks yet.</div>';
      el("g33AdminNavV601")?.classList.toggle("hide",!commissioner());if(currentView==="admin")renderAdmin();
    }catch(x){note("Game 33 could not refresh: "+x.message,false)}finally{busy=false}
@@ -59,16 +55,14 @@ window.LinksGame33=(()=>{
    if(!commissioner()||!data)return;
    const locked=!!data.drawLocked,players=data.players||[];
    if(el("g33DrawStatusV601"))el("g33DrawStatusV601").innerHTML=locked?"🔒 YEARLY DRAW LOCKED — teams stay all 18 weeks.":"🔓 No yearly draw locked yet.";
-   if(el("g33RandomV601"))el("g33RandomV601").disabled=locked;if(el("g33SaveAssignmentsV601"))el("g33SaveAssignmentsV601").disabled=locked;if(el("g33Load2026V601"))el("g33Load2026V601").disabled=locked;
+   if(el("g33RandomV601"))el("g33RandomV601").disabled=locked;if(el("g33SaveAssignmentsV601"))el("g33SaveAssignmentsV601").disabled=locked;
    if(el("g33AdminPlayersV601"))el("g33AdminPlayersV601").innerHTML=players.map(p=>'<div class="g33-player-v601"><b>'+esc(p)+'</b><span>'+esc((data.assignments||[]).find(a=>a.player===p)?.team||"—")+'</span><span>'+(data.paid?.[p]?"💯":"—")+'</span></div>').join("")||'<div class="small">No players yet.</div>';
    const assigned=Object.fromEntries((data.assignments||[]).map(x=>[x.player,x.team]));
    if(el("g33ManualV601"))el("g33ManualV601").innerHTML=players.map(p=>'<div class="g33-manual-v601"><b>'+esc(p)+'</b><select data-g33-manual="'+esc(p)+'" '+(locked?"disabled":"")+'><option value="">— Team —</option>'+NFL_TEAMS_33.map(t=>'<option value="'+t+'" '+(assigned[p]===t?"selected":"")+'>'+esc(teamName(t))+'</option>').join("")+'</select></div>').join("");
    if(el("g33AccessV601"))el("g33AccessV601").innerHTML=players.map(p=>{const paid=!!data.paid?.[p];return '<button class="g33-access-v601 '+(paid?"active":"pending")+'" data-player="'+esc(p)+'" data-paid="'+(paid?1:0)+'">'+(paid?"✓ ACTIVE":"✕ PENDING")+' — '+esc(p)+'</button>'}).join("");
  }
  async function addPlayer(){const n=el("g33AddNameV601")?.value.trim(),email=el("g33AddEmailV601")?.value.trim(),st=el("g33AddStatusV601");if(!n||!email){if(st)st.textContent="Enter player name and email.";return}try{await call("/api/admin/player",{method:"POST",body:JSON.stringify({name:n,password:"",email})});const r=await call("/api/admin/player-setup-invite",{method:"POST",body:JSON.stringify({player:n,email,delivery:"email"})});if(st)st.textContent=r.sent?"✅ Player added and setup email sent.":"✅ Player added. Setup link created.";el("g33AddNameV601").value="";el("g33AddEmailV601").value="";await render()}catch(x){if(st)st.textContent="⚠️ "+x.message}}
- function fillAssignments(list){document.querySelectorAll("[data-g33-manual]").forEach(s=>{const found=list.find(x=>x[0]===s.dataset.g33Manual);if(found)s.value=found[1]});note("2026 draw loaded. Review it, then SAVE & LOCK ASSIGNMENTS.")}
- function load2026(){if(data?.drawLocked)return;fillAssignments(window.LINKS_GAME33_2026_ASSIGNMENTS)}
- async function saveManual(){const a=[...document.querySelectorAll("[data-g33-manual]")].map(s=>({player:s.dataset.g33Manual,team:s.value}));if(!a.length||a.some(x=>!x.team))return note("Assign a team to every player first.",false);if(new Set(a.map(x=>x.team)).size!==a.length)return note("Each entry must have a different NFL team.",false);if(!confirm("Save and LOCK these teams for all 18 weeks?"))return;try{await call(path33("/api/33/manual-draw"),{method:"POST",body:JSON.stringify({assignments:a})});for(const [p,,paid] of window.LINKS_GAME33_2026_ASSIGNMENTS){if(a.some(x=>x.player===p)&&!!data.paid?.[p]!==paid)await call(path33("/api/33/payment"),{method:"POST",body:JSON.stringify({player:p,paid})}).catch(()=>{})}await render();note("✅ Yearly assignments saved and locked.")}catch(x){note(x.message,false)}}
+ async function saveManual(){const a=[...document.querySelectorAll("[data-g33-manual]")].map(s=>({player:s.dataset.g33Manual,team:s.value}));if(!a.length||a.some(x=>!x.team))return note("Assign a team to every player first.",false);if(new Set(a.map(x=>x.team)).size!==a.length)return note("Each entry must have a different NFL team.",false);if(!confirm("Save and LOCK these teams for all 18 weeks?"))return;try{await call(path33("/api/33/manual-draw"),{method:"POST",body:JSON.stringify({assignments:a})});await render();note("✅ Yearly assignments saved and locked.")}catch(x){note(x.message,false)}}
  async function randomDraw(){if(!confirm("Run one random yearly draw and lock it for all 18 weeks?"))return;try{await call(path33("/api/33/random-draw"),{method:"POST",body:"{}"});await render();note("🎲 Yearly draw complete.")}catch(x){note(x.message,false)}}
  async function finalize(){if(!confirm("Finalize this Game 33 week?"))return;try{const r=await call(path33("/api/33/finalize"),{method:"POST",body:"{}"});await render();note(r.rolled?"↪️ No 33 — rollover recorded.":"🏆 Winner recorded.")}catch(x){note(x.message,false)}}
  async function payout(){try{const r=await call(path33("/api/33/payout"),{method:"POST",body:"{}"});await render();note(r.payoutPaid?"Winner status COMPLETE.":"Winner status reopened.")}catch(x){note(x.message,false)}}
