@@ -5555,33 +5555,7 @@ document.addEventListener("click",function(e){
   e.preventDefault();e.stopPropagation();openGameInfo(game);
 },true);
 </script>
-<script id="links-version-check-v583">
-(()=>{
-  const CURRENT_BUILD="v583";
-  let checking=false;
-  async function checkForLinksUpdate(){
-    if(checking) return;
-    checking=true;
-    try{
-      const r=await fetch("/version.json?t="+Date.now(),{cache:"no-store"});
-      if(!r.ok) return;
-      const data=await r.json();
-      const latest=String(data.version||"").trim();
-      if(latest && latest!==CURRENT_BUILD){
-        if("serviceWorker" in navigator){
-          const regs=await navigator.serviceWorker.getRegistrations();
-          await Promise.all(regs.map(reg=>reg.update().catch(()=>{})));
-        }
-        location.reload();
-      }
-    }catch(e){}finally{checking=false;}
-  }
-  window.addEventListener("pageshow",checkForLinksUpdate);
-  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")checkForLinksUpdate();});
-  window.addEventListener("online",checkForLinksUpdate);
-  setTimeout(checkForLinksUpdate,1500);
-})();
-</script>
+<!-- v585: automatic version reload checker disabled to prevent iPhone/Safari reload loop. -->
 
 <script id="links-v585-create-game-selection">
 (()=>{
