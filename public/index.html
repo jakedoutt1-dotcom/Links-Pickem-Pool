@@ -1939,8 +1939,8 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
 #createPoolGames .create-v580-game input{pointer-events:auto!important}
 @media(max-width:420px){#createPoolGames.create-v580-games{grid-template-columns:1fr!important}}
 .links-terms-v581{max-width:760px;margin:0 auto}.links-terms-v581 h3{margin-top:20px}.links-terms-v581 p,.links-terms-v581 li{line-height:1.55}
-</style><link rel="stylesheet" href="./games/game33/game33.css?v=596">
-<script src="./games/game33/game33.js?v=596" defer></script>
+</style><link rel="stylesheet" href="./games/game33/game33.css?v=597">
+<script src="./games/game33/game33.js?v=597" defer></script>
 </head>
 
 <body><div id="top"></div><div class="wrap">
@@ -2036,7 +2036,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#ff8a32"><span style="color:#59c7ff">LINKS PICK’EM POOLS — v596</span></span></footer>
+  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#ff8a32"><span style="color:#59c7ff">LINKS PICK’EM POOLS — v597</span></span></footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -5624,6 +5624,26 @@ document.addEventListener("DOMContentLoaded",()=>{
    if(typeof window.render33==="function")window.render33();
    setTimeout(()=>document.getElementById("g33Admin")?.scrollIntoView({behavior:"smooth",block:"start"}),80);
  },true);
+})();
+</script>
+
+<script id="links-scroll-stability-v597">
+(()=>{
+ let userScrollingUntil=0;
+ const mark=()=>{userScrollingUntil=Date.now()+900};
+ addEventListener("touchstart",mark,{passive:true,capture:true});
+ addEventListener("touchmove",mark,{passive:true,capture:true});
+ addEventListener("wheel",mark,{passive:true,capture:true});
+ const nativeScrollIntoView=Element.prototype.scrollIntoView;
+ Element.prototype.scrollIntoView=function(options){
+   if(Date.now()<userScrollingUntil)return;
+   return nativeScrollIntoView.call(this,options);
+ };
+ const nativeScrollTo=window.scrollTo.bind(window);
+ window.scrollTo=function(...args){
+   if(Date.now()<userScrollingUntil)return;
+   return nativeScrollTo(...args);
+ };
 })();
 </script>
 </body></html>
