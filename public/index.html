@@ -2034,7 +2034,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#ff8a32"><span style="color:#59c7ff">LINKS PICK’EM POOLS — v590</span></span></footer>
+  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#ff8a32"><span style="color:#59c7ff">LINKS PICK’EM POOLS — v591</span></span></footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2599,7 +2599,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <div class="card"><h3 style="margin-top:0">🏆 33 Winner History</h3><div id="g33History"></div></div>
     <div id="g33Admin" class="hide">
       <div class="card g33-admin-head-v379"><h2 style="margin:0">⚙️ GAME 33 ADMIN</h2><div class="small">Commissioner controls for Game 33 only. NFL Pick’em and College Pick’em controls are unchanged.</div></div>
-      <div class="g33-admin-grid-v379">
+      <div class="g33-admin-grid-v379"><div class="card g33-admin-card-v379 g33-player-manager-v591"><h3>👥 Add & Manage Players</h3><div class="small">Invite players to this Game 33 pool and manage the pool roster.</div><button type="button" id="g33OpenPlayerManagerV591" class="green">ADD / MANAGE PLAYERS</button></div>
         <div class="card g33-admin-card-v379"><h3>🎲 Yearly Team Draw</h3><div class="small">Run the one-time random draw. Each player keeps the assigned NFL team for all 18 regular-season weeks.</div><div id="g33DrawStatus" class="msg" style="margin-top:10px"></div><button id="g33RandomDraw" class="green">RANDOM DRAW — ASSIGN YEARLY TEAMS</button></div>
         <div class="card g33-admin-card-v379"><h3>📝 Manual Team Assignments</h3><div class="small">Use this when your group draws teams in person. Maximum 32 players, one NFL team per player.</div><div id="g33ManualAssignments"></div><button id="g33SaveManual" class="gold">SAVE YEARLY TEAM ASSIGNMENTS</button></div>
         <div class="card g33-admin-card-v379"><h3>👥 Player Access</h3><div class="small">Set each Game 33 player ACTIVE or PENDING for the season.</div><div id="g33PaymentAdmin"></div></div>
@@ -5582,6 +5582,42 @@ document.addEventListener("DOMContentLoaded",()=>{
 /* Selection is shown by the green SELECTED state; keep native checkbox functional but invisible. */
 #createPoolGames .create-v580-game input[type="checkbox"]{opacity:0!important;visibility:hidden!important;pointer-events:none!important}
 </style>
+
+<script id="links-v591-game33-admin-fix">
+(()=>{
+ function is33(){return String(window.sport||"")==="33" || !document.getElementById("game33")?.classList.contains("hide")}
+ async function openPlayers(){
+   try{
+     // Reuse the existing, proven commissioner Admin player/invite controls.
+     if(typeof window.renderAdmin==="function") await window.renderAdmin();
+     const title=document.getElementById("commissionerSportTitle");
+     if(title) title.textContent="3️⃣3️⃣ GAME 33 ADMIN";
+     document.querySelectorAll(".commissioner-sport-card .small").forEach(el=>{if(/Commissioner controls/i.test(el.textContent||""))el.textContent="Commissioner controls for Game 33."});
+     if(typeof window.showOnly==="function") window.showOnly("admin");
+     setTimeout(()=>{
+       const target=document.querySelector("#adminControls .commissioner-players-card,#adminControls [id*='invite'],#adminControls [class*='player']");
+       if(target) target.scrollIntoView({behavior:"smooth",block:"start"});
+     },120);
+   }catch(e){
+     const loading=document.getElementById("adminOnly");
+     if(loading)loading.innerHTML='<h3>⚠️ ADMIN</h3><div class="small">Could not load commissioner controls. Please try again.</div>';
+   }
+ }
+ document.addEventListener("click",e=>{
+   const b=e.target.closest?.("#g33OpenPlayerManagerV591");if(!b)return;
+   e.preventDefault();openPlayers();
+ });
+ // The normal NFL-style ADMIN tab should route Game 33 commissioners to its own controls,
+ // not leave the generic admin screen stuck on LOADING.
+ document.addEventListener("click",e=>{
+   const b=e.target.closest?.('#app .tabs [data-tab="admin"]');if(!b||!is33())return;
+   e.preventDefault();e.stopImmediatePropagation();
+   if(typeof window.showOnly==="function")window.showOnly("game33");
+   if(typeof window.render33==="function")window.render33();
+   setTimeout(()=>document.getElementById("g33Admin")?.scrollIntoView({behavior:"smooth",block:"start"}),80);
+ },true);
+})();
+</script>
 </body></html>
 
 <!-- v139 local audio caching + one Games in This Pool control at bottom of each commissioner admin page -->
