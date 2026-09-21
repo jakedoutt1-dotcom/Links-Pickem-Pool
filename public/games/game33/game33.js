@@ -12,7 +12,7 @@ window.LinksGame33=(()=>{
    if(view==="admin"&&!commissioner())view="home";currentView=view;
    document.querySelectorAll("#game33NewV601 [data-g33-page]").forEach(x=>x.classList.toggle("hide",x.dataset.g33Page!==view));
    document.querySelectorAll("#g33NavV601 [data-g33-view]").forEach(x=>x.classList.toggle("active",x.dataset.g33View===view));
-   if(view==="admin"){renderAdmin();if(typeof refreshPoolGames==="function")refreshPoolGames().then(()=>{if(typeof renderPoolGamesManagers==="function")renderPoolGamesManagers()});if(typeof renderGameInstanceUI==="function")renderGameInstanceUI("33");}
+   if(view==="admin"){renderAdmin();renderAddGamesV621();if(typeof renderGameInstanceUI==="function")renderGameInstanceUI("33");}
  }
  async function mount(){
    let host=el("game33NewHostV596");if(!host){host=document.createElement("div");host.id="game33NewHostV596";const app=el("app");if(!app)throw new Error("Game 33 app container is missing");app.appendChild(host)}
@@ -20,7 +20,7 @@ window.LinksGame33=(()=>{
    el("game33")?.classList.add("hide");host.classList.remove("hide");document.body.classList.add("links-game33-standalone-v596");
    // Game 33 owns its week state. On entry, ask its own API for the active week instead of inheriting NFL Pick’em week state.
    try{const dw=await call(path33("/api/33/default-week?_="+Date.now()));window.game33Week=Math.max(1,Math.min(18,Number(dw.week)||1));}catch(e){window.game33Week=window.game33Week||1}
-   el("g33AdminNavV601")?.classList.toggle("hide",!commissioner());show(currentView);await render();if(typeof renderGameInstanceUI==="function")await renderGameInstanceUI("33");if(commissioner()&&typeof refreshPoolGames==="function")await refreshPoolGames();if(commissioner()&&typeof renderPoolGamesManagers==="function")renderPoolGamesManagers();return host;
+   el("g33AdminNavV601")?.classList.toggle("hide",!commissioner());show(currentView);await render();await renderPoolGameTabsV621();if(typeof renderGameInstanceUI==="function")await renderGameInstanceUI("33");if(commissioner())await renderAddGamesV621();return host;
  }
  function leave(){document.body.classList.remove("links-game33-standalone-v596");el("game33NewHostV596")?.classList.add("hide")}
  function bind(){
@@ -33,6 +33,23 @@ window.LinksGame33=(()=>{
    el("g33PayoutV601")?.addEventListener("click",payout);
    el("g33SaveAccessV601")?.addEventListener("click",saveAccess);
  }
+ async function renderPoolGameTabsV621(){
+   try{if(typeof refreshPoolGames==="function")await refreshPoolGames()}catch(e){}
+   const games=typeof normalizePoolGames==="function"?normalizePoolGames(window.poolGames||poolGames||[],"33"):(window.poolGames||["33"]);
+   const host=el("g33ActiveGameTabsV621");if(!host)return;
+   host.innerHTML=games.map(g=>'<button type="button" data-g33-pool-game="'+esc(g)+'" class="'+(g==="33"?"active":"")+'">'+esc(typeof poolGameName==="function"?poolGameName(g):g)+'</button>').join("");
+   host.querySelectorAll("[data-g33-pool-game]").forEach(b=>b.onclick=()=>{const g=b.dataset.g33PoolGame;if(g==="33")return;if(typeof enterPoolGames==="function")enterPoolGames(games,g);});
+ }
+ async function renderAddGamesV621(){
+   if(!commissioner())return;try{if(typeof refreshPoolGames==="function")await refreshPoolGames()}catch(e){}
+   const card=document.querySelector("#game33NewV601 .g33-games-manager-v619"),active=card?.querySelector(".pool-games-active"),add=card?.querySelector(".pool-games-add");if(!card||!add)return;
+   const choices=["nfl","college","march","33","squares","survivor","confidence","props","playoff","masters","nascar","fantasy","dynasty"];
+   const games=typeof normalizePoolGames==="function"?normalizePoolGames(window.poolGames||poolGames||[],"33"):(window.poolGames||["33"]);
+   if(active)active.innerHTML='<div class="small"><b>ACTIVE NOW</b> — '+games.map(g=>esc(typeof poolGameName==="function"?poolGameName(g):g)).join(" • ")+'</div>';
+   add.innerHTML='<div class="small"><b>ADD / REMOVE GAMES</b></div><div class="g33-add-grid-v621">'+choices.map(g=>'<label><input type="checkbox" value="'+g+'" '+(games.includes(g)?"checked":"")+'><span>'+esc(typeof poolGameName==="function"?poolGameName(g):g)+'</span></label>').join("")+'</div><button id="g33SavePoolGamesV621" type="button" class="green">SAVE ACTIVE GAMES</button><div id="g33SavePoolGamesStatusV621" class="small"></div>';
+   el("g33SavePoolGamesV621").onclick=async()=>{const selected=[...add.querySelectorAll('input:checked')].map(x=>x.value),st=el("g33SavePoolGamesStatusV621"),btn=el("g33SavePoolGamesV621");if(!selected.length){st.textContent="Keep at least one game checked.";return}btn.disabled=true;st.textContent="Saving…";try{const d=await call("/api/admin/pool-games",{method:"POST",body:JSON.stringify({gameTypes:selected})});if(typeof savePoolGames==="function")savePoolGames(d.games,d.gameType||selected[0]);st.textContent="✅ Active games saved.";await renderPoolGameTabsV621();await renderAddGamesV621()}catch(e){st.textContent=e.message||"Could not save active games."}finally{btn.disabled=false}};
+ }
+
  function row(a){
    const score=a.score??"—",n=Number(a.score),near=Number.isFinite(n)&&Math.abs(n-33)<=3&&!a.hit33;
    return '<div class="g33-team-v601 '+(a.hit33?"hit":"")+'"><img src="'+esc(logo(a.team))+'" alt=""><div><b>'+esc(a.player||"Open")+' — '+esc(teamName(a.team))+'</b><div class="small">'+(a.opponent?("vs "+esc(teamName(a.opponent))+" • "):"")+esc(a.status||"")+(a.hit33?" • 🎯 HIT 33":"")+'</div></div><div class="score '+(near?"near":"")+'">'+esc(score)+'</div></div>';
