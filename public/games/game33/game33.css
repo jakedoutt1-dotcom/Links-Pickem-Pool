@@ -29,3 +29,6 @@ body.links-game33-standalone-v596 #game33NewHostV596{display:block!important;vis
 .g33-status-box-v617{display:inline-flex!important;align-items:center;justify-content:center;min-width:68px;padding:5px 7px;border-radius:7px;font-size:11px!important;font-weight:950!important;color:#fff!important}
 .g33-status-box-v617.active{background:#138a45!important;border:1px solid #55e894!important}
 .g33-status-box-v617.pending{background:#a5222c!important;border:1px solid #ff7d83!important}
+
+/* v619: Game 33 commissioner Add Games card uses the shared LINKS pool-games manager. */
+.g33-games-manager-v619{border-color:#ff7a2f!important}.g33-games-manager-v619 .pool-game-check-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}.g33-games-manager-v619 .pool-game-check{display:grid;grid-template-columns:24px 44px minmax(0,1fr);gap:7px;align-items:center;padding:8px;border:1px solid #344754;border-radius:10px;background:#101820}.g33-games-manager-v619 .game-selector-logo{width:42px;height:42px;object-fit:contain}.g33-games-manager-v619 .game-selector-name{font-size:12px;font-weight:900}.g33-games-manager-v619 input{width:20px;height:20px}@media(max-width:620px){.g33-games-manager-v619 .pool-game-check-grid{grid-template-columns:1fr}}
