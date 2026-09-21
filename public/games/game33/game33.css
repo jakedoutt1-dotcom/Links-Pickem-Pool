@@ -38,3 +38,6 @@ body.links-game33-standalone-v596 #game33NewHostV596{display:block!important;vis
 
 /* v621 active pool game tabs and standalone admin game picker */
 .g33-active-game-tabs-v621{margin:10px 0;padding:10px;border:1px solid #344754;border-radius:11px;background:#0b1117}.g33-active-game-tabs-v621 #g33ActiveGameTabsV621{display:flex;gap:7px;overflow-x:auto;margin-top:6px}.g33-active-game-tabs-v621 button{min-height:42px;white-space:nowrap;font-weight:900}.g33-active-game-tabs-v621 button.active{background:#ff6418!important;border-color:#ff8a43!important}.g33-add-grid-v621{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:9px 0}.g33-add-grid-v621 label{display:flex;gap:8px;align-items:center;padding:10px;border:1px solid #344754;border-radius:9px;background:#101820;font-weight:850}.g33-add-grid-v621 input{width:20px;height:20px}.g33-games-manager-v619 #g33SavePoolGamesV621{width:100%;margin-top:5px}@media(max-width:620px){.g33-add-grid-v621{grid-template-columns:1fr}}
+
+/* v622: Game 33 tab host is local to /games/game33 only. */
+.g33-local-tabs-v622{margin:10px 0 12px}.g33-local-tabs-v622 .game-instance-tabs-v180{display:flex;gap:7px;overflow-x:auto}.g33-local-tabs-v622 button{min-height:42px;white-space:nowrap;font-weight:900}
