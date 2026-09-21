@@ -1928,8 +1928,8 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
 #createPoolGames .create-v580-game input{pointer-events:auto!important}
 @media(max-width:420px){#createPoolGames.create-v580-games{grid-template-columns:1fr!important}}
 .links-terms-v581{max-width:760px;margin:0 auto}.links-terms-v581 h3{margin-top:20px}.links-terms-v581 p,.links-terms-v581 li{line-height:1.55}
-</style><link rel="stylesheet" href="./games/game33/game33.css?v=613">
-<script src="./games/game33/game33.js?v=613" defer></script>
+</style><link rel="stylesheet" href="./games/game33/game33.css?v=614">
+<script src="./games/game33/game33.js?v=614" defer></script>
 </head>
 
 <body><div id="top"></div><div class="wrap">
@@ -2025,7 +2025,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#ff8a32">LINKS PICK’EM POOLS — v613</span></footer>
+  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#ff8a32">LINKS PICK’EM POOLS — v614</span></footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -5517,18 +5517,8 @@ document.addEventListener("DOMContentLoaded",()=>{
    const b=e.target.closest?.("#g33OpenPlayerManagerV591");if(!b)return;
    e.preventDefault();openPlayers();
  });
- // The normal NFL-style ADMIN tab should route Game 33 commissioners to its own controls,
- // not leave the generic admin screen stuck on LOADING.
- document.addEventListener("click",e=>{
-   const b=e.target.closest?.('#app .tabs [data-tab="admin"]');if(!b||!is33())return;
-   e.preventDefault();e.stopImmediatePropagation();
-   if(typeof window.showOnly==="function")window.showOnly("app");
-   // Game 33 is a section INSIDE #app, not a top-level screen. Keep #app visible.
-   document.querySelectorAll("#app > section").forEach(s=>s.classList.add("hide"));
-   document.getElementById("game33")?.classList.remove("hide");
-   if(typeof window.render33==="function")window.render33();
-   setTimeout(()=>document.getElementById("g33Admin")?.scrollIntoView({behavior:"smooth",block:"start"}),80);
- },true);
+ // v614: legacy Game 33 admin interceptor removed; folder app owns its ADMIN navigation.
+
 })();
 </script>
 
