@@ -3034,6 +3034,21 @@ export async function onRequest(context){
     if(path==="33/default-week"&&method==="GET"){
       return json({week:await game33DefaultWeek(DB,pid),maxWeek:18});
     }
+    if(path==="33/test-load-2026"&&method==="POST"){
+      if(s.role!=="admin")return json({error:"Commissioner only."},403);
+      const test=[
+        ["Tailgate Trey","LAC",1],["Jack","DET",1],["Fred","PHI",0],["TD 1","TB",1],
+        ["TD 2","HOU",1],["Robb","MIN",1],["Karen","NYJ",1],["Randy","JAX",1]
+      ];
+      // Temporary Game 33 test fixture only. Shared NFL Pick'em data is not changed.
+      await DB.prepare("DELETE FROM pool_33_assignments WHERE pool_id=?").bind(pid).run();
+      await DB.prepare("DELETE FROM pool_33_entries WHERE pool_id=?").bind(pid).run();
+      const entries=test.map(x=>DB.prepare("INSERT INTO pool_33_entries(pool_id,player_name,paid) VALUES(?,?,?)").bind(pid,x[0],x[2]));
+      const assigns=test.map(x=>DB.prepare("INSERT INTO pool_33_assignments(pool_id,player_name,team,assigned_at,source) VALUES(?,?,?,?,?)").bind(pid,x[0],x[1],new Date().toISOString(),"test-2026"));
+      await DB.batch([...entries,...assigns]);
+      await DB.prepare("INSERT INTO pool_33_state(pool_id,draw_locked,draw_source,draw_at) VALUES(?,1,'test-2026',?) ON CONFLICT(pool_id) DO UPDATE SET draw_locked=1,draw_source='test-2026',draw_at=excluded.draw_at").bind(pid,new Date().toISOString()).run();
+      return json({ok:true,count:test.length});
+    }
     if(path==="33/random-draw"&&method==="POST"){
       if(s.role!=="admin")return json({error:"Commissioner only."},403);
       const st=await DB.prepare("SELECT draw_locked FROM pool_33_state WHERE pool_id=?").bind(pid).first();
