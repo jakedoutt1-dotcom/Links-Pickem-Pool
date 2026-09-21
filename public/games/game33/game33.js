@@ -16,7 +16,7 @@ window.LinksGame33=(()=>{
    const old=document.getElementById("game33");if(old)old.classList.add("hide");
    host.classList.remove("hide");
    document.body.classList.add("links-game33-standalone-v596");
-   const admin=document.getElementById("g33NewAdminV595");if(admin)admin.style.display=window.isCommissioner?"block":"none";
+   const admin=document.getElementById("g33NewAdminV595");if(admin){const commissioner=!!window.isCommissioner||window.role==="admin"||sessionStorage.getItem("poolIsCommissioner")==="1";admin.style.display=commissioner?"block":"none";admin.classList.toggle("links-g33-admin-visible-v598",commissioner)}
    admin?.addEventListener("click",()=>{const p=document.getElementById("g33Admin");p?.classList.remove("hide");setTimeout(()=>p?.scrollIntoView({behavior:"smooth",block:"start"}),40)},{once:false});
    return host;
  }
@@ -44,4 +44,17 @@ window.LinksGame33=(()=>{
    e.preventDefault();
    if(byId("game33NewV595")?.classList.contains("g33-admin-open-v597"))closeAdmin();else openAdmin();
  });
+})();
+
+/* v598 commissioner visibility: use the same persisted session flag as the working login. */
+(()=>{
+ function syncAdmin(){
+   const b=document.getElementById("g33NewAdminV595");if(!b)return;
+   const commissioner=!!window.isCommissioner||window.role==="admin"||sessionStorage.getItem("poolIsCommissioner")==="1";
+   b.style.setProperty("display",commissioner?"block":"none","important");
+   b.classList.toggle("links-g33-admin-visible-v598",commissioner);
+ }
+ document.addEventListener("links-game33-mounted",syncAdmin);
+ document.addEventListener("visibilitychange",()=>{if(!document.hidden)syncAdmin()});
+ setInterval(()=>{if(document.body.classList.contains("links-game33-standalone-v596"))syncAdmin()},1000);
 })();
