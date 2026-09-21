@@ -11,3 +11,10 @@ body.links-game33-standalone-v596 #pickLockCard,
 body.links-game33-standalone-v596 #weekPickerCard,
 body.links-game33-standalone-v596 #pageSportIndicator{display:none!important}
 body.links-game33-standalone-v596 #game33{display:none!important}
+
+/* v597 Game 33 admin page presentation */
+#game33NewV595.g33-admin-open-v597>.card,
+#game33NewV595.g33-admin-open-v597>#g33PlayerPayment{display:none!important}
+#game33NewV595.g33-admin-open-v597>#g33Admin{display:block!important}
+#game33NewV595.g33-admin-open-v597 .game33-new-banner-v595{display:none!important}
+#game33NewV595.g33-admin-open-v597 .game33-new-admin-v595{display:block!important}
