@@ -1,4 +1,4 @@
-/* LINKS Game 33 v603 — current-week Game 33 UI; NFL scores feed remains automatic. */
+/* LINKS Game 33 v605 — batch player access + 32-entry guard. */
 window.LinksGame33=(()=>{
  let loaded=false,data=null,currentView="home",busy=false;
  const el=id=>document.getElementById(id), esc=s=>typeof escapeHtml==="function"?escapeHtml(String(s??"")):String(s??"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
@@ -31,7 +31,7 @@ window.LinksGame33=(()=>{
    el("g33SaveAssignmentsV601")?.addEventListener("click",saveManual);
    el("g33FinalizeV601")?.addEventListener("click",finalize);
    el("g33PayoutV601")?.addEventListener("click",payout);
-   el("g33AccessV601")?.addEventListener("click",async e=>{const b=e.target.closest("[data-player]");if(!b)return;try{await call(path33("/api/33/payment"),{method:"POST",body:JSON.stringify({player:b.dataset.player,paid:b.dataset.paid!=="1"})});await render();note("Player access updated.")}catch(x){note(x.message,false)}});
+   el("g33SaveAccessV601")?.addEventListener("click",saveAccess);
  }
  function row(a){
    const score=a.score??"—",n=Number(a.score),near=Number.isFinite(n)&&Math.abs(n-33)<=3&&!a.hit33;
@@ -58,12 +58,14 @@ window.LinksGame33=(()=>{
    const locked=!!data.drawLocked,players=data.players||[];
    if(el("g33DrawStatusV601"))el("g33DrawStatusV601").innerHTML=locked?"🔒 YEARLY DRAW LOCKED — teams stay all 18 weeks.":"🔓 No yearly draw locked yet.";
    if(el("g33RandomV601"))el("g33RandomV601").disabled=locked;if(el("g33SaveAssignmentsV601"))el("g33SaveAssignmentsV601").disabled=locked;
-   if(el("g33AdminPlayersV601"))el("g33AdminPlayersV601").innerHTML=players.map(p=>'<div class="g33-player-v601"><b>'+esc(p)+'</b><span>'+esc((data.assignments||[]).find(a=>a.player===p)?.team||"—")+'</span><span>'+(data.paid?.[p]?"💯":"—")+'</span></div>').join("")||'<div class="small">No players yet.</div>';
+   if(el("g33PlayerCountV601"))el("g33PlayerCountV601").textContent=players.length+" / 32"; const add=el("g33AddPlayerV601");if(add){add.disabled=players.length>=32;add.textContent=players.length>=32?"MAXIMUM 32 PLAYERS":"ADD PLAYER & SEND SETUP"}
+   if(el("g33AdminPlayersV601"))el("g33AdminPlayersV601").innerHTML=players.map(p=>'<div class="g33-player-v601"><b>'+esc(p)+'</b><span>'+esc((data.assignments||[]).find(a=>a.player===p)?.team||"—")+'</span><span>'+(data.paid?.[p]?"ACTIVE":"PENDING")+'</span></div>').join("")||'<div class="small">No players yet.</div>';
    const assigned=Object.fromEntries((data.assignments||[]).map(x=>[x.player,x.team]));
    if(el("g33ManualV601"))el("g33ManualV601").innerHTML=players.map(p=>'<div class="g33-manual-v601"><b>'+esc(p)+'</b><select data-g33-manual="'+esc(p)+'" '+(locked?"disabled":"")+'><option value="">— Team —</option>'+NFL_TEAMS_33.map(t=>'<option value="'+t+'" '+(assigned[p]===t?"selected":"")+'>'+esc(teamName(t))+'</option>').join("")+'</select></div>').join("");
    if(el("g33AccessV601"))el("g33AccessV601").innerHTML=players.map(p=>{const paid=!!data.paid?.[p];return '<button class="g33-access-v601 '+(paid?"active":"pending")+'" data-player="'+esc(p)+'" data-paid="'+(paid?1:0)+'">'+(paid?"✓ ACTIVE":"✕ PENDING")+' — '+esc(p)+'</button>'}).join("");
  }
- async function addPlayer(){const n=el("g33AddNameV601")?.value.trim(),email=el("g33AddEmailV601")?.value.trim(),st=el("g33AddStatusV601");if(!n||!email){if(st)st.textContent="Enter player name and email.";return}try{await call("/api/admin/player",{method:"POST",body:JSON.stringify({name:n,password:"",email})});const r=await call("/api/admin/player-setup-invite",{method:"POST",body:JSON.stringify({player:n,email,delivery:"email"})});if(st)st.textContent=r.sent?"✅ Player added and setup email sent.":"✅ Player added. Setup link created.";el("g33AddNameV601").value="";el("g33AddEmailV601").value="";await render()}catch(x){if(st)st.textContent="⚠️ "+x.message}}
+ async function addPlayer(){const n=el("g33AddNameV601")?.value.trim(),email=el("g33AddEmailV601")?.value.trim(),st=el("g33AddStatusV601");if((data?.players||[]).length>=32){if(st)st.textContent="Maximum 32 players — all NFL teams are accounted for.";return}if(!n||!email){if(st)st.textContent="Enter player name and email.";return}try{await call("/api/admin/player",{method:"POST",body:JSON.stringify({name:n,password:"",email})});const r=await call("/api/admin/player-setup-invite",{method:"POST",body:JSON.stringify({player:n,email,delivery:"email"})});if(st)st.textContent=r.sent?"✅ Player added and setup email sent.":"✅ Player added. Setup link created.";el("g33AddNameV601").value="";el("g33AddEmailV601").value="";await render()}catch(x){if(st)st.textContent="⚠️ "+x.message}}
+ async function saveAccess(){const boxes=[...document.querySelectorAll("[data-g33-access]")];try{await call(path33("/api/33/access"),{method:"POST",body:JSON.stringify({players:boxes.map(b=>({player:b.dataset.g33Access,active:b.checked}))})});await render();note("✅ Player access saved.")}catch(x){note(x.message,false)}}
  async function saveManual(){const a=[...document.querySelectorAll("[data-g33-manual]")].map(s=>({player:s.dataset.g33Manual,team:s.value}));if(!a.length||a.some(x=>!x.team))return note("Assign a team to every player first.",false);if(new Set(a.map(x=>x.team)).size!==a.length)return note("Each entry must have a different NFL team.",false);if(!confirm("Save and LOCK these teams for all 18 weeks?"))return;try{await call(path33("/api/33/manual-draw"),{method:"POST",body:JSON.stringify({assignments:a})});await render();note("✅ Yearly assignments saved and locked.")}catch(x){note(x.message,false)}}
  async function randomDraw(){if(!confirm("Run one random yearly draw and lock it for all 18 weeks?"))return;try{await call(path33("/api/33/random-draw"),{method:"POST",body:"{}"});await render();note("🎲 Yearly draw complete.")}catch(x){note(x.message,false)}}
  async function finalize(){if(!confirm("Finalize this Game 33 week?"))return;try{const r=await call(path33("/api/33/finalize"),{method:"POST",body:"{}"});await render();note(r.rolled?"↪️ No 33 — rollover recorded.":"🏆 Winner recorded.")}catch(x){note(x.message,false)}}
