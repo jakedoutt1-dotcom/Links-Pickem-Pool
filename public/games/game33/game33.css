@@ -20,3 +20,8 @@ body.links-game33-standalone-v596 #game33{display:none!important}
 #game33NewV595.g33-admin-open-v597 .game33-new-admin-v595{display:block!important}
 
 #game33NewV595 .game33-new-admin-v595.links-g33-admin-visible-v598{display:block!important}
+
+/* v599 native Game 33 admin */
+#g33Admin input{width:100%;box-sizing:border-box;margin:7px 0;padding:12px;border-radius:9px}
+.g33-admin-player-v599{display:flex;justify-content:space-between;gap:10px;padding:10px 2px;border-bottom:1px solid #2c3a44}
+.g33-admin-player-v599 span{color:#b9c5cc;text-align:right}
