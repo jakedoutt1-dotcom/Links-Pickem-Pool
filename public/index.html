@@ -1939,7 +1939,8 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
 #createPoolGames .create-v580-game input{pointer-events:auto!important}
 @media(max-width:420px){#createPoolGames.create-v580-games{grid-template-columns:1fr!important}}
 .links-terms-v581{max-width:760px;margin:0 auto}.links-terms-v581 h3{margin-top:20px}.links-terms-v581 p,.links-terms-v581 li{line-height:1.55}
-</style></head>
+</style><link rel="stylesheet" href="./games/game33/game33.css?v=593">
+</head>
 
 <body><div id="top"></div><div class="wrap">
 
@@ -2586,29 +2587,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     </div>
   </section>
 
-  <section id="game33" class="links-interactive-zone hide">
-    <div class="card game33-hero">
-      <div class="game33-big">33</div>
-      <div><h2 style="margin:0">THE 33 GAME</h2><div class="small">Up to <b>32 players</b> can play because the NFL has 32 teams. Each player gets <b>one NFL team for the whole 18-week regular season</b>. If a team finishes a week with exactly <b>33 points</b>, win or lose, that player wins that week. If nobody hits 33, the rollover streak continues into the next week.</div></div>
-    </div>
-    <div class="card"><h3 style="margin-top:0">3️⃣3️⃣ How Game 33 Works</h3><div class="small" style="line-height:1.7">• Maximum <b>32 players</b> — one player per NFL team.<br>• Each player keeps the same assigned NFL team for all 18 regular-season weeks.<br>• If an assigned team finishes a week with exactly <b>33 points</b>, that player is a weekly winner.<br>• If nobody hits 33, the rollover streak continues into the next week.<br>• If multiple eligible players hit 33 in the same week, they are all shown as winners.</div></div>
-    <div id="g33PlayerPayment" class="card hide"><h3 style="margin-top:0">👥 PLAYER ACCESS</h3><div id="g33PaymentStatus"></div><div id="g33PayButtons" style="margin-top:8px"></div><div class="small" style="margin-top:7px">Player access is controlled by your pool commissioner.</div></div>
-    <div class="card"><div class="row"><b>33 Week</b><select id="g33WeekSelect"></select></div></div>
-    <div class="card"><div class="row"><h3 id="g33WeekTitle" style="margin:0">Week 1</h3><span id="g33CarryBadge" class="badge"></span></div><div id="g33MyTeam"></div><div id="g33WeekResult" class="small" style="margin-top:10px"></div></div>
-    <div class="card"><h3 style="margin-top:0">🏈 Teams & Scores</h3><div id="g33ScoreBoard"></div></div>
-    <div class="card"><h3 style="margin-top:0">🏆 33 Winner History</h3><div id="g33History"></div></div>
-    <div id="g33Admin" class="hide">
-      <div class="card g33-admin-head-v379"><h2 style="margin:0">⚙️ GAME 33 ADMIN</h2><div class="small">Commissioner controls for Game 33 only. NFL Pick’em and College Pick’em controls are unchanged.</div></div>
-      <div class="g33-admin-grid-v379"><div class="card g33-admin-card-v379 g33-player-manager-v591"><h3>👥 Add & Manage Players</h3><div class="small">Invite players to this Game 33 pool and manage the pool roster.</div><button type="button" id="g33OpenPlayerManagerV591" class="green">ADD / MANAGE PLAYERS</button></div>
-        <div class="card g33-admin-card-v379"><h3>🎲 Yearly Team Draw</h3><div class="small">Run the one-time random draw. Each player keeps the assigned NFL team for all 18 regular-season weeks.</div><div id="g33DrawStatus" class="msg" style="margin-top:10px"></div><button id="g33RandomDraw" class="green">RANDOM DRAW — ASSIGN YEARLY TEAMS</button></div>
-        <div class="card g33-admin-card-v379"><h3>📝 Manual Team Assignments</h3><div class="small">Use this when your group draws teams in person. Maximum 32 players, one NFL team per player.</div><div id="g33ManualAssignments"></div><button id="g33SaveManual" class="gold">SAVE YEARLY TEAM ASSIGNMENTS</button></div>
-        <div class="card g33-admin-card-v379"><h3>👥 Player Access</h3><div class="small">Set each Game 33 player ACTIVE or PENDING for the season.</div><div id="g33PaymentAdmin"></div></div>
-        <div class="card g33-admin-card-v379 g33-finalize-v379"><h3>🏁 Finalize Week & Rollover</h3><div class="small">After all NFL games are final, check active assigned teams for exactly 33 points. If nobody hits 33, carry the rollover into the next week.</div><button id="g33Finalize" class="green">FINALIZE GAME 33 WEEK</button><button id="g33Payout">WINNER STATUS — COMPLETE / OPEN</button></div>
-        <div class="card pool-games-manager links-games-manager-bottom g33-admin-card-v379"><h3>🎮 Games in This Pool</h3><div class="small">Add another Links game to this pool. Game 33 keeps its own controls when selected.</div><div class="pool-games-active" style="margin-top:10px"></div><div class="pool-games-add" style="margin-top:10px"></div></div>
-      </div>
-    </div>
-    <div class="links-fixed-ad" aria-label="Advertisement" style="margin:18px auto;max-width:1100px;display:none"><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-2654873707790051" data-ad-slot="9269292379" data-ad-format="auto" data-full-width-responsive="true"></ins></div>
-  </section>
+  <div id="game33ModuleMount"></div>
 <section id="admin" class="links-interactive-zone hide">
     <div id="adminOnly" class="card admin-loading-v191"><h3 style="margin-top:0">⚙️ LOADING ADMIN</h3><div class="small">Loading commissioner controls…</div></div>
     <div id="adminControls" class="hide"><div class="card commissioner-sport-card"><h2 id="commissionerSportTitle" style="margin:0"></h2><div class="small" style="margin-top:5px">Commissioner controls for this sport and selected week.</div><button id="adminChangeGame" type="button" class="hide admin-change-game-v119">🎮 CHANGE GAME</button></div>
@@ -3197,6 +3176,7 @@ async function enterApp(selected){
   // Do not block the first paint on commissioner extras or league-tab metadata. Load them after the game page is usable.
 
   if(sport==="33"){
+    await window.ensureGame33ModuleV593();
     week=1;
     $("#feeLine").textContent="";
     $("#feeLine").classList.add("hide");
@@ -5635,6 +5615,20 @@ body.links-game33-active-v593 #weekPickerCard,
 body.links-game33-active-v593 #pageSportIndicator{display:none!important}
 body.links-game33-active-v593 #game33{display:block!important}
 </style>
+<script src="./games/game33/game33.js?v=593"></script>
+<script id="links-game33-module-loader-v593">
+(()=>{
+ let loading=null;
+ window.ensureGame33ModuleV593=async()=>{
+   if(document.getElementById("game33"))return document.getElementById("game33");
+   if(loading)return loading;
+   loading=fetch("./games/game33/game33.html?v=593",{cache:"no-store"}).then(r=>{if(!r.ok)throw new Error("Game 33 module failed to load");return r.text()}).then(html=>{
+     const mount=document.getElementById("game33ModuleMount");if(!mount)throw new Error("Game 33 mount missing");
+     mount.innerHTML=html;return document.getElementById("game33");
+   });return loading;
+ };
+})();
+</script>
 </body></html>
 
 <!-- v139 local audio caching + one Games in This Pool control at bottom of each commissioner admin page -->
