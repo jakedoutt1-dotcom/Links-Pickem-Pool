@@ -4493,8 +4493,8 @@ function applyOwnerGameAccessV357(){
   return true;
 }
 $("#createPoolEmail")?.addEventListener("input",()=>{if(!applyOwnerGameAccessV357()&&$("#createPoolPlan")?.value==="all_access"&&sessionStorage.getItem("linksCommissionerEmail")===LINKS_OWNER_EMAIL_V357){$("#createPoolPlan").value="free"}});
-$("#createPoolEmail")?.addEventListener("change",applyOwnerGameAccessV357);
-setTimeout(applyOwnerGameAccessV357,0);
+// v582 legacy Create Pool email selection hook disabled.
+// v582 new Create Pool owns selection state; legacy owner auto-select disabled.
 $("#createPoolGames")?.addEventListener("change",()=>{const st=$("#createPlanStatus"),games=$$('#createPoolGames input[type="checkbox"]:checked').length,copies=Number($("#createPoolCopies")?.value||1);if(st&&($("#createPoolPlan")?.value||"free")==="free"&&(games>1||copies>1))st.innerHTML='<b>PACKAGE CHECK</b> • Your commissioner email will be checked when you create. Paid packages can use multiple game-pool slots; free-for-life includes 1 game pool.';});
 $("#createPoolCopies")?.addEventListener("change",()=>$("#createPoolGames input[type=checkbox]")?.dispatchEvent(new Event("change",{bubbles:true})));
 
@@ -4533,7 +4533,11 @@ document.getElementById("createPoolGames")?.addEventListener("change",createV580
 document.getElementById("createPoolGames")?.addEventListener("click",e=>{
  const card=e.target.closest(".create-v580-game");if(!card)return;
  const cb=card.querySelector('input[type="checkbox"]');if(!cb)return;
- if(e.target!==cb){e.preventDefault();cb.checked=!cb.checked;cb.dispatchEvent(new Event("change",{bubbles:true}));}
+ // Native checkbox taps already toggle themselves. Card/image/text taps toggle here.
+ if(e.target===cb)return;
+ e.preventDefault();e.stopPropagation();
+ cb.checked=!cb.checked;
+ createV580Refresh();
 });
 document.getElementById("openTermsV581")?.addEventListener("click",e=>{e.preventDefault();showOnly("termsPageV581")});
 document.getElementById("termsBackCreateV581")?.addEventListener("click",()=>showOnly("createPoolPage"));
