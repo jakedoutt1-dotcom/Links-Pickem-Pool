@@ -1116,7 +1116,17 @@ function parseEvents(all,kind){
     const st=e.status||c.status||{},type=st.type||{},completed=!!(type.completed||st.completed);
     const winComp=comps.find(x=>x.winner),winner=completed?(kind==="nfl"?normTeam(ab(winComp)):ab(winComp)):null;
     function scoreOf(x){if(!x)return null;if(x.score!==undefined&&x.score!==null&&x.score!=="")return Number(x.score);return null}
-    const rec={};for(const x of comps){const rr=(x.records||[]).find(y=>y.type==="total")||(x.records||[])[0];if(rr?.summary)rec[kind==="nfl"?normTeam(ab(x)):ab(x)]=rr.summary}
+    const rec={};for(const x of comps){
+      // ESPN does not always label the overall record as type="total".
+      // Prefer the record whose name/type identifies "overall", then total,
+      // then any record with a summary so one team's record does not disappear.
+      const rs=Array.isArray(x.records)?x.records:[];
+      const rr=rs.find(y=>String(y?.name||"").toLowerCase()==="overall")
+        ||rs.find(y=>String(y?.type||"").toLowerCase()==="total")
+        ||rs.find(y=>String(y?.type||"").toLowerCase()==="overall")
+        ||rs.find(y=>y?.summary);
+      if(rr?.summary)rec[kind==="nfl"?normTeam(ab(x)):ab(x)]=rr.summary;
+    }
     return {
       eventId:String(e.id||""),away:at,home:ht,
       awayName:away?.team?.displayName||away?.team?.shortDisplayName||at,
