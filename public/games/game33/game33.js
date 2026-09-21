@@ -23,3 +23,25 @@ window.LinksGame33=(()=>{
  function leave(){document.body.classList.remove("links-game33-standalone-v596");document.getElementById("game33NewHostV596")?.classList.add("hide")}
  return Object.freeze({mount,leave});
 })();
+
+/* v597 dedicated Game 33 admin page controls */
+(()=>{
+ const byId=id=>document.getElementById(id);
+ function openAdmin(){
+   if(!window.isCommissioner)return;
+   const p=byId("g33Admin"); if(!p)return;
+   p.classList.remove("hide");
+   byId("game33NewV595")?.classList.add("g33-admin-open-v597");
+   const b=byId("g33NewAdminV595"); if(b)b.textContent="← BACK TO GAME 33";
+ }
+ function closeAdmin(){
+   byId("g33Admin")?.classList.add("hide");
+   byId("game33NewV595")?.classList.remove("g33-admin-open-v597");
+   const b=byId("g33NewAdminV595"); if(b)b.textContent="⚙️ ADMIN";
+ }
+ document.addEventListener("click",e=>{
+   const b=e.target.closest?.("#g33NewAdminV595"); if(!b)return;
+   e.preventDefault();
+   if(byId("game33NewV595")?.classList.contains("g33-admin-open-v597"))closeAdmin();else openAdmin();
+ });
+})();
