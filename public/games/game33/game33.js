@@ -1,4 +1,4 @@
-/* LINKS Game 33 v611 — exposed temporary test roster loader. */
+/* LINKS Game 33 v615 — mount host directly inside #app after legacy removal. */
 window.LinksGame33=(()=>{
  let loaded=false,data=null,currentView="home",busy=false;
  const el=id=>document.getElementById(id), esc=s=>typeof escapeHtml==="function"?escapeHtml(String(s??"")):String(s??"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
@@ -15,8 +15,8 @@ window.LinksGame33=(()=>{
    if(view==="admin")renderAdmin();
  }
  async function mount(){
-   let host=el("game33NewHostV596");if(!host){host=document.createElement("div");host.id="game33NewHostV596";const old=el("game33");old?.parentNode?.insertBefore(host,old)}
-   if(!loaded){const r=await fetch("./games/game33/game33.html?v=611",{cache:"no-store"});if(!r.ok)throw new Error("Could not load Game 33");host.innerHTML=await r.text();bind();loaded=true}
+   let host=el("game33NewHostV596");if(!host){host=document.createElement("div");host.id="game33NewHostV596";const app=el("app");if(!app)throw new Error("Game 33 app container is missing");app.appendChild(host)}
+   if(!loaded){const r=await fetch("./games/game33/game33.html?v=615",{cache:"no-store"});if(!r.ok)throw new Error("Could not load Game 33");host.innerHTML=await r.text();bind();loaded=true}
    el("game33")?.classList.add("hide");host.classList.remove("hide");document.body.classList.add("links-game33-standalone-v596");
    // Game 33 owns its week state. On entry, ask its own API for the active week instead of inheriting NFL Pick’em week state.
    try{const dw=await call(path33("/api/33/default-week?_="+Date.now()));window.game33Week=Math.max(1,Math.min(18,Number(dw.week)||1));}catch(e){window.game33Week=window.game33Week||1}
