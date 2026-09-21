@@ -1354,18 +1354,7 @@ table{max-width:100%}
 #adminControls:not(.admin-tool-active-v185)>.commissioner-settings-card.admin-open-v368 h3:after{content:none!important;display:none!important}
 </style>
 
-<style id="links-v379-game33-admin">
-/* v379 — Game 33-only commissioner dashboard. NFL/College selectors are intentionally untouched. */
-.links-game33-active-v373 #g33Admin{margin-top:14px}
-.links-game33-active-v373 .g33-admin-head-v379{border-color:#d5a72f!important;background:linear-gradient(135deg,#241b08,#10151b)!important;text-align:center}
-.links-game33-active-v373 .g33-admin-head-v379 h2{color:#ffd45d}
-.links-game33-active-v373 .g33-admin-grid-v379{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.links-game33-active-v373 .g33-admin-card-v379{margin:0!important;border-color:#4c4530;background:linear-gradient(180deg,#151b20,#0c1116)}
-.links-game33-active-v373 .g33-admin-card-v379 h3{margin:0 0 7px}
-.links-game33-active-v373 .g33-admin-card-v379 button{width:100%;margin-top:10px;font-weight:950;min-height:48px}
-.links-game33-active-v373 .g33-finalize-v379{border-color:#d5a72f}
-@media(max-width:620px){.links-game33-active-v373 .g33-admin-grid-v379{grid-template-columns:1fr}}
-</style>
+
 <style id="links-v379-college-only">
 body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
 #collegeSetup .college-mode-v379 label{display:flex;gap:7px;align-items:center;background:#101820;border:1px solid #40515e;border-radius:10px;padding:10px;font-weight:800}
@@ -1939,7 +1928,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
 #createPoolGames .create-v580-game input{pointer-events:auto!important}
 @media(max-width:420px){#createPoolGames.create-v580-games{grid-template-columns:1fr!important}}
 .links-terms-v581{max-width:760px;margin:0 auto}.links-terms-v581 h3{margin-top:20px}.links-terms-v581 p,.links-terms-v581 li{line-height:1.55}
-</style><link rel="stylesheet" href="./games/game33/game33.css?v=609">
+</style><link rel="stylesheet" href="./games/game33/game33.css?v=613">
 <script src="./games/game33/game33.js?v=611" defer></script>
 </head>
 
@@ -2588,30 +2577,8 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     </div>
   </section>
 
-  <section id="game33" class="links-interactive-zone hide">
-    <button type="button" id="g33PageAdminV594">⚙️ ADMIN</button>
-    <div class="card game33-hero">
-      <div class="game33-big">33</div>
-      <div><h2 style="margin:0">THE 33 GAME</h2><div class="small">Up to <b>32 players</b> can play because the NFL has 32 teams. Each player gets <b>one NFL team for the whole 18-week regular season</b>. If a team finishes a week with exactly <b>33 points</b>, win or lose, that player wins that week. If nobody hits 33, the rollover streak continues into the next week.</div></div>
-    </div>
-    <div class="card"><h3 style="margin-top:0">3️⃣3️⃣ How Game 33 Works</h3><div class="small" style="line-height:1.7">• Maximum <b>32 players</b> — one player per NFL team.<br>• Each player keeps the same assigned NFL team for all 18 regular-season weeks.<br>• If an assigned team finishes a week with exactly <b>33 points</b>, that player is a weekly winner.<br>• If nobody hits 33, the rollover streak continues into the next week.<br>• If multiple eligible players hit 33 in the same week, they are all shown as winners.</div></div>
-    <div id="g33PlayerPayment" class="card hide"><h3 style="margin-top:0">👥 PLAYER ACCESS</h3><div id="g33PaymentStatus"></div><div id="g33PayButtons" style="margin-top:8px"></div><div class="small" style="margin-top:7px">Player access is controlled by your pool commissioner.</div></div>
-    <div class="card"><div class="row"><b>33 Week</b><select id="g33WeekSelect"></select></div></div>
-    <div class="card"><div class="row"><h3 id="g33WeekTitle" style="margin:0">Week 1</h3><span id="g33CarryBadge" class="badge"></span></div><div id="g33MyTeam"></div><div id="g33WeekResult" class="small" style="margin-top:10px"></div></div>
-    <div class="card"><h3 style="margin-top:0">🏈 Teams & Scores</h3><div id="g33ScoreBoard"></div></div>
-    <div class="card"><h3 style="margin-top:0">🏆 33 Winner History</h3><div id="g33History"></div></div>
-    <div id="g33Admin" class="hide">
-      <div class="card g33-admin-head-v379"><h2 style="margin:0">⚙️ GAME 33 ADMIN</h2><div class="small">Commissioner controls for Game 33 only. NFL Pick’em and College Pick’em controls are unchanged.</div></div>
-      <div class="g33-admin-grid-v379"><div class="card g33-admin-card-v379 g33-player-manager-v591"><h3>👥 Add & Manage Players</h3><div class="small">Invite players to this Game 33 pool and manage the pool roster.</div><button type="button" id="g33OpenPlayerManagerV591" class="green">ADD / MANAGE PLAYERS</button></div>
-        <div class="card g33-admin-card-v379"><h3>🎲 Yearly Team Draw</h3><div class="small">Run the one-time random draw. Each player keeps the assigned NFL team for all 18 regular-season weeks.</div><div id="g33DrawStatus" class="msg" style="margin-top:10px"></div><button id="g33RandomDraw" class="green">RANDOM DRAW — ASSIGN YEARLY TEAMS</button></div>
-        <div class="card g33-admin-card-v379"><h3>📝 Manual Team Assignments</h3><div class="small">Use this when your group draws teams in person. Maximum 32 players, one NFL team per player.</div><div id="g33ManualAssignments"></div><button id="g33SaveManual" class="gold">SAVE YEARLY TEAM ASSIGNMENTS</button></div>
-        <div class="card g33-admin-card-v379"><h3>👥 Player Access</h3><div class="small">Set each Game 33 player ACTIVE or PENDING for the season.</div><div id="g33PaymentAdmin"></div></div>
-        <div class="card g33-admin-card-v379 g33-finalize-v379"><h3>🏁 Finalize Week & Rollover</h3><div class="small">After all NFL games are final, check active assigned teams for exactly 33 points. If nobody hits 33, carry the rollover into the next week.</div><button id="g33Finalize" class="green">FINALIZE GAME 33 WEEK</button><button id="g33Payout">WINNER STATUS — COMPLETE / OPEN</button></div>
-        <div class="card pool-games-manager links-games-manager-bottom g33-admin-card-v379"><h3>🎮 Games in This Pool</h3><div class="small">Add another Links game to this pool. Game 33 keeps its own controls when selected.</div><div class="pool-games-active" style="margin-top:10px"></div><div class="pool-games-add" style="margin-top:10px"></div></div>
-      </div>
-    </div>
-    <div class="links-fixed-ad" aria-label="Advertisement" style="margin:18px auto;max-width:1100px;display:none"><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-2654873707790051" data-ad-slot="9269292379" data-ad-format="auto" data-full-width-responsive="true"></ins></div>
-  </section>
+  <!-- v613: legacy embedded Game 33 removed; /games/game33/ is the only Game 33 UI. -->
+
 <section id="admin" class="links-interactive-zone hide">
     <div id="adminOnly" class="card admin-loading-v191"><h3 style="margin-top:0">⚙️ LOADING ADMIN</h3><div class="small">Loading commissioner controls…</div></div>
     <div id="adminControls" class="hide"><div class="card commissioner-sport-card"><h2 id="commissionerSportTitle" style="margin:0"></h2><div class="small" style="margin-top:5px">Commissioner controls for this sport and selected week.</div><button id="adminChangeGame" type="button" class="hide admin-change-game-v119">🎮 CHANGE GAME</button></div>
@@ -2944,19 +2911,16 @@ function applyRoleNavigation(){
   if(adminBtn)adminBtn.classList.toggle("hide",!isCommissioner);
   if(tabs)tabs.classList.remove("hide-for-commissioner");
   $$(".player-tab").forEach(b=>b.classList.remove("hide"));
-  const g33=$("#game33");
   if(sport==="33"){
     if(tabs)tabs.classList.add("hide");
     const indicator=$("#pageSportIndicator");if(indicator){indicator.className="sport-page-indicator college";indicator.textContent="3️⃣3️⃣ THE 33 GAME"}
     ["picks","compare","scores","standings","projected","paid","rules","admin"].forEach(id=>{const el=$("#"+id);if(el)el.classList.add("hide")});
     // v607: legacy Game 33 stays hidden; /games/game33/ owns the entire UI.
-    if(g33)g33.classList.add("hide");
     const wp=$("#weekPickerCard");if(wp)wp.classList.add("hide");
     const lc=$("#pickLockCard");if(lc)lc.classList.add("hide");
     return;
   }
   // Game 33 must never leak into NFL/College pick pages.
-  if(g33)g33.classList.add("hide");
   if(tabs)tabs.classList.remove("hide");
   const wp=$("#weekPickerCard");if(wp)wp.classList.toggle("hide",!(sport==="nfl"||sport==="college")||name==="standings");
   const lc=$("#pickLockCard");if(lc)lc.classList.remove("hide");
@@ -4733,66 +4697,7 @@ clickOnEnter("#newPlayerEmail","#addPlayer");
 function g33Money(n){return `$${Number(n||0).toFixed(2)}`}
 function g33TeamName(t){return TEAM_NAMES[t]||t}
 function g33Logo(t){return ESPN[t]?`https://a.espncdn.com/i/teamlogos/nfl/500/${ESPN[t]}.png`:""}
-async function render33(){
-  setTimeout(()=>ensureSectionAd("game33"),500);
-  applyRoleNavigation();
-  const d=await api(q(`/api/33?_=${Date.now()}`));
-  $("#g33WeekSelect").innerHTML=Array.from({length:18},(_,i)=>`<option value="${i+1}">Week ${i+1}</option>`).join("");
-  $("#g33WeekSelect").value=week;
-  $("#g33WeekSelect").onchange=async()=>{week=Number($("#g33WeekSelect").value);await render33()};
-  $("#g33WeekTitle").textContent=`NFL Week ${week}`;
-  $("#g33CarryBadge").textContent=d.carryWeeks?`${d.carryWeeks} rollover week${d.carryWeeks===1?"":"s"}`:"No rollover";
-
-  const g33Cards=$("#game33 > .card");
-  // Player Game 33 is a status page, not a picks page. Commissioner retains the full setup/control view.
-  if(!isCommissioner){
-    g33Cards.forEach((card,i)=>card.classList.toggle("hide",i===1 || i===2 || i===4));
-  }else{
-    g33Cards.forEach(card=>card.classList.remove("hide"));
-  }
-
-  if(role==="player"){
-    $("#g33PlayerPayment").classList.remove("hide");
-    const paid=!!d.paid?.[currentUser];
-    $("#g33PaymentStatus").innerHTML=paid
-      ?`<div style="color:#55e894;font-weight:950">✓ PARTICIPATION STATUS: ACTIVE</div>`
-      :`<div style="color:#ff7d83;font-weight:950">✕ PARTICIPATION STATUS: PENDING</div>`;
-    $("#g33PayButtons").innerHTML=paid?"":`<button type="button" id="g33ContactCommissioner" style="width:100%">Contact Commissioner</button><div class="small" style="margin-top:7px">Player access is controlled by your commissioner.</div>`;
-    const gc=$("#g33ContactCommissioner");
-    if(gc)gc.onclick=()=>msg("Contact your pool commissioner about your player access. The commissioner can mark your 33 participation status in Links.",true);
-  }else{$("#g33PlayerPayment").classList.add("hide")}
-
-  if(role==="player"&&d.viewerTeam){
-    const a=(d.assignments||[]).find(x=>x.player===currentUser)||{};
-    $("#g33MyTeam").innerHTML=`<div class="g33-team-row ${a.hit33?"g33-hit":""}"><div class="g33-team-main"><img src="${g33Logo(d.viewerTeam)}"><div><b style="font-size:18px">${g33TeamName(d.viewerTeam)}</b><div class="small">Your team for ALL 18 weeks${a.opponent?` • vs ${g33TeamName(a.opponent)}`:""}</div></div></div><div class="g33-score">${a.score??"—"}</div></div>`;
-  }else if(role==="player"){$("#g33MyTeam").innerHTML=`<div class="small">The commissioner has not completed the yearly team draw yet.</div>`}
-  else{$("#g33MyTeam").innerHTML=`<div class="small">Yearly teams are shown below in Commissioner controls.</div>`}
-
-  if(d.finalized){
-    if(d.winners?.length){$("#g33WeekResult").innerHTML=`🏆 <b>${d.winners.map(x=>`${x.player} (${x.team})`).join(", ")}</b> hit 33. ${d.payoutPaid?"Winner status COMPLETE":"Winner status OPEN"}`}
-    else $("#g33WeekResult").innerHTML=`↪️ Nobody scored exactly 33. This week's share rolled into the next week.`;
-  }else $("#g33WeekResult").innerHTML=`A active player wins when their assigned team finishes with exactly <b>33 points</b>, win or lose.`;
-
-  $("#g33ScoreBoard").innerHTML=(d.assignments||[]).map(a=>`<div class="g33-team-row ${a.hit33?"g33-hit":""}"><div class="g33-team-main"><img src="${g33Logo(a.team)}"><div><b>${a.player}</b> — ${g33TeamName(a.team)} ${a.paid?'<span style="color:#55e894">✓ ACTIVE</span>':'<span style="color:#ff7d83">✕ PENDING</span>'}<div class="small">${a.opponent?`vs ${g33TeamName(a.opponent)} • `:""}${a.status||""}${a.hit33?" • 🎯 HIT 33":""}</div></div></div><div class="g33-score">${a.score??"—"}</div></div>`).join("")||`<div class="small">No yearly team assignments yet.</div>`;
-
-  $("#g33History").innerHTML=(d.history||[]).filter(x=>x.finalized).map(h=>h.winners?.length?`<div class="g33-team-row"><div><b>Week ${h.week}</b><div class="small">${h.winners.map(x=>`${x.player} — ${x.team}`).join(", ")}</div></div><div class="small">${h.payoutPaid?"COMPLETE":"OPEN"}</div></div>`:`<div class="g33-team-row"><div><b>Week ${h.week}</b><div class="small">No 33 — rolled over</div></div><b>↪️</b></div>`).join("")||`<div class="small">No weeks finalized yet.</div>`;
-
-  $("#g33Admin").classList.toggle("hide",!isCommissioner);
-  if(isCommissioner){
-    const locked=!!d.drawLocked;
-    $("#g33DrawStatus").innerHTML=locked?`🔒 <b>YEARLY TEAM DRAW LOCKED</b><br><span class="small">${d.drawSource==="random"?"Random draw":"Manual drawing"} saved. These teams stay all 18 weeks.</span>`:`🔓 <b>NO YEARLY DRAW YET</b><br><span class="small">Run the random draw or load your own drawing.</span>`;
-    $("#g33RandomDraw").disabled=locked;$("#g33SaveManual").disabled=locked;
-    $("#g33RandomDraw").textContent=locked?"🔒 YEARLY DRAW ALREADY SET":"🎲 RANDOM DRAW — ASSIGN YEARLY TEAMS";
-    const assigned=Object.fromEntries((d.assignments||[]).map(x=>[x.player,x.team]));
-    $("#g33ManualAssignments").innerHTML=(d.players||[]).map(p=>`<div class="g33-manual-row"><b>${p}</b><select data-g33-player="${p}" ${locked?"disabled":""}><option value="">— Team —</option>${NFL_TEAMS_33.map(t=>`<option value="${t}" ${assigned[p]===t?"selected":""}>${g33TeamName(t)}</option>`).join("")}</select></div>`).join("");
-    $("#g33PaymentAdmin").innerHTML=(d.players||[]).map(p=>{const paid=!!d.paid?.[p];return `<button class="g33-paid-btn ${paid?"paid":"unpaid"}" data-g33-pay="${p}" data-paid="${paid?1:0}">${paid?"✓":"✕"} ${p} — ${paid?"ACTIVE":"PENDING"}</button>`}).join("");
-    $$("[data-g33-pay]").forEach(b=>b.onclick=async()=>{await api(q("/api/33/payment"),{method:"POST",body:JSON.stringify({player:b.dataset.g33Pay,paid:b.dataset.paid!=="1"})});await render33()});
-    $("#g33RandomDraw").onclick=async()=>{if(!confirm("Run the ONE yearly random draw now? Each player keeps this same team for all 18 weeks."))return;try{await api(q("/api/33/random-draw"),{method:"POST",body:"{}"});await render33();msg("🎲 33 yearly random draw complete and locked.",true)}catch(e){msg(e.message)}};
-    $("#g33SaveManual").onclick=async()=>{const assignments=$$("[data-g33-player]").map(s=>({player:s.dataset.g33Player,team:s.value}));if(assignments.some(a=>!a.team)){msg("Assign a team to every player.");return}if(new Set(assignments.map(a=>a.team)).size!==assignments.length){msg("Each player must have a different NFL team.");return}if(!confirm("Save and LOCK these teams for all 18 weeks?"))return;try{await api(q("/api/33/manual-draw"),{method:"POST",body:JSON.stringify({assignments})});await render33();msg("✅ Manual yearly 33 drawing saved and locked.",true)}catch(e){msg(e.message)}};
-    $("#g33Finalize").onclick=async()=>{try{const r=await api(q("/api/33/finalize"),{method:"POST",body:"{}"});await render33();msg(r.rolled?`↪️ Week ${week}: nobody scored 33. Rollover streak continues.`:`🏆 ${r.winners.map(x=>x.player).join(", ")} hit 33.`,true)}catch(e){msg(e.message)}};
-    $("#g33Payout").onclick=async()=>{try{const r=await api(q("/api/33/payout"),{method:"POST",body:"{}"});await render33();msg(r.payoutPaid?"✅ 33 winner status marked COMPLETE.":"↩️ 33 winner status reopened.",true)}catch(e){msg(e.message)}};
-  }
-}
+// v613: legacy render33 removed. Folder-based LinksGame33 owns Game 33 rendering.
 
 function setCollegeSaveStatus(text,good=true){
   const el=$("#collegeSaveStatus");
