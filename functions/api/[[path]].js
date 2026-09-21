@@ -1351,7 +1351,21 @@ async function fastBootstrapWeek(DB,pid,sport,w){
       const r=snapBy.get(i),winner=r?.winner||resultBy.get(i)||null,completed=!!winner;
       return {gameIndex:i,away:pair[0],home:pair[1],awayName:TEAM_NAMES[pair[0]]||pair[0],homeName:TEAM_NAMES[pair[1]]||pair[1],completed,winner,status:completed?"FINAL":"",state:completed?"post":"pre",clock:"",awayScore:r?.away_score==null?null:Number(r.away_score),homeScore:r?.home_score==null?null:Number(r.home_score)};
     });
-    return {liveGames,records:{},sourceKickoff:meta.lock_time||OFFICIAL_FIRST_KICKOFF_FALLBACK[w]||null,source:"LINKS FAST CACHE"};
+    // v571: the fast bootstrap used to return an empty records object, so the
+    // Picks renderer never received ESPN records even when syncWeek had them.
+    // Load the single weekly feed here and return its team record map.
+    const records={};
+    try{
+      const feed=await fetchNFLWeek(w);
+      for(const g of feed)Object.assign(records,g.records||{});
+      const needed=new Set();
+      for(const pair of gamesNFL(w)){if(!records[pair[0]])needed.add(pair[0]);if(!records[pair[1]])needed.add(pair[1]);}
+      if(needed.size){
+        const fallback=await fetchNFLStandingsRecords();
+        for(const t of needed)if(fallback[t])records[t]=fallback[t];
+      }
+    }catch(e){}
+    return {liveGames,records,sourceKickoff:meta.lock_time||OFFICIAL_FIRST_KICKOFF_FALLBACK[w]||null,source:"LINKS FAST CACHE"};
   }
   if(sport==="college"){
     const base=(await selectedCollegeGames(DB,pid,w)).map(x=>({gameIndex:x.game_index,eventId:x.event_id,away:x.away,home:x.home,awayName:x.away_name||x.away,homeName:x.home_name||x.home,kickoff:x.kickoff}));
