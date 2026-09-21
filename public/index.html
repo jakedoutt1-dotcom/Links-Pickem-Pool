@@ -2025,7 +2025,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v575</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v576</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -4495,7 +4495,7 @@ $("#createPoolEmail")?.addEventListener("input",()=>{if(!applyOwnerGameAccessV35
 $("#createPoolEmail")?.addEventListener("change",applyOwnerGameAccessV357);
 setTimeout(applyOwnerGameAccessV357,0);
 $("#createPoolGames")?.addEventListener("change",()=>{const st=$("#createPlanStatus"),games=$$('#createPoolGames input[type="checkbox"]:checked').length,copies=Number($("#createPoolCopies")?.value||1);if(st&&($("#createPoolPlan")?.value||"free")==="free"&&(games>1||copies>1))st.innerHTML='<b>PACKAGE CHECK</b> • Your commissioner email will be checked when you create. Paid packages can use multiple game-pool slots; free-for-life includes 1 game pool.';});
-$("#createPoolCopies")?.addEventListener("change",()=>$("#createPoolGames input[type=checkbox]")?.dispatchEvent(new Event("change",{bubbles:true})));
+$("#createPoolCopies")?.addEventListener("change",()=>$('#createPoolGames input[type="checkbox"]').forEach(x=>x.dispatchEvent(new Event("change",{bubbles:true})));
 
 // v154 top login / pool selector modal
 const openLoginV150=()=>{$("#poolLoginModalV150")?.classList.remove("hide");setTimeout(()=>$("#poolCodeInput")?.focus(),40)};
@@ -4921,7 +4921,7 @@ $("#gameInfoBack").onclick=()=>homeJump(".links-games-v4");
 $("#gameInfoCreate").onclick=()=>{
   const wanted=$("#gameInfoCreate").dataset.game||"nfl";
   sessionStorage.setItem("linksCreateGame",wanted);
-  $("#createPoolGames input[type=checkbox]").forEach(x=>x.checked=x.value===wanted);
+  $('#createPoolGames input[type="checkbox"]').forEach(x=>x.checked=x.value===wanted);
   if($("#createPoolCopies"))$("#createPoolCopies").value="1";
   if($("#createPoolPlan"))$("#createPoolPlan").value="free";
   const st=$("#createPlanStatus");if(st)st.innerHTML='<b>FREE FOR LIFE</b> • 1 game pool • ad supported';
@@ -5530,9 +5530,9 @@ document.addEventListener("DOMContentLoaded",()=>{
 });
 </script>
 
-<script id="links-version-check-v575">
+<script id="links-version-check-v576">
 (()=>{
-  const CURRENT_BUILD="v575";
+  const CURRENT_BUILD="v576";
   let checking=false;
   async function checkForLinksUpdate(){
     if(checking) return;
