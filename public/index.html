@@ -2034,7 +2034,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#ff8a32">LINKS PICK’EM POOLS — v584</span></footer>
+  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#ff8a32">LINKS PICK’EM POOLS — v585</span></footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -4522,7 +4522,7 @@ $("#enterPoolBtn").onclick=async()=>{
 };
 $("#showCreatePool").onclick=()=>showOnly("createPoolPage");
 // v580 isolated Create Pool flow. Login code below is intentionally untouched.
-const createV580Selected=()=>Array.from(document.querySelectorAll('#createPoolGames input[type="checkbox"]:checked')).map(x=>x.value);
+const createV580Selected=()=>window.linksCreatePoolSelectedGamesV585?window.linksCreatePoolSelectedGamesV585():Array.from(document.querySelectorAll('#createPoolGames input[type="checkbox"]:checked')).map(x=>x.value);
 function createV580Refresh(){
  const count=createV580Selected().length,notice=document.getElementById("createPackageNoticeV580"),status=document.getElementById("createPlanStatus"),btn=document.getElementById("createPoolBtn");
  if(notice)notice.classList.toggle("hide",count<=1);
@@ -4530,15 +4530,7 @@ function createV580Refresh(){
  if(btn)btn.textContent=count<=1?"CREATE FREE POOL":"CONTINUE WITH PACKAGE";
 }
 document.getElementById("createPoolGames")?.addEventListener("change",createV580Refresh);
-document.getElementById("createPoolGames")?.addEventListener("click",e=>{
- const card=e.target.closest(".create-v580-game");if(!card)return;
- const cb=card.querySelector('input[type="checkbox"]');if(!cb)return;
- // Native checkbox taps already toggle themselves. Card/image/text taps toggle here.
- if(e.target===cb)return;
- e.preventDefault();e.stopPropagation();
- cb.checked=!cb.checked;
- createV580Refresh();
-});
+// v585: Create Pool card selection is handled by the proven independent touch selector below.
 document.getElementById("openTermsV581")?.addEventListener("click",e=>{e.preventDefault();showOnly("termsPageV581")});
 document.getElementById("termsBackCreateV581")?.addEventListener("click",()=>showOnly("createPoolPage"));
 document.getElementById("createPoolBackHomeV580")?.addEventListener("click",()=>{showOnly("home");window.scrollTo(0,0)});
@@ -5590,6 +5582,39 @@ document.addEventListener("click",function(e){
   setTimeout(checkForLinksUpdate,1500);
 })();
 </script>
+
+<script id="links-v585-create-game-selection">
+(()=>{
+ const selected=new Set();
+ const root=()=>document.getElementById("createPoolGames");
+ function paint(){
+  const r=root();if(!r)return;
+  r.querySelectorAll(".create-v580-game").forEach(card=>{
+   const cb=card.querySelector('input[type="checkbox"]');if(!cb)return;
+   cb.disabled=false;cb.removeAttribute("disabled");cb.checked=selected.has(cb.value);
+   card.classList.toggle("links-create-game-selected-v585",cb.checked);
+   card.setAttribute("aria-pressed",cb.checked?"true":"false");
+  });
+  if(typeof createV580Refresh==="function")createV580Refresh();
+ }
+ document.addEventListener("pointerup",e=>{
+  const card=e.target.closest?.("#createPoolGames .create-v580-game");if(!card)return;
+  e.preventDefault();e.stopPropagation();
+  const cb=card.querySelector('input[type="checkbox"]');if(!cb)return;
+  if(selected.has(cb.value))selected.delete(cb.value);else selected.add(cb.value);
+  paint();
+ },true);
+ document.addEventListener("click",e=>{if(e.target.closest?.("#createPoolGames .create-v580-game")){e.preventDefault();e.stopPropagation()}},true);
+ window.linksCreatePoolSelectedGamesV585=()=>Array.from(selected);
+ paint();
+})();
+</script>
+<style id="links-v585-create-game-selection-css">
+#createPoolGames .create-v580-game{touch-action:manipulation!important;-webkit-tap-highlight-color:transparent!important}
+#createPoolGames .create-v580-game input[type="checkbox"]{pointer-events:none!important}
+#createPoolGames .create-v580-game.links-create-game-selected-v585{border-color:#39d98a!important;box-shadow:inset 0 0 0 2px #39d98a,0 0 16px rgba(57,217,138,.30)!important}
+#createPoolGames .create-v580-game.links-create-game-selected-v585 .create-v580-check{display:block!important}
+</style>
 </body></html>
 
 <!-- v139 local audio caching + one Games in This Pool control at bottom of each commissioner admin page -->
