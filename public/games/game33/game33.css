@@ -25,3 +25,8 @@ body.links-game33-standalone-v596 #game33{display:none!important}
 #g33Admin input{width:100%;box-sizing:border-box;margin:7px 0;padding:12px;border-radius:9px}
 .g33-admin-player-v599{display:flex;justify-content:space-between;gap:10px;padding:10px 2px;border-bottom:1px solid #2c3a44}
 .g33-admin-player-v599 span{color:#b9c5cc;text-align:right}
+
+.g33-2026-list-v600{display:grid;gap:6px;margin-top:8px}
+.g33-2026-row-v600{display:grid;grid-template-columns:1fr 70px 42px;gap:8px;align-items:center;padding:9px 10px;border:1px solid #30414c;border-radius:9px;background:#101820}
+.g33-2026-row-v600 span:nth-child(2){font-weight:900;text-align:center}
+.g33-2026-row-v600 span:last-child{text-align:center}
