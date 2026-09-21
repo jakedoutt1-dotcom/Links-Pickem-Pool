@@ -1125,7 +1125,13 @@ function parseEvents(all,kind){
         ||rs.find(y=>String(y?.type||"").toLowerCase()==="total")
         ||rs.find(y=>String(y?.type||"").toLowerCase()==="overall")
         ||rs.find(y=>y?.summary);
-      if(rr?.summary)rec[kind==="nfl"?normTeam(ab(x)):ab(x)]=rr.summary;
+      if(rr?.summary){
+        const raw=ab(x),key=kind==="nfl"?normTeam(raw):raw;
+        rec[key]=rr.summary;
+        // ESPN has used both WSH and WAS for Washington. Keep both aliases in
+        // the event record map so the card lookup cannot lose the record.
+        if(kind==="nfl"&&(raw==="WSH"||raw==="WAS")){rec.WAS=rr.summary;rec.WSH=rr.summary;}
+      }
     }
     return {
       eventId:String(e.id||""),away:at,home:ht,
