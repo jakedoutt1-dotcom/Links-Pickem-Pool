@@ -2034,7 +2034,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#ff8a32">LINKS PICK’EM POOLS — v585</span></footer>
+  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#ff8a32">LINKS PICK’EM POOLS — v586</span></footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -5535,26 +5535,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 });
 </script>
 
-<script id="links-create-select-v583">
-document.addEventListener("click",function(e){
-  const card=e.target.closest && e.target.closest("#createPoolGames .create-v580-game");
-  if(!card)return;
-  e.preventDefault();
-  e.stopImmediatePropagation();
-  const cb=card.querySelector('input[type="checkbox"]');
-  if(!cb)return;
-  cb.checked=!cb.checked;
-  cb.dispatchEvent(new Event("change",{bubbles:true}));
-},true);
-// Every public game card, including category lists and Home game cards, opens its existing rules/details page.
-document.addEventListener("click",function(e){
-  const card=e.target.closest && e.target.closest("[data-open-game-v554],[data-game-info]");
-  if(!card)return;
-  const game=card.getAttribute("data-open-game-v554")||card.getAttribute("data-game-info");
-  if(!game||typeof openGameInfo!=="function")return;
-  e.preventDefault();e.stopPropagation();openGameInfo(game);
-},true);
-</script>
+<!-- v586: old v583 Create Pool selector removed; v585 independent selector is authoritative. -->
 <!-- v585: automatic version reload checker disabled to prevent iPhone/Safari reload loop. -->
 
 <script id="links-v585-create-game-selection">
@@ -5588,6 +5569,13 @@ document.addEventListener("click",function(e){
 #createPoolGames .create-v580-game input[type="checkbox"]{pointer-events:none!important}
 #createPoolGames .create-v580-game.links-create-game-selected-v585{border-color:#39d98a!important;box-shadow:inset 0 0 0 2px #39d98a,0 0 16px rgba(57,217,138,.30)!important}
 #createPoolGames .create-v580-game.links-create-game-selected-v585 .create-v580-check{display:block!important}
+</style>
+
+<style id="links-v586-create-selection-state">
+#createPoolGames .create-v580-game .create-v580-check{display:none!important}
+#createPoolGames .create-v580-game.links-create-game-selected-v585 .create-v580-check{display:block!important}
+#createPoolGames .create-v580-game:not(.links-create-game-selected-v585){border-color:#34434d!important;box-shadow:none!important}
+#createPoolGames .create-v580-game.links-create-game-selected-v585{border-color:#39d98a!important;box-shadow:inset 0 0 0 2px #39d98a,0 0 16px rgba(57,217,138,.30)!important}
 </style>
 </body></html>
 
