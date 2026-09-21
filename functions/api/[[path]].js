@@ -1621,8 +1621,19 @@ async function commissionerPools(DB,email){email=commissionerEmail(email);if(!em
 async function poolAccessFor(DB,pid){const email=await poolCommissionerEmail(DB,pid),ent=await commissionerEntitlement(DB,email);let adFree=!!Number(ent?.ad_free||0);if(!adFree){const legacy=await DB.prepare("SELECT plan,status FROM pool_service WHERE pool_id=?").bind(pid).first();const st=String(legacy?.status||"").toUpperCase();if(legacy&&String(legacy.plan||"free")!=="free"&&(st==="PAID"||st==="ACTIVE"))adFree=true;}return {adFree,commissionerPlan:ent?.plan||"free"};}
 // v451 — every built game is available to choose. Packages control capacity/ad-free service only; they never lock a game type.
 function planAllowsGame(ent,gt){return VALID_POOL_GAMES.includes(String(gt||"").trim().toLowerCase())}
-async function canCreatePool(DB,email,gameTypes,copies=1){email=commissionerEmail(email);copies=Math.max(1,Math.min(10,Number(copies)||1));const pools=await commissionerPools(DB,email),ent=await commissionerEntitlement(DB,email);const launch=await entitlementLaunchAt(DB),post=pools.filter(x=>!launch||String(x.created_at||"")>=launch);if(!ent){if(pools.length)return {ok:false,error:"Your first LINKS game pool is free for life. Upgrade to create another game pool.",upgradeRequired:true};if(copies!==1)return {ok:false,error:"Your free-for-life package includes 1 game pool. Upgrade to run 2, 3, 4 or more separate pools — including copies of the same game.",upgradeRequired:true};if(gameTypes.length!==1)return {ok:false,error:"Your free-for-life pool includes one game. Choose one game or upgrade for more game-pool slots.",upgradeRequired:true};return {ok:true,plan:"free",copies:1};}const maxPools=Math.max(1,Number(ent.max_pools||1));if(post.length+copies>maxPools)return {ok:false,error:`${ent.plan} includes ${maxPools} total new game-pool slots. You have ${Math.max(0,maxPools-post.length)} slot(s) remaining.`,upgradeRequired:true};const maxGames=Math.max(1,Number(ent.max_games_per_pool||1));if(gameTypes.length>maxGames)return {ok:false,error:`${ent.plan} allows up to ${maxGames} different games inside each game pool.`,upgradeRequired:true};const bad=gameTypes.find(g=>!planAllowsGame(ent,g));if(bad)return {ok:false,error:"That game is not included in your current LINKS package.",upgradeRequired:true};return {ok:true,plan:ent.plan,adFree:!!Number(ent.ad_free||0),copies};}
-async function canChangePoolGames(DB,pid,selected,current){const additions=selected.filter(g=>!current.includes(g));if(!additions.length)return {ok:true};const email=await poolCommissionerEmail(DB,pid),ent=await commissionerEntitlement(DB,email);if(!ent)return {ok:false,error:"Your existing games are grandfathered and will stay active. Upgrade LINKS to add another game.",upgradeRequired:true};const bad=additions.find(g=>!planAllowsGame(ent,g));if(bad)return {ok:false,error:"That game is not included in your current LINKS package.",upgradeRequired:true};const maxGames=Math.max(1,Number(ent.max_games_per_pool||1));if(current.length<=maxGames&&selected.length>maxGames)return {ok:false,error:`${ent.plan} allows up to ${maxGames} games per pool.`,upgradeRequired:true};return {ok:true,email,ent,additions};}
+// v572 TEST MODE — temporarily unlock pool creation and all built games for everyone.
+// Keep this isolated so normal package/capacity rules can be restored after testing.
+async function canCreatePool(DB,email,gameTypes,copies=1){
+  copies=Math.max(1,Math.min(10,Number(copies)||1));
+  const valid=gameTypes.every(g=>planAllowsGame(null,g));
+  if(!valid)return {ok:false,error:"Choose a supported LINKS game."};
+  return {ok:true,plan:"all_access",adFree:false,copies,testUnlock:true};
+}
+async function canChangePoolGames(DB,pid,selected,current){
+  const bad=selected.find(g=>!planAllowsGame(null,g));
+  if(bad)return {ok:false,error:"Choose a supported LINKS game."};
+  return {ok:true,additions:selected.filter(g=>!current.includes(g)),testUnlock:true};
+}
 
 function paypalBase(env){
   return String(env.PAYPAL_ENV||"live").toLowerCase()==="sandbox"
