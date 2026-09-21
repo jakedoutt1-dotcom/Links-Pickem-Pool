@@ -1933,7 +1933,13 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
 <style id="links-create-v580-style">
 .create-v580-card{max-width:720px;margin-left:auto;margin-right:auto}.create-v580-free{text-align:center;padding:15px;border:2px solid #39d98a;border-radius:12px;background:#10251d;margin-bottom:14px}.create-v580-free b{display:block;font-size:22px;color:#71e6a0}.create-v580-free span{display:block;margin-top:4px}.create-v580-games{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:8px}.create-v580-game{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:145px;padding:10px;border:2px solid #34434d;border-radius:13px;background:#111a20;cursor:pointer;text-align:center;overflow:hidden}.create-v580-game input{position:absolute;top:8px;right:8px;width:25px;height:25px;z-index:3;accent-color:#39d98a}.create-v580-game img{width:100%;height:92px;object-fit:contain;border-radius:8px}.create-v580-game span{font-weight:900;margin-top:7px}.create-v580-game:has(input:checked){border-color:#39d98a;box-shadow:0 0 0 2px rgba(57,217,138,.2)}.create-v580-check{display:none;color:#71e6a0;font-size:11px;margin-top:4px}.create-v580-game:has(input:checked) .create-v580-check{display:block}.create-v580-package{margin-top:10px;padding:12px;border:2px solid #ff9a57;border-radius:10px;text-align:center}.create-v580-package b,.create-v580-package span{display:block}.create-v580-package button{margin-top:8px}.create-v580-terms{display:flex;gap:9px;align-items:center;margin-top:14px}.create-v580-terms input{width:22px;height:22px}@media(max-width:520px){.create-v580-games{grid-template-columns:1fr 1fr}.create-v580-game{min-height:125px}.create-v580-game img{height:72px}}
 </style>
-</head>
+<style id="links-create-v581-style">
+#createPoolGames.create-v580-games{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;max-height:none!important;height:auto!important;overflow:visible!important}
+#createPoolGames .create-v580-game{display:flex!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}
+#createPoolGames .create-v580-game input{pointer-events:auto!important}
+@media(max-width:420px){#createPoolGames.create-v580-games{grid-template-columns:1fr!important}}
+.links-terms-v581{max-width:760px;margin:0 auto}.links-terms-v581 h3{margin-top:20px}.links-terms-v581 p,.links-terms-v581 li{line-height:1.55}
+</style></head>
 
 <body><div id="top"></div><div class="wrap">
 
@@ -2028,7 +2034,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v580</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v581</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2167,10 +2173,27 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
   <div id="createPlanStatus" class="create-plan-status-v150"><b>FREE FOR LIFE</b> • Choose 1 game</div>
   <div id="createPackageNoticeV580" class="hide create-v580-package"><b>PACKAGE REQUIRED</b><span>You selected more than one game. A LINKS package must be purchased for multiple games.</span><button type="button" id="createViewPackagesV580">VIEW PACKAGES</button></div>
   <input id="createPoolCopies" type="hidden" value="1"><input id="createPoolPlan" type="hidden" value="free">
-  <label class="create-v580-terms"><input id="createTermsV580" type="checkbox"> I agree to the LINKS Pool Rules and Terms.</label>
+  <label class="create-v580-terms"><input id="createTermsV580" type="checkbox"> I agree to the <button type="button" id="openTermsV581" style="background:none;border:0;padding:0;color:#7ec8ff;text-decoration:underline;font:inherit;font-weight:900">LINKS Pool Rules and Terms</button>.</label>
   <button id="createPoolBtn" class="green" style="width:100%;font-size:18px;margin-top:14px">CREATE FREE POOL</button>
   <button id="createPoolBackHomeV580" type="button" style="width:100%;margin-top:9px">← BACK TO HOME</button>
   <div id="homeErr" class="portal-error-v2" style="margin-top:10px"></div>
+</div></div>
+
+<div id="termsPageV581" class="login hide links-welcome-page">
+<img class="pool-logo login-brand-v121" src="./links-login-banner-v121.png" alt="Links Pick Em Pools">
+<div class="pool-name-banner">LINKS TERMS & CONDITIONS</div>
+<div class="card links-terms-v581">
+<p><b>Effective September 21, 2026</b></p>
+<h3>Free Pool</h3><p>LINKS provides one free pool for life per eligible commissioner account/email. The free pool includes one game and is ad supported. Creating additional pools or using multiple games may require a paid commissioner package.</p>
+<h3>Packages & Purchases</h3><p>Paid packages provide the features shown at purchase. Package access is associated with the commissioner email used to purchase or create the pool. Prices, included features, and renewal terms are shown before purchase.</p>
+<h3>Commissioner Responsibilities</h3><p>Commissioners are responsible for inviting players, configuring their pool, communicating pool rules, and handling any private entry fees or prizes. LINKS does not hold, collect, distribute, guarantee, or insure pool prize money.</p>
+<h3>Scoring & Sports Data</h3><p>LINKS uses third-party sports data and automated feeds for schedules, scores, records, and results. Data may be delayed, corrected, unavailable, or changed by the source. Commissioners and players should verify important results. LINKS is a pool-management tool and is not guaranteed to be the official scorekeeper.</p>
+<h3>Accounts & Acceptable Use</h3><p>Users must provide accurate account information, protect their passwords, and may not abuse, disrupt, reverse engineer, or use LINKS for unlawful activity. Access may be limited for misuse or attempts to evade package limits.</p>
+<h3>Ads</h3><p>Free services may display advertising. Paid packages may remove ads when that benefit is included in the package purchased.</p>
+<h3>Refunds & Cancellations</h3><p>Any applicable purchase, renewal, cancellation, or refund terms shown during checkout apply to that purchase. Users should review those terms before completing payment.</p>
+<h3>Service Availability</h3><p>LINKS may update features, correct errors, perform maintenance, or experience interruptions. We do not promise uninterrupted or error-free service.</p>
+<h3>Agreement</h3><p>By creating a pool, you agree to these Terms and the rules displayed for the games you use.</p>
+<button id="termsBackCreateV581" type="button" style="width:100%;margin-top:14px">← BACK TO CREATE POOL</button>
 </div></div>
 
 <div id="linksAdmin" class="login hide links-master-page">
@@ -2759,7 +2782,7 @@ function ensureSectionAd(id){const el=document.getElementById(id);if(!el)return;
 function tryInitManualAd(id){const el=document.getElementById(id);if(el)requestAdIn(el)}
 window.addEventListener("load",()=>setTimeout(ensureHomeAd,600));
 function showOnly(id,opts={}){
-  const screens=["home","demoPage","commissionerWelcome","createPoolPage","linksAdmin","publicScoresPage","categoryInfoPageV554","gameInfoPage","inviteJoinPage","playerSetupPage","login","sportChoice","specialGameApp","squaresApp","marchApp","app"];
+  const screens=["home","demoPage","commissionerWelcome","createPoolPage","termsPageV581","linksAdmin","publicScoresPage","categoryInfoPageV554","gameInfoPage","inviteJoinPage","playerSetupPage","login","sportChoice","specialGameApp","squaresApp","marchApp","app"];
   screens.forEach(x=>$("#"+x).classList.toggle("hide",x!==id));
   if(!opts.fromHistory && id!==currentScreen){
     try{history.pushState({linksScreen:id},"",location.href)}catch(e){}
@@ -4507,6 +4530,8 @@ function createV580Refresh(){
  if(btn)btn.textContent=count<=1?"CREATE FREE POOL":"CONTINUE WITH PACKAGE";
 }
 document.getElementById("createPoolGames")?.addEventListener("change",createV580Refresh);
+document.getElementById("openTermsV581")?.addEventListener("click",e=>{e.preventDefault();showOnly("termsPageV581")});
+document.getElementById("termsBackCreateV581")?.addEventListener("click",()=>showOnly("createPoolPage"));
 document.getElementById("createPoolBackHomeV580")?.addEventListener("click",()=>{showOnly("home");window.scrollTo(0,0)});
 document.getElementById("createViewPackagesV580")?.addEventListener("click",()=>{showOnly("home");setTimeout(()=>document.getElementById("linksPackages")?.scrollIntoView({behavior:"smooth"}),50)});
 $("#createPoolBtn").onclick=async()=>{
@@ -5509,9 +5534,9 @@ document.addEventListener("DOMContentLoaded",()=>{
 });
 </script>
 
-<script id="links-version-check-v580">
+<script id="links-version-check-v581">
 (()=>{
-  const CURRENT_BUILD="v580";
+  const CURRENT_BUILD="v581";
   let checking=false;
   async function checkForLinksUpdate(){
     if(checking) return;
