@@ -3043,8 +3043,15 @@ export async function onRequest(context){
       // Temporary Game 33 test fixture only. Shared NFL Pick'em data is not changed.
       await DB.prepare("DELETE FROM pool_33_assignments WHERE pool_id=?").bind(pid).run();
       await DB.prepare("DELETE FROM pool_33_entries WHERE pool_id=?").bind(pid).run();
+      const now=new Date().toISOString();
+      // Keep Game 33 membership self-contained, but also ensure each test name has a shared login/player row
+      // because the current Game 33 data reader still validates against pool_players.
+      const existing=(await DB.prepare("SELECT name FROM pool_players WHERE pool_id=?").bind(pid).all()).results||[];
+      const have=new Set(existing.map(x=>x.name));
+      const addShared=test.filter(x=>!have.has(x[0])).map(x=>DB.prepare("INSERT INTO pool_players(pool_id,name,password) VALUES(?,?,?)").bind(pid,x[0],""));
+      if(addShared.length)await DB.batch(addShared);
       const entries=test.map(x=>DB.prepare("INSERT INTO pool_33_entries(pool_id,player_name,paid) VALUES(?,?,?)").bind(pid,x[0],x[2]));
-      const assigns=test.map(x=>DB.prepare("INSERT INTO pool_33_assignments(pool_id,player_name,team,assigned_at,source) VALUES(?,?,?,?,?)").bind(pid,x[0],x[1],new Date().toISOString(),"test-2026"));
+      const assigns=test.map(x=>DB.prepare("INSERT INTO pool_33_assignments(pool_id,player_name,team,assigned_at,source) VALUES(?,?,?,?,?)").bind(pid,x[0],x[1],now,"test-2026"));
       await DB.batch([...entries,...assigns]);
       await DB.prepare("INSERT INTO pool_33_state(pool_id,draw_locked,draw_source,draw_at) VALUES(?,1,'test-2026',?) ON CONFLICT(pool_id) DO UPDATE SET draw_locked=1,draw_source='test-2026',draw_at=excluded.draw_at").bind(pid,new Date().toISOString()).run();
       return json({ok:true,count:test.length});
