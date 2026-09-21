@@ -2949,7 +2949,8 @@ function applyRoleNavigation(){
     if(tabs)tabs.classList.add("hide");
     const indicator=$("#pageSportIndicator");if(indicator){indicator.className="sport-page-indicator college";indicator.textContent="3️⃣3️⃣ THE 33 GAME"}
     ["picks","compare","scores","standings","projected","paid","rules","admin"].forEach(id=>{const el=$("#"+id);if(el)el.classList.add("hide")});
-    if(g33)g33.classList.remove("hide");
+    // v607: legacy Game 33 stays hidden; /games/game33/ owns the entire UI.
+    if(g33)g33.classList.add("hide");
     const wp=$("#weekPickerCard");if(wp)wp.classList.add("hide");
     const lc=$("#pickLockCard");if(lc)lc.classList.add("hide");
     return;
@@ -3200,12 +3201,11 @@ async function enterApp(selected){
   // Do not block the first paint on commissioner extras or league-tab metadata. Load them after the game page is usable.
 
   if(sport==="33"){
+    // v607: ONLY the clean self-contained /games/game33/ app renders Game 33.
+    // Do not re-enter the legacy #game33 renderer after mounting it.
+    showOnly("app");setLinksRoute(LINKS_ROUTES.game33);
     await window.LinksGame33?.mount?.();
-    week=1;
-    $("#feeLine").textContent="";
-    $("#feeLine").classList.add("hide");
-    try{const d=await api(q("/api/33/default-week"));week=Math.max(1,Math.min(18,Number(d?.week||1)))}catch(e){}
-    showOnly("app");setLinksRoute(LINKS_ROUTES.game33);applyRoleNavigation();await render33();return;
+    return;
   }
   window.LinksGame33?.leave?.();
   $("#feeLine").classList.add("hide");
