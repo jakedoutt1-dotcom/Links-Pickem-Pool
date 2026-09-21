@@ -12,7 +12,7 @@ window.LinksGame33=(()=>{
    if(view==="admin"&&!commissioner())view="home";currentView=view;
    document.querySelectorAll("#game33NewV601 [data-g33-page]").forEach(x=>x.classList.toggle("hide",x.dataset.g33Page!==view));
    document.querySelectorAll("#g33NavV601 [data-g33-view]").forEach(x=>x.classList.toggle("active",x.dataset.g33View===view));
-   if(view==="admin"){renderAdmin();if(typeof renderPoolGamesManagers==="function")renderPoolGamesManagers();}
+   if(view==="admin"){renderAdmin();if(typeof refreshPoolGames==="function")refreshPoolGames().then(()=>{if(typeof renderPoolGamesManagers==="function")renderPoolGamesManagers()});if(typeof renderGameInstanceUI==="function")renderGameInstanceUI("33");}
  }
  async function mount(){
    let host=el("game33NewHostV596");if(!host){host=document.createElement("div");host.id="game33NewHostV596";const app=el("app");if(!app)throw new Error("Game 33 app container is missing");app.appendChild(host)}
@@ -20,7 +20,7 @@ window.LinksGame33=(()=>{
    el("game33")?.classList.add("hide");host.classList.remove("hide");document.body.classList.add("links-game33-standalone-v596");
    // Game 33 owns its week state. On entry, ask its own API for the active week instead of inheriting NFL Pick’em week state.
    try{const dw=await call(path33("/api/33/default-week?_="+Date.now()));window.game33Week=Math.max(1,Math.min(18,Number(dw.week)||1));}catch(e){window.game33Week=window.game33Week||1}
-   el("g33AdminNavV601")?.classList.toggle("hide",!commissioner());show(currentView);await render();if(commissioner()&&typeof renderPoolGamesManagers==="function")renderPoolGamesManagers();return host;
+   el("g33AdminNavV601")?.classList.toggle("hide",!commissioner());show(currentView);await render();if(typeof renderGameInstanceUI==="function")await renderGameInstanceUI("33");if(commissioner()&&typeof refreshPoolGames==="function")await refreshPoolGames();if(commissioner()&&typeof renderPoolGamesManagers==="function")renderPoolGamesManagers();return host;
  }
  function leave(){document.body.classList.remove("links-game33-standalone-v596");el("game33NewHostV596")?.classList.add("hide")}
  function bind(){
