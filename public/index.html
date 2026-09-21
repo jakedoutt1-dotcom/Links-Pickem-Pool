@@ -1930,6 +1930,9 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
 .links-category-game-v554 img{width:70px;height:70px;object-fit:contain;border-radius:9px;background:#070b0f;flex:0 0 70px}.links-category-game-v554 b{display:block;font-size:15px}.links-category-game-v554 span{display:block;color:#bdc9d4;font-size:11px;margin-top:4px;line-height:1.35}
 @media(max-width:600px){.links-category-games-v554{grid-template-columns:1fr}.links-category-game-v554{min-height:76px}.links-category-game-v554 img{width:60px;height:60px;flex-basis:60px}}
 </style>
+<style id="links-create-v580-style">
+.create-v580-card{max-width:720px;margin-left:auto;margin-right:auto}.create-v580-free{text-align:center;padding:15px;border:2px solid #39d98a;border-radius:12px;background:#10251d;margin-bottom:14px}.create-v580-free b{display:block;font-size:22px;color:#71e6a0}.create-v580-free span{display:block;margin-top:4px}.create-v580-games{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:8px}.create-v580-game{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:145px;padding:10px;border:2px solid #34434d;border-radius:13px;background:#111a20;cursor:pointer;text-align:center;overflow:hidden}.create-v580-game input{position:absolute;top:8px;right:8px;width:25px;height:25px;z-index:3;accent-color:#39d98a}.create-v580-game img{width:100%;height:92px;object-fit:contain;border-radius:8px}.create-v580-game span{font-weight:900;margin-top:7px}.create-v580-game:has(input:checked){border-color:#39d98a;box-shadow:0 0 0 2px rgba(57,217,138,.2)}.create-v580-check{display:none;color:#71e6a0;font-size:11px;margin-top:4px}.create-v580-game:has(input:checked) .create-v580-check{display:block}.create-v580-package{margin-top:10px;padding:12px;border:2px solid #ff9a57;border-radius:10px;text-align:center}.create-v580-package b,.create-v580-package span{display:block}.create-v580-package button{margin-top:8px}.create-v580-terms{display:flex;gap:9px;align-items:center;margin-top:14px}.create-v580-terms input{width:22px;height:22px}@media(max-width:520px){.create-v580-games{grid-template-columns:1fr 1fr}.create-v580-game{min-height:125px}.create-v580-game img{height:72px}}
+</style>
 </head>
 
 <body><div id="top"></div><div class="wrap">
@@ -2025,7 +2028,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v579</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v580</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2139,46 +2142,36 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
 
 <div id="createPoolPage" class="login hide links-welcome-page">
 <img class="pool-logo login-brand-v121" src="./links-login-banner-v121.png" alt="Links Pick Em Pools">
-  <div class="pool-name-banner">CREATE A NEW POOL — COMMISSIONER SETUP</div>
-  <div class="card" style="max-width:620px;margin-left:auto;margin-right:auto">
-    <div class="commissioner-create-warning-v118"><b>THIS STARTS A BRAND-NEW POOL.</b><br>This page is for the person running the pool. Creating a pool makes you the commissioner and also a player in it.<br><br><b>Trying to play in someone else’s pool?</b> You must join from that commissioner’s private invitation.</div>
-    <label class="field-label" for="createPoolName">POOL NAME</label><input id="createPoolName" placeholder="Example: Barnes Family" style="width:100%">
-    <div style="margin-top:10px;padding:11px 12px;border:1px solid #33434f;border-radius:9px;background:#101820;color:#c8d3da;font-size:13px;line-height:1.45">
-      <b style="color:#fff">Pool Code:</b> Links will automatically create a unique code for this pool. Pool names can be the same — the code keeps every pool separate.
-    </div>
-    <label class="field-label" for="createPoolEmail">YOUR EMAIL</label><input id="createPoolEmail" type="email" placeholder="you@example.com" style="width:100%"><div class="small" style="margin-top:5px">This becomes the commissioner contact email for the pool.</div>
-    <label class="field-label" for="createPoolPlayerName">YOUR PLAYER NAME</label><input id="createPoolPlayerName" placeholder="Example: Jake" style="width:100%"><div class="small" style="margin-top:5px">You will use this same player name to make picks. Your account will also have the ADMIN button.</div>
-    <label class="field-label" for="createPoolPass">YOUR PASSWORD</label><input id="createPoolPass" type="password" placeholder="Create your player password" style="width:100%">
-    <label class="field-label">GAMES FOR THIS POOL</label>
-    <div class="create-game-grid" id="createPoolGames">
-      <label><input type="checkbox" value="nfl" checked><img class="game-selector-logo" src="./nfl-pickem-logo.png" alt=""><span class="game-selector-name">NFL Pick’em</span></label>
-      <label><input type="checkbox" value="college"><img class="game-selector-logo" src="./college-pickem-logo.png" alt=""><span class="game-selector-name">College Pick’em</span></label>
-      <label><input type="checkbox" value="march"><img class="game-selector-logo" src="./march-madness-logo.png" alt=""><span class="game-selector-name">March Madness</span></label>
-      <label><input type="checkbox" value="33"><img class="game-selector-logo" src="./game-33-logo.png" alt=""><span class="game-selector-name">Game 33</span></label>
-      <label><input type="checkbox" value="squares"><img class="game-selector-logo" src="./football-squares-logo-v102.png" alt=""><span class="game-selector-name">Football Squares</span></label>
-      <label><input type="checkbox" value="survivor"><img class="game-selector-logo" src="./nfl-survivor-logo-v102.jpg" alt=""><span class="game-selector-name">NFL Survivor</span></label>
-      <label><input type="checkbox" value="confidence"><img class="game-selector-logo" src="./confidence-pool-logo-v102.jpg" alt=""><span class="game-selector-name">Confidence Pool</span></label>
-      <label><input type="checkbox" value="props"><img class="game-selector-logo" src="./super-bowl-props-logo-v102.jpg" alt=""><span class="game-selector-name">Super Bowl Props</span></label>
-      <label><input type="checkbox" value="playoff"><img class="game-selector-logo" src="./nfl-playoff-challenge-logo-v102.jpg" alt=""><span class="game-selector-name">NFL Playoff Challenge</span></label>
-      <label><input type="checkbox" value="masters"><img class="game-selector-logo" src="./masters-golf-pool-logo-v102.jpg" alt=""><span class="game-selector-name">Masters Golf Pool</span></label>
-      <label><input type="checkbox" value="nascar"><img class="game-selector-logo" src="./nascar-pool-logo-v102.jpg" alt=""><span class="game-selector-name">NASCAR Pool</span></label>
-      <label><input type="checkbox" value="fantasy"><img class="game-selector-logo" src="./fantasy-football-logo-v154.png" alt=""><span class="game-selector-name">Fantasy Football</span></label>
-      <label><input type="checkbox" value="dynasty"><img class="game-selector-logo" src="./dynasty-fantasy-football-logo-v157.png" alt=""><span class="game-selector-name">Dynasty Fantasy Football</span></label>
-    </div>
-    <div class="small" style="margin-top:7px;line-height:1.45">Your first pool is <b>FREE FOR LIFE</b> and includes one game. Paid packages let you run additional separate game pools — including 2, 3, 4 or more copies of the <b>same</b> game — and remove ads.</div>
-    <label class="field-label" for="createPoolCopies">HOW MANY SEPARATE COPIES OF THIS POOL?</label><select id="createPoolCopies" style="width:100%"><option value="1">1 pool</option><option value="2">2 separate pools</option><option value="3">3 separate pools</option><option value="4">4 separate pools</option><option value="5">5 separate pools</option><option value="6">6 separate pools</option><option value="7">7 separate pools</option><option value="8">8 separate pools</option><option value="9">9 separate pools</option><option value="10">10 separate pools</option></select><div class="small" style="margin-top:5px;line-height:1.45">Copies are independent. Example: choose NFL Pick’em and 3 copies to create NFL Pick’em #1, #2 and #3, each with its own pool code, players, picks and standings.</div>
-    <div id="createPlanStatus" class="create-plan-status-v150"><b>FREE FOR LIFE</b> • 1 game pool • ad supported</div>
-    <div class="create-upgrade-row-v150"><button type="button" data-links-plan="plus">PLUS $19.99 / YEAR</button><button type="button" data-links-plan="nfl_package">NFL $29.99 / YEAR</button><button type="button" data-links-plan="all_access">ALL ACCESS $49.99 / YEAR</button></div>
-    <input id="createPoolPlan" type="hidden" value="free">
-    <span id="selectedPlanSummary" class="hide"></span>
-    <div id="servicePurchaseGate" class="hide"></div>
-    <div style="margin-top:10px;text-align:center;color:#71e6a0;font-weight:900">FIRST POOL FREE FOR LIFE • NO CREDIT CARD</div>
-    <button id="createPoolBtn" class="green" style="width:100%;font-size:18px;margin-top:14px">CREATE FREE POOL</button>
-    <div id="homeErr" class="portal-error-v2" style="margin-top:10px"></div>
-  </div>
-  <div class="links-fixed-ad login-ad-v119" aria-label="Advertisement" style="display:none"><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-2654873707790051" data-ad-slot="9269292379" data-ad-format="auto" data-full-width-responsive="true"></ins></div>
-  <div class="login-gear-promo-v130"><img src="./nav-v514-upload/7C7A88C3-0AE3-49BE-8758-4DD7B110CD3D.png?v=541" alt="LINKS Gear coming soon"><div class="login-gear-copy-v130"><b>LINKS GEAR — COMING SOON</b><span>Shirts, long sleeves, hoodies and hats. Preview the crew gear.</span><button type="button" data-view-links-gear>VIEW GEAR</button></div></div>
-</div>
+<div class="pool-name-banner">CREATE A NEW POOL</div>
+<div class="card create-v580-card">
+  <div class="create-v580-free"><b>1 POOL FREE FOR LIFE</b><span>Choose any one LINKS game. No credit card required.</span></div>
+  <label class="field-label">COMMISSIONER NAME</label><input id="createPoolPlayerName" placeholder="Your name" style="width:100%">
+  <label class="field-label">EMAIL</label><input id="createPoolEmail" type="email" placeholder="you@example.com" style="width:100%"><div class="small">Your email identifies your free pool and any LINKS package you own.</div>
+  <label class="field-label">PHONE NUMBER</label><input id="createPoolPhone" type="tel" inputmode="tel" placeholder="(555) 555-5555" style="width:100%">
+  <label class="field-label">POOL NAME</label><input id="createPoolName" placeholder="Example: Barnes Family" style="width:100%">
+  <label class="field-label">PASSWORD</label><input id="createPoolPass" type="password" placeholder="At least 4 characters" style="width:100%">
+  <label class="field-label">CHOOSE YOUR GAME</label>
+  <div id="createPoolGames" class="create-v580-games"><label class="create-v580-game"><input type="checkbox" value="nfl"><img src="./nfl-pickem-logo.png" alt=""><span>NFL Pick’em</span><b class="create-v580-check">✓ SELECTED</b></label>
+<label class="create-v580-game"><input type="checkbox" value="college"><img src="./college-pickem-logo.png" alt=""><span>College Pick’em</span><b class="create-v580-check">✓ SELECTED</b></label>
+<label class="create-v580-game"><input type="checkbox" value="march"><img src="./march-madness-logo.png" alt=""><span>March Madness</span><b class="create-v580-check">✓ SELECTED</b></label>
+<label class="create-v580-game"><input type="checkbox" value="33"><img src="./game-33-logo.png" alt=""><span>Game 33</span><b class="create-v580-check">✓ SELECTED</b></label>
+<label class="create-v580-game"><input type="checkbox" value="squares"><img src="./football-squares-logo-v102.png" alt=""><span>Football Squares</span><b class="create-v580-check">✓ SELECTED</b></label>
+<label class="create-v580-game"><input type="checkbox" value="survivor"><img src="./nfl-survivor-logo-v102.jpg" alt=""><span>NFL Survivor</span><b class="create-v580-check">✓ SELECTED</b></label>
+<label class="create-v580-game"><input type="checkbox" value="confidence"><img src="./confidence-pool-logo-v102.jpg" alt=""><span>Confidence Pool</span><b class="create-v580-check">✓ SELECTED</b></label>
+<label class="create-v580-game"><input type="checkbox" value="props"><img src="./super-bowl-props-logo-v102.jpg" alt=""><span>Super Bowl Props</span><b class="create-v580-check">✓ SELECTED</b></label>
+<label class="create-v580-game"><input type="checkbox" value="playoff"><img src="./nfl-playoff-challenge-logo-v102.jpg" alt=""><span>NFL Playoff Challenge</span><b class="create-v580-check">✓ SELECTED</b></label>
+<label class="create-v580-game"><input type="checkbox" value="masters"><img src="./masters-golf-pool-logo-v102.jpg" alt=""><span>Masters Golf Pool</span><b class="create-v580-check">✓ SELECTED</b></label>
+<label class="create-v580-game"><input type="checkbox" value="nascar"><img src="./nascar-pool-logo-v102.jpg" alt=""><span>NASCAR Pool</span><b class="create-v580-check">✓ SELECTED</b></label>
+<label class="create-v580-game"><input type="checkbox" value="fantasy"><img src="./fantasy-football-logo-v154.png" alt=""><span>Fantasy Football</span><b class="create-v580-check">✓ SELECTED</b></label>
+<label class="create-v580-game"><input type="checkbox" value="dynasty"><img src="./dynasty-fantasy-football-logo-v157.png" alt=""><span>Dynasty Fantasy Football</span><b class="create-v580-check">✓ SELECTED</b></label></div>
+  <div id="createPlanStatus" class="create-plan-status-v150"><b>FREE FOR LIFE</b> • Choose 1 game</div>
+  <div id="createPackageNoticeV580" class="hide create-v580-package"><b>PACKAGE REQUIRED</b><span>You selected more than one game. A LINKS package must be purchased for multiple games.</span><button type="button" id="createViewPackagesV580">VIEW PACKAGES</button></div>
+  <input id="createPoolCopies" type="hidden" value="1"><input id="createPoolPlan" type="hidden" value="free">
+  <label class="create-v580-terms"><input id="createTermsV580" type="checkbox"> I agree to the LINKS Pool Rules and Terms.</label>
+  <button id="createPoolBtn" class="green" style="width:100%;font-size:18px;margin-top:14px">CREATE FREE POOL</button>
+  <button id="createPoolBackHomeV580" type="button" style="width:100%;margin-top:9px">← BACK TO HOME</button>
+  <div id="homeErr" class="portal-error-v2" style="margin-top:10px"></div>
+</div></div>
 
 <div id="linksAdmin" class="login hide links-master-page">
 <img class="pool-logo login-brand-v121" src="./links-login-banner-v121.png" alt="Links Pick Em Pools">
@@ -4505,26 +4498,32 @@ $("#enterPoolBtn").onclick=async()=>{
   finally{if(enterBtn){enterBtn.disabled=false;enterBtn.textContent=enterOld;enterBtn.classList.remove("links-action-loading-v511")}}
 };
 $("#showCreatePool").onclick=()=>showOnly("createPoolPage");
+// v580 isolated Create Pool flow. Login code below is intentionally untouched.
+const createV580Selected=()=>Array.from(document.querySelectorAll('#createPoolGames input[type="checkbox"]:checked')).map(x=>x.value);
+function createV580Refresh(){
+ const count=createV580Selected().length,notice=document.getElementById("createPackageNoticeV580"),status=document.getElementById("createPlanStatus"),btn=document.getElementById("createPoolBtn");
+ if(notice)notice.classList.toggle("hide",count<=1);
+ if(status)status.innerHTML=count<=1?'<b>FREE FOR LIFE</b> • 1 game pool':'<b>PACKAGE REQUIRED</b> • Multiple games selected';
+ if(btn)btn.textContent=count<=1?"CREATE FREE POOL":"CONTINUE WITH PACKAGE";
+}
+document.getElementById("createPoolGames")?.addEventListener("change",createV580Refresh);
+document.getElementById("createPoolBackHomeV580")?.addEventListener("click",()=>{showOnly("home");window.scrollTo(0,0)});
+document.getElementById("createViewPackagesV580")?.addEventListener("click",()=>{showOnly("home");setTimeout(()=>document.getElementById("linksPackages")?.scrollIntoView({behavior:"smooth"}),50)});
 $("#createPoolBtn").onclick=async()=>{
-  const createBtn=$("#createPoolBtn"),oldText=createBtn?.textContent||"CREATE FREE POOL";
-  $("#homeErr").textContent="";
-  const name=$("#createPoolName").value.trim(),email=$("#createPoolEmail").value.trim(),playerName=$("#createPoolPlayerName").value.trim(),password=$("#createPoolPass").value;
-  const gameTypes=$(`#createPoolGames input[type="checkbox"]:checked`).map(x=>x.value);
-  if(!name||!email||!playerName||!password){$("#homeErr").textContent="Enter the pool name, your email, your player name and a password.";return}
-  if(!gameTypes.length){$("#homeErr").textContent="Choose at least one game for this pool.";return}
-  if(createBtn){createBtn.disabled=true;createBtn.textContent="CREATING POOL…";createBtn.classList.add("links-action-loading-v511")}
-  try{
-    applyOwnerGameAccessV357();
-    const d=await api("/api/pool/create",{method:"POST",body:JSON.stringify({name,email,playerName,password,gameTypes,copies:Number($("#createPoolCopies")?.value||1),plan:$("#createPoolPlan")?.value||"free"})});
-    sessionStorage.removeItem("linksWelcomeSeen");
-    token=d.token; role="player"; isCommissioner=true; currentUser=d.playerName; poolName=d.name; poolCode=d.code;applyPoolAdMode(!!d.service?.adFree);
-    Object.entries({poolToken:token,poolRole:role,poolUser:currentUser,poolName,poolCode,poolIsCommissioner:"1"}).forEach(([k,v])=>sessionStorage.setItem(k,v));
-    await enterPoolGames(d.games,d.gameType);
-    const created=Array.isArray(d.createdPools)?d.createdPools:[];const emailNote=d.commissionerWelcomeEmailSent?` Welcome email${created.length>1?"s":""} sent to <b>${escapeHtml($("#createPoolEmail").value)}</b>.`:` <span style="color:#ffd166">Welcome email was NOT sent${d.commissionerWelcomeEmailError?`: ${escapeHtml(d.commissionerWelcomeEmailError)}`:""}.</span>`;
-    const copiesNote=created.length>1?` Created <b>${created.length} separate game pools</b>: ${created.map(x=>`<b>${escapeHtml(x.name)}</b> — ${escapeHtml(x.code)}`).join(" • ")}. You are signed into the first one.`:` Pool code: <b>${escapeHtml(poolCode)}</b>.`;
-    msg(`✅ ${created.length>1?"Pools":"Pool"} created. You have commissioner ADMIN access.${copiesNote}${emailNote}`,true);
-  }catch(e){$("#homeErr").innerHTML=`${escapeHtml(e.message||"Pool could not be created. Please try again.")}${/upgrade|free for life|package/i.test(e.message||"")?' <a href="#" id="createUpgradeLink" style="color:#ff9a57;font-weight:900">View commissioner packages</a>':''}`;$("#createUpgradeLink")?.addEventListener("click",ev=>{ev.preventDefault();showOnly("home");setTimeout(()=>$("#linksPackages")?.scrollIntoView({behavior:"smooth"}),50);});}
-  finally{if(createBtn){createBtn.disabled=false;createBtn.textContent=oldText;createBtn.classList.remove("links-action-loading-v511")}}
+ const createBtn=$("#createPoolBtn"),err=$("#homeErr");if(err)err.textContent="";
+ const name=$("#createPoolName")?.value.trim(),email=$("#createPoolEmail")?.value.trim(),playerName=$("#createPoolPlayerName")?.value.trim(),password=$("#createPoolPass")?.value||"",phone=$("#createPoolPhone")?.value.trim()||"",gameTypes=createV580Selected();
+ if(!name||!email||!playerName||!phone||!password){if(err)err.textContent="Enter commissioner name, email, phone number, pool name and password.";return}
+ if(!$("#createTermsV580")?.checked){if(err)err.textContent="Please agree to the LINKS Pool Rules and Terms.";return}
+ if(!gameTypes.length){if(err)err.textContent="Choose a game for your pool.";return}
+ if(gameTypes.length>1){if(err)err.textContent="Multiple games require a LINKS package. Select one game for your free-for-life pool, or purchase a package.";document.getElementById("createPackageNoticeV580")?.classList.remove("hide");return}
+ const old=createBtn.textContent;createBtn.disabled=true;createBtn.textContent="CREATING POOL…";
+ try{
+  const d=await api("/api/pool/create",{method:"POST",body:JSON.stringify({name,email,phone,playerName,password,gameTypes,copies:1,plan:"free"})});
+  sessionStorage.removeItem("linksWelcomeSeen");token=d.token;role="player";isCommissioner=true;currentUser=d.playerName;poolName=d.name;poolCode=d.code;applyPoolAdMode(!!d.service?.adFree);
+  Object.entries({poolToken:token,poolRole:role,poolUser:currentUser,poolName,poolCode,poolIsCommissioner:"1"}).forEach(([k,v])=>sessionStorage.setItem(k,v));
+  await enterPoolGames(d.games,d.gameType);msg("✅ Pool created. Pool code: <b>"+escapeHtml(poolCode)+"</b>.",true);
+ }catch(e){if(err)err.textContent=e.message||"Pool could not be created."}
+ finally{createBtn.disabled=false;createBtn.textContent=old;createV580Refresh()}
 };
 $("#backHomeBtn").onclick=async()=>{await loadPoolMenu(poolCode);showOnly("home")};
 $("#signIn").onclick=async()=>{
@@ -5510,9 +5509,9 @@ document.addEventListener("DOMContentLoaded",()=>{
 });
 </script>
 
-<script id="links-version-check-v579">
+<script id="links-version-check-v580">
 (()=>{
-  const CURRENT_BUILD="v579";
+  const CURRENT_BUILD="v580";
   let checking=false;
   async function checkForLinksUpdate(){
     if(checking) return;
