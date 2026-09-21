@@ -1,4 +1,4 @@
-/* LINKS Game 33 v602 — clean self-contained game UI. Shared login/API stay outside this folder. */
+/* LINKS Game 33 v603 — current-week Game 33 UI; NFL scores feed remains automatic. */
 window.LinksGame33=(()=>{
  let loaded=false,data=null,currentView="home",busy=false;
  const el=id=>document.getElementById(id), esc=s=>typeof escapeHtml==="function"?escapeHtml(String(s??"")):String(s??"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
@@ -18,12 +18,14 @@ window.LinksGame33=(()=>{
    let host=el("game33NewHostV596");if(!host){host=document.createElement("div");host.id="game33NewHostV596";const old=el("game33");old?.parentNode?.insertBefore(host,old)}
    if(!loaded){const r=await fetch("./games/game33/game33.html?v=601",{cache:"no-store"});if(!r.ok)throw new Error("Could not load Game 33");host.innerHTML=await r.text();bind();loaded=true}
    el("game33")?.classList.add("hide");host.classList.remove("hide");document.body.classList.add("links-game33-standalone-v596");
-   el("g33AdminNavV601")?.classList.toggle("hide",!commissioner());show(currentView);return host;
+   // Game 33 owns its week state. On entry, ask its own API for the active week instead of inheriting NFL Pick’em week state.
+   try{const dw=await call(path33("/api/33/default-week?_="+Date.now()));window.game33Week=Math.max(1,Math.min(18,Number(dw.week)||1));}catch(e){window.game33Week=window.game33Week||1}
+   el("g33AdminNavV601")?.classList.toggle("hide",!commissioner());show(currentView);await render();return host;
  }
  function leave(){document.body.classList.remove("links-game33-standalone-v596");el("game33NewHostV596")?.classList.add("hide")}
  function bind(){
    el("g33NavV601")?.addEventListener("click",e=>{const b=e.target.closest("[data-g33-view]");if(b)show(b.dataset.g33View)});
-   el("g33WeekV601")?.addEventListener("change",async e=>{window.week=Number(e.target.value)||1;await render()});
+   el("g33WeekV601")?.addEventListener("change",async e=>{window.game33Week=Number(e.target.value)||1;await render()});
    el("g33AddPlayerV601")?.addEventListener("click",addPlayer);
    el("g33RandomV601")?.addEventListener("click",randomDraw);
    el("g33SaveAssignmentsV601")?.addEventListener("click",saveManual);
@@ -38,8 +40,8 @@ window.LinksGame33=(()=>{
  async function render(){
    if(busy)return;busy=true;
    try{
-     data=await call(path33("/api/33?_="+Date.now()));
-     const w=el("g33WeekV601");if(w){w.innerHTML=Array.from({length:18},(_,i)=>'<option value="'+(i+1)+'">Week '+(i+1)+'</option>').join("");w.value=String(window.week||1)}
+     data=await call(path33("/api/33?week="+encodeURIComponent(window.game33Week||1)+"&_="+Date.now()));
+     const w=el("g33WeekV601");if(w){w.innerHTML=Array.from({length:18},(_,i)=>'<option value="'+(i+1)+'">Week '+(i+1)+'</option>').join("");w.value=String(data.week||window.game33Week||1);window.game33Week=Number(data.week)||window.game33Week||1}
      if(el("g33RolloverV601"))el("g33RolloverV601").textContent=data.carryWeeks?(data.carryWeeks+" rollover week"+(data.carryWeeks===1?"":"s")):"No rollover";
      const result=el("g33ResultV601");if(result)result.innerHTML=data.finalized?(data.winners?.length?("🏆 <b>"+data.winners.map(x=>esc(x.player)+" ("+esc(x.team)+")").join(", ")+"</b> hit 33."):"↪️ Nobody hit 33. Rollover continues."):'<div class="small">Live week — final scores determine the result.</div>';
      const mine=el("g33MyTeamCardV601");if(mine){mine.classList.toggle("hide",window.role!=="player");const a=(data.assignments||[]).find(x=>x.player===window.currentUser);if(el("g33MyTeamV601"))el("g33MyTeamV601").innerHTML=a?row(a):'<div class="small">Your yearly team has not been assigned yet.</div>'}
