@@ -12,3 +12,10 @@
   Cache-Control: no-cache
 /
   Cache-Control: no-cache
+
+/service-worker.js
+  Cache-Control: no-store, no-cache, must-revalidate
+/version.json
+  Cache-Control: no-store, no-cache, must-revalidate
+/*.js
+  Cache-Control: no-cache
