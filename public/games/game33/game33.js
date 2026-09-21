@@ -90,3 +90,23 @@ window.LinksGame33=(()=>{
    if(e.target.closest?.("#g33AdminAddPlayerV599")){e.preventDefault();addPlayer()}
  });
 })();
+
+/* v600 — 2026 Game 33 commissioner-provided yearly assignments. */
+window.LINKS_GAME33_2026_ASSIGNMENTS=Object.freeze([
+["Tailgate Trey","LAC",true],["Jack","DET",true],["Fred","PHI",false],["TD","TB",true],
+["TD2","HOU",true],["Robb","MIN",true],["Karen","NYJ",true],["Randy","JAX",true],
+["Lockman","NYG",false],["Bill A","CHI",true],["Cindy A","TEN",true],["Almarode","CIN",true],
+["B-man","ATL",true],["Kelly","NO",true],["Taylor","NE",false],["Daniel","KC",false],
+["Mike D","BAL",false],["Katie","LV",true],["Thad","BUF",true],["Cristen","DEN",true],
+["Grizzo","LAR",false],["Jake","ARZ",false],["Amanda","DAL",false],["Austin Hale","CLE",true],
+["Lee","WAS",true],["Kirsten","SF",true],["Mark","GB",true],["Franklin","MIA",true],
+["Laura Hale 1","SEA",true],["Laura Hale 2","CAR",true],["Codie","PIT",true],["Rob","IND",true]
+]);
+(()=>{
+ function show2026(){
+   const box=document.getElementById("g33ManualAssignments");if(!box||box.dataset.links2026==="1")return;
+   box.dataset.links2026="1";
+   box.innerHTML='<div class="g33-2026-list-v600">'+window.LINKS_GAME33_2026_ASSIGNMENTS.map(([n,t,paid])=>'<div class="g33-2026-row-v600"><b>'+escapeHtml(n)+'</b><span>'+escapeHtml(t)+'</span><span>'+(paid?'💯':'—')+'</span></div>').join("")+'</div>';
+ }
+ document.addEventListener("click",e=>{if(e.target.closest?.("#g33NewAdminV595"))setTimeout(show2026,30)});
+})();
