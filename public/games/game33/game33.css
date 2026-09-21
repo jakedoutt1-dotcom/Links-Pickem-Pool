@@ -1,15 +1,13 @@
-/* LINKS Game 33 isolated styles — safe migration step.
-   Loaded globally but every rule is scoped to #game33 / Game 33 body state. */
-#game33{position:relative}
-body.links-game33-active-v373 #game33{display:block}
-
-/* v594 Game 33 page chrome. Does not alter login or routing. */
-body.links-game33-active-v373 #appHeroImage{content:url("../../game33-page-banner.jpg")!important;display:block!important}
-body.links-game33-active-v373 #app>.tabs{display:none!important}
-body.links-game33-active-v373 #mainGameInstanceTabs,
-body.links-game33-active-v373 .v180-pool-game-tabs-wrap,
-body.links-game33-active-v373 #pickLockCard,
-body.links-game33-active-v373 #weekPickerCard,
-body.links-game33-active-v373 #pageSportIndicator{display:none!important}
-#g33PageAdminV594{display:none;width:100%;margin:0 0 12px;padding:13px 16px;font-size:17px;font-weight:900}
-body.links-game33-active-v373 #g33PageAdminV594.links-g33-admin-visible{display:block!important}
+/* LINKS Game 33 standalone page v596 */
+#game33NewHostV596{width:100%}
+#game33NewHostV596.hide{display:none!important}
+.game33-new-banner-v595{display:block;width:100%;max-width:1180px;margin:0 auto 14px;border-radius:16px}
+.game33-new-admin-v595{display:none;width:100%;margin:0 0 14px;padding:14px;font-size:18px;font-weight:950;border:2px solid #ff7a2f;border-radius:13px;background:linear-gradient(180deg,#1d2934,#0c131a);color:#fff}
+body.links-game33-standalone-v596 #appHeroImage,
+body.links-game33-standalone-v596 #app>.tabs,
+body.links-game33-standalone-v596 .v180-pool-game-tabs-wrap,
+body.links-game33-standalone-v596 #mainGameInstanceTabs,
+body.links-game33-standalone-v596 #pickLockCard,
+body.links-game33-standalone-v596 #weekPickerCard,
+body.links-game33-standalone-v596 #pageSportIndicator{display:none!important}
+body.links-game33-standalone-v596 #game33{display:none!important}
