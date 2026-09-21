@@ -28,7 +28,7 @@ window.LinksGame33=(()=>{
 (()=>{
  const byId=id=>document.getElementById(id);
  function openAdmin(){
-   if(!window.isCommissioner)return;
+   const commissioner=!!window.isCommissioner||window.role==="admin"||sessionStorage.getItem("poolIsCommissioner")==="1"; if(!commissioner)return;
    const p=byId("g33Admin"); if(!p)return;
    p.classList.remove("hide");
    byId("game33NewV595")?.classList.add("g33-admin-open-v597");
@@ -57,4 +57,36 @@ window.LinksGame33=(()=>{
  document.addEventListener("links-game33-mounted",syncAdmin);
  document.addEventListener("visibilitychange",()=>{if(!document.hidden)syncAdmin()});
  setInterval(()=>{if(document.body.classList.contains("links-game33-standalone-v596"))syncAdmin()},1000);
+})();
+
+/* v599 native Game 33 admin — never opens the shared NFL admin. */
+(()=>{
+ const $=id=>document.getElementById(id);
+ async function call(path,opt={}){return api(path,opt)}
+ async function loadPlayers(){
+   const box=$("g33AdminPlayerListV599");if(!box)return;
+   box.innerHTML='<div class="small">Loading players…</div>';
+   try{
+     const d=await call(q("/api/33?_="+Date.now()));
+     const players=d.players||d.assignments||[];
+     const rows=Array.isArray(players)?players:Object.entries(players).map(([name,x])=>({name,...(typeof x==="object"?x:{team:x})}));
+     box.innerHTML=rows.length?rows.map(x=>'<div class="g33-admin-player-v599"><b>'+escapeHtml(x.name||x.player||"Player")+'</b><span>'+(x.team?escapeHtml(g33TeamName(x.team)):"Waiting for team draw")+'</span></div>').join(""):'<div class="small">No players added yet.</div>';
+   }catch(e){box.innerHTML='<div class="small">Could not load players: '+escapeHtml(e.message)+'</div>'}
+ }
+ async function addPlayer(){
+   const name=$("g33AdminPlayerNameV599")?.value.trim(),email=$("g33AdminPlayerEmailV599")?.value.trim(),st=$("g33AdminPlayerStatusV599"),b=$("g33AdminAddPlayerV599");
+   if(!name||!email){if(st)st.textContent="Enter the player name and email.";return}
+   b.disabled=true;if(st)st.textContent="Adding player…";
+   try{
+     await call("/api/admin/player",{method:"POST",body:JSON.stringify({name,password:"",email})});
+     const d=await call("/api/admin/player-setup-invite",{method:"POST",body:JSON.stringify({player:name,email,delivery:"email"})});
+     if(st)st.textContent=d.sent?"✅ Player added and setup email sent.":"✅ Player added. Setup email was not sent.";
+     $("g33AdminPlayerNameV599").value="";$("g33AdminPlayerEmailV599").value="";
+     await loadPlayers(); if(typeof render33==="function")await render33();
+   }catch(e){if(st)st.textContent="⚠️ "+e.message}finally{b.disabled=false}
+ }
+ document.addEventListener("click",e=>{
+   if(e.target.closest?.("#g33NewAdminV595"))setTimeout(loadPlayers,0);
+   if(e.target.closest?.("#g33AdminAddPlayerV599")){e.preventDefault();addPlayer()}
+ });
 })();
