@@ -1186,7 +1186,40 @@ async function fetchNFLWeek(w){
   // 2026 date windows stay as a last-resort compatibility fallback only.
   if(season===2026&&!post&&REG_WEEK_DATES[w]){const [a,b]=REG_WEEK_DATES[w];urls.push(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${a}-${b}&limit=100&_=${bust}`)}
   for(const u of urls){const j=await getJSON(u);if(j){all=findEventsDeep(j);if(all.length)break}}
-  return parseEvents(all,"nfl");
+  const games=parseEvents(all,"nfl");
+
+  // v570: ESPN occasionally omits a team's record on an upcoming-game
+  // competitor (Washington in 2026 Week 3). Fill only missing records from
+  // the previous week's final scoreboard. This is one league-wide request,
+  // not per-game fanout, and preserves ESPN's cumulative W-L summary.
+  const missing=new Set();
+  for(const g of games){
+    if(g.away&&!g.records?.[g.away])missing.add(g.away);
+    if(g.home&&!g.records?.[g.home])missing.add(g.home);
+  }
+  if(missing.size&&w>1&&!post){
+    const prev=w-1,range=REG_WEEK_DATES[prev];
+    const prevUrl=range
+      ? `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${range[0]}-${range[1]}&limit=100&_=${bust}`
+      : `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${season}&seasontype=2&week=${prev}&limit=100&_=${bust}`;
+    const pj=await getJSON(prevUrl);
+    if(pj){
+      const prior=parseEvents(findEventsDeep(pj),"nfl");
+      const fallback={};
+      for(const pg of prior){
+        for(const code of [pg.away,pg.home]){
+          const summary=pg.records?.[code];
+          if(summary)fallback[code]=summary;
+        }
+      }
+      for(const g of games){
+        for(const code of [g.away,g.home]){
+          if(code&&!g.records?.[code]&&fallback[code])g.records[code]=fallback[code];
+        }
+      }
+    }
+  }
+  return games;
 }
 async function refreshNFLGameDetail(g){
   if(!g?.eventId)return g;
