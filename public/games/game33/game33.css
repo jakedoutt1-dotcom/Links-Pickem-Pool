@@ -1,0 +1,4 @@
+/* LINKS Game 33 isolated styles — safe migration step.
+   Loaded globally but every rule is scoped to #game33 / Game 33 body state. */
+#game33{position:relative}
+body.links-game33-active-v373 #game33{display:block}
