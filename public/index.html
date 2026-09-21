@@ -2034,7 +2034,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v582</footer>
+  <footer class="links-build-footer" aria-label="Links build version">LINKS PICK’EM POOLS — v583</footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -5543,9 +5543,29 @@ document.addEventListener("DOMContentLoaded",()=>{
 });
 </script>
 
-<script id="links-version-check-v582">
+<script id="links-create-select-v583">
+document.addEventListener("click",function(e){
+  const card=e.target.closest && e.target.closest("#createPoolGames .create-v580-game");
+  if(!card)return;
+  e.preventDefault();
+  e.stopImmediatePropagation();
+  const cb=card.querySelector('input[type="checkbox"]');
+  if(!cb)return;
+  cb.checked=!cb.checked;
+  cb.dispatchEvent(new Event("change",{bubbles:true}));
+},true);
+// Every public game card, including category lists and Home game cards, opens its existing rules/details page.
+document.addEventListener("click",function(e){
+  const card=e.target.closest && e.target.closest("[data-open-game-v554],[data-game-info]");
+  if(!card)return;
+  const game=card.getAttribute("data-open-game-v554")||card.getAttribute("data-game-info");
+  if(!game||typeof openGameInfo!=="function")return;
+  e.preventDefault();e.stopPropagation();openGameInfo(game);
+},true);
+</script>
+<script id="links-version-check-v583">
 (()=>{
-  const CURRENT_BUILD="v582";
+  const CURRENT_BUILD="v583";
   let checking=false;
   async function checkForLinksUpdate(){
     if(checking) return;
