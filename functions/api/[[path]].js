@@ -3048,7 +3048,7 @@ export async function onRequest(context){
       // because the current Game 33 data reader still validates against pool_players.
       const existing=(await DB.prepare("SELECT name FROM pool_players WHERE pool_id=?").bind(pid).all()).results||[];
       const have=new Set(existing.map(x=>x.name));
-      const addShared=test.filter(x=>!have.has(x[0])).map(x=>DB.prepare("INSERT INTO pool_players(pool_id,name,password) VALUES(?,?,?)").bind(pid,x[0],""));
+      const addShared=test.filter(x=>!have.has(x[0])).map(x=>{const salt=newSalt();return DB.prepare("INSERT INTO pool_players(pool_id,name,password_hash,salt) VALUES(?,?,?,?)").bind(pid,x[0],"__GAME33_TEST_NO_LOGIN__",salt)});
       if(addShared.length)await DB.batch(addShared);
       const entries=test.map(x=>DB.prepare("INSERT INTO pool_33_entries(pool_id,player_name,paid) VALUES(?,?,?)").bind(pid,x[0],x[2]));
       const assigns=test.map(x=>DB.prepare("INSERT INTO pool_33_assignments(pool_id,player_name,team,assigned_at,source) VALUES(?,?,?,?,?)").bind(pid,x[0],x[1],now,"test-2026"));
