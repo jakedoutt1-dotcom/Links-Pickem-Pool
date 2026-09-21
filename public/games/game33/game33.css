@@ -2,3 +2,14 @@
    Loaded globally but every rule is scoped to #game33 / Game 33 body state. */
 #game33{position:relative}
 body.links-game33-active-v373 #game33{display:block}
+
+/* v594 Game 33 page chrome. Does not alter login or routing. */
+body.links-game33-active-v373 #appHeroImage{content:url("../../game33-page-banner.jpg")!important;display:block!important}
+body.links-game33-active-v373 #app>.tabs{display:none!important}
+body.links-game33-active-v373 #mainGameInstanceTabs,
+body.links-game33-active-v373 .v180-pool-game-tabs-wrap,
+body.links-game33-active-v373 #pickLockCard,
+body.links-game33-active-v373 #weekPickerCard,
+body.links-game33-active-v373 #pageSportIndicator{display:none!important}
+#g33PageAdminV594{display:none;width:100%;margin:0 0 12px;padding:13px 16px;font-size:17px;font-weight:900}
+body.links-game33-active-v373 #g33PageAdminV594.links-g33-admin-visible{display:block!important}
