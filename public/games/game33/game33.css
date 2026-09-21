@@ -15,3 +15,8 @@ body.links-game33-standalone-v596 #appHeroImage,body.links-game33-standalone-v59
 html:has(body.links-game33-standalone-v596),body.links-game33-standalone-v596{height:auto!important;min-height:100%!important;overflow-x:hidden!important;overflow-y:auto!important;position:static!important;touch-action:pan-y!important;-webkit-overflow-scrolling:touch!important}
 body.links-game33-standalone-v596 #app,body.links-game33-standalone-v596 #game33NewHostV596,body.links-game33-standalone-v596 #game33NewV601{height:auto!important;max-height:none!important;min-height:100%!important;overflow:visible!important;touch-action:pan-y!important}
 body.links-game33-standalone-v596 [data-g33-page]{height:auto!important;max-height:none!important;overflow:visible!important;touch-action:pan-y!important}
+
+/* v608: while Game 33 is mounted, hide every legacy NFL/old-33 content section inside #app. Keep the shared account header and the new folder-based Game 33 host visible. */
+body.links-game33-standalone-v596 #app > section{display:none!important}
+body.links-game33-standalone-v596 #app > #game33NewHostV596{display:block!important}
+body.links-game33-standalone-v596 #game33NewHostV596{display:block!important;visibility:visible!important;opacity:1!important}
