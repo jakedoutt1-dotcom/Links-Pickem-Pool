@@ -1,0 +1,8 @@
+/* Game 33 isolated presentation. Loaded only for sport=33 by the main app. */
+body.links-game33-active-v373 #appHeroImage{display:none!important}
+body.links-game33-active-v373 #pickLockCard,
+body.links-game33-active-v373 #weekPickerCard,
+body.links-game33-active-v373 #pageSportIndicator{display:none!important}
+body.links-game33-active-v373 #app>.tabs button:not([data-tab="admin"]){display:none!important}
+body.links-game33-active-v373 #app>.tabs{grid-template-columns:1fr!important}
+body.links-game33-active-v373 #app>.tabs [data-tab="admin"]{display:block!important}
