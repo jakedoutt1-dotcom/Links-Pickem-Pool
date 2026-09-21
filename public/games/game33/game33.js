@@ -1,4 +1,4 @@
-/* LINKS Game 33 v615 — mount host directly inside #app after legacy removal. */
+/* LINKS Game 33 v617 — mount host directly inside #app after legacy removal. */
 window.LinksGame33=(()=>{
  let loaded=false,data=null,currentView="home",busy=false;
  const el=id=>document.getElementById(id), esc=s=>typeof escapeHtml==="function"?escapeHtml(String(s??"")):String(s??"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
@@ -44,12 +44,12 @@ window.LinksGame33=(()=>{
      data=await call(path33("/api/33?week="+encodeURIComponent(window.game33Week||1)+"&_="+Date.now()));
      const w=el("g33WeekV601");if(w){w.innerHTML=Array.from({length:18},(_,i)=>'<option value="'+(i+1)+'">Week '+(i+1)+'</option>').join("");w.value=String(data.week||window.game33Week||1);window.game33Week=Number(data.week)||window.game33Week||1}
      if(el("g33RolloverV601"))el("g33RolloverV601").textContent=data.carryWeeks?(data.carryWeeks+" rollover week"+(data.carryWeeks===1?"":"s")):"No rollover";
-     const result=el("g33ResultV601");if(result)result.innerHTML=data.finalized?(data.winners?.length?("🏆 <b>"+data.winners.map(x=>esc(x.player)+" ("+esc(x.team)+")").join(", ")+"</b> hit 33."):"↪️ Nobody hit 33. Rollover continues."):'<div class="small">Live week — final scores determine the result.</div>';
+     const result=el("g33ResultV601");if(result)result.innerHTML=data.finalized?(data.winners?.length?("🏆 <b>"+data.winners.map(x=>esc(x.player)+" ("+esc(x.team)+")").join(", ")+"</b> finished with a FINAL score of 33."):"↪️ Nobody hit 33. Rollover continues."):'<div class="small">Live week — final scores determine the result.</div>';
      const mine=el("g33MyTeamCardV601");if(mine){mine.classList.toggle("hide",window.role!=="player");const a=(data.assignments||[]).find(x=>x.player===window.currentUser);if(el("g33MyTeamV601"))el("g33MyTeamV601").innerHTML=a?row(a):'<div class="small">Your yearly team has not been assigned yet.</div>'}
      const sorted=[...(data.assignments||[])].sort((a,b)=>Math.abs(Number(a.score??999)-33)-Math.abs(Number(b.score??999)-33));
      if(el("g33WatchV601"))el("g33WatchV601").innerHTML=sorted.filter(a=>a.score!=null).slice(0,5).map(row).join("")||'<div class="small">Scores will appear when games begin.</div>';
      if(el("g33ScoresV601"))el("g33ScoresV601").innerHTML=(data.assignments||[]).map(row).join("")||'<div class="small">No assignments yet.</div>';
-     if(el("g33TeamsV601"))el("g33TeamsV601").innerHTML=(data.assignments||[]).map(a=>'<div class="g33-player-v601"><b>'+esc(a.player)+'</b><span>'+esc(a.team)+'</span><span>'+(data.paid?.[a.player]?"ACTIVE":"PENDING")+'</span></div>').join("")||'<div class="small">No yearly team assignments yet.</div>';
+     if(el("g33TeamsV601"))el("g33TeamsV601").innerHTML=(data.assignments||[]).map(a=>'<div class="g33-player-v601"><b>'+esc(a.player)+'</b><span>'+esc(a.team)+'</span><span class="g33-status-box-v617 '+(data.paid?.[a.player]?"active":"pending")+'">'+(data.paid?.[a.player]?"ACTIVE":"PENDING")+'</span></div>').join("")||'<div class="small">No yearly team assignments yet.</div>';
      if(el("g33HistoryV601"))el("g33HistoryV601").innerHTML=(data.history||[]).filter(x=>x.finalized).map(h=>'<div class="g33-player-v601"><b>Week '+h.week+'</b><span>'+(h.winners?.length?esc(h.winners.map(x=>x.player).join(", ")):"Rollover")+'</span><span>'+(h.payoutPaid?"✓":"")+'</span></div>').join("")||'<div class="small">No finalized weeks yet.</div>';
      el("g33AdminNavV601")?.classList.toggle("hide",!commissioner());if(currentView==="admin")renderAdmin();
    }catch(x){note("Game 33 could not refresh: "+x.message,false)}finally{busy=false}
@@ -60,7 +60,7 @@ window.LinksGame33=(()=>{
    if(el("g33DrawStatusV601"))el("g33DrawStatusV601").innerHTML=locked?"🔒 YEARLY DRAW LOCKED — teams stay all 18 weeks.":"🔓 No yearly draw locked yet.";
    if(el("g33RandomV601"))el("g33RandomV601").disabled=locked;if(el("g33SaveAssignmentsV601"))el("g33SaveAssignmentsV601").disabled=locked;
    if(el("g33PlayerCountV601"))el("g33PlayerCountV601").textContent=players.length+" / 32"; const add=el("g33AddPlayerV601");if(add){add.disabled=players.length>=32;add.textContent=players.length>=32?"MAXIMUM 32 PLAYERS":"ADD PLAYER & SEND SETUP"}
-   if(el("g33AdminPlayersV601"))el("g33AdminPlayersV601").innerHTML=players.map(p=>'<div class="g33-player-v601"><b>'+esc(p)+'</b><span>'+esc((data.assignments||[]).find(a=>a.player===p)?.team||"—")+'</span><span>'+(data.paid?.[p]?"ACTIVE":"PENDING")+'</span></div>').join("")||'<div class="small">No players yet.</div>';
+   if(el("g33AdminPlayersV601"))el("g33AdminPlayersV601").innerHTML=players.map(p=>'<div class="g33-player-v601"><b>'+esc(p)+'</b><span>'+esc((data.assignments||[]).find(a=>a.player===p)?.team||"—")+'</span><span class="g33-status-box-v617 '+(data.paid?.[p]?"active":"pending")+'">'+(data.paid?.[p]?"ACTIVE":"PENDING")+'</span></div>').join("")||'<div class="small">No players yet.</div>';
    const assigned=Object.fromEntries((data.assignments||[]).map(x=>[x.player,x.team]));
    if(el("g33ManualV601"))el("g33ManualV601").innerHTML=players.map(p=>'<div class="g33-manual-v601"><b>'+esc(p)+'</b><select data-g33-manual="'+esc(p)+'" '+(locked?"disabled":"")+'><option value="">— Team —</option>'+NFL_TEAMS_33.map(t=>'<option value="'+t+'" '+(assigned[p]===t?"selected":"")+'>'+esc(teamName(t))+'</option>').join("")+'</select></div>').join("");
    if(el("g33AccessV601"))el("g33AccessV601").innerHTML=players.map(p=>{const paid=!!data.paid?.[p];return '<label class="g33-access-v601 '+(paid?"active":"pending")+'"><input type="checkbox" data-g33-access="'+esc(p)+'" '+(paid?"checked":"")+'><span class="g33-access-state-v609">'+(paid?"✓ ACTIVE":"PENDING")+'</span><b>'+esc(p)+'</b></label>'}).join("");
