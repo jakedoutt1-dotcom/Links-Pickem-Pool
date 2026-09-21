@@ -32,7 +32,6 @@ window.LinksGame33=(()=>{
    el("g33FinalizeV601")?.addEventListener("click",finalize);
    el("g33PayoutV601")?.addEventListener("click",payout);
    el("g33SaveAccessV601")?.addEventListener("click",saveAccess);
-   el("g33LoadTestV610")?.addEventListener("click",loadTestRoster);
  }
  function row(a){
    const score=a.score??"—",n=Number(a.score),near=Number.isFinite(n)&&Math.abs(n-33)<=3&&!a.hit33;
@@ -67,7 +66,6 @@ window.LinksGame33=(()=>{
    el("g33AccessV601")?.querySelectorAll("[data-g33-access]").forEach(box=>box.addEventListener("change",()=>{const row=box.closest(".g33-access-v601"),state=row?.querySelector(".g33-access-state-v609");row?.classList.toggle("active",box.checked);row?.classList.toggle("pending",!box.checked);if(state)state.textContent=box.checked?"✓ ACTIVE":"PENDING"}));
  }
  async function addPlayer(){const n=el("g33AddNameV601")?.value.trim(),email=el("g33AddEmailV601")?.value.trim(),st=el("g33AddStatusV601");if((data?.players||[]).length>=32){if(st)st.textContent="Maximum 32 players — all NFL teams are accounted for.";return}if(!n||!email){if(st)st.textContent="Enter player name and email.";return}try{await call("/api/admin/player",{method:"POST",body:JSON.stringify({name:n,password:"",email})});const r=await call("/api/admin/player-setup-invite",{method:"POST",body:JSON.stringify({player:n,email,delivery:"email"})});if(st)st.textContent=r.sent?"✅ Player added and setup email sent.":"✅ Player added. Setup link created.";el("g33AddNameV601").value="";el("g33AddEmailV601").value="";await render()}catch(x){if(st)st.textContent="⚠️ "+x.message}}
- async function loadTestRoster(){if(!confirm("Load the temporary 2026 Game 33 test names and teams into this pool?"))return;try{await call(path33("/api/33/test-load-2026"),{method:"POST",body:"{}"});await render();note("✅ Temporary Game 33 test roster loaded.")}catch(x){note(x.message,false)}}
  async function saveAccess(){const boxes=[...document.querySelectorAll("[data-g33-access]")];try{await call(path33("/api/33/access"),{method:"POST",body:JSON.stringify({players:boxes.map(b=>({player:b.dataset.g33Access,active:b.checked}))})});await render();note("✅ Player access saved.")}catch(x){note(x.message,false)}}
  async function saveManual(){const a=[...document.querySelectorAll("[data-g33-manual]")].map(s=>({player:s.dataset.g33Manual,team:s.value}));if(!a.length||a.some(x=>!x.team))return note("Assign a team to every player first.",false);if(new Set(a.map(x=>x.team)).size!==a.length)return note("Each entry must have a different NFL team.",false);if(!confirm("Save and LOCK these teams for all 18 weeks?"))return;try{await call(path33("/api/33/manual-draw"),{method:"POST",body:JSON.stringify({assignments:a})});await render();note("✅ Yearly assignments saved and locked.")}catch(x){note(x.message,false)}}
  async function randomDraw(){if(!confirm("Run one random yearly draw and lock it for all 18 weeks?"))return;try{await call(path33("/api/33/random-draw"),{method:"POST",body:"{}"});await render();note("🎲 Yearly draw complete.")}catch(x){note(x.message,false)}}
