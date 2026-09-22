@@ -3116,3 +3116,24 @@ function scrubSeedPoolsV89(){
 LinksLifecycleCallbacksV82.push(scrubSeedPoolsV89);
 function stampV89(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v89 · LAUNCH DATA GUARD</span>";if(x.innerHTML!==html)x.innerHTML=html})}
 queueMicrotask(()=>{scrubSeedPoolsV89();stampV89();LinksLifecycleV82.queue()});
+
+
+// Pool Truth Surface v90 — newly created pools render from real stored player/setup state, never seeded activity copy.
+function poolTruthV90(pool){
+ const p=PoolHubData[pool]||{},created=CreatedPools.all().some(x=>x.name===pool),players=realEntrantsV88(pool),slate=GameSlateStoreV86.read(pool);
+ return {created,players,slate,members:created?Math.max(1,players.length+1):(p.members||0),ready:created?players.filter(x=>x.done===x.total).length+(slate.length?1:0):(p.ready||0),setup:slate.length>0};
+}
+function cleanCreatedPoolHubV90(){
+ if(document.documentElement.dataset.view!=="pool")return;const pool=document.documentElement.dataset.pool||"",truth=poolTruthV90(pool);if(!truth.created)return;
+ const hub=document.querySelector(".pool-hub");if(!hub)return;
+ const hero=hub.querySelector(".poolhub-title p");if(hero){const p=PoolHubData[pool];hero.textContent=(p?.game||"LINKS POOL")+" · "+truth.members+" PLAYER"+(truth.members===1?'':'S')}
+ const lock=hub.querySelector(".poolhub-lock");if(lock){const strong=lock.querySelector("strong"),em=lock.querySelector("em");if(strong)strong.textContent=truth.setup?(PoolHubData[pool]?.lock||"PER-GAME KICKOFF"):"SETUP REQUIRED";if(em)em.textContent=truth.setup?"● PICKS OPEN":"● WAITING FOR SETUP"}
+ const overview=hub.querySelector('.hub-overview');if(!overview)return;
+ const main=overview.querySelector('.hub-main');if(main){const score=main.querySelector('.hub-scoreline strong');if(score)score.textContent="—";const rank=main.querySelector('.hub-scoreline small');if(rank)rank.textContent="Season begins with the first scored game";const progress=main.querySelector('.hub-progress i');if(progress)progress.style.width=(truth.members?Math.round(truth.ready/truth.members*100):0)+"%";const copy=main.querySelector('p');if(copy)copy.textContent=truth.setup?(truth.ready+" of "+truth.members+" players ready."):"Publish the game slate, then invite players and open picks."}
+ const tiles=overview.querySelectorAll('.hub-tile');if(tiles[0]){tiles[0].querySelector('strong').textContent=truth.members;tiles[0].querySelector('small').textContent=truth.players.length+" invited"}if(tiles[1]){tiles[1].querySelector('strong').textContent="—";tiles[1].querySelector('small').textContent="No scored results yet"}
+ overview.querySelector('.hub-live')?.remove();
+ const activity=overview.querySelector('.hub-activity');if(activity)activity.innerHTML='<span>POOL PULSE</span><h3>Latest activity</h3>'+(truth.setup?'<p><b>Game slate</b> published <small>READY</small></p>':'<p><b>Commissioner setup</b> needs games <small>ACTION</small></p>')+(truth.players.length?'<p><b>'+truth.players.length+' player'+(truth.players.length===1?'':'s')+'</b> invited <small>ACTIVE</small></p>':'<p><b>No players invited yet</b> <small>START HERE</small></p>');
+}
+LinksLifecycleCallbacksV82.push(cleanCreatedPoolHubV90);
+function stampV90(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v90 · POOL TRUTH SURFACE</span>";if(x.innerHTML!==html)x.innerHTML=html})}
+queueMicrotask(()=>{cleanCreatedPoolHubV90();stampV90();LinksLifecycleV82.queue()});
