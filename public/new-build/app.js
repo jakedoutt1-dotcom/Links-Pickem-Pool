@@ -3645,3 +3645,11 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-network-ga
 const CreatePoolOpenV145=CreatePoolStudio.open.bind(CreatePoolStudio);CreatePoolStudio.open=function(game){if(game&&!LaunchFormatsV145.has(launchFormatTypeV145(game))){modal('ENGINE IN FINAL DEVELOPMENT','<div class="connected-modal"><span class="badge">LINKS GAME NETWORK</span><h3>'+linksEscape(game)+'</h3><p>Creation opens only after this format’s complete engine passes launch QA.</p></div>');return}CreatePoolOpenV145(game);queueMicrotask(catalogIntegrityV145)};
 function releaseV145(){catalogIntegrityV145();document.documentElement.dataset.linksBuild='v145';document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v145 · LAUNCH CATALOG</span>';if(x.innerHTML!==h)x.innerHTML=h})}
 LinksLifecycleCallbacksV82.push(releaseV145);queueMicrotask(()=>{releaseV145();LinksLifecycleV82.queue()});
+
+// LINKS Owner Admin Foundation v147 — owner console exists, but cannot be unlocked by a client-side hard-coded secret.
+const LinksOwnerAdminV147={open(){modal('LINKS ADMIN','<section class="links-owner-v147"><span>OWNER CONSOLE</span><h2>LINKS SYSTEM ADMIN</h2><p>This console is reserved for LINKS ownership. Secure authentication will be connected with the production backend; no owner password is stored in this public JavaScript bundle.</p><div><b>SECURITY STATUS</b><strong>BACKEND AUTH REQUIRED</strong><small>Pool commissioner controls remain separate from LINKS owner controls.</small></div><button data-owner-close-v147>CLOSE</button></section>')},ready:false};
+window.LinksOwnerAdmin=LinksOwnerAdminV147;
+document.addEventListener('click',e=>{if(e.target.closest('[data-owner-close-v147]'))document.querySelector('.modal')?.remove()},true);
+function ownerSecurityAuditV147(){document.querySelectorAll('[data-links-owner],[data-global-admin]').forEach(b=>{b.onclick=null;b.setAttribute('aria-disabled','true');b.title='Secure owner authentication required'})}
+function releaseV147(){ownerSecurityAuditV147();document.documentElement.dataset.linksBuild='v147';document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v147 · OWNER ADMIN SECURITY</span>';if(x.innerHTML!==h)x.innerHTML=h})}
+LinksLifecycleCallbacksV82.push(releaseV147);queueMicrotask(()=>{releaseV147();LinksLifecycleV82.queue()});
