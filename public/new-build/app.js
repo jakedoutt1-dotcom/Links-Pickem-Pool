@@ -2283,3 +2283,15 @@ function commissionerToolsV30(){
 }
 function bootV30(){navigationArchitectureV30();commissionerToolsV30()}const v30o=new MutationObserver(bootV30);v30o.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV30);
 function stampV30(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v30 · NAVIGATION ARCHITECTURE</span>")}const s30=new MutationObserver(stampV30);s30.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV30);
+
+// Audio-ready product shell v31 — visual hooks for the future original LINKS theme without autoplay.
+function audioReadyV31(){
+ const splash=document.querySelector(".splash,.splash-screen,.intro-splash");
+ if(splash&&!splash.querySelector(".links-sonic-v31"))splash.insertAdjacentHTML("beforeend",'<div class="links-sonic-v31" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>');
+ document.querySelectorAll(".platform-hero-v22,.game-center-v28").forEach(x=>x.classList.add("v31-broadcast"));
+}
+function scoreStatusV31(){
+ document.querySelectorAll(".live-score-rail-v24").forEach(r=>{if(!r.querySelector(".live-pulse-v31"))r.insertAdjacentHTML("afterbegin",'<span class="live-pulse-v31" aria-hidden="true"></span>')});
+}
+function bootV31(){audioReadyV31();scoreStatusV31()}const o31=new MutationObserver(bootV31);o31.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV31);
+function stampV31(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v31 · BROADCAST FINISH</span>")}const s31=new MutationObserver(stampV31);s31.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV31);
