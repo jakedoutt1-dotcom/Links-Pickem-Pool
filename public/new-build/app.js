@@ -1743,3 +1743,64 @@ function validatePoolRoute(){
  AppStatus.show("warn","Pool unavailable","That pool is not available on this device. Showing your pools instead.");LinksRouter.apply("my-pools","",true);
 }
 setTimeout(validatePoolRoute,30);
+
+// Finish Pass v15 — consistent hierarchy, context, and empty-state placement across the app.
+function contextBar(){
+ const v=document.documentElement.dataset.view||"home",pool=document.documentElement.dataset.pool||"";
+ if(v==="home"||document.documentElement.dataset.publicHome==="true")return "";
+ const map={"my-pools":["MY LINKS","Pools"],"my-picks":["GAME DAY","Picks"],results:["LINKS LIVE","Results"],messages:["POOL ROOM","Messages"],notifications:["SMART INBOX","Inbox"],commissioner:["COMMISSIONER","Command Center"],pool:["POOL HUB",pool||"Pool"]};
+ const x=map[v];if(!x)return "";
+ return '<div class="links-context-v15"><button data-context-home aria-label="Home"><i>L</i></button><span>'+x[0]+'</span><b>'+linksEscape(x[1])+'</b>'+(v==="pool"?'<em>'+linksEscape(PoolHubData[pool]?.game||"")+'</em>':'')+'</div>';
+}
+function mountContextBar(){
+ const v=document.documentElement.dataset.view||"home",w=document.querySelector(".route-workspace");if(!w||v==="home"||document.documentElement.dataset.publicHome==="true"||w.querySelector(".links-context-v15"))return;
+ w.insertAdjacentHTML("afterbegin",contextBar());w.querySelector("[data-context-home]")?.addEventListener("click",()=>LinksRouter.navigate("home"));
+}
+function polishHierarchy(){
+ const v=document.documentElement.dataset.view||"home";
+ document.body.dataset.linksView=v;
+ mountContextBar();
+ // Only one route identity/header owns the top of a workspace.
+ const w=document.querySelector(".route-workspace");if(w){
+   const ids=w.querySelectorAll(".route-identity");ids.forEach((x,i)=>{if(i)x.remove()});
+   const ctx=w.querySelector(".links-context-v15"),id=w.querySelector(".route-identity");if(ctx&&id&&ctx.nextElementSibling!==id)ctx.after(id);
+ }
+ // Pool hub order: context > hero > identity > status > quick actions > setup > live tab.
+ if(v==="pool"){
+   const hub=document.querySelector(".pool-hub");if(hub){
+    const hero=hub.querySelector(".poolhub-hero"),identity=hub.querySelector(".pool-identity"),status=hub.querySelector(".pool-status-ribbon"),quick=hub.querySelector(".hub-quick"),setup=hub.querySelector(".pool-setup-summary"),tabs=hub.querySelector(".poolhub-tabs");
+    let anchor=hero;
+    [identity,status,quick,setup,tabs].forEach(el=>{if(el&&anchor&&anchor.nextElementSibling!==el){anchor.after(el)}if(el)anchor=el});
+   }
+ }
+}
+function removePrototypeNoise(){
+ // Hide old route hero when a modern identity and modern feature surface are present.
+ const w=document.querySelector(".route-workspace");if(!w)return;
+ if(w.querySelector(".route-identity"))w.querySelectorAll(":scope > .route-hero").forEach(x=>x.classList.add("v15-superseded"));
+ // Repeated legacy route grids remain useful only when there is no modern primary surface.
+ const v=document.documentElement.dataset.view;
+ const modern={ "my-pools":".mypools-v3","my-picks":".mypicks-v3","results":".results-board-v13","commissioner":".commissioner-flow-v12"}[v];
+ if(modern&&w.querySelector(modern))w.querySelectorAll(":scope > .route-grid").forEach(x=>x.classList.add("v15-superseded"));
+}
+const FinishPass={run(){polishHierarchy();removePrototypeNoise();},queue(){requestAnimationFrame(()=>this.run())}};
+document.addEventListener("click",()=>FinishPass.queue(),true);window.addEventListener("popstate",()=>FinishPass.queue());queueMicrotask(()=>FinishPass.queue());
+
+// Home bottom finish: a restrained closing action instead of leftover prototype sections.
+function homeFinishV15(){
+ return '<section class="home-finish-v15"><div class="hfv-mark">L</div><div><span>LINKS POOLS</span><b>GAME DAY, ORGANIZED.</b><small>One account · Every pool · Every pick</small></div><button data-hfv-games>EXPLORE GAMES ›</button></section>';
+}
+function mountHomeFinish(){
+ if(document.documentElement.dataset.view!=="home"||document.documentElement.dataset.publicHome==="true")return;
+ const main=document.querySelector(".main");if(!main||main.querySelector(".home-finish-v15"))return;
+ const network=main.querySelector(".game-network-v2");if(network)network.insertAdjacentHTML("afterend",homeFinishV15());else main.insertAdjacentHTML("beforeend",homeFinishV15());
+ main.querySelector("[data-hfv-games]")?.addEventListener("click",()=>document.querySelector(".game-network-v2")?.scrollIntoView({behavior:"smooth",block:"start"}));
+}
+const finishObserver=new MutationObserver(()=>mountHomeFinish());finishObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountHomeFinish);
+
+// More sheet becomes the clean home for secondary navigation on phones.
+function refineMobileMore(){
+ const sheet=document.querySelector(".mobile-more-sheet");if(!sheet||sheet.dataset.refined==="1")return;sheet.dataset.refined="1";
+ if(!sheet.querySelector(".mobile-more-head"))sheet.insertAdjacentHTML("afterbegin",'<div class="mobile-more-head"><div><span>LINKS</span><b>MORE</b></div><small>ACCOUNT & TOOLS</small></div>');
+}
+const moreObserver=new MutationObserver(()=>refineMobileMore());moreObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(refineMobileMore);
