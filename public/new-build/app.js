@@ -3229,3 +3229,19 @@ const LINKS_NEW_BUILD_VERSION_V96={version:"v96",label:"LAUNCH POLISH"};
 function authoritativeStampV96(){document.querySelectorAll('.app-build-v18').forEach(x=>{const html='<b>LINKS</b><span>NEW BUILD · '+LINKS_NEW_BUILD_VERSION_V96.version+' · '+LINKS_NEW_BUILD_VERSION_V96.label+'</span>';if(x.innerHTML!==html)x.innerHTML=html});document.documentElement.dataset.linksBuild=LINKS_NEW_BUILD_VERSION_V96.version}
 LinksLifecycleCallbacksV82.push(authoritativeStampV96);
 queueMicrotask(()=>{authoritativeStampV96();requestAnimationFrame(authoritativeStampV96)});
+
+
+// Game Identity Completion v97 — Confidence and Custom keep their own visual/game identity everywhere.
+const gameIdentityV96=gameIdentity;
+gameIdentity=function(game=""){
+ const n=String(game||"").toUpperCase();
+ if(n.includes("CONFIDENCE"))return {type:"confidence",eyebrow:"RANK THE CARD",label:"CONFIDENCE"};
+ if(n.includes("CUSTOM"))return {type:"custom",eyebrow:"YOUR GAME. YOUR RULES.",label:"CUSTOM POOL"};
+ return gameIdentityV96(game);
+};
+const gameHubTermsV96=gameHubTerms;
+gameHubTerms=function(name){const p=PoolHubData[name],g=gameIdentity(p?.game||"");if(g.type==="confidence")return {action:"MAKE CONFIDENCE PICKS",noun:"ranked games",status:"Confidence card"};if(g.type==="custom")return {action:"OPEN CUSTOM PICKS",noun:"choices",status:"Custom game"};return gameHubTermsV96(name)};
+function repairGameIdentityV97(){if(document.documentElement.dataset.view!=="pool")return;const pool=document.documentElement.dataset.pool||"",p=PoolHubData[pool];if(!p)return;const g=gameIdentity(p.game||""),band=document.querySelector('.pool-identity');if(band){band.className='pool-identity pi-'+g.type;band.querySelector('.pi-art').innerHTML=networkGlyph(g.type);band.querySelector('.pi-copy>span').textContent=g.eyebrow;band.querySelector('.pi-copy>b').textContent=g.label}const hub=document.querySelector('.pool-hub');if(hub){hub.dataset.gameType=g.type;hub.querySelector('.poolhub-hero')?.setAttribute('data-game-type',g.type)}correctPoolLanguage()}
+LinksLifecycleCallbacksV82.push(repairGameIdentityV97);
+function stampV97(){document.querySelectorAll('.app-build-v18').forEach(x=>{const html='<b>LINKS</b><span>NEW BUILD · v97 · GAME IDENTITY COMPLETION</span>';if(x.innerHTML!==html)x.innerHTML=html})}
+queueMicrotask(()=>{repairGameIdentityV97();stampV97();LinksLifecycleV82.queue()});
