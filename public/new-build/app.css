@@ -256,3 +256,6 @@ body[data-links-view="commissioner"] .finish-dock-v26,body[data-links-view="admi
 
 /* Reveal Readiness v47 */
 html{background:#050908}body{min-height:100dvh}.links-v27{min-height:100dvh}.links-v27 img{-webkit-user-drag:none;user-select:none}.links-v27 .finish-dock-v26{padding-bottom:max(7px,env(safe-area-inset-bottom))}.links-v27 .route-workspace{padding-bottom:max(76px,calc(58px + env(safe-area-inset-bottom)))}@media(min-width:901px){.links-v27 .route-workspace{padding-bottom:36px}.links-v27 .finish-dock-v26{padding-bottom:7px}}@media(max-width:700px){.links-v27{overflow-x:hidden}.links-v27 .route-workspace,.links-v27 .main{max-width:100vw}}
+
+/* Production Feel v48 */
+.sr-only-v48{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}.links-v27 button:empty:not([aria-label]){display:none!important}.links-v27 ::selection{background:rgba(241,117,33,.28);color:#fff}.links-v27 input::placeholder,.links-v27 textarea::placeholder{color:#66716c;opacity:1}
