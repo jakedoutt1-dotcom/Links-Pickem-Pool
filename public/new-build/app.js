@@ -2327,3 +2327,12 @@ function mobileFinishV33(){
 }
 function bootV33(){mobileFinishV33()}const o33=new MutationObserver(bootV33);o33.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV33);
 function stampV33(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v33 · MOBILE FINISH</span>")}const s33=new MutationObserver(stampV33);s33.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV33);
+
+// Release Readiness v34 — consistent empty/loading language and final product semantics.
+function releaseReadinessV34(){
+ document.querySelectorAll("[data-empty],.empty-state").forEach(e=>{if(!e.querySelector(".v34-empty-mark"))e.insertAdjacentHTML("afterbegin",'<span class="v34-empty-mark" aria-hidden="true">LINKS</span>')});
+ document.querySelectorAll("a[target='_blank']").forEach(a=>{if(!a.rel)a.rel="noopener noreferrer"});
+ document.querySelectorAll("img").forEach(i=>{if(!i.hasAttribute("loading"))i.loading="lazy";if(!i.hasAttribute("decoding"))i.decoding="async"});
+}
+function bootV34(){releaseReadinessV34()}const o34=new MutationObserver(bootV34);o34.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV34);
+function stampV34(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v34 · RELEASE READINESS</span>")}const s34=new MutationObserver(stampV34);s34.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV34);
