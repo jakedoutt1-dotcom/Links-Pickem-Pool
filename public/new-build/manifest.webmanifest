@@ -1,0 +1,27 @@
+{
+  "name": "LINKS Pools",
+  "short_name": "LINKS",
+  "description": "All your pools. All your games. All in one place.",
+  "start_url": "./?view=home",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#06090d",
+  "theme_color": "#090b0f",
+  "shortcuts": [
+    {
+      "name": "My Picks",
+      "short_name": "Picks",
+      "url": "./?view=my-picks"
+    },
+    {
+      "name": "My Pools",
+      "short_name": "Pools",
+      "url": "./?view=my-pools"
+    },
+    {
+      "name": "Commissioner",
+      "short_name": "Admin",
+      "url": "./?view=commissioner"
+    }
+  ]
+}
