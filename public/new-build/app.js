@@ -2656,3 +2656,16 @@ function applyAISportV66(sport){
 }
 document.addEventListener("click",e=>{const b=e.target.closest("[data-ai-sport]");if(!b)return;e.preventDefault();e.stopImmediatePropagation();applyAISportV66(b.dataset.aiSport);AppStatus.show("ok",b.dataset.aiSport+" selected","Research board switched to "+b.dataset.aiSport+".")},true);
 function stampV66(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v66 · AI MULTI-SPORT FLOW</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV66);
+
+// AI Card Continuity v67 — keep each sport's research card independent while switching sports.
+const AISportCardsV67={key:"links-ai-sport-cards-v67",read(){try{return JSON.parse(localStorage.getItem(this.key)||"{}")}catch{return{}}},get(s){return this.read()[s]||[]},set(s,ids){const x=this.read();x[s]=ids;localStorage.setItem(this.key,JSON.stringify(x))}};
+const aiBaseSaveV67=AIStudio.save.bind(AIStudio);
+AIStudio.save=function(ids){aiBaseSaveV67(ids);AISportCardsV67.set(aiSportV66,ids)};
+const applyAISportBaseV67=applyAISportV66;
+applyAISportV66=function(sport){
+ const rows=AISportPreviewV66[sport]||AISportPreviewV66.NFL;aiSportV66=sport;
+ AIStudio.legs=rows.map((x,i)=>({id:"v66-"+sport.toLowerCase()+"-"+i,game:x[0],pick:x[1],price:x[2],prob:x[3],trend:"Preview research sample",why:"Illustrative "+sport+" research candidate. Verify current market data before acting.",corr:"CHECK"}));
+ aiBaseSaveV67(AISportCardsV67.get(sport));
+ const h=document.querySelector("#aiStudioMount");if(!h)return;h.innerHTML=AIStudio.html();AIStudio.wire(h);h.insertAdjacentHTML("afterbegin",aiPlanStrip());h.insertAdjacentHTML("beforeend",sportsbookHandoffV22());h.querySelector(".ai-studio-v19")?.insertAdjacentHTML("afterbegin",multiSportBar());h.querySelectorAll("[data-ai-sport]").forEach(b=>b.classList.toggle("active",b.dataset.aiSport===sport));
+};
+function stampV67(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v67 · AI CARD CONTINUITY</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV67);
