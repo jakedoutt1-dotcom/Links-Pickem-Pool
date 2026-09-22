@@ -1571,3 +1571,49 @@ document.addEventListener("click",e=>{
  PickEngine.save(pool+"-"+id,b.dataset.adapterPick);const live=b.closest(".pool-tab-live");if(live){live.innerHTML=gameSpecificPickPanel(pool);live.dataset.adapter="1"}
 },true);
 const adapterObserver=new MutationObserver(()=>mountGameAdapter());adapterObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountGameAdapter);
+
+// Game Experience v11 — continue replacing generic NFL content with format-specific player screens.
+const FormatAdapters={
+ squares:{title:"Football Squares",kicker:"GAME GRID",copy:"Claim a square and follow the numbers when the game starts."},
+ bracket:{title:"Tournament Bracket",kicker:"ROAD TO THE TITLE",copy:"Build your bracket before the tournament locks."},
+ racing:{title:"Race Day",kicker:"GREEN FLAG",copy:"Make your driver selections before the field goes green."},
+ golf:{title:"Golf Pool",kicker:"TOURNAMENT CARD",copy:"Set your golfers before the opening round locks."},
+ game33:{title:"Game 33",kicker:"ONE NUMBER · ONE WINNER",copy:"Make your weekly selection. The pool rolls until somebody hits 33."},
+ fantasy:{title:"Fantasy Football",kicker:"GAME DAY",copy:"Set the lineup, work waivers and follow your matchup."},
+ dynasty:{title:"Dynasty Football",kicker:"FRONT OFFICE",copy:"Roster, contracts, picks and long-term team building."}
+};
+function formatPanel(pool,type){
+ const p=PoolHubData[pool],d=FormatAdapters[type];if(!d)return "";
+ const head='<div class="format-head fh-'+type+'"><div>'+networkGlyph(type)+'</div><span>'+d.kicker+'</span><h3>'+d.title+'</h3><p>'+d.copy+'</p></div>';
+ if(type==="squares")return head+'<div class="squares-preview"><div class="sq-axis"><b>HOME</b><span>?</span><span>?</span><span>?</span></div><div class="sq-grid">'+Array.from({length:16},(_,i)=>'<button data-format-choice="Square '+(i+1)+'"><small>'+(i+1)+'</small><b>'+(i===5?"YOU":"OPEN")+'</b></button>').join("")+'</div><div class="format-foot"><span>NUMBERS ASSIGNED AFTER GRID FILLS</span><button>VIEW FULL GRID ›</button></div></div>';
+ if(type==="bracket")return head+'<div class="bracket-preview"><div><button data-format-choice="TEN">TEN</button><i></i><button data-format-choice="UK">UK</button></div><b>→</b><div class="br-next"><span>YOUR WINNER</span><strong>SELECT</strong></div></div><div class="format-foot"><span>BRACKET SAVES AS YOU GO</span><button>OPEN FULL BRACKET ›</button></div>';
+ if(type==="racing")return head+'<div class="race-preview">'+["5","9","11","22"].map((n,i)=>'<button data-format-choice="CAR '+n+'"><i>'+n+'</i><b>'+(["Larson","Elliott","Hamlin","Logano"][i])+'</b><span>SELECT DRIVER</span></button>').join("")+'</div><div class="format-foot"><span>RACE CARD · '+linksEscape(p?.week||"")+'</span><button>VIEW FIELD ›</button></div>';
+ if(type==="golf")return head+'<div class="golf-preview">'+["SCHEFFLER","MCILROY","SCHAUFFELE","MORIKAWA"].map((n,i)=>'<button data-format-choice="'+n+'"><i>'+(i+1)+'</i><b>'+n+'</b><span>SELECT</span></button>').join("")+'</div><div class="format-foot"><span>TOURNAMENT FIELD</span><button>VIEW ALL GOLFERS ›</button></div>';
+ if(type==="game33")return head+'<div class="g33-preview"><div><span>CURRENT TARGET</span><b>33</b><small>POINTS</small></div><div><span>YOUR PICK</span><strong>—</strong><small>NOT SELECTED</small></div></div><button class="format-primary" data-format-choice="OPEN GAME 33">MAKE GAME 33 PICK ›</button>';
+ if(type==="fantasy"||type==="dynasty")return head+'<div class="fantasy-preview"><div><span>'+((type==="dynasty")?"ROSTER":"STARTERS")+'</span><b>'+((type==="dynasty")?"24":"9")+'</b><small>'+((type==="dynasty")?"PLAYERS":"ACTIVE")+'</small></div><div><span>'+((type==="dynasty")?"CAP ROOM":"PROJECTED")+'</span><b>'+((type==="dynasty")?"$18":"127.4")+'</b><small>'+((type==="dynasty")?"AVAILABLE":"POINTS")+'</small></div><div><span>'+((type==="dynasty")?"DRAFT PICKS":"MATCHUP")+'</span><b>'+((type==="dynasty")?"7":"1–0")+'</b><small>'+((type==="dynasty")?"NEXT 2 YRS":"RECORD")+'</small></div></div><div class="format-foot"><span>'+((type==="dynasty")?"FRONT OFFICE READY":"LINEUP READY")+'</span><button>'+((type==="dynasty")?"OPEN TEAM":"SET LINEUP")+' ›</button></div>';
+ return "";
+}
+function mountFormatAdapter(){
+ if(document.documentElement.dataset.view!=="pool")return;
+ const pool=document.documentElement.dataset.pool||"",type=gameIdentity(PoolHubData[pool]?.game||"").type;
+ if(!FormatAdapters[type])return;
+ const live=document.querySelector(".pool-tab-live");if(!live||live.dataset.formatAdapter==="1")return;
+ const active=[...document.querySelectorAll(".poolhub-tabs button,.pool-tabs button")].find(b=>b.classList.contains("active"))?.textContent.trim().toLowerCase();
+ if(active!=="picks")return;
+ live.dataset.formatAdapter="1";live.innerHTML=formatPanel(pool,type);
+}
+document.addEventListener("click",e=>{
+ const b=e.target.closest("[data-format-choice]");if(!b)return;
+ e.preventDefault();const live=b.closest(".pool-tab-live");
+ live?.querySelectorAll("[data-format-choice]").forEach(x=>x.classList.remove("selected"));b.classList.add("selected");
+ AppStatus.show("ok","Selection saved",b.dataset.formatChoice);
+},true);
+const formatObserver=new MutationObserver(()=>mountFormatAdapter());formatObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountFormatAdapter);
+
+// Pool Hub visual state follows each format.
+function formatHubPolish(){
+ if(document.documentElement.dataset.view!=="pool")return;const pool=document.documentElement.dataset.pool||"",p=PoolHubData[pool];if(!p)return;
+ const type=gameIdentity(p.game).type,hub=document.querySelector(".pool-hub");if(!hub)return;hub.dataset.gameType=type;
+ const hero=hub.querySelector(".poolhub-hero");if(hero)hero.setAttribute("data-game-type",type);
+}
+const formatPolishObserver=new MutationObserver(()=>formatHubPolish());formatPolishObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(formatHubPolish);
