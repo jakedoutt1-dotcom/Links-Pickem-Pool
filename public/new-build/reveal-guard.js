@@ -83,11 +83,6 @@ function neutralizePrototypeCopy(){
   document.querySelectorAll(".home-scorebug,.home-radar").forEach(el=>{
     if(/85%|LIVE|4\s*games|1\s*due/i.test(el.textContent||"")) el.remove();
   });
-  document.querySelectorAll(".app-build-v18").forEach(x=>{
-    x.innerHTML="<b>LINKS</b><span>NEW BUILD · v152 · REVEAL CLEAN</span>";
-  });
 }
+// v166: app.js owns the current build stamp and lifecycle. Keep this guard cleanup-only.
 queueMicrotask(neutralizePrototypeCopy);
-const copyObserverV152=new MutationObserver(()=>neutralizePrototypeCopy());
-const appV152=document.querySelector("#app");
-if(appV152) copyObserverV152.observe(appV152,{childList:true,subtree:true});
