@@ -297,14 +297,7 @@ const LaunchRouter={
 LaunchRouter.init();
 
 // Home Spotlight — a concise first screen that answers: what do I need to do now?
-function mountHomeLaunch(){
- const hero=document.querySelector(".hero");if(!hero)return;
- const panel=document.createElement("section");panel.className="home-launch";
- panel.innerHTML='<div class="home-now"><span>GOOD MORNING · YOUR LINKS</span><h2>One pick needs you.</h2><p>My Pool locks Thursday at 7:15 PM. Everything else is ready.</p><div class="home-actions"><button class="primary" data-home-pick>FINISH MY PICKS ›</button><button class="ghost" data-home-pools>OPEN MY POOLS</button></div></div><div class="home-radar"><div><small>POOLS</small><strong>3</strong><span>active</span></div><div><small>PICKS</small><strong>1</strong><span>due</span></div><div><small>LIVE</small><strong>4</strong><span>games</span></div><div><small>INBOX</small><strong>2</strong><span>unread</span></div></div>';
- hero.insertAdjacentElement("afterend",panel);
- panel.querySelector("[data-home-pick]").addEventListener("click",()=>{setRoute("my-picks");renderRouteWorkspace()});
- panel.querySelector("[data-home-pools]").addEventListener("click",()=>{setRoute("my-pools");renderRouteWorkspace()});
-}
+function mountHomeLaunch(){}
 queueMicrotask(mountHomeLaunch);
 
 // Visual Identity v1 — branded sport marks replace generic emoji in the primary product surfaces.
@@ -381,13 +374,7 @@ function mountMobileShell(){
 queueMicrotask(mountMobileShell);
 
 // Game-day NOW strip: remains useful without making Home noisy.
-function mountNowStrip(){
- const top=document.querySelector(".top");if(!top||document.querySelector(".now-strip"))return;
- const n=document.createElement("div");n.className="now-strip";
- n.innerHTML='<span class="now-pulse"></span><b>NOW</b><div class="now-copy"><strong>1 PICK DUE</strong><span>My Pool · Thu 7:15 PM</span></div><button data-now-action>FINISH ›</button>';
- top.insertAdjacentElement("afterend",n);
- n.querySelector("[data-now-action]").addEventListener("click",()=>{setRoute("my-picks");renderRouteWorkspace()});
-}
+function mountNowStrip(){}
 queueMicrotask(mountNowStrip);
 
 // Install prompt support for browsers that expose beforeinstallprompt.
@@ -403,21 +390,7 @@ function mountInstallCard(){
 queueMicrotask(mountInstallCard);
 
 // Pool Hub v2 — turn the pool destination into a real game-day workspace.
-function mountPoolGameDay(){
- const workspace=document.querySelector(".route-workspace");
- if(!workspace||document.documentElement.dataset.view!=="pool"||workspace.querySelector(".pool-gameday"))return;
- const pool=document.documentElement.dataset.pool||new URL(location.href).searchParams.get("pool")||"My Pool";
- const p=PoolHubData[pool];if(!p)return;
- const wrap=document.createElement("section");wrap.className="pool-gameday";
- wrap.innerHTML='<div class="gameday-title"><div><span>GAME DAY</span><h2>Your week at a glance.</h2></div><div class="gameday-status"><i></i>PICKS OPEN</div></div><div class="gameday-grid"><button data-pg="picks"><small>MY PICKS</small><strong>2 / 3</strong><span>1 still needs you</span><em>FINISH ›</em></button><button data-pg="standings"><small>STANDINGS</small><strong>'+p.rank+'</strong><span>'+p.record+' this season</span><em>VIEW ›</em></button><button data-pg="compare"><small>FIELD</small><strong>'+p.ready+'/'+p.members+'</strong><span>players ready</span><em>COMPARE ›</em></button><button data-pg="room"><small>POOL ROOM</small><strong>3</strong><span>new messages</span><em>OPEN ›</em></button></div><div class="matchup-feature"><div class="matchup-kicker"><span>NEXT LOCK</span><b>'+p.lock+'</b></div><div class="matchup-teams"><div><i>TEN</i><strong>TITANS</strong><span>AWAY</span></div><div class="versus"><b>VS</b><span>WEEK 3</span></div><div><i>IND</i><strong>COLTS</strong><span>HOME</span></div></div><div class="matchup-foot"><span>YOUR PICK</span><b>'+(PickEngine.get("ten-ind")?.team||"NOT PICKED")+'</b><button data-pg="picks">MAKE PICK ›</button></div></div>';
- workspace.appendChild(wrap);
- wrap.querySelectorAll("[data-pg]").forEach(b=>b.addEventListener("click",()=>{
-   const tab=b.dataset.pg;
-   if(tab==="picks"){setRoute("home");renderRouteWorkspace();setTimeout(()=>document.querySelector("[data-slate]")?.scrollIntoView({behavior:"smooth",block:"center"}),60)}
-   else if(tab==="standings"){setRoute("results");renderRouteWorkspace();scrollTo({top:0,behavior:"smooth"})}
-   else modal(tab==="compare"?"FIELD COMPARE":"POOL ROOM",tab==="compare"?'<div class="connected-modal"><span class="badge live">AFTER LOCK</span><h3>See the field without spoiling picks.</h3><p>Selections stay hidden until the game locks. Then LINKS reveals who took each side and updates the impact live.</p></div>':'<div class="connected-modal"><span class="badge">POOL ROOM</span><h3>Your pool, together.</h3><p>Announcements, commissioner notes, reactions and weekly conversation live here without exposing protected picks.</p></div>');
- }));
-}
+function mountPoolGameDay(){}
 const poolDayObserver={disconnect(){}}; // v158 legacy demo observer retired.// v158: seeded pool game-day module disabled for launch.
 
 // Pick celebration: subtle confirmation feedback, never blocks the workflow.
@@ -440,7 +413,7 @@ function poolTabPanel(tab,pool){
 }
 function activatePoolTabs(){
  const ws=document.querySelector(".route-workspace");if(!ws||document.documentElement.dataset.view!=="pool")return;
- const pool=document.documentElement.dataset.pool||new URL(location.href).searchParams.get("pool")||"My Pool";
+ const pool=document.documentElement.dataset.pool||new URL(location.href).searchParams.get("pool")||"";
  const tabs=[...ws.querySelectorAll(".poolhub-tabs button,.pool-tabs button")];
  if(!tabs.length)return;
  let host=ws.querySelector(".pool-tab-live");if(!host){host=document.createElement("section");host.className="pool-tab-live";(ws.querySelector(".pool-gameday")||ws.lastElementChild).insertAdjacentElement("afterend",host)}
@@ -542,11 +515,7 @@ function syncDockInbox(){
 queueMicrotask(syncDockInbox);
 
 // My Picks v3 — cross-pool command card with deadline priority and completion.
-const MyPickCards=[
- {pool:"My Pool",game:"NFL PICK’EM",due:"THU · 7:15 PM",done:2,total:3,state:"action",note:"1 PICK MISSING"},
- {pool:"College Pool",game:"COLLEGE PICK’EM",due:"SAT · 11:00 AM",done:10,total:10,state:"ready",note:"CARD COMPLETE"},
- {pool:"Last One Standing",game:"SURVIVOR",due:"SUN · 12:00 PM",done:0,total:1,state:"action",note:"SELECTION NEEDED"}
-];
+const MyPickCards=[];
 function myPicksCommand(){
  return '<section class="mypicks-v3"><div class="mypicks-hero"><div><span>MY PICKS</span><h2>Two decisions. Then you’re done.</h2><p>LINKS sorts every pool by what needs you first.</p></div><div class="pick-health-ring"><b>85%</b><span>WEEK READY</span></div></div><div class="deadline-line"><i></i><div><span>NEXT LOCK</span><b>My Pool · Thursday 7:15 PM</b></div><em>1 PICK DUE</em></div><div class="pick-command-grid">'+MyPickCards.map((x,i)=>'<button class="pick-command-card '+x.state+'" data-pickpool="'+x.pool+'"><div class="pick-card-art '+gameCategory(x.game)+'">'+artHTML(gameCategory(x.game))+'</div><div class="pick-card-copy"><span>'+x.game+'</span><h3>'+x.pool+'</h3><div class="pick-progress"><i style="width:'+Math.round(x.done/x.total*100)+'%"></i></div><small>'+x.done+' OF '+x.total+' SAVED · '+x.due+'</small><b>'+x.note+' ›</b></div></button>').join("")+'</div><div class="pick-safe-banner"><div class="safe-shield">✓</div><div><b>PICK SAFE</b><span>Your saved picks stay private until each game locks.</span></div><em>AUTO-SAVE ON</em></div></section>';
 }
@@ -619,7 +588,7 @@ document.addEventListener("click",e=>{
  const btn=e.target.closest("[data-room-v2], .gameday-card.room");
  if(!btn)return;
  const hub=document.querySelector(".poolhub-hero h1,.poolhub-hero h2");
- const pool=hub?.textContent?.trim()||new URL(location.href).searchParams.get("pool")||"My Pool";
+ const pool=hub?.textContent?.trim()||new URL(location.href).searchParams.get("pool")||"";
  e.preventDefault();e.stopImmediatePropagation();openRoomV2(pool);
 },true);
 
@@ -695,7 +664,7 @@ if("serviceWorker" in navigator){
 
 // Invite Center v2 — commissioner growth flow with link, email/SMS handoff and join preview.
 const InviteState={key:"links-invites-v2",read(){try{return JSON.parse(localStorage.getItem(this.key)||"[]")}catch{return[]}},add(v){const a=this.read();a.unshift({value:v,at:new Date().toISOString(),status:"local"});localStorage.setItem(this.key,JSON.stringify(a.slice(0,30)));return a}};
-function inviteCenter(pool="My Pool"){
+function inviteCenter(pool=""){
  const base=location.origin+location.pathname+"?view=pool&pool="+encodeURIComponent(pool)+"&invite=1";
  const sent=InviteState.read();
  return '<section class="invite-v2"><div class="invite-hero"><div><span>INVITE CENTER</span><h2>Bring the whole group in.</h2><p>One link opens the right pool. Existing members sign in; new players get a short setup.</p></div><div class="invite-mark">+</div></div><div class="invite-link"><div><span>POOL INVITE LINK</span><b data-invite-url></b></div><button data-copy-invite>COPY LINK</button></div><div class="invite-actions"><button data-share-invite="text"><i>↗</i><div><b>SHARE INVITE</b><span>Text, email or any installed app</span></div></button><button data-share-invite="email"><i>@</i><div><b>EMAIL</b><span>Open a prefilled invitation</span></div></button></div><form class="invite-direct"><div><span>DIRECT INVITE</span><h3>Email or mobile number</h3></div><input type="text" placeholder="player@email.com or mobile number" autocomplete="off"><button>SEND INVITE</button></form><div class="join-preview"><span>WHAT PLAYERS SEE</span><div><i>L</i><div><b>'+pool+'</b><small>You’ve been invited to join</small></div><em>JOIN POOL ›</em></div><p>No pool searching. The invitation takes them directly to the correct pool.</p></div>'+(sent.length?'<div class="invite-history"><span>RECENT INVITES</span>'+sent.slice(0,3).map(x=>'<div><b></b><em>SENT</em></div>').join("")+'</div>':'')+'</section>';
@@ -714,7 +683,7 @@ function wireInvite(h,pool){
 }
 document.addEventListener("click",e=>{
  const b=e.target.closest("[data-invite-players],[data-cmd='invite'],.invite-players");
- if(!b)return;const pool=new URL(location.href).searchParams.get("pool")||"My Pool";e.preventDefault();e.stopImmediatePropagation();openInviteCenter(pool);
+ if(!b)return;const pool=new URL(location.href).searchParams.get("pool")||"";e.preventDefault();e.stopImmediatePropagation();openInviteCenter(pool);
 },true);
 
 // Route Stabilizer v1 — explicit URLs win, Home is the clean default, browser history is deterministic.
@@ -944,7 +913,7 @@ document.addEventListener("submit",e=>{
  const host=f.closest(".room-v2")||f.closest("[data-room-host]");if(!host)return;
  e.preventDefault();e.stopImmediatePropagation();
  const input=f.querySelector("input,textarea"),text=(input?.value||"").trim();if(!text)return;
- const pool=new URL(location.href).searchParams.get("pool")||document.documentElement.dataset.pool||"My Pool";
+ const pool=new URL(location.href).searchParams.get("pool")||document.documentElement.dataset.pool||"";
  RoomStore.add(pool,text);if(input)input.value="";
  const mount=host.parentElement;if(mount){mount.innerHTML=roomV2(pool);hydrateRoomText(mount,pool);openRoomWire(mount,pool)}
  AppStatus.show("ok","Message sent","Posted to "+pool+" Pool Room.");
@@ -1069,7 +1038,7 @@ const quickObserver=new MutationObserver(()=>mountHubQuick());quickObserver.obse
 // Home Command v4 — visual, simple, action-first landing page.
 function homeCommandV4(){
  const pools=Object.entries(PoolHubData),active=pools.length,next=pools[0]?.[1];
- return '<section class="home-command-v4"><div class="home-stage"><div class="home-stadium"><i></i><i></i><i></i><i></i><div class="field-lines"></div></div><div class="home-stage-copy"><span>LINKS POOLS</span><h1>ALL YOUR POOLS.<br><em>ALL IN ONE PLACE.</em></h1><p>Make picks. Track the field. Run your pools. One account for every game.</p><div class="home-primary"><button data-home-go="my-picks">MAKE MY PICKS <b>1 DUE</b></button><button class="ghost" data-home-go="my-pools">MY POOLS</button></div></div><div class="home-scorebug"><span>YOUR WEEK</span><b>85%</b><small>READY</small><i style="--week:85%"></i></div></div><div class="home-now-grid"><button class="home-now urgent" data-home-go="my-picks"><div class="now-icon">✓</div><div><span>NEEDS YOU</span><b>1 PICK LEFT</b><small>My Pool · before Thursday lock</small></div><em>FINISH ›</em></button><button class="home-now" data-home-pool="My Pool"><div class="now-icon live">●</div><div><span>UP NEXT</span><b>'+((next&&next.game)||"NFL PICK’EM")+'</b><small>'+((next&&next.lock)||"THU · 7:15 PM")+'</small></div><em>OPEN ›</em></button><button class="home-now" data-home-go="results"><div class="now-icon trophy">★</div><div><span>LIVE BOARD</span><b>SEE RESULTS</b><small>Scores, standings and movement</small></div><em>WATCH ›</em></button></div><div class="home-section-head"><div><span>YOUR POOLS</span><h2>Jump back in.</h2></div><button data-home-go="my-pools">VIEW ALL '+active+' ›</button></div><div class="home-pool-rail">'+pools.slice(0,3).map(([name,p])=>{const g=gameIdentity(p.game);return '<button class="home-pool-card hpc-'+g.type+'" data-home-pool="'+name+'"><div class="hpc-art">'+networkGlyph(g.type)+'</div><div class="hpc-copy"><span>'+p.game+' · '+p.week+'</span><h3>'+name+'</h3><div><b>'+p.ready+'/'+p.members+' READY</b><b>'+p.lock+'</b></div></div><em>'+p.rank+'<small>'+p.record+'</small></em></button>'}).join("")+'</div><div class="home-explore"><div class="home-explore-art"><i></i><i></i><i></i><b>LINKS</b></div><div><span>GAME NETWORK</span><h2>There’s a pool for that.</h2><p>Football, brackets, racing, golf, fantasy, custom games and more.</p></div><button data-home-games>EXPLORE GAMES ›</button></div></section>';
+ return '<section class="home-command-v4"><div class="home-stage"><div class="home-stadium"><i></i><i></i><i></i><i></i><div class="field-lines"></div></div><div class="home-stage-copy"><span>LINKS POOLS</span><h1>ALL YOUR POOLS.<br><em>ALL IN ONE PLACE.</em></h1><p>Make picks. Track the field. Run your pools. One account for every game.</p><div class="home-primary"><button data-home-go="my-picks">MAKE MY PICKS <b>1 DUE</b></button><button class="ghost" data-home-go="my-pools">MY POOLS</button></div></div><div class="home-scorebug"><span>YOUR WEEK</span><b>85%</b><small>READY</small><i style="--week:85%"></i></div></div><div class="home-now-grid"><button class="home-now urgent" data-home-go="my-picks"><div class="now-icon">✓</div><div><span>NEEDS YOU</span><b>1 PICK LEFT</b><small>My Pool · before Thursday lock</small></div><em>FINISH ›</em></button><button class="home-now" data-home-pool=""><div class="now-icon live">●</div><div><span>UP NEXT</span><b>'+((next&&next.game)||"NFL PICK’EM")+'</b><small>'+((next&&next.lock)||"THU · 7:15 PM")+'</small></div><em>OPEN ›</em></button><button class="home-now" data-home-go="results"><div class="now-icon trophy">★</div><div><span>LIVE BOARD</span><b>SEE RESULTS</b><small>Scores, standings and movement</small></div><em>WATCH ›</em></button></div><div class="home-section-head"><div><span>YOUR POOLS</span><h2>Jump back in.</h2></div><button data-home-go="my-pools">VIEW ALL '+active+' ›</button></div><div class="home-pool-rail">'+pools.slice(0,3).map(([name,p])=>{const g=gameIdentity(p.game);return '<button class="home-pool-card hpc-'+g.type+'" data-home-pool="'+name+'"><div class="hpc-art">'+networkGlyph(g.type)+'</div><div class="hpc-copy"><span>'+p.game+' · '+p.week+'</span><h3>'+name+'</h3><div><b>'+p.ready+'/'+p.members+' READY</b><b>'+p.lock+'</b></div></div><em>'+p.rank+'<small>'+p.record+'</small></em></button>'}).join("")+'</div><div class="home-explore"><div class="home-explore-art"><i></i><i></i><i></i><b>LINKS</b></div><div><span>GAME NETWORK</span><h2>There’s a pool for that.</h2><p>Football, brackets, racing, golf, fantasy, custom games and more.</p></div><button data-home-games>EXPLORE GAMES ›</button></div></section>';
 }
 function mountHomeCommandV4(){
  if(document.documentElement.dataset.view!=="home")return;
@@ -1267,12 +1236,7 @@ document.addEventListener("click",e=>{
 });
 
 // Mobile Home v6: replace desktop-heavy scorebug with a compact readiness rail.
-function mobileReadiness(){
- if(document.querySelector(".mobile-readiness-v6")||document.documentElement.dataset.view!=="home")return;
- const hero=document.querySelector(".home-stage");if(!hero)return;
- hero.insertAdjacentHTML("afterend",'<section class="mobile-readiness-v6"><div><span>YOUR WEEK</span><b>85% READY</b></div><i><em style="width:85%"></em></i><button data-mobile-finish>FINISH PICKS ›</button></section>');
- document.querySelector("[data-mobile-finish]")?.addEventListener("click",()=>LinksRouter.navigate("my-picks"));
-}
+function mobileReadiness(){}
 const mrObserver=new MutationObserver(()=>mobileReadiness());mrObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mobileReadiness);
 
 // LINKS Cohesion v7 — one visual rhythm across Home, Pool Hub and route workspaces.
@@ -1435,7 +1399,7 @@ const poolTruthObserver=new MutationObserver(()=>patchMyPoolsTruth());poolTruthO
 
 function patchMyPicksTruth(){
  const host=document.querySelector(".mypicks-v3");if(!host)return;const s=currentPickSummary();
- const barnes=host.querySelector('[data-pickpool="My Pool"]');
+ const barnes=host.querySelector('[data-pickpool=""]');
  if(barnes){
   barnes.classList.toggle("action",s.due>0);barnes.classList.toggle("ready",s.due===0);
   const bar=barnes.querySelector(".pick-progress i");if(bar)bar.style.width=s.pct+"%";
@@ -2095,7 +2059,7 @@ function commissionerQuickStartV23(){
 function mountCommissionerQuickV23(){
  if(document.documentElement.dataset.view!=="commissioner")return;const w=document.querySelector(".route-workspace");if(!w||w.querySelector(".comm-quick-v23"))return;
  const flow=w.querySelector(".commissioner-flow-v12")||w.querySelector(".route-identity");flow?.insertAdjacentHTML("afterend",commissionerQuickStartV23());
- w.querySelectorAll("[data-cqv]").forEach(b=>b.onclick=()=>{const k=b.dataset.cqv;if(k==="setup"){typeof openSetupStudio==="function"?openSetupStudio():CreatePoolStudio.open()}else if(k==="invite"){const pool=Object.keys(PoolHubData)[0]||"My Pool";modal("INVITE PLAYERS",inviteCenter(pool))}else if(k==="players"){document.querySelector(".entrant-manager,.readiness-strip")?.scrollIntoView({behavior:"smooth",block:"center"})}else{document.querySelector(".week-control-v2,.week-control,.commander-v3")?.scrollIntoView({behavior:"smooth",block:"center"})}});
+ w.querySelectorAll("[data-cqv]").forEach(b=>b.onclick=()=>{const k=b.dataset.cqv;if(k==="setup"){typeof openSetupStudio==="function"?openSetupStudio():CreatePoolStudio.open()}else if(k==="invite"){const pool=Object.keys(PoolHubData)[0]||"";modal("INVITE PLAYERS",inviteCenter(pool))}else if(k==="players"){document.querySelector(".entrant-manager,.readiness-strip")?.scrollIntoView({behavior:"smooth",block:"center"})}else{document.querySelector(".week-control-v2,.week-control,.commander-v3")?.scrollIntoView({behavior:"smooth",block:"center"})}});
 }
 const cqvObserver=new MutationObserver(()=>mountCommissionerQuickV23());cqvObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountCommissionerQuickV23);
 
@@ -3081,7 +3045,7 @@ function realPoolEntriesV89(){return CreatedPools.all().map(p=>[poolGlyphV83(p.g
 function launchPoolEntriesV89(){const real=realPoolEntriesV89();return real.length?real:pools.filter(p=>!DemoPoolNamesV89.has(p[1]))}
 function scrubSeedPoolsV89(){
  const real=realPoolEntriesV89();if(!real.length)return;
- document.querySelectorAll('[data-open-pool="My Pool"],[data-open-pool="College Pool"],[data-open-pool="Last One Standing"],[data-pickpool="My Pool"],[data-pickpool="College Pool"],[data-pickpool="Last One Standing"]').forEach(x=>x.remove());
+ document.querySelectorAll('[data-open-pool=""],[data-open-pool="College Pool"],[data-open-pool="Last One Standing"],[data-pickpool=""],[data-pickpool="College Pool"],[data-pickpool="Last One Standing"]').forEach(x=>x.remove());
  document.querySelectorAll(".route-pool,.portfolio-card,.pick-command-card").forEach(card=>{const name=card.dataset.openPool||card.dataset.pickpool||"";if(DemoPoolNamesV89.has(name))card.remove()});
  document.querySelectorAll(".mypools-v3 .pool-summary>div b").forEach((b,i)=>{if(i===0)b.textContent=real.length});
 }
@@ -4148,3 +4112,13 @@ function revealRushV174(){
 }
 LinksLifecycleCallbacksV82.push(revealRushV174);
 queueMicrotask(()=>{revealRushV174();LinksLifecycleV82.queue()});
+
+
+// First-Look Integrity v175 — legacy static home, NOW strip, game-day and mobile readiness mounts retired.
+function firstLookV175(){
+ document.querySelectorAll('.home-launch,.now-strip,.pool-gameday,.mobile-readiness-v6').forEach(x=>x.remove());
+ document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v175 · FIRST-LOOK INTEGRITY</span>';if(x.innerHTML!==h)x.innerHTML=h});
+ document.documentElement.dataset.linksBuild='v175';
+}
+LinksLifecycleCallbacksV82.push(firstLookV175);
+queueMicrotask(()=>{firstLookV175();LinksLifecycleV82.queue()});
