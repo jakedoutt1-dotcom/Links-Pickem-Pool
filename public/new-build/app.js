@@ -1982,3 +1982,38 @@ function imageFallbacks(){
  document.querySelectorAll("img").forEach(img=>{if(img.dataset.linksFallback)return;img.dataset.linksFallback="1";img.addEventListener("error",()=>{img.classList.add("links-img-broken");img.alt=img.alt||"LINKS";})});
 }
 const imageQAObserver=new MutationObserver(()=>imageFallbacks());imageQAObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(imageFallbacks);
+
+// Game Center v21 — one polished place for a pool's next matchup, pick state and consequences.
+function gameCenterV21(pool){
+ const p=PoolHubData[pool]||PoolHubData["Barnes Family"],g=DemoSlate[0],saved=PickEngine.get(g.id)?.team||"",locked=LockEngine.isLocked(g.id);
+ return '<section class="game-center-v21"><div class="gcv-top"><div><span>GAME CENTER · '+linksEscape(p.week)+'</span><h2>'+g.away+' <i>VS</i> '+g.home+'</h2><p>'+g.kick+' · '+(locked?"PICKS LOCKED":"PICKS OPEN")+'</p></div><div class="gcv-state '+(locked?"locked":"open")+'"><i></i><b>'+(locked?"LOCKED":"OPEN")+'</b></div></div><div class="gcv-match"><button '+(locked?"disabled":"")+' data-gcv-team="'+g.away+'"><span>'+g.away+'</span><b>'+g.away+'</b><small>'+(saved===g.away?"YOUR PICK":"SELECT")+'</small></button><div class="gcv-middle"><span>WEEK IMPACT</span><strong>HIGH</strong><i></i><small>Pick’em · Results · Pool Room</small></div><button '+(locked?"disabled":"")+' data-gcv-team="'+g.home+'"><span>'+g.home+'</span><b>'+g.home+'</b><small>'+(saved===g.home?"YOUR PICK":"SELECT")+'</small></button></div><div class="gcv-foot"><div><span>YOUR PICK</span><b>'+(saved?saved:"NOT SET")+'</b></div><div><span>POOL STATUS</span><b>'+p.ready+'/'+p.members+' READY</b></div><button data-gcv-compare>COMPARE FIELD ›</button></div></section>';
+}
+function mountGameCenterV21(){
+ if(document.documentElement.dataset.view!=="pool")return;const pool=document.documentElement.dataset.pool||"";const hub=document.querySelector(".pool-hub");if(!hub||hub.querySelector(".game-center-v21"))return;
+ const tabs=hub.querySelector(".poolhub-tabs");tabs?.insertAdjacentHTML("afterend",gameCenterV21(pool));
+ hub.querySelectorAll("[data-gcv-team]").forEach(b=>b.onclick=()=>{const game=DemoSlate[0];if(LockEngine.isLocked(game.id)){AppStatus.show("warn","Game locked","This selection can no longer be changed.");return}PickEngine.save(game.id,b.dataset.gcvTeam);const old=hub.querySelector(".game-center-v21"),box=document.createElement("div");box.innerHTML=gameCenterV21(pool);old?.replaceWith(box.firstElementChild);mountGameCenterV21()});
+ hub.querySelector("[data-gcv-compare]")?.addEventListener("click",()=>{const t=hub.querySelector('[data-hubtab="compare"]');t?.click();t?.scrollIntoView({behavior:"smooth",block:"center"})});
+}
+const gcvObserver=new MutationObserver(()=>mountGameCenterV21());gcvObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountGameCenterV21);
+
+// Pool hub tab state is now reflected in the URL, making refresh/back behavior predictable.
+function syncPoolTabURL(tab){
+ const u=new URL(location.href);if(u.searchParams.get("view")!=="pool")return;u.searchParams.set("tab",tab);history.replaceState({...history.state,tab},"",u);
+}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-hubtab]");if(b)syncPoolTabURL(b.dataset.hubtab)},true);
+function restorePoolTab(){
+ if(document.documentElement.dataset.view!=="pool")return;const tab=new URL(location.href).searchParams.get("tab");if(!tab)return;
+ const b=document.querySelector('[data-hubtab="'+CSS.escape(tab)+'"]');if(b&&!b.classList.contains("active"))b.click();
+}
+setTimeout(restorePoolTab,50);
+
+// Installable app polish: expose a quiet install action when the browser supports it.
+let linksInstallPrompt=null;
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();linksInstallPrompt=e;document.documentElement.dataset.installReady="true";mountInstallV21()});
+function mountInstallV21(){
+ if(!linksInstallPrompt||document.querySelector(".install-v21")||document.documentElement.dataset.publicHome==="true")return;
+ const main=document.querySelector(".main");if(!main)return;
+ main.insertAdjacentHTML("beforeend",'<section class="install-v21"><div class="install-mark">L</div><div><span>LINKS APP</span><b>Keep game day one tap away.</b><small>Install LINKS on this device for a full-screen app experience.</small></div><button data-install-v21>INSTALL ›</button></section>');
+ document.querySelector("[data-install-v21]")?.addEventListener("click",async()=>{if(!linksInstallPrompt)return;linksInstallPrompt.prompt();const r=await linksInstallPrompt.userChoice;if(r.outcome==="accepted"){document.querySelector(".install-v21")?.remove();AppStatus.show("ok","LINKS installed","You can open LINKS from your home screen.")}linksInstallPrompt=null});
+}
+const installObserver=new MutationObserver(()=>mountInstallV21());installObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});
