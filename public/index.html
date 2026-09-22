@@ -1928,8 +1928,8 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
 #createPoolGames .create-v580-game input{pointer-events:auto!important}
 @media(max-width:420px){#createPoolGames.create-v580-games{grid-template-columns:1fr!important}}
 .links-terms-v581{max-width:760px;margin:0 auto}.links-terms-v581 h3{margin-top:20px}.links-terms-v581 p,.links-terms-v581 li{line-height:1.55}
-</style><link rel="stylesheet" href="./games/game33/game33.css?v=626">
-<script src="./games/game33/game33.js?v=626" defer></script>
+</style><link rel="stylesheet" href="./games/game33/game33.css?v=627">
+<script src="./games/game33/game33.js?v=627" defer></script>
 </head>
 
 <body><div id="top"></div><div class="wrap">
@@ -2025,7 +2025,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#ff8a32">LINKS PICK’EM POOLS — v626</span></footer>
+  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#ff8a32">LINKS PICK’EM POOLS — v627</span></footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -3124,7 +3124,13 @@ function renderPoolGamesManagers(){
       // If the commissioner disabled the screen they are currently on, route them to an active game.
       const current=String(sport||"").toLowerCase();
       if(current&&!poolGames.includes(current))await enterPoolGames(poolGames,poolGames[0]);
-    }catch(e){if(status)status.textContent=e.message||"Could not save active games."}
+    }catch(e){
+      if(status)status.textContent=e.message||"Could not save active games.";
+      if(e?.upgradeRequired||Number(e?.status)===402||/package|free pool includes one game|all access/i.test(String(e?.message||""))){
+        if(status)status.textContent=(e.message||"A LINKS package is required to add more games.")+" Opening Packages…";
+        setTimeout(()=>{showOnly("home");setTimeout(()=>$("#linksPackages")?.scrollIntoView({behavior:"smooth"}),50)},350);
+      }
+    }
     finally{btn.disabled=false}
   });
 }
