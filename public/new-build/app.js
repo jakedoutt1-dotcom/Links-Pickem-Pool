@@ -2209,3 +2209,24 @@ function v26Boot(){finishProductV26();polishActionsV26()}
 const v26o=new MutationObserver(()=>v26Boot());v26o.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(v26Boot);
 function stampV26(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v26 · FINISH PRODUCT</span>")}
 const stamp26o=new MutationObserver(stampV26);stamp26o.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV26);
+
+
+// Stadium Continuity v27 — clean splash language carried through the product.
+function stadiumContinuityV27(){
+ document.documentElement.classList.add("links-v27");
+ const hero=document.querySelector(".platform-hero-v22");
+ if(hero&&!hero.querySelector(".v27-stadium-signature"))hero.insertAdjacentHTML("afterbegin",'<div class="v27-stadium-signature" aria-hidden="true"><i></i><i></i><i></i><span></span></div>');
+ document.querySelectorAll(".platform-choice-v23,.sport-world-v25,.comm-quick-v23,.preflight-v24,.ai-studio-v19,.route-workspace").forEach(x=>x.classList.add("v27-premium-surface"));
+}
+function visitorClarityV27(){
+ if(document.documentElement.dataset.view!=="home"||document.documentElement.dataset.publicHome==="true")return;
+ const main=document.querySelector(".main"); if(!main||main.querySelector(".visitor-path-v27"))return;
+ const choice=main.querySelector(".platform-choice-v23")||main.querySelector(".platform-hero-v22"); if(!choice)return;
+ choice.insertAdjacentHTML("afterend",'<section class="visitor-path-v27"><div><span>NEW TO LINKS?</span><b>FREE SPORTS POOLS, WITHOUT THE WORK.</b><small>Create a pool, invite your people, make picks. LINKS handles locks, scores, standings and the weekly flow.</small><button data-v27-create>CREATE A FREE POOL ›</button></div><div><span>ALREADY PLAY HERE?</span><b>GET BACK TO YOUR POOL FAST.</b><small>Open your pools and jump straight to the picks, scores or standings that matter now.</small><button data-v27-return>OPEN MY POOLS ›</button></div><div class="ai"><span>LINKS AI</span><b>CREATE A RESEARCH CARD.</b><small>Research multiple sports, build a card, share it, then hand off to a sportsbook when you choose.</small><button data-ai-studio>CREATE A CARD ›</button></div></section>');
+ main.querySelector("[data-v27-create]")?.addEventListener("click",()=>{if(typeof CreatePoolStudio!=="undefined"&&CreatePoolStudio.open)CreatePoolStudio.open();else LinksRouter.navigate("my-pools")});
+ main.querySelector("[data-v27-return]")?.addEventListener("click",()=>LinksRouter.navigate("my-pools"));
+}
+function bootV27(){stadiumContinuityV27();visitorClarityV27()}
+const v27o=new MutationObserver(bootV27);v27o.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV27);
+function stampV27(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v27 · STADIUM FINISH</span>")}
+const stamp27o=new MutationObserver(stampV27);stamp27o.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV27);
