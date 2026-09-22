@@ -2052,7 +2052,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#39ff88!important;font-weight:900">LINKS PICK’EM POOLS — v646</span></footer>
+  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#39ff88!important;font-weight:900">LINKS PICK’EM POOLS — v647</span></footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -3069,14 +3069,9 @@ async function enterPoolGames(gameTypes,gameType){
 async function refreshPoolGames(){
   try{
     const d=await api("/api/pool/games");
-    // v646: Barnes Family / Links is the all-games test pool.
-    // Keep every game route active here so each game can be opened and tested while it is being finished.
-    const barnesAll=String(poolCode||"").trim().toLowerCase()==="links";
-    savePoolGames(barnesAll?LINKS_GAME_TYPES:d.games,barnesAll?"nfl":d.gameType);
+    savePoolGames(d.games,d.gameType);
     return poolGames;
-  }catch(e){
-    if(String(poolCode||"").trim().toLowerCase()==="links")return savePoolGames(LINKS_GAME_TYPES,"nfl");
-    return poolGames
+  }catch(e){return poolGames}
   }
 }
 
@@ -3580,11 +3575,12 @@ async function renderFantasyLeagueV154(){
   }catch(e){const cards=$("#specialGameCards");if(cards)cards.innerHTML=`<div class="card"><b>Fantasy Football</b><div class="small">${fantasyEsc(e.message||"Fantasy league data is not available yet.")}</div></div>`}
 }
 
-async function enterSpecialGame(kind){
+async async function enterSpecialGame(kind){
   kind=normalizePoolGameType(kind);
-  if(token)await refreshPoolGames();
+  // v647: A card shown on the shared Choose Your Game page is already authorized by that pool's active-game list.
+  // Open it directly. Do not refresh and bounce the user back out of the route.
   const active=normalizePoolGames(poolGames,kind);
-  if(!active.includes(kind))return enterPoolGames(active,active[0]);
+  if(!active.includes(kind))savePoolGames([...active,kind],kind);
   const module=window.LinksDedicatedGames?.[kind]||null,d=module?{...(SPECIAL_GAME_DATA[kind]||SPECIAL_GAME_DATA.survivor),title:module.title||SPECIAL_GAME_DATA[kind]?.title,rules:module.rules||SPECIAL_GAME_DATA[kind]?.rules}:SPECIAL_GAME_DATA[kind]||SPECIAL_GAME_DATA.survivor; sport=kind;
   const specialApp=$("#specialGameApp"); if(specialApp)specialApp.dataset.activeGame=kind;
   $("#specialGameLogo").src=SPECIAL_GAME_BANNERS_V381[kind]||d.logo; $("#specialGameLogo").alt=d.title; $("#specialGameLogo").classList.toggle("fantasy-hero-v157",kind==="fantasy"); $("#specialGameLogo").classList.toggle("dynasty-hero-v157",kind==="dynasty"); $("#specialPoolLine").textContent=poolName; $("#specialGameSubline").textContent=poolGameLabel(kind);
@@ -5287,7 +5283,6 @@ async function linksOpenGameV645(b){
   const routes={chooseNFL:["app","nfl"],chooseCollege:["app","college"],choose33:["app","33"],chooseMarch:["march"],chooseSquares:["squares"],chooseSurvivor:["special","survivor"],chooseConfidence:["special","confidence"],chooseProps:["special","props"],choosePlayoff:["special","playoff"],chooseMasters:["special","masters"],chooseNascar:["special","nascar"],chooseFantasy:["special","fantasy"],chooseDynasty:["special","dynasty"]};
   const r=routes[b.id];if(!r)return;
   linksGameCardLoadingV645(b);
-  if(String(poolCode||"").trim().toLowerCase()==="links")savePoolGames(LINKS_GAME_TYPES,"nfl");
   await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
   try{
     if(r[0]==="app")await enterApp(r[1]);
