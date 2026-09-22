@@ -3551,3 +3551,9 @@ let qaTickV130=0;function launchGateV130(){cardPulseSyncV130();routeFocusV130();
 const gateObserverV130=new MutationObserver(()=>{clearTimeout(qaTickV130);qaTickV130=setTimeout(launchGateV130,40)});gateObserverV130.observe(document.querySelector('#app'),{childList:true,subtree:true});
 document.addEventListener('click',e=>{if(e.target.closest('[data-ai-leg],[data-mix-remove],[data-mix-clear],[data-card-builder-v119],[data-v122-card]'))setTimeout(cardPulseSyncV130,0)},true);
 LinksLifecycleCallbacksV82.push(launchGateV130);queueMicrotask(()=>{launchGateV130();LinksLifecycleV82.queue()});
+
+// Launch Candidate v131 — final modal/action consistency and recovery polish.
+function modalFinishV131(){document.querySelectorAll('.modalback:not([data-v131])').forEach(back=>{back.dataset.v131='1';const box=back.querySelector('.modalbox');if(!box)return;box.setAttribute('role','dialog');box.setAttribute('aria-modal','true');const h=box.querySelector('h2');if(h&&!h.id)h.id='links-dialog-'+Math.random().toString(36).slice(2,8);if(h)box.setAttribute('aria-labelledby',h.id);back.addEventListener('click',e=>{if(e.target===back)back.remove()})})}
+function touchTargetV131(){document.querySelectorAll('.mobile-gamebar-v122 button,.pool-next-v120 button,.frontdoor-v129 button').forEach(b=>b.classList.add('touch-ready-v131'))}
+function releaseV131(){modalFinishV131();touchTargetV131();document.documentElement.dataset.linksBuild='v131';document.querySelectorAll('.app-build-v18').forEach(x=>x.innerHTML='<b>LINKS</b><span>NEW BUILD · v131 · LAUNCH CANDIDATE</span>')}
+let releaseTickV131;const releaseObserverV131=new MutationObserver(()=>{clearTimeout(releaseTickV131);releaseTickV131=setTimeout(releaseV131,30)});releaseObserverV131.observe(document.querySelector('#app'),{childList:true,subtree:true});LinksLifecycleCallbacksV82.push(releaseV131);queueMicrotask(()=>{releaseV131();LinksLifecycleV82.queue()});
