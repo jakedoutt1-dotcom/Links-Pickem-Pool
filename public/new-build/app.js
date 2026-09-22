@@ -133,3 +133,27 @@ function mountScoreboard(){
  box.querySelector("[data-score-detail]").addEventListener("click",()=>modal("SCORING DETAIL",'<div class="connected-modal"><span class="badge live">DETERMINISTIC ENGINE</span><h3>Scores come from game results—not AI.</h3><p>AI can explain movement and scenarios, but final winners, records and standings are computed from the result feed and stored picks.</p></div>'));
 }
 queueMicrotask(mountScoreboard);
+
+// Commissioner integrity v1 — lock state + explicit audited overrides.
+const AuditLog={
+ key:"links-audit-v1",
+ all(){try{return JSON.parse(localStorage.getItem(this.key)||"[]")}catch{return[]}},
+ add(action,detail){const rows=this.all();rows.unshift({at:new Date().toISOString(),action,detail,actor:"Commissioner"});localStorage.setItem(this.key,JSON.stringify(rows.slice(0,50)));return rows[0]}
+};
+const LockEngine={
+ key:"links-locks-v1",
+ read(){try{return JSON.parse(localStorage.getItem(this.key)||"{}")}catch{return{}}},
+ set(id,locked,reason="Commissioner override"){const x=this.read();x[id]={locked,at:new Date().toISOString(),reason};localStorage.setItem(this.key,JSON.stringify(x));AuditLog.add(locked?"GAME LOCKED":"GAME UNLOCKED",id+" · "+reason);return x[id]},
+ isLocked(id){return !!this.read()[id]?.locked}
+};
+function mountIntegrity(){
+ const anchor=document.querySelector(".score-engine");if(!anchor)return;
+ const box=document.createElement("section");box.className="integrity card wide";
+ box.innerHTML='<div class="integrity-head"><div><span>COMMISSIONER INTEGRITY</span><b>Locks & audit trail</b><small>Overrides are explicit, timestamped and visible.</small></div><button class="ghost" data-audit>VIEW AUDIT LOG ›</button></div><div class="lockrows">'+DemoSlate.map(g=>'<div class="lockrow" data-lockrow="'+g.id+'"><div><small>'+g.kick+'</small><b>'+g.away+' at '+g.home+'</b></div><span class="lockstate"></span><button class="ghost locktoggle" data-lock="'+g.id+'"></button></div>').join("")+'</div>';
+ anchor.insertAdjacentElement("afterend",box);
+ const paint=()=>box.querySelectorAll("[data-lockrow]").forEach(r=>{const id=r.dataset.lockrow,on=LockEngine.isLocked(id);r.classList.toggle("locked",on);r.querySelector(".lockstate").textContent=on?"🔒 LOCKED":"○ OPEN";r.querySelector(".locktoggle").textContent=on?"UNLOCK":"LOCK NOW"});
+ box.querySelectorAll("[data-lock]").forEach(b=>b.addEventListener("click",()=>{const id=b.dataset.lock,on=LockEngine.isLocked(id);const reason=on?"Manual correction window":"Manual commissioner lock";LockEngine.set(id,!on,reason);paint()}));
+ box.querySelector("[data-audit]").addEventListener("click",()=>{const rows=AuditLog.all();modal("COMMISSIONER AUDIT LOG",'<div class="audit-list">'+(rows.length?rows.map(x=>'<div><span>'+new Date(x.at).toLocaleString()+'</span><b>'+x.action+'</b><small>'+x.detail+' · '+x.actor+'</small></div>').join(""):'<p>No commissioner overrides recorded yet.</p>')+'</div>')});
+ paint();
+}
+queueMicrotask(mountIntegrity);
