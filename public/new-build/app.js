@@ -742,3 +742,67 @@ document.addEventListener("click",e=>{
  const b=e.target.closest("[data-invite-players],[data-cmd='invite'],.invite-players");
  if(!b)return;const pool=new URL(location.href).searchParams.get("pool")||"Barnes Family";e.preventDefault();e.stopImmediatePropagation();openInviteCenter(pool);
 },true);
+
+// Route Stabilizer v1 — explicit URLs win, Home is the clean default, browser history is deterministic.
+const LinksRouter={
+ valid:new Set(["home","my-pools","my-picks","results","messages","notifications","commissioner","pool"]),
+ readURL(){const u=new URL(location.href);return {explicit:u.searchParams.has("view"),view:u.searchParams.get("view")||"home",pool:u.searchParams.get("pool")||""}},
+ apply(view,pool="",render=true){
+   if(!this.valid.has(view))view="home";
+   document.documentElement.dataset.view=view;
+   if(view==="pool"&&pool)document.documentElement.dataset.pool=pool;else delete document.documentElement.dataset.pool;
+   LinksState.write({route:view,pool:view==="pool"?pool:""});
+   if(render){
+     if(view==="pool"&&pool){openPoolHubStable(pool)}
+     else if(view==="home"){document.querySelector(".route-workspace")?.remove()}
+     else renderRouteWorkspace();
+   }
+   syncRouteNav(view);
+ },
+ navigate(view,pool=""){
+   const u=new URL(location.href);u.searchParams.set("view",view);
+   if(view==="pool"&&pool)u.searchParams.set("pool",pool);else u.searchParams.delete("pool");
+   history.pushState({route:view,pool},"",u);this.apply(view,pool,true);
+ },
+ boot(){
+   const r=this.readURL();
+   // Explicit links are always intentional. A bare /new-build/ always starts at Home.
+   if(!r.explicit){const u=new URL(location.href);u.searchParams.set("view","home");u.searchParams.delete("pool");history.replaceState({route:"home",pool:""},"",u);this.apply("home","",false);return}
+   this.apply(r.view,r.pool,true);
+ }
+};
+function syncRouteNav(view){
+ const map={home:"home","my-pools":"pools","pool":"pools","my-picks":"picks",results:"results",commissioner:"admin",messages:"","notifications":""};
+ document.querySelectorAll(".nav button,.mobile-dock button").forEach(b=>{
+   const raw=(b.dataset.mobileRoute||b.dataset.route||b.textContent||"").toLowerCase();
+   const want=map[view]||view;b.classList.toggle("active",!!want&&raw.includes(want));
+ });
+}
+function openPoolHubStable(name){
+ const oldPush=history.pushState;
+ // Existing hub renderer may push history; suppress that during router hydration.
+ history.pushState=function(){};
+ try{openPoolHub(name)}finally{history.pushState=oldPush}
+ document.documentElement.dataset.view="pool";document.documentElement.dataset.pool=name;LinksState.write({route:"pool",pool:name});syncRouteNav("pool");
+}
+window.addEventListener("popstate",()=>{
+ const r=LinksRouter.readURL();LinksRouter.apply(r.view,r.pool,true);
+});
+
+// Capture primary navigation and pool cards so old click/dblclick handlers cannot fight the router.
+document.addEventListener("click",e=>{
+ const poolCard=e.target.closest("[data-open-pool],[data-pickpool]");
+ if(poolCard){const name=poolCard.dataset.openPool||poolCard.dataset.pickpool;if(name){e.preventDefault();e.stopImmediatePropagation();LinksRouter.navigate("pool",name);return}}
+ const mb=e.target.closest(".mobile-dock [data-mobile-route]");
+ if(mb){e.preventDefault();e.stopImmediatePropagation();LinksRouter.navigate(mb.dataset.mobileRoute);return}
+},true);
+
+// Normalize stale pool state whenever a non-pool workspace is rendered.
+const routeStateObserver=new MutationObserver(()=>{
+ const v=document.documentElement.dataset.view;if(v!=="pool"&&document.documentElement.dataset.pool)delete document.documentElement.dataset.pool;
+ syncRouteNav(v||"home");
+});
+routeStateObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});
+
+// Run after legacy startup code has had a chance to initialize.
+setTimeout(()=>LinksRouter.boot(),0);
