@@ -2017,3 +2017,66 @@ function mountInstallV21(){
  document.querySelector("[data-install-v21]")?.addEventListener("click",async()=>{if(!linksInstallPrompt)return;linksInstallPrompt.prompt();const r=await linksInstallPrompt.userChoice;if(r.outcome==="accepted"){document.querySelector(".install-v21")?.remove();AppStatus.show("ok","LINKS installed","You can open LINKS from your home screen.")}linksInstallPrompt=null});
 }
 const installObserver=new MutationObserver(()=>mountInstallV21());installObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});
+
+// LINKS Platform v22 — AI-first home, freemium foundation, multi-sport card creation, sharing and sportsbook handoff.
+const LinksAIPlan={
+ key:"links-ai-plan-v22",usageKey:"links-ai-usage-v22",dailyFree:3,
+ plan(){return localStorage.getItem(this.key)||"free"},
+ usage(){try{const x=JSON.parse(localStorage.getItem(this.usageKey)||"{}"),today=new Date().toISOString().slice(0,10);return x.date===today?x:{date:today,count:0}}catch{return{date:new Date().toISOString().slice(0,10),count:0}}},
+ canCreate(){return this.plan()==="pro"||this.usage().count<this.dailyFree},
+ remaining(){return this.plan()==="pro"?Infinity:Math.max(0,this.dailyFree-this.usage().count)},
+ consume(){if(this.plan()==="pro")return;const x=this.usage();x.count++;localStorage.setItem(this.usageKey,JSON.stringify(x))}
+};
+const AISports={
+ NFL:["BUF · MONEYLINE","DAL @ NYG · OVER 45.5","PHI · TEAM TD 1+"],
+ NBA:["BOS · MONEYLINE","LAL @ PHX · OVER 224.5","NYK +4.5"],
+ MLB:["ATL · MONEYLINE","NYY @ BOS · OVER 8.5","LAD -1.5"],
+ NHL:["EDM · MONEYLINE","NYR @ BOS · OVER 5.5","TOR +1.5"],
+ NCAAF:["TENN · MONEYLINE","UGA -6.5","ALA @ LSU · OVER 51.5"],
+ SOCCER:["ARSENAL · DRAW NO BET","OVER 2.5 GOALS","BOTH TEAMS TO SCORE"]
+};
+function aiPlanStrip(){
+ const pro=LinksAIPlan.plan()==="pro",left=LinksAIPlan.remaining();
+ return '<div class="ai-plan-v22"><div><span>'+(pro?"LINKS AI PRO":"FREE PLAN")+'</span><b>'+(pro?"UNLIMITED CARDS":left+" OF "+LinksAIPlan.dailyFree+" CARDS LEFT TODAY")+'</b></div><i><em style="width:'+(pro?100:(left/LinksAIPlan.dailyFree*100))+'%"></em></i><button data-ai-upgrade>'+(pro?"PRO ACTIVE":"VIEW PRO")+'</button></div>';
+}
+function sportsbookHandoffV22(){
+ return '<div class="book-handoff-v22"><div class="bh-title"><span>OPEN YOUR CARD</span><b>Choose where you want to finish.</b><small>LINKS prepares the card. Sportsbooks handle wagering. Full prefilled betslip handoff will only be enabled for partners that support and approve it.</small></div><div class="bh-books"><button data-book="draftkings"><i>DK</i><b>DRAFTKINGS</b><span>OPEN SPORTSBOOK</span></button><button data-book="fanduel"><i>FD</i><b>FANDUEL</b><span>OPEN SPORTSBOOK</span></button><button data-book="bet365"><i>365</i><b>BET365</b><span>OPEN SPORTSBOOK</span></button><button data-share-card><i>↗</i><b>SHARE CARD</b><span>TEXT / SHARE</span></button></div><p>21+ where applicable. Availability varies by location. LINKS does not place wagers.</p></div>';
+}
+function cardShareText(){
+ const ids=AIStudio.load(),legs=AIStudio.legs.filter(x=>ids.includes(x.id));return "My LINKS research card\n"+legs.map(x=>"• "+x.pick+" ("+x.price+")").join("\n")+"\n\nBuilt with LINKS AI — check current odds before acting.";
+}
+async function shareAICard(){
+ const text=cardShareText();if(navigator.share){try{await navigator.share({title:"My LINKS Card",text});return}catch{}}
+ try{await navigator.clipboard.writeText(text);AppStatus.show("ok","Card copied","Your LINKS card is ready to paste into a text.")}catch{modal("SHARE CARD",'<div class="ai-share-fallback"><pre>'+linksEscape(text)+'</pre></div>')}
+}
+const SportsbookLinks={draftkings:"https://sportsbook.draftkings.com/",fanduel:"https://sportsbook.fanduel.com/",bet365:"https://www.bet365.com/"};
+document.addEventListener("click",e=>{
+ const up=e.target.closest("[data-ai-upgrade]");if(up){e.preventDefault();modal("LINKS AI PRO",'<div class="ai-pro-modal"><span>COMING WHEN BILLING GOES LIVE</span><h3>LINKS AI Pro</h3><b>$9.99 / MONTH</b><p>Unlimited research cards, deeper matchup tools, saved card history and advanced research. Free pools stay free.</p><small>During New Build testing, AI features remain available so we can finish the experience before enforcing billing.</small></div>');return}
+ const share=e.target.closest("[data-share-card]");if(share){e.preventDefault();shareAICard();return}
+ const book=e.target.closest("[data-book]");if(book){e.preventDefault();const url=SportsbookLinks[book.dataset.book];modal("OPEN SPORTSBOOK",'<div class="book-confirm-v22"><span>LINKS HANDOFF</span><h3>'+book.querySelector("b").textContent+'</h3><p>Your LINKS card stays available here for reference. This prototype opens the sportsbook home; a prefilled betslip will only be used where an approved integration supports it.</p><button data-book-go="'+url+'">CONTINUE ›</button></div>');return}
+ const go=e.target.closest("[data-book-go]");if(go){window.open(go.dataset.bookGo,"_blank","noopener")}
+},true);
+
+// Extend the AI review with the freemium meter and sportsbook/share handoff.
+const originalAIOpen=AIStudio.open.bind(AIStudio);
+AIStudio.open=function(){originalAIOpen();const mount=document.querySelector("#aiStudioMount");if(!mount)return;mount.insertAdjacentHTML("afterbegin",aiPlanStrip());mount.insertAdjacentHTML("beforeend",sportsbookHandoffV22())};
+
+// Multi-sport research selector sits above the existing evidence board.
+function multiSportBar(){
+ return '<div class="ai-sports-v22"><span>SPORT</span>'+Object.keys(AISports).map((x,i)=>'<button class="'+(i===0?"active":"")+'" data-ai-sport="'+x+'">'+x+'</button>').join("")+'</div>';
+}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-ai-sport]");if(!b)return;document.querySelectorAll("[data-ai-sport]").forEach(x=>x.classList.toggle("active",x===b));const title=document.querySelector(".ais-title small");if(title)title.textContent=b.dataset.aiSport+" research selected · live market feed connection comes next.";AppStatus.show("ok",b.dataset.aiSport+" selected","Research workspace switched to "+b.dataset.aiSport+".")},true);
+const oldOpen2=AIStudio.open.bind(AIStudio);
+AIStudio.open=function(){oldOpen2();const m=document.querySelector("#aiStudioMount");if(m&&!m.querySelector(".ai-sports-v22"))m.querySelector(".ai-studio-v19")?.insertAdjacentHTML("afterbegin",multiSportBar())};
+
+// AI becomes a first-class Home pillar while Pools remains immediately accessible.
+function platformHeroV22(){
+ return '<section class="platform-hero-v22"><div class="ph-field"><i></i><i></i><i></i><b></b></div><div class="ph-copy"><span>LINKS · GAME DAY INTELLIGENCE</span><h1>BUILD THE CARD.<br><em>RUN THE POOL.</em></h1><p>Sports research, multi-leg cards and every pool you play—built into one game-day platform.</p><div><button data-ai-studio>BUILD A CARD ›</button><button class="ghost" data-ph-pools>OPEN MY POOLS</button></div><small>Research first. Clear reasoning. No guaranteed winners.</small></div><div class="ph-card"><span>LINKS AI</span><b>CREATE A CARD</b><div><i>NFL</i><i>NBA</i><i>MLB</i><i>NHL</i></div><strong>3 FREE / DAY</strong><button data-ai-studio>START RESEARCH ›</button></div></section>';
+}
+function mountPlatformHeroV22(){
+ if(document.documentElement.dataset.view!=="home"||document.documentElement.dataset.publicHome==="true")return;const main=document.querySelector(".main");if(!main||main.querySelector(".platform-hero-v22"))return;
+ const first=main.firstElementChild;first?.insertAdjacentHTML("beforebegin",platformHeroV22());main.querySelector("[data-ph-pools]")?.addEventListener("click",()=>LinksRouter.navigate("my-pools"));
+ // Older stadium hero remains as atmosphere deeper on Home, but no longer competes for primary CTA.
+ main.querySelectorAll(".home-command-v4,.stadium-command-hero").forEach(x=>x.classList.add("v22-secondary-hero"));
+}
+const ph22Observer=new MutationObserver(()=>mountPlatformHeroV22());ph22Observer.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountPlatformHeroV22);
