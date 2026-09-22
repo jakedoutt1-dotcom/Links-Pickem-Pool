@@ -919,3 +919,59 @@ function mountMyPoolsV3(){
  ws.querySelector("[data-browse-games]")?.addEventListener("click",()=>LinksRouter.navigate("home"));
 }
 const poolsObserver=new MutationObserver(()=>mountMyPoolsV3());poolsObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountMyPoolsV3);
+
+// Cleanup Pass v1 — remove duplicate/legacy controls and keep each action in its natural home.
+function cleanupLayout(){
+ const v=document.documentElement.dataset.view||"home";
+ // Only one contextual back control; mobile dock already supplies Home-level navigation.
+ document.querySelectorAll(".context-back").forEach((b,i)=>{if(i>0)b.remove()});
+ // Hide redundant pool/week selectors when the modern Pool Hub owns that context.
+ if(v==="pool"){
+  document.querySelectorAll(".legacy-week-select,.week-select-top,.select-week-top,[data-legacy-week]").forEach(x=>x.remove());
+ }
+ // Remove empty cards/sections left behind by progressive replacement.
+ document.querySelectorAll(".card,.panel,.section").forEach(x=>{
+  if(x.dataset.keepEmpty!==undefined)return;
+  const meaningful=(x.textContent||"").trim()||x.querySelector("button,input,img,svg,[class*='mark']");
+  if(!meaningful&&x.children.length===0)x.remove();
+ });
+ // Deduplicate repeated action buttons by semantic command inside the same local toolbar.
+ document.querySelectorAll(".toolbar,.actions,.admin-actions,.pool-actions").forEach(bar=>{
+  const seen=new Set();
+  bar.querySelectorAll("button").forEach(b=>{
+   const key=b.dataset.cmd||b.dataset.action||b.textContent.trim().replace(/\s+/g," ").toLowerCase();
+   if(key&&seen.has(key))b.remove();else if(key)seen.add(key);
+  });
+ });
+ // Admin-only controls never belong on player pool surfaces.
+ if(v==="pool")document.querySelectorAll(".pool-hub .admin-only-global,.pool-hub [data-global-admin]").forEach(x=>x.remove());
+}
+const cleanupObserver=new MutationObserver(()=>cleanupLayout());cleanupObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(cleanupLayout);
+
+// Results correctness: wherever demo standings are rendered, compute rank from wins instead of source-array order.
+function rankedDemoPlayers(){
+ return [...ScoreDemo.players].map(p=>({p,s:scored(p)})).sort((a,b)=>b.s.wins-a.s.wins||a.p.name.localeCompare(b.p.name));
+}
+function resultsTruthStrip(){
+ const rows=rankedDemoPlayers(),leader=rows[0];if(!leader)return "";
+ return '<section class="results-truth"><div><span>LIVE LEADER</span><b>'+leader.p.name+'</b></div><div><span>CURRENT SCORE</span><b>'+leader.s.wins+' CORRECT</b></div><div><span>SCORING</span><b>AUTO UPDATED</b></div></section>';
+}
+function correctResultsUI(){
+ if(document.documentElement.dataset.view!=="results")return;
+ const host=document.querySelector(".results-v2,.results-live,.route-workspace");if(!host||host.querySelector(".results-truth"))return;
+ host.insertAdjacentHTML("afterbegin",resultsTruthStrip());
+}
+const resultObserver=new MutationObserver(()=>correctResultsUI());resultObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(correctResultsUI);
+
+// Pool Room rerender-safe wiring: event delegation keeps Send working after every message render.
+document.addEventListener("submit",e=>{
+ const f=e.target.closest("#inviteV2Mount form.room-compose,.room-v2 form,.room-compose");
+ if(!f)return;
+ const host=f.closest(".room-v2")||f.closest("[data-room-host]");if(!host)return;
+ e.preventDefault();e.stopImmediatePropagation();
+ const input=f.querySelector("input,textarea"),text=(input?.value||"").trim();if(!text)return;
+ const pool=new URL(location.href).searchParams.get("pool")||document.documentElement.dataset.pool||"Barnes Family";
+ RoomStore.add(pool,text);if(input)input.value="";
+ const mount=host.parentElement;if(mount){mount.innerHTML=roomV2(pool);hydrateRoomText(mount,pool);openRoomWire(mount,pool)}
+ AppStatus.show("ok","Message sent","Posted to "+pool+" Pool Room.");
+},true);
