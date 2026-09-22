@@ -2377,3 +2377,12 @@ function resilienceV38(){
 window.addEventListener("offline",()=>document.body.classList.add("links-offline-v38"));window.addEventListener("online",()=>document.body.classList.remove("links-offline-v38"));if(!navigator.onLine)document.body.classList.add("links-offline-v38");
 function bootV38(){resilienceV38()}const o38=new MutationObserver(bootV38);o38.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV38);
 function stampV38(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v38 · RESILIENCE FINISH</span>")}const s38=new MutationObserver(stampV38);s38.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV38);
+
+// Game Day Finish v39 — reinforce actionable state and clean selected navigation.
+function gameDayFinishV39(){
+ const view=document.documentElement.dataset.view||"";
+ document.querySelectorAll(".finish-dock-v26 button,.game-center-v28 button").forEach(b=>{const t=(b.textContent||"").toLowerCase();b.classList.toggle("v39-current",(view==="home"&&t.includes("home"))||(view.includes("pool")&&t.includes("pool"))||(view.includes("ai")&&t.includes("card"))||(view.includes("result")&&t.includes("live"))||(view.includes("comm")&&t.includes("comm")))});
+ document.querySelectorAll(".card,.panel,.game-card").forEach(x=>{if(!x.dataset.v39)x.dataset.v39="1"});
+}
+function bootV39(){gameDayFinishV39()}const o39=new MutationObserver(bootV39);o39.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV39);
+function stampV39(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v39 · GAME DAY FINISH</span>")}const s39=new MutationObserver(stampV39);s39.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV39);
