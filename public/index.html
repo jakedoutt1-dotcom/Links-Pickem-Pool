@@ -1957,7 +1957,9 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
 #sportChoice .sport-btn.links-game-loading-v645 .sport-choice-label{color:#fff!important}
 .links-game-loading-label-v645{position:absolute!important;inset:0!important;display:flex!important;align-items:center!important;justify-content:center!important;z-index:20!important;background:rgba(255,92,0,.78)!important;color:#fff!important;font-size:20px!important;font-weight:950!important;letter-spacing:1px!important;text-shadow:0 2px 4px #000!important;pointer-events:none!important}
 </style>
-</head>
+<style id="links-v648-pick-card">
+.links-pc-open-v648{overflow:hidden!important}.links-pc-overlay-v648{position:fixed;inset:0;z-index:100000;background:rgba(5,8,10,.96);overflow:auto;padding:12px}.links-pc-shell-v648{max-width:760px;margin:auto}.links-pc-toolbar-v648{position:sticky;top:0;z-index:3;display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;padding:8px 0;background:#080b0d}.links-pc-toolbar-v648 button{font-weight:900;font-size:13px}.links-pc-sheet-v648{background:linear-gradient(#15191c,#080a0b);border:3px solid #7b4a24;border-radius:18px;padding:14px;color:#fff;box-shadow:0 0 0 2px #222 inset}.links-pc-head-v648{text-align:center;border-bottom:2px solid #8a5328;padding:6px 4px 12px}.links-pc-brand-v648{font-size:24px;font-weight:950;color:#ff7a1a;text-shadow:0 2px 3px #000}.links-pc-week-v648{font-weight:900;color:#42e36f;margin-top:4px}.links-pc-head-v648 h2{margin:8px 0 2px;text-transform:uppercase}.links-pc-grid-v648{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:12px}.links-pc-game-v648{display:grid;grid-template-columns:30px 42px 1fr 24px;align-items:center;gap:7px;background:#202326;border:1px solid #555;border-radius:9px;padding:7px;min-height:58px}.links-pc-game-v648 img{width:40px;height:40px;object-fit:contain}.links-pc-game-v648 small{display:block;color:#bbb;font-size:10px}.links-pc-game-v648 strong{color:#42e36f;font-size:22px}.links-pc-no-v648{font-size:10px;color:#aaa}.links-pc-tie-v648{margin-top:12px;background:#222;border:2px solid #8a5328;border-radius:10px;padding:12px;display:flex;justify-content:space-between;font-size:18px}.links-pc-tie-v648 span{color:#42e36f;font-size:25px;font-weight:950}@media(max-width:560px){.links-pc-grid-v648{grid-template-columns:1fr}.links-pc-brand-v648{font-size:20px}.links-pc-toolbar-v648 button{font-size:11px;padding:9px 4px}}@media print{body>*{display:none!important}#linksPickCardOverlayV648{display:block!important;position:static!important;background:#fff!important;padding:0!important}#linksPickCardOverlayV648 .links-pc-toolbar-v648{display:none!important}#linksPickCardOverlayV648 .links-pc-sheet-v648{display:block!important;box-shadow:none!important;break-inside:avoid}.links-pc-overlay-v648 *{visibility:visible!important}}
+</style></head>
 
 <body><div id="top"></div><div class="wrap">
 
@@ -2052,7 +2054,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#39ff88!important;font-weight:900">LINKS PICK’EM POOLS — v646</span></footer>
+  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#39ff88!important;font-weight:900">LINKS PICK’EM POOLS — v648</span></footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2558,7 +2560,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <div id="topPicksDeadline" class="pick-deadline-v191"></div>
     <div id="games"></div>
     <div class="card"><b>Tiebreaker</b><div class="small">Combined score of the final selected game • Locks with your picks</div><input id="tieInput" type="number" min="0" placeholder="Example: 43" style="width:100%;margin-top:6px"></div>
-    <div id="savePicksDeadline" class="pick-deadline-v191"></div><button id="savePicks" class="blue" style="width:100%;font-size:17px">Save My Picks</button>
+    <div id="savePicksDeadline" class="pick-deadline-v191"></div><button id="savePicks" class="blue" style="width:100%;font-size:17px">Save My Picks</button><button id="viewPickCardV648" type="button" class="hide" style="width:100%;font-size:17px;margin-top:9px;background:#ff6a1a;color:#fff">📸 VIEW / SAVE MY PICK CARD</button>
     <div class="links-fixed-ad" aria-label="Advertisement" style="margin:18px auto;max-width:1100px;display:none"><ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-2654873707790051" data-ad-slot="9269292379" data-ad-format="auto" data-full-width-responsive="true"></ins></div>
   </section>
 
@@ -3779,9 +3781,35 @@ function renderPicks(){
     }).join("");
   }
   $$(".team[data-game]").forEach(b=>b.onclick=()=>{me.picks[b.dataset.game]=b.dataset.team;renderPicks()});
-  $("#tieInput").value=me?.tie??"";$("#tieInput").disabled=locked||paymentLocked||role!=="player";$("#savePicks").disabled=locked||paymentLocked||role!=="player"||!g.length;
+  $("#tieInput").value=me?.tie??"";$("#tieInput").disabled=locked||paymentLocked||role!=="player";$("#savePicks").disabled=locked||paymentLocked||role!=="player"||!g.length;const pcb=$("#viewPickCardV648");if(pcb){pcb.classList.toggle("hide",!linksPickCardReadyV648());pcb.onclick=openPickCardV648;}
 }
 
+
+function linksPickCardReadyV648(){
+  return sport==="nfl"&&role==="player"&&gamesNow().length>0&&Object.keys(normalizedPicksForGames(me?.picks||{},gamesNow())).length===gamesNow().length;
+}
+function linksPickCardMarkupV648(){
+  const gs=gamesNow(),ps=normalizedPicksForGames(me?.picks||{},gs);
+  const rows=gs.map((g,i)=>{
+    const t=ps[i],logo=t?teamLogo(t,g):"",opp=sameSavedPick(t,g.away)?g.home:g.away;
+    return `<div class="links-pc-game-v648"><span class="links-pc-no-v648">G${i+1}</span>${logo?`<img src="${logo}" alt="">`:""}<span><b>${escapeHtml(t?teamName(t,g):"—")}</b><small>over ${escapeHtml(teamName(opp,g))}</small></span><strong>✓</strong></div>`;
+  }).join("");
+  return `<div class="links-pc-sheet-v648" id="linksPickCardSheetV648"><div class="links-pc-head-v648"><div class="links-pc-brand-v648">LINKS PICK'EM POOLS</div><div class="links-pc-week-v648">${escapeHtml(weekLabel())} • MY PICKS</div><h2>${escapeHtml(me?.player||me?.name||playerName||"PLAYER")}</h2><div>${escapeHtml(poolName||"")}</div></div><div class="links-pc-grid-v648">${rows}</div><div class="links-pc-tie-v648"><b>TIEBREAKER</b><span>${escapeHtml(String(me?.tie??$("#tieInput")?.value??"—"))}</span></div></div>`;
+}
+function closePickCardV648(){document.getElementById("linksPickCardOverlayV648")?.remove();document.body.classList.remove("links-pc-open-v648")}
+function openPickCardV648(){
+  if(!linksPickCardReadyV648())return msg("Save all of your NFL picks first.");
+  closePickCardV648();
+  const o=document.createElement("div");o.id="linksPickCardOverlayV648";o.className="links-pc-overlay-v648";
+  o.innerHTML=`<div class="links-pc-shell-v648"><div class="links-pc-toolbar-v648"><button type="button" id="linksPcShareV648">📤 SHARE / SAVE</button><button type="button" id="linksPcPrintV648">🖨 PRINT</button><button type="button" id="linksPcCloseV648">✕ CLOSE</button></div>${linksPickCardMarkupV648()}</div>`;
+  document.body.appendChild(o);document.body.classList.add("links-pc-open-v648");
+  $("#linksPcCloseV648").onclick=closePickCardV648;
+  $("#linksPcPrintV648").onclick=()=>window.print();
+  $("#linksPcShareV648").onclick=async()=>{
+    const text=`${me?.player||me?.name||playerName||"Player"} — ${weekLabel()} NFL picks: ${gamesNow().map((g,i)=>teamName((me?.picks||{})[i],g)).join(", ")}. Tiebreaker: ${me?.tie??$("#tieInput")?.value??"—"}`;
+    try{if(navigator.share)await navigator.share({title:"LINKS Pick Card",text});else{await navigator.clipboard.writeText(text);msg("Pick card text copied. You can also screenshot this card.",true)}}catch(e){}
+  };
+}
 async function startSquareCheckout(){
   const b=$("#squarePayNow");if(b){b.disabled=true;b.textContent="Opening secure checkout…"}
   try{
