@@ -4180,3 +4180,30 @@ function firstRevealGateV182(){
 }
 LinksLifecycleCallbacksV82.push(firstRevealGateV182);
 queueMicrotask(()=>{firstRevealGateV182();LinksLifecycleV82.queue()});
+
+
+// Reveal Rush v183 — last-minute truth/click polish before owner first look.
+function revealRushV183(){
+ // No internal QA/test language belongs in the customer-facing reveal.
+ document.querySelectorAll('.package-note-v148').forEach(x=>x.remove());
+ // Any legacy direct-invite surface must describe what it actually does.
+ document.querySelectorAll('.invite-direct button').forEach(b=>{
+   if(/SEND INVITE/i.test(b.textContent||'')){b.textContent='SAVE INVITE';b.title='Saves the invite locally. Use Copy Link or Share Invite to send it.'}
+ });
+ // Legacy reminder buttons are drafts until delivery is connected.
+ document.querySelectorAll('[data-remind],[data-remind-all],[data-ready-remind],[data-remind-v88],[data-remind-all-v88]').forEach(b=>{
+   if(/^REMIND/i.test((b.textContent||'').trim())) b.title='Prepares a reminder locally; external delivery is not connected.';
+ });
+ // Strip obsolete hard-coded commissioner/demo panels if an older lifecycle mounts one for a frame.
+ const bad=/59\s*\/\s*64|64 PLAYERS|5 need picks|SCORING FEED\s*·\s*LIVE|HEALTHY/i;
+ document.querySelectorAll('.commander-v3,.readiness-strip,.entrant-manager').forEach(x=>{if(bad.test(x.textContent||''))x.remove()});
+ // Avoid calling an empty/new pool "live" merely because the hub exists.
+ document.querySelectorAll('.hero-live-detail').forEach(x=>{
+   const pool=document.documentElement.dataset.pool||'',slate=pool?GameSlateStoreV86.read(pool):[];
+   if(!slate.length)x.remove();
+ });
+ document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v183 · REVEAL RUSH</span>';if(x.innerHTML!==h)x.innerHTML=h});
+ document.documentElement.dataset.linksBuild='v183';
+}
+LinksLifecycleCallbacksV82.push(revealRushV183);
+queueMicrotask(()=>{revealRushV183();LinksLifecycleV82.queue()});
