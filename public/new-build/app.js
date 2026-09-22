@@ -2988,7 +2988,7 @@ queueMicrotask(()=>{stampV84();LinksLifecycleV82.queue()});
 // Full Tournament Field v85 — 64-team main bracket, four regions, six advancing rounds.
 const BracketFieldV85={
  key:"links-bracket-field-v85",regions:["EAST","WEST","SOUTH","MIDWEST"],order:[[1,16],[8,9],[5,12],[4,13],[6,11],[3,14],[7,10],[2,15]],
- defaultField(){return this.regions.flatMap(region=>this.order.flatMap(pair=>pair.map(seed=>region+" · "+seed+" SEED")))},
+ defaultField(){return Array.from({length:64},()=>"")},
  read(pool){try{const x=JSON.parse(localStorage.getItem(this.key+"-"+pool)||"null");return Array.isArray(x)&&x.length===64?x:this.defaultField()}catch{return this.defaultField()}},
  write(pool,field){if(!Array.isArray(field)||field.length!==64)return false;localStorage.setItem(this.key+"-"+pool,JSON.stringify(field.map(x=>String(x||"").trim()||"TBD")));return true},
  apply(pool){BracketStoreV76.seed=this.read(pool);BracketStoreV76.rounds=[{name:"FIRST ROUND",games:Array.from({length:32},(_,i)=>i)},{name:"SECOND ROUND",games:Array.from({length:16},(_,i)=>i)},{name:"SWEET 16",games:Array.from({length:8},(_,i)=>i)},{name:"ELITE EIGHT",games:Array.from({length:4},(_,i)=>i)},{name:"FINAL FOUR",games:[0,1]},{name:"CHAMPIONSHIP",games:[0]}]},
@@ -3916,3 +3916,23 @@ LinksLifecycleCallbacksV82.push(liveStatusV160);
 CollegeLiveV160.refresh().then(liveCollegePoolSetupV160);
 setInterval(()=>CollegeLiveV160.refresh().then(liveCollegePoolSetupV160),60000);
 queueMicrotask(()=>{liveStatusV160();LinksLifecycleV82.queue()});
+
+
+// Launch QA v161 — field-driven formats never ship with famous-player/sample-field previews.
+function fieldTruthV161(){
+ document.querySelectorAll('.race-preview,.golf-preview,.bracket-preview').forEach(x=>x.remove());
+ document.querySelectorAll('[data-format-choice]').forEach(b=>{
+   const v=(b.dataset.formatChoice||'').toUpperCase();
+   if(/CAR 5|CAR 9|CAR 11|CAR 22|SCHEFFLER|MCILROY|SCHAUFFELE|MORIKAWA|^TEN$|^UK$/.test(v))b.remove();
+ });
+ // March Madness stays commissioner-published until a verified tournament field is loaded.
+ CreatedPools.all().forEach(p=>{
+   if(gameIdentity(p.game||'').type==='bracket'&&!BracketPublishedV92.read(p.name)){
+     try{localStorage.removeItem(BracketFieldV85.key+'-'+p.name)}catch{}
+   }
+ });
+ document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v161 · FIELD TRUTH QA</span>';if(x.innerHTML!==h)x.innerHTML=h});
+ document.documentElement.dataset.linksBuild='v161';
+}
+LinksLifecycleCallbacksV82.push(fieldTruthV161);
+queueMicrotask(()=>{fieldTruthV161();LinksLifecycleV82.queue()});
