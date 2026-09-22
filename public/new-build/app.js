@@ -3529,3 +3529,10 @@ function routeSafetyV127(){document.querySelectorAll('a[href="#"],a[href=""],but
 function finalReleaseV127(){document.documentElement.dataset.linksBuild='v127';document.querySelectorAll('.app-build-v18').forEach(x=>x.innerHTML='<b>LINKS</b><span>NEW BUILD · v127 · FINAL QA SHIELD</span>')}
 function qaFinishV127(){actionShieldV127();routeSafetyV127();finalReleaseV127()}
 LinksLifecycleCallbacksV82.push(qaFinishV127);const qaObserverV127=new MutationObserver(()=>qaFinishV127());qaObserverV127.observe(document.querySelector('#app'),{childList:true,subtree:true});queueMicrotask(()=>{qaFinishV127();LinksLifecycleV82.queue()});
+
+// Reveal Ready v128 — final viewport, safe-area and error-resilience pass.
+function viewportFinishV128(){document.documentElement.classList.toggle('links-mobile-v128',innerWidth<=760);document.documentElement.style.setProperty('--links-vh',(innerHeight*.01)+'px')}
+addEventListener('resize',viewportFinishV128,{passive:true});addEventListener('orientationchange',()=>setTimeout(viewportFinishV128,120),{passive:true});
+function brokenAssetGuardV128(){document.querySelectorAll('img:not([data-asset-v128])').forEach(img=>{img.dataset.assetV128='1';img.addEventListener('error',()=>{img.classList.add('asset-missing-v128');img.setAttribute('aria-hidden','true')},{once:true})})}
+function releaseHealthV128(){viewportFinishV128();brokenAssetGuardV128();document.documentElement.dataset.linksBuild='v128';document.querySelectorAll('.app-build-v18').forEach(x=>x.innerHTML='<b>LINKS</b><span>NEW BUILD · v128 · REVEAL READY</span>')}
+LinksLifecycleCallbacksV82.push(releaseHealthV128);const revealObserverV128=new MutationObserver(()=>releaseHealthV128());revealObserverV128.observe(document.querySelector('#app'),{childList:true,subtree:true});queueMicrotask(()=>{releaseHealthV128();LinksLifecycleV82.queue()});
