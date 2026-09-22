@@ -331,3 +331,23 @@ function mountHomeLaunch(){
  panel.querySelector("[data-home-pools]").addEventListener("click",()=>{setRoute("my-pools");renderRouteWorkspace()});
 }
 queueMicrotask(mountHomeLaunch);
+
+// Visual Identity v1 — branded sport marks replace generic emoji in the primary product surfaces.
+const SportMarks={
+ NFL:'<span class="sportmark football"><i></i><b>NFL</b></span>',
+ NCAA:'<span class="sportmark college"><i></i><b>TOP 25</b></span>',
+ SURVIVOR:'<span class="sportmark survivor"><i></i><b>LAST</b></span>'
+};
+function applySportMarks(){
+ document.querySelectorAll(".poolhub-mark").forEach(el=>{const name=document.documentElement.dataset.pool,p=PoolHubData[name];if(p&&SportMarks[p.accent])el.innerHTML=SportMarks[p.accent]});
+ document.querySelectorAll(".route-pool").forEach(el=>{const n=el.dataset.openPool,p=PoolHubData[n],mark=el.querySelector(".route-icon");if(p&&mark&&SportMarks[p.accent])mark.innerHTML=SportMarks[p.accent]});
+ document.querySelectorAll(".pool").forEach(el=>{const n=el.querySelector("b")?.textContent,p=PoolHubData[n],mark=el.querySelector(".sport");if(p&&mark&&SportMarks[p.accent])mark.innerHTML=SportMarks[p.accent]});
+}
+const brandObserver=new MutationObserver(()=>applySportMarks());brandObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(applySportMarks);
+
+// Installed-app attention badge: progressive enhancement only.
+function syncAppBadge(){
+ const incomplete=EntrantStatus?.filter?.(x=>x.name==="Jake"&&x.done<x.total).length||1;
+ if("setAppBadge" in navigator)navigator.setAppBadge(incomplete).catch(()=>{});
+}
+queueMicrotask(syncAppBadge);
