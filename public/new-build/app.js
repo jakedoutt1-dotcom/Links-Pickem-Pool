@@ -3222,3 +3222,10 @@ function cleanHomeTruthV95(){
 LinksLifecycleCallbacksV82.push(cleanHomeTruthV95);
 function stampV95(){document.querySelectorAll('.app-build-v18').forEach(x=>{const html='<b>LINKS</b><span>NEW BUILD · v95 · REAL HOME COMMAND</span>';if(x.innerHTML!==html)x.innerHTML=html})}
 queueMicrotask(()=>{cleanHomeTruthV95();stampV95();LinksLifecycleV82.queue()});
+
+
+// Single Version Authority v96 — one final build stamp wins over every legacy stamp function.
+const LINKS_NEW_BUILD_VERSION_V96={version:"v96",label:"LAUNCH POLISH"};
+function authoritativeStampV96(){document.querySelectorAll('.app-build-v18').forEach(x=>{const html='<b>LINKS</b><span>NEW BUILD · '+LINKS_NEW_BUILD_VERSION_V96.version+' · '+LINKS_NEW_BUILD_VERSION_V96.label+'</span>';if(x.innerHTML!==html)x.innerHTML=html});document.documentElement.dataset.linksBuild=LINKS_NEW_BUILD_VERSION_V96.version}
+LinksLifecycleCallbacksV82.push(authoritativeStampV96);
+queueMicrotask(()=>{authoritativeStampV96();requestAnimationFrame(authoritativeStampV96)});
