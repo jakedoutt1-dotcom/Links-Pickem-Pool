@@ -1413,3 +1413,96 @@ const densityObserver=new MutationObserver(()=>dedupeModernHome());densityObserv
 
 document.addEventListener("pointerdown",e=>{const b=e.target.closest("button");if(b)b.classList.add("links-pressed")},true);
 ["pointerup","pointercancel","pointerleave"].forEach(type=>document.addEventListener(type,e=>e.target.closest?.("button")?.classList.remove("links-pressed"),true));
+
+// Truth & Safety v9 — final prototype cleanup: derived state, safer creation, correct ranks.
+function linksEscape(v=""){return String(v).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]))}
+function safePoolName(v=""){return String(v).replace(/[<>]/g,"").replace(/\s+/g," ").trim().slice(0,42)}
+
+function readinessTruth(){
+ const rows=Array.isArray(EntrantStatus)?EntrantStatus:Object.values(EntrantStatus||{});
+ const missing=rows.filter(x=>(x.done??x.picks??0)<(x.total??3));
+ return {total:rows.length,ready:rows.length-missing.length,missing};
+}
+function patchCommissionerTruth(){
+ const r=readinessTruth(),cmd=document.querySelector(".commander-v3");if(!cmd)return;
+ const metric=cmd.querySelector('[data-cmd="entrants"]');
+ if(metric){metric.querySelector("strong").textContent=r.ready+" / "+r.total;metric.querySelector("span").textContent=r.missing.length?r.missing.length+" need picks":"Everyone ready"}
+ const remind=cmd.querySelector('[data-cmd="remind"]');if(remind){remind.textContent=r.missing.length?"REMIND "+r.missing.length+" MISSING":"EVERYONE READY";remind.disabled=!r.missing.length}
+ const auto=document.querySelector(".autopilot-v1");if(auto){
+   const player=[...auto.querySelectorAll(".auto-task-list>div")].find(x=>x.querySelector("b")?.textContent==="PLAYERS");
+   if(player){player.className=r.missing.length?"action":"done";player.querySelector("i").textContent=r.missing.length?"!":"✓";player.querySelector("span").textContent=r.missing.length?r.missing.length+" players still need picks":"All players are ready";player.querySelector("em").textContent=r.missing.length?"ACTION":"DONE"}
+ }
+}
+const commissionerTruthObserver=new MutationObserver(()=>patchCommissionerTruth());commissionerTruthObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(patchCommissionerTruth);
+
+function patchStandingsTruth(){
+ const ranked=rankedDemoPlayers();
+ document.querySelectorAll(".hub-standings").forEach(host=>{
+   host.innerHTML=ranked.map((x,i)=>'<div class="'+(x.p.name==="Jake"?"me":"")+'"><strong>'+(i+1)+'</strong><b>'+linksEscape(x.p.name)+'</b><span>'+x.s.wins+' WINS</span><em>'+(x.p.name==="Jake"?"YOU":"")+'</em></div>').join("");
+ });
+}
+const standingTruthObserver=new MutationObserver(()=>patchStandingsTruth());standingTruthObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(patchStandingsTruth);
+
+function patchMyPoolsTruth(){
+ const host=document.querySelector(".mypools-v3");if(!host)return;
+ const pools=Object.entries(PoolHubData),summary=host.querySelectorAll(".pool-summary>div b");
+ const s=currentPickSummary(),top3=pools.filter(([,p])=>/^(1|2|3|T-[123])$/.test(String(p.rank))).length;
+ if(summary[0])summary[0].textContent=pools.length;
+ if(summary[1])summary[1].textContent=s.due;
+ if(summary[2])summary[2].textContent=top3;
+ if(summary[3])summary[3].textContent=(pools.find(([,p])=>p.lock&&p.lock!=="NOT SET")?.[1].lock||"—").split("·")[0].trim();
+ host.querySelectorAll(".portfolio-card").forEach(card=>{
+   const name=card.dataset.openPool,p=PoolHubData[name],em=card.querySelector(".portfolio-rank em");if(!p||!em)return;
+   if(name==="Barnes Family")em.textContent=s.due?(s.due+" PICK"+(s.due===1?"":"S")+" DUE ›"):"OPEN POOL ›";else em.textContent="OPEN POOL ›";
+   card.classList.toggle("attention",name==="Barnes Family"&&s.due>0);
+ });
+}
+const poolTruthObserver=new MutationObserver(()=>patchMyPoolsTruth());poolTruthObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(patchMyPoolsTruth);
+
+function patchMyPicksTruth(){
+ const host=document.querySelector(".mypicks-v3");if(!host)return;const s=currentPickSummary();
+ const barnes=host.querySelector('[data-pickpool="Barnes Family"]');
+ if(barnes){
+  barnes.classList.toggle("action",s.due>0);barnes.classList.toggle("ready",s.due===0);
+  const bar=barnes.querySelector(".pick-progress i");if(bar)bar.style.width=s.pct+"%";
+  const small=barnes.querySelector(".pick-card-copy small");if(small)small.textContent=s.made+" OF "+s.total+" SAVED · THU · 7:15 PM";
+  const note=barnes.querySelector(".pick-card-copy>b");if(note)note.textContent=(s.due?(s.due+" PICK"+(s.due===1?"":"S")+" MISSING"):"CARD COMPLETE")+" ›";
+ }
+ const cards=[...host.querySelectorAll(".pick-command-card")],totals=cards.map(x=>{const bar=x.querySelector(".pick-progress i");return parseFloat(bar?.style.width)||0});
+ const pct=totals.length?Math.round(totals.reduce((a,b)=>a+b,0)/totals.length):100;
+ const ring=host.querySelector(".pick-health-ring b");if(ring)ring.textContent=pct+"%";
+ const due=cards.filter(x=>x.classList.contains("action")).length,hero=host.querySelector(".mypicks-hero h2");if(hero)hero.textContent=due?(due+" pool"+(due===1?"":"s")+" need"+(due===1?"s":"")+" you."):"You’re ready for game day.";
+}
+const picksTruthObserver=new MutationObserver(()=>patchMyPicksTruth());picksTruthObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(patchMyPicksTruth);
+
+// Stop unsafe or duplicate pool names before the existing wizard advances/publishes.
+document.addEventListener("input",e=>{const x=e.target.closest("[data-create-name]");if(x){const clean=safePoolName(x.value);if(clean!==x.value)x.value=clean}},true);
+document.addEventListener("click",e=>{
+ const next=e.target.closest('[data-create-next="3"]');if(next){
+  const input=document.querySelector("#createPoolMount [data-create-name]"),name=safePoolName(input?.value||"");
+  if(!name){e.preventDefault();e.stopImmediatePropagation();AppStatus.show("warn","Pool name needed","Give this pool a name before continuing.");return}
+  if(Object.keys(PoolHubData).some(n=>n.toLowerCase()===name.toLowerCase())){e.preventDefault();e.stopImmediatePropagation();AppStatus.show("warn","That pool name is already used","Choose a different name so invite links stay clear.");return}
+  input.value=name;CreatePoolStudio.draft.name=name;
+ }
+ const pub=e.target.closest("[data-create-publish]");if(pub){
+  const name=safePoolName(CreatePoolStudio.draft.name);
+  if(!name||Object.keys(PoolHubData).some(n=>n.toLowerCase()===name.toLowerCase())){e.preventDefault();e.stopImmediatePropagation();AppStatus.show("warn","Choose a unique pool name","Each LINKS pool needs its own name.");return}
+  CreatePoolStudio.draft.name=name;
+ }
+},true);
+
+// Saved-pick success belongs to the save event, never merely to a tap.
+const originalPickSave=PickEngine.save.bind(PickEngine);
+PickEngine.save=function(game,team){
+ const result=originalPickSave(game,team);
+ window.dispatchEvent(new CustomEvent("links:picksaved",{detail:{game,team,result}}));
+ return result;
+};
+window.addEventListener("links:picksaved",e=>{AppStatus.show("ok","Pick saved",e.detail.team+" is saved.");setTimeout(()=>{tightenHomeTruth();patchMyPicksTruth();patchMyPoolsTruth()},20)});
+
+// Remove any generic click-generated success toast if a blocked pick was tapped.
+document.addEventListener("click",e=>{
+ const b=e.target.closest("[data-pick-team],[data-hub-team],[data-slate],[data-hubpick]");
+ if(!b)return;
+ if(!WeekGate.isOpen()||LockEngine.isLocked(b.closest("[data-hubgame]")?.dataset.hubgame||b.dataset.slate||""))document.querySelectorAll(".app-status.ok,.status-toast.ok").forEach(x=>{if(/pick saved/i.test(x.textContent))x.remove()});
+},true);
