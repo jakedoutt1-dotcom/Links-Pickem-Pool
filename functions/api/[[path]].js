@@ -1632,7 +1632,19 @@ async function canCreatePool(DB,email,gameTypes,copies=1){
 async function canChangePoolGames(DB,pid,selected,current){
   const bad=selected.find(g=>!planAllowsGame(null,g));
   if(bad)return {ok:false,error:"Choose a supported LINKS game."};
-  return {ok:true,additions:selected.filter(g=>!current.includes(g)),testUnlock:true};
+  const additions=selected.filter(g=>!current.includes(g));
+  if(!additions.length)return {ok:true,additions};
+  const email=await poolCommissionerEmail(DB,pid);
+  const ent=await commissionerEntitlement(DB,email);
+  if(!ent)return {ok:false,error:"Your free pool includes one game. Choose a LINKS package to add more games.",upgradeRequired:true};
+  const maxGames=Math.max(1,Number(ent.max_games_per_pool||1));
+  if(selected.length>maxGames)return {ok:false,error:`Your ${LINKS_PLANS[ent.plan]?.label||"LINKS"} package allows up to ${maxGames} games in a pool.`,upgradeRequired:true};
+  const scope=String(ent.game_scope||"all").toLowerCase();
+  if(scope==="nfl"){
+    const outside=selected.find(g=>!NFL_PACKAGE_GAMES.has(g));
+    if(outside)return {ok:false,error:"That game is not included in the LINKS NFL Package. Choose All Access to add it.",upgradeRequired:true};
+  }
+  return {ok:true,additions,plan:ent.plan||"free"};
 }
 
 function paypalBase(env){
