@@ -975,3 +975,55 @@ document.addEventListener("submit",e=>{
  const mount=host.parentElement;if(mount){mount.innerHTML=roomV2(pool);hydrateRoomText(mount,pool);openRoomWire(mount,pool)}
  AppStatus.show("ok","Message sent","Posted to "+pool+" Pool Room.");
 },true);
+
+// Create Pool Studio v1 — Game Network -> details -> rules -> publish.
+const CreatedPools={
+ key:"links-created-pools-v1",
+ all(){try{return JSON.parse(localStorage.getItem(this.key)||"[]")}catch{return[]}},
+ save(p){const a=this.all();a.unshift(p);localStorage.setItem(this.key,JSON.stringify(a.slice(0,20)));return p},
+ hydrate(){this.all().forEach(p=>{if(!PoolHubData[p.name])PoolHubData[p.name]={game:p.game,week:"NEW POOL",members:1,ready:1,lock:"NOT SET",record:"0–0",rank:"—",accent:p.accent||"LINKS"}})}
+};
+CreatedPools.hydrate();
+
+const CreatePoolStudio={
+ draft:{game:"NFL PICK’EM",name:"",privacy:"PRIVATE",deadline:"PER-GAME KICKOFF",scoring:"STRAIGHT UP"},
+ gameType(name){const hit=NetworkGames.find(x=>x[0]===name);return hit?.[1]||"custom"},
+ accent(name){return name.replace(/[^A-Z0-9]/gi," ").trim().split(/\s+/).slice(0,2).join(" ").toUpperCase()},
+ html(step=1){
+  const d=this.draft,g=this.gameType(d.game);
+  if(step===1)return '<div class="create-studio"><div class="create-steps"><b class="on">1 GAME</b><b>2 DETAILS</b><b>3 RULES</b><b>4 READY</b></div><div class="create-title"><span>CREATE POOL</span><h2>What are you playing?</h2><p>Start with the format. LINKS will load the right commissioner controls next.</p></div><div class="create-games">'+NetworkGames.map(x=>'<button data-create-game="'+x[0]+'" class="'+(d.game===x[0]?"selected":"")+'"><div class="mini-network-art">'+networkGlyph(x[1])+'</div><div><b>'+x[0]+'</b><span>'+x[2]+'</span></div><em>›</em></button>').join("")+'</div><div class="create-foot"><span>1 COMMISSIONER POOL FREE FOR LIFE</span><button data-create-next="2">CONTINUE ›</button></div></div>';
+  if(step===2)return '<div class="create-studio"><div class="create-steps"><b class="done">✓ GAME</b><b class="on">2 DETAILS</b><b>3 RULES</b><b>4 READY</b></div><div class="create-title"><span>'+d.game+'</span><h2>Name your pool.</h2><p>Keep it recognizable. Invite links will take players straight here.</p></div><label class="create-field"><span>POOL NAME</span><input data-create-name maxlength="42" value="'+d.name.replace(/"/g,"&quot;")+'" placeholder="Example: Barnes Family"></label><div class="create-choice"><span>WHO CAN JOIN?</span><button data-create-privacy="PRIVATE" class="'+(d.privacy==="PRIVATE"?"selected":"")+'"><b>PRIVATE</b><small>Invite link or commissioner invite</small></button><button data-create-privacy="OPEN" class="'+(d.privacy==="OPEN"?"selected":"")+'"><b>OPEN</b><small>Players can request to join</small></button></div><div class="create-foot"><button class="secondary" data-create-next="1">‹ BACK</button><button data-create-next="3">CONTINUE ›</button></div></div>';
+  if(step===3)return '<div class="create-studio"><div class="create-steps"><b class="done">✓ GAME</b><b class="done">✓ DETAILS</b><b class="on">3 RULES</b><b>4 READY</b></div><div class="create-title"><span>QUICK SETUP</span><h2>Set the week rules.</h2><p>These can be changed later from Commissioner → Pool Rules.</p></div><div class="create-rule"><span>DEADLINE</span><button data-create-deadline="PER-GAME KICKOFF" class="'+(d.deadline==="PER-GAME KICKOFF"?"selected":"")+'">PER-GAME KICKOFF</button><button data-create-deadline="WEEKLY DEADLINE" class="'+(d.deadline==="WEEKLY DEADLINE"?"selected":"")+'">WEEKLY DEADLINE</button></div><div class="create-rule"><span>SCORING</span><button data-create-scoring="STRAIGHT UP" class="'+(d.scoring==="STRAIGHT UP"?"selected":"")+'">STRAIGHT UP</button><button data-create-scoring="AGAINST SPREAD" class="'+(d.scoring==="AGAINST SPREAD"?"selected":"")+'">AGAINST SPREAD</button></div><div class="create-preview"><div class="mini-network-art">'+networkGlyph(g)+'</div><div><span>PLAYER PREVIEW</span><b>'+d.game+'</b><small>'+d.deadline+' · '+d.scoring+'</small></div></div><div class="create-foot"><button class="secondary" data-create-next="2">‹ BACK</button><button data-create-next="4">REVIEW POOL ›</button></div></div>';
+  return '<div class="create-studio"><div class="create-steps"><b class="done">✓ GAME</b><b class="done">✓ DETAILS</b><b class="done">✓ RULES</b><b class="on">4 READY</b></div><div class="create-ready"><div class="create-ready-mark">'+networkGlyph(g)+'</div><span>READY TO CREATE</span><h2>'+(d.name||"Your New Pool")+'</h2><p>'+d.game+' · '+d.privacy+'</p><div class="ready-grid"><div><span>DEADLINE</span><b>'+d.deadline+'</b></div><div><span>SCORING</span><b>'+d.scoring+'</b></div><div><span>PLAYERS</span><b>YOU + INVITES</b></div><div><span>ACCESS</span><b>'+d.privacy+'</b></div></div><button data-create-publish>CREATE POOL</button><small>You can invite players immediately after creation.</small></div><div class="create-foot"><button class="secondary" data-create-next="3">‹ EDIT RULES</button></div></div>';
+ },
+ open(game){
+  if(game&&NetworkGames.some(x=>x[0]===game))this.draft={...this.draft,game};
+  modal("CREATE A POOL",'<div id="createPoolMount"></div>');
+  const h=document.querySelector("#createPoolMount");h.innerHTML=this.html(1);this.wire(h,1);
+ },
+ render(h,step){h.innerHTML=this.html(step);this.wire(h,step)},
+ wire(h,step){
+  h.querySelectorAll("[data-create-game]").forEach(b=>b.onclick=()=>{this.draft.game=b.dataset.createGame;this.render(h,1)});
+  h.querySelectorAll("[data-create-privacy]").forEach(b=>b.onclick=()=>{this.draft.privacy=b.dataset.createPrivacy;this.render(h,2)});
+  h.querySelectorAll("[data-create-deadline]").forEach(b=>b.onclick=()=>{this.draft.deadline=b.dataset.createDeadline;this.render(h,3)});
+  h.querySelectorAll("[data-create-scoring]").forEach(b=>b.onclick=()=>{this.draft.scoring=b.dataset.createScoring;this.render(h,3)});
+  h.querySelectorAll("[data-create-next]").forEach(b=>b.onclick=()=>{if(step===2){const n=h.querySelector("[data-create-name]")?.value.trim();if(!n){AppStatus.show("warn","Pool name needed","Give this pool a name before continuing.");return}this.draft.name=n}this.render(h,+b.dataset.createNext)});
+  h.querySelector("[data-create-publish]")?.addEventListener("click",()=>{
+   const d={...this.draft,id:"pool-"+Date.now(),createdAt:new Date().toISOString(),accent:this.accent(this.draft.game)};
+   CreatedPools.save(d);PoolHubData[d.name]={game:d.game,week:"NEW POOL",members:1,ready:1,lock:"NOT SET",record:"0–0",rank:"—",accent:d.accent};
+   SetupState.write({deadline:d.deadline,style:d.scoring});
+   AuditLog.add("POOL CREATED",d.name+" · "+d.game);
+   document.querySelector(".modal")?.remove();AppStatus.show("ok","Pool created",d.name+" is ready for players.");
+   setTimeout(()=>{LinksRouter.navigate("pool",d.name);setTimeout(()=>openInviteCenter(d.name),260)},180);
+  });
+ }
+};
+
+// Replace placeholder Game Network/Create Pool actions with the real studio.
+document.addEventListener("click",e=>{
+ const game=e.target.closest("[data-network-game]");
+ const add=e.target.closest("[data-new-pool]");
+ if(!game&&!add)return;
+ e.preventDefault();e.stopImmediatePropagation();
+ CreatePoolStudio.open(game?.dataset.networkGame||null);
+},true);
