@@ -2517,3 +2517,12 @@ function reviewLockV52(){
 }
 function bootV52(){reviewLockV52()}const o52=new MutationObserver(bootV52);o52.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV52);
 function stampV52(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v52 · REVIEW LOCK</span>")}const s52=new MutationObserver(stampV52);s52.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV52);
+
+// Review Finish v53 — normalize actionable controls and final mobile behavior.
+function reviewFinishV53(){
+ document.querySelectorAll("button").forEach(b=>{if(!b.hasAttribute("type"))b.type="button";if(b.disabled)b.setAttribute("aria-disabled","true")});
+ document.querySelectorAll("a[target='_blank']").forEach(a=>a.rel="noopener noreferrer");
+ document.querySelectorAll("img:not([alt])").forEach(i=>i.alt="");
+}
+function bootV53(){reviewFinishV53()}const o53=new MutationObserver(bootV53);o53.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV53);
+function stampV53(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v53 · REVIEW FINISH</span>")}const s53=new MutationObserver(stampV53);s53.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV53);
