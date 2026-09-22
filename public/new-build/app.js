@@ -2230,3 +2230,18 @@ function bootV27(){stadiumContinuityV27();visitorClarityV27()}
 const v27o=new MutationObserver(bootV27);v27o.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV27);
 function stampV27(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v27 · STADIUM FINISH</span>")}
 const stamp27o=new MutationObserver(stampV27);stamp27o.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV27);
+
+// Game Center Finish v28 — one clean destination for every active pool.
+function gameCenterV28(){
+ if(document.documentElement.dataset.view!=="my-pools")return;
+ const w=document.querySelector(".route-workspace,.main");if(!w||w.querySelector(".game-center-v28"))return;
+ w.insertAdjacentHTML("afterbegin",'<section class="game-center-v28"><div class="g28-head"><div><span>MY LINKS</span><h2>GAME CENTER</h2><small>Picks, live action, results and commissioner work—one tap away.</small></div><button data-v28-create>+ FREE POOL</button></div><div class="g28-actions"><button data-v28-picks><i>✓</i><b>MY PICKS</b><span>Finish what locks next</span></button><button data-v28-live><i>●</i><b>LIVE SCORES</b><span>Follow every result</span></button><button data-v28-results><i>🏆</i><b>RESULTS</b><span>Standings + winners</span></button><button data-v28-commish><i>⚙</i><b>COMMISSIONER</b><span>Run your pool</span></button></div></section>');
+ const nav=(s)=>LinksRouter.navigate(s);
+ w.querySelector("[data-v28-picks]")?.addEventListener("click",()=>nav("my-picks"));w.querySelector("[data-v28-live]")?.addEventListener("click",()=>nav("results"));w.querySelector("[data-v28-results]")?.addEventListener("click",()=>nav("results"));w.querySelector("[data-v28-commish]")?.addEventListener("click",()=>nav("commissioner"));w.querySelector("[data-v28-create]")?.addEventListener("click",()=>typeof CreatePoolStudio!=="undefined"&&CreatePoolStudio.open?CreatePoolStudio.open():nav("my-pools"));
+}
+function routeIdentityV28(){
+ const view=document.documentElement.dataset.view||"home";document.querySelectorAll(".finish-dock-v26 [data-v26]").forEach(b=>b.classList.toggle("active",b.dataset.v26===({home:"home","my-pools":"pools","my-picks":"pools",results:"scores",commissioner:"commish"}[view]||"")));
+}
+function bootV28(){gameCenterV28();routeIdentityV28()}
+const v28o=new MutationObserver(bootV28);v28o.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV28);
+function stampV28(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v28 · GAME CENTER FINISH</span>")}const s28=new MutationObserver(stampV28);s28.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV28);
