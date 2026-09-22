@@ -563,3 +563,19 @@ function syncDockInbox(){
  document.querySelectorAll(".mobile-dock [data-mobile-route='my-picks'] b").forEach(x=>{x.textContent=Math.max(1,unread);x.title=unread+" unread alerts"});
 }
 queueMicrotask(syncDockInbox);
+
+// My Picks v3 — cross-pool command card with deadline priority and completion.
+const MyPickCards=[
+ {pool:"Barnes Family",game:"NFL PICK’EM",due:"THU · 7:15 PM",done:2,total:3,state:"action",note:"1 PICK MISSING"},
+ {pool:"Saturday Crew",game:"COLLEGE PICK’EM",due:"SAT · 11:00 AM",done:10,total:10,state:"ready",note:"CARD COMPLETE"},
+ {pool:"Last One Standing",game:"SURVIVOR",due:"SUN · 12:00 PM",done:0,total:1,state:"action",note:"SELECTION NEEDED"}
+];
+function myPicksCommand(){
+ return '<section class="mypicks-v3"><div class="mypicks-hero"><div><span>MY PICKS</span><h2>Two decisions. Then you’re done.</h2><p>LINKS sorts every pool by what needs you first.</p></div><div class="pick-health-ring"><b>85%</b><span>WEEK READY</span></div></div><div class="deadline-line"><i></i><div><span>NEXT LOCK</span><b>Barnes Family · Thursday 7:15 PM</b></div><em>1 PICK DUE</em></div><div class="pick-command-grid">'+MyPickCards.map((x,i)=>'<button class="pick-command-card '+x.state+'" data-pickpool="'+x.pool+'"><div class="pick-card-art '+gameCategory(x.game)+'">'+artHTML(gameCategory(x.game))+'</div><div class="pick-card-copy"><span>'+x.game+'</span><h3>'+x.pool+'</h3><div class="pick-progress"><i style="width:'+Math.round(x.done/x.total*100)+'%"></i></div><small>'+x.done+' OF '+x.total+' SAVED · '+x.due+'</small><b>'+x.note+' ›</b></div></button>').join("")+'</div><div class="pick-safe-banner"><div class="safe-shield">✓</div><div><b>PICK SAFE</b><span>Your saved picks stay private until each game locks.</span></div><em>AUTO-SAVE ON</em></div></section>';
+}
+function mountMyPicksV3(){
+ const ws=document.querySelector(".route-workspace");if(!ws||document.documentElement.dataset.view!=="my-picks"||ws.querySelector(".mypicks-v3"))return;
+ ws.insertAdjacentHTML("beforeend",myPicksCommand());
+ ws.querySelectorAll("[data-pickpool]").forEach(b=>b.addEventListener("click",()=>openPoolHub(b.dataset.pickpool)));
+}
+const myPicksObserver=new MutationObserver(()=>mountMyPicksV3());myPicksObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountMyPicksV3);
