@@ -2697,3 +2697,20 @@ function aiFlowFinishV69(){
 document.addEventListener("click",e=>{if(e.target.closest("[data-ai-sport],[data-ai-leg]"))setTimeout(aiFlowFinishV69,0)},true);
 document.addEventListener("click",e=>{if(e.target.closest("[data-ai],[data-ai-studio],[data-ai-card],[data-parlay]"))setTimeout(aiFlowFinishV69,0)},true);
 function stampV69(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v69 · AI FLOW FINISH</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV69);
+
+// Cross-Sport Card v70 — one LINKS card can contain legs from multiple sports.
+const AIMixV70={key:"links-ai-mix-v70",read(){try{return JSON.parse(localStorage.getItem(this.key)||"[]")}catch{return[]}},write(x){localStorage.setItem(this.key,JSON.stringify(x.slice(0,12)))},add(sport,leg){let x=this.read();const k=sport+"|"+leg.id;x=x.filter(v=>v.key!==k);x.push({key:k,sport,game:leg.game,pick:leg.pick,price:leg.price,prob:leg.prob});this.write(x);return x},remove(k){this.write(this.read().filter(x=>x.key!==k))},clear(){this.write([])}};
+function mixedCardMathV70(rows){const dec=rows.reduce((a,x)=>a*AIStudio.decimal(x.price),1);return {american:rows.length?(dec>=2?Math.round((dec-1)*100):Math.round(-100/(dec-1))):0};}
+function mixedCardPanelV70(){
+ const rows=AIMixV70.read(),calc=mixedCardMathV70(rows);
+ return '<div class="ai-mix-v70"><div><span>MULTI-SPORT CARD</span><b>'+rows.length+' LEGS · '+new Set(rows.map(x=>x.sport)).size+' SPORTS</b><small>Mix football, college, basketball, hockey, MMA, baseball, soccer and more on one research card.</small></div>'+rows.map(x=>'<button data-mix-remove="'+linksEscape(x.key)+'"><em>'+linksEscape(x.sport)+'</em><b>'+linksEscape(x.pick)+'</b><span>'+linksEscape(x.price)+'</span><i>×</i></button>').join("")+'<footer><strong>'+(rows.length?((calc.american>0?"+":"")+calc.american):"—")+'</strong><button data-mix-clear '+(!rows.length?"disabled":"")+'>CLEAR</button></footer></div>';
+}
+function mountMixedCardV70(){const h=document.querySelector("#aiStudioMount");if(!h)return;h.querySelector(".ai-mix-v70")?.remove();h.querySelector(".ai-studio-v19")?.insertAdjacentHTML("beforeend",mixedCardPanelV70())}
+document.addEventListener("click",e=>{
+ const leg=e.target.closest("[data-ai-leg]");if(leg){setTimeout(()=>{const x=AIStudio.legs.find(v=>v.id===leg.dataset.aiLeg);if(x&&leg.classList.contains("selected"))AIMixV70.add(aiSportV66,x);else if(x)AIMixV70.remove(aiSportV66+"|"+x.id);mountMixedCardV70()},0);return}
+ const rm=e.target.closest("[data-mix-remove]");if(rm){e.preventDefault();AIMixV70.remove(rm.dataset.mixRemove);mountMixedCardV70();return}
+ if(e.target.closest("[data-mix-clear]")){e.preventDefault();AIMixV70.clear();mountMixedCardV70()}
+},true);
+document.addEventListener("click",e=>{if(e.target.closest("[data-ai-sport],[data-ai],[data-ai-studio],[data-ai-card],[data-parlay]"))setTimeout(mountMixedCardV70,0)},true);
+cardShareText=function(){const rows=AIMixV70.read();if(rows.length)return "My LINKS multi-sport research card\n"+rows.map(x=>"• ["+x.sport+"] "+x.pick+" ("+x.price+")").join("\n")+"\n\nBuilt with LINKS AI — preview research only; verify current lines and availability.";const x=aiSportSummaryV69();return "My LINKS "+x.sport+" research card\n"+x.legs.map(l=>"• "+l.pick+" ("+l.price+")").join("\n")+"\n\nBuilt with LINKS AI — preview research only; verify current lines and availability."};
+function stampV70(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v70 · MULTI-SPORT CARD</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV70);
