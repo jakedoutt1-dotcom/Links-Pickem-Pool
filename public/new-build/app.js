@@ -2593,3 +2593,14 @@ function assetReadinessV62(){
 queueMicrotask(assetReadinessV62);
 new MutationObserver(assetReadinessV62).observe(document.querySelector("#app"),{childList:true,subtree:true});
 function stampV62(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v62 · ASSET READINESS</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV62);
+
+// Flow Completion v63 — persist the last meaningful destination so returning players resume naturally.
+const LinksResumeV63={
+ key:"links-resume-v63",
+ save(view,pool=""){if(!view||["home","public-home"].includes(view))return;try{localStorage.setItem(this.key,JSON.stringify({view,pool,at:Date.now()}))}catch{}},
+ get(){try{const x=JSON.parse(localStorage.getItem(this.key)||"null");return x&&Date.now()-x.at<1000*60*60*24*30?x:null}catch{return null}}
+};
+document.addEventListener("click",e=>{const b=e.target.closest("[data-route],[data-route-action],[data-pool]");if(!b)return;const view=b.dataset.route||b.dataset.routeAction||"";const pool=b.dataset.pool||new URL(location.href).searchParams.get("pool")||"";LinksResumeV63.save(view,pool)},true);
+window.addEventListener("links:picksaved",()=>LinksResumeV63.save("my-picks",new URL(location.href).searchParams.get("pool")||""));
+window.LinksResumeV63=LinksResumeV63;
+function stampV63(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v63 · FLOW COMPLETION</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV63);
