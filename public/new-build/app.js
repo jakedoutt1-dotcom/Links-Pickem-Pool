@@ -2431,3 +2431,14 @@ function nearFinalV43(){
 }
 function bootV43(){nearFinalV43()}const o43=new MutationObserver(bootV43);o43.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV43);
 function stampV43(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v43 · NEAR-FINAL QA</span>")}const s43=new MutationObserver(stampV43);s43.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV43);
+
+// Release Candidate v44 — consistent top-of-page routing and compact mobile game-day behavior.
+function releaseCandidateV44(){
+ const view=document.documentElement.dataset.view||"";
+ document.body.dataset.linksView=view||"home";
+ document.querySelectorAll(".route-workspace h1,.route-workspace h2").forEach(h=>{if(!h.id)h.id="links-title-"+Math.random().toString(36).slice(2,8)});
+ document.querySelectorAll(".route-workspace").forEach(w=>{const h=w.querySelector("h1,h2");if(h)w.setAttribute("aria-labelledby",h.id)});
+}
+let lastV44="";function bootV44(){const v=document.documentElement.dataset.view||"home";releaseCandidateV44();if(v!==lastV44){lastV44=v;requestAnimationFrame(()=>window.scrollTo({top:0,behavior:"auto"}))}}
+const o44=new MutationObserver(bootV44);o44.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV44);
+function stampV44(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v44 · RELEASE CANDIDATE</span>")}const s44=new MutationObserver(stampV44);s44.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV44);
