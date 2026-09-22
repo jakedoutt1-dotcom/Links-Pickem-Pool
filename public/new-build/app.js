@@ -419,3 +419,29 @@ function mountInstallCard(){
  card.querySelector("[data-install-links]").addEventListener("click",async()=>{if(linksInstallPrompt){linksInstallPrompt.prompt();await linksInstallPrompt.userChoice;linksInstallPrompt=null;card.remove();return}modal("INSTALL LINKS",'<div class="connected-modal"><span class="badge live">HOME SCREEN</span><h3>Keep LINKS one tap away.</h3><p>On iPhone: open the Share menu, choose Add to Home Screen, then confirm Add.</p></div>')});
 }
 queueMicrotask(mountInstallCard);
+
+// Pool Hub v2 — turn the pool destination into a real game-day workspace.
+function mountPoolGameDay(){
+ const workspace=document.querySelector(".route-workspace");
+ if(!workspace||document.documentElement.dataset.view!=="pool"||workspace.querySelector(".pool-gameday"))return;
+ const pool=document.documentElement.dataset.pool||new URL(location.href).searchParams.get("pool")||"Barnes Family";
+ const p=PoolHubData[pool]||PoolHubData["Barnes Family"];
+ const wrap=document.createElement("section");wrap.className="pool-gameday";
+ wrap.innerHTML='<div class="gameday-title"><div><span>GAME DAY</span><h2>Your week at a glance.</h2></div><div class="gameday-status"><i></i>PICKS OPEN</div></div><div class="gameday-grid"><button data-pg="picks"><small>MY PICKS</small><strong>2 / 3</strong><span>1 still needs you</span><em>FINISH ›</em></button><button data-pg="standings"><small>STANDINGS</small><strong>'+p.rank+'</strong><span>'+p.record+' this season</span><em>VIEW ›</em></button><button data-pg="compare"><small>FIELD</small><strong>'+p.ready+'/'+p.members+'</strong><span>players ready</span><em>COMPARE ›</em></button><button data-pg="room"><small>POOL ROOM</small><strong>3</strong><span>new messages</span><em>OPEN ›</em></button></div><div class="matchup-feature"><div class="matchup-kicker"><span>NEXT LOCK</span><b>'+p.lock+'</b></div><div class="matchup-teams"><div><i>TEN</i><strong>TITANS</strong><span>AWAY</span></div><div class="versus"><b>VS</b><span>WEEK 3</span></div><div><i>IND</i><strong>COLTS</strong><span>HOME</span></div></div><div class="matchup-foot"><span>YOUR PICK</span><b>'+(PickEngine.get("ten-ind")?.team||"NOT PICKED")+'</b><button data-pg="picks">MAKE PICK ›</button></div></div>';
+ workspace.appendChild(wrap);
+ wrap.querySelectorAll("[data-pg]").forEach(b=>b.addEventListener("click",()=>{
+   const tab=b.dataset.pg;
+   if(tab==="picks"){setRoute("home");renderRouteWorkspace();setTimeout(()=>document.querySelector("[data-slate]")?.scrollIntoView({behavior:"smooth",block:"center"}),60)}
+   else if(tab==="standings"){setRoute("results");renderRouteWorkspace();scrollTo({top:0,behavior:"smooth"})}
+   else modal(tab==="compare"?"FIELD COMPARE":"POOL ROOM",tab==="compare"?'<div class="connected-modal"><span class="badge live">AFTER LOCK</span><h3>See the field without spoiling picks.</h3><p>Selections stay hidden until the game locks. Then LINKS reveals who took each side and updates the impact live.</p></div>':'<div class="connected-modal"><span class="badge">POOL ROOM</span><h3>Your pool, together.</h3><p>Announcements, commissioner notes, reactions and weekly conversation live here without exposing protected picks.</p></div>');
+ }));
+}
+const poolDayObserver=new MutationObserver(()=>mountPoolGameDay());poolDayObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountPoolGameDay);
+
+// Pick celebration: subtle confirmation feedback, never blocks the workflow.
+function pickCelebration(team){
+ let t=document.querySelector(".pick-toast");if(t)t.remove();
+ t=document.createElement("div");t.className="pick-toast";t.innerHTML='<i>✓</i><div><b>PICK SAVED</b><span>'+team+' is locked into your card</span></div>';
+ document.body.appendChild(t);requestAnimationFrame(()=>t.classList.add("show"));setTimeout(()=>{t.classList.remove("show");setTimeout(()=>t.remove(),250)},1800);
+}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-slate] button");if(!b||b.disabled)return;const game=b.closest("[data-slate]")?.dataset.slate;if(game&&LockEngine&&!LockEngine.isLocked(game))setTimeout(()=>pickCelebration(b.textContent.trim()),80)},true);
