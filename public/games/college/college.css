@@ -12,3 +12,6 @@ body.links-college-standalone-v629 #app>.tabs,body.links-college-standalone-v629
 .college-team-v629.selected img{filter:drop-shadow(0 0 3px #ff6a1a) drop-shadow(0 0 8px #ff6a1a);transform:scale(1.08)}
 #collegeLoadCandidatesV629.loaded{background:#168b50!important;border-color:#38d87a!important;color:#fff!important}
 .college-lock-v637{width:100%;margin-top:8px;font-weight:950;border:2px solid #ff8a32;background:#35200f;color:#fff}.college-lock-v637.locked{background:#6b1f27;border-color:#ff6675}.college-candidate-v629.disabled{opacity:.45;pointer-events:none}
+
+/* v642 College weekly lock countdown */
+.college-countdown-v642{margin-top:8px;padding:10px 12px;border:1px solid rgba(255,106,26,.7);border-radius:10px;background:rgba(0,0,0,.28);font-size:16px;font-weight:900;letter-spacing:.35px;text-align:center}
