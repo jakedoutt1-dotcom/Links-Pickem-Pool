@@ -2806,3 +2806,12 @@ document.addEventListener("pointercancel",()=>document.querySelectorAll(".is-pre
 document.addEventListener("click",e=>{const b=e.target.closest("button.links-control-v79");if(!b||b.disabled)return;b.classList.add("did-fire-v79");setTimeout(()=>b.classList.remove("did-fire-v79"),360)},true);
 const premiumObserverV79=new MutationObserver(premiumControlsV79);premiumObserverV79.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(premiumControlsV79);
 function stampV79(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v79 · PREMIUM INTERACTION</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV79);
+
+// Launch Trust v80 — affiliate handoff disclosure and responsible-use guardrail.
+function launchTrustV80(){
+ document.querySelectorAll(".book-handoff-v22:not([data-trust-v80])").forEach(x=>{x.dataset.trustV80="1";x.insertAdjacentHTML("beforeend",'<div class="affiliate-trust-v80"><b>PARTNER HANDOFF</b><span>LINKS may earn compensation from eligible partner referrals after approved affiliate links are activated.</span><small>21+ where required · Availability varies by location · Play responsibly · LINKS does not accept wagers.</small></div>')});
+}
+document.addEventListener("click",e=>{if(e.target.closest("[data-ai],[data-ai-studio],[data-ai-card],[data-parlay],[data-pool-ai-v78]"))setTimeout(launchTrustV80,0)},true);
+document.addEventListener("click",e=>{const b=e.target.closest("[data-book-go]");if(!b)return;e.preventDefault();const u=b.dataset.bookGo;if(!/^https?:\/\//i.test(u||""))return;window.open(u,"_blank","noopener,noreferrer")},true);
+queueMicrotask(launchTrustV80);
+function stampV80(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v80 · LAUNCH TRUST</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV80);
