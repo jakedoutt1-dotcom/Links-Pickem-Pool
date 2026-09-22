@@ -2794,3 +2794,15 @@ function aiSportFromPoolV78(type){return ({football:"NFL",college:"NCAAF",confid
 document.addEventListener("click",e=>{const b=e.target.closest("[data-pool-ai-v78]");if(!b)return;e.preventDefault();const sport=aiSportFromPoolV78(b.dataset.poolAiV78);AIStudio.open();setTimeout(()=>{applyAISportV66(sport);aiStadiumVisualV68();aiFlowFinishV69();mountMixedCardV70();mixDockV71()},0)},true);
 document.addEventListener("click",e=>{if(e.target.closest(".poolhub-tabs button,.pool-tabs button,[data-route]"))setTimeout(poolAIFunnelV78,0)},true);queueMicrotask(poolAIFunnelV78);
 function stampV78(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v78 · LAUNCH FUNNEL</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV78);
+
+// Premium Interaction v79 — tactile controls, live button feedback, keyboard focus, and game-context atmosphere.
+function premiumControlsV79(){
+ document.querySelectorAll("button:not([data-premium-v79])").forEach(b=>{b.dataset.premiumV79="1";if(!b.disabled)b.classList.add("links-control-v79")});
+ document.querySelectorAll(".pool-hub:not([data-atmosphere-v79])").forEach(h=>{h.dataset.atmosphereV79="1";const type=h.dataset.gameType||"football";h.insertAdjacentHTML("afterbegin",'<div class="links-atmosphere-v79" data-sport="'+linksEscape(type)+'"><i></i><i></i><i></i><span>LINKS LIVE EXPERIENCE</span></div>')});
+}
+document.addEventListener("pointerdown",e=>{const b=e.target.closest("button.links-control-v79");if(!b||b.disabled)return;b.classList.add("is-pressed-v79")},true);
+document.addEventListener("pointerup",e=>e.target.closest("button.links-control-v79")?.classList.remove("is-pressed-v79"),true);
+document.addEventListener("pointercancel",()=>document.querySelectorAll(".is-pressed-v79").forEach(x=>x.classList.remove("is-pressed-v79")),true);
+document.addEventListener("click",e=>{const b=e.target.closest("button.links-control-v79");if(!b||b.disabled)return;b.classList.add("did-fire-v79");setTimeout(()=>b.classList.remove("did-fire-v79"),360)},true);
+const premiumObserverV79=new MutationObserver(premiumControlsV79);premiumObserverV79.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(premiumControlsV79);
+function stampV79(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v79 · PREMIUM INTERACTION</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV79);
