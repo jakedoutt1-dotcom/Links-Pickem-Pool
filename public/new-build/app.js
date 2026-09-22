@@ -516,9 +516,7 @@ queueMicrotask(syncDockInbox);
 
 // My Picks v3 — cross-pool command card with deadline priority and completion.
 const MyPickCards=[];
-function myPicksCommand(){
- return '<section class="mypicks-v3"><div class="mypicks-hero"><div><span>MY PICKS</span><h2>Two decisions. Then you’re done.</h2><p>LINKS sorts every pool by what needs you first.</p></div><div class="pick-health-ring"><b>85%</b><span>WEEK READY</span></div></div><div class="deadline-line"><i></i><div><span>NEXT LOCK</span><b>My Pool · Thursday 7:15 PM</b></div><em>1 PICK DUE</em></div><div class="pick-command-grid">'+MyPickCards.map((x,i)=>'<button class="pick-command-card '+x.state+'" data-pickpool="'+x.pool+'"><div class="pick-card-art '+gameCategory(x.game)+'">'+artHTML(gameCategory(x.game))+'</div><div class="pick-card-copy"><span>'+x.game+'</span><h3>'+x.pool+'</h3><div class="pick-progress"><i style="width:'+Math.round(x.done/x.total*100)+'%"></i></div><small>'+x.done+' OF '+x.total+' SAVED · '+x.due+'</small><b>'+x.note+' ›</b></div></button>').join("")+'</div><div class="pick-safe-banner"><div class="safe-shield">✓</div><div><b>PICK SAFE</b><span>Your saved picks stay private until each game locks.</span></div><em>AUTO-SAVE ON</em></div></section>';
-}
+function myPicksCommand(){return ''}
 function mountMyPicksV3(){
  const ws=document.querySelector(".route-workspace");if(!ws||document.documentElement.dataset.view!=="my-picks"||ws.querySelector(".mypicks-v3"))return;
  ws.insertAdjacentHTML("beforeend",myPicksCommand());
@@ -570,11 +568,7 @@ function roomV2(pool){
  const msgs=[...RoomStore.load(pool)];
  return '<section class="room-v2"><div class="room-hero"><div><span>POOL ROOM</span><h2>'+pool+'</h2><p>Game-day talk, commissioner updates and bragging rights.</p></div><div class="room-live"><i></i><b>64</b><span>MEMBERS</span></div></div><div class="room-pinned"><i>L</i><div><span>PINNED BY COMMISSIONER</span><b>Week 3 picks lock at each game kickoff.</b></div><em>RULES ›</em></div><div class="room-feed">'+msgs.map((m,i)=>'<div class="room-message '+(m.who===currentPlayerNameV172()?"mine":"")+'"><i>'+m.who.charAt(0)+'</i><div><b>'+m.who+(m.who==="Commissioner"?' <small>COMMISSIONER</small>':'')+'</b><p></p><time>'+m.at+'</time></div></div>').join("")+'</div><form class="room-compose"><i>J</i><input maxlength="280" placeholder="Message the pool…" autocomplete="off"><button>SEND</button></form><div class="room-foot"><span>Keep it fun. Commissioner can moderate the room.</span><b>GAME DAY CHAT</b></div></section>';
 }
-function hydrateRoomText(host,pool){
- const seed=["Week 3 is open. Picks lock at each game kickoff.","That Thursday game is tougher than it looks.","I’m locked in. Good luck everybody."];
- const texts=[...seed,...RoomStore.load(pool).map(x=>x.text)];
- host.querySelectorAll(".room-message p").forEach((p,i)=>p.textContent=texts[i]||"");
-}
+function hydrateRoomText(){}
 function openRoomV2(pool){
  const html='<div id="roomV2Mount"></div>';modal("POOL ROOM",html);
  const host=document.querySelector("#roomV2Mount");host.innerHTML=roomV2(pool);hydrateRoomText(host,pool);
@@ -1632,7 +1626,7 @@ function pickReviewPanel(){
 function mountPickReview(){
  if(document.documentElement.dataset.view!=="my-picks")return;const w=document.querySelector(".route-workspace");if(!w||w.querySelector(".pick-review-v13"))return;
  const hero=w.querySelector(".mypicks-hero")||w.querySelector(".route-identity");hero?.insertAdjacentHTML("afterend",pickReviewPanel());
- w.querySelectorAll("[data-prv-game],[data-prv-review]").forEach(b=>b.onclick=()=>LinksRouter.navigate("pool","My Pool"));
+ w.querySelectorAll("[data-prv-game],[data-prv-review]").forEach(b=>b.onclick=()=>LinksRouter.navigate("my-pools"));
 }
 function refreshPickReview(){
  const old=document.querySelector(".pick-review-v13");if(!old)return;const wrap=document.createElement("div");wrap.innerHTML=pickReviewPanel();old.replaceWith(wrap.firstElementChild);mountPickReview();
@@ -4122,3 +4116,13 @@ function firstLookV175(){
 }
 LinksLifecycleCallbacksV82.push(firstLookV175);
 queueMicrotask(()=>{firstLookV175();LinksLifecycleV82.queue()});
+
+
+// Final Touch v176 — legacy static picks and seeded room hydration retired.
+function finalTouchV176(){
+ document.querySelectorAll('.mypicks-v3').forEach(x=>{if(/85%|My Pool|1 PICK/i.test(x.textContent||''))x.remove()});
+ document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v176 · FINAL TOUCH</span>';if(x.innerHTML!==h)x.innerHTML=h});
+ document.documentElement.dataset.linksBuild='v176';
+}
+LinksLifecycleCallbacksV82.push(finalTouchV176);
+queueMicrotask(()=>{finalTouchV176();LinksLifecycleV82.queue()});
