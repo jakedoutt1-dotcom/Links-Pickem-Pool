@@ -4207,3 +4207,37 @@ function revealRushV183(){
 }
 LinksLifecycleCallbacksV82.push(revealRushV183);
 queueMicrotask(()=>{revealRushV183();LinksLifecycleV82.queue()});
+
+
+// Deep First-Reveal Fix v184 — remove remaining customer-visible QA/billing fiction and stale commissioner labels.
+function deepRevealFixV184(){
+ // Playmaker is a focal product, but paid limits/prices are not real yet.
+ document.querySelectorAll('.ai-plan-v22').forEach(x=>{
+   x.innerHTML='<div><span>LINKS PLAYMAKER</span><b>RESEARCH MODE</b></div><i><em style="width:100%"></em></i><button data-ai-studio>OPEN PLAYMAKER</button>';
+ });
+ document.querySelectorAll('.pcv-ai em').forEach(x=>{if(/FREE CARDS|PRO/i.test(x.textContent||''))x.textContent='OPEN PLAYMAKER ›'});
+ document.querySelectorAll('[data-ai-upgrade]').forEach(x=>x.remove());
+ // Customer-facing wording should describe incomplete engines plainly, not expose internal QA terminology.
+ document.querySelectorAll('[data-network-game]').forEach(b=>{
+   const n=(b.dataset.networkGame||'').toUpperCase();
+   if(/FANTASY|DYNASTY/.test(n)){
+     b.querySelectorAll('small,span,em').forEach(x=>{
+       if(/FINAL QA|FULL ENGINE|OPEN LINEUP|OPEN TEAM/i.test(x.textContent||''))x.textContent='IN DEVELOPMENT';
+     });
+   }
+ });
+ // Remove internal/test audit wording from commissioner UI.
+ document.querySelectorAll('.commander-v3 small,.commander-v3 span').forEach(x=>{
+   if(/local test events/i.test(x.textContent||''))x.textContent='recorded changes';
+ });
+ // Do not show a fake invite count inferred from member count.
+ document.querySelectorAll('.commander-v3 .command-metrics button').forEach(b=>{
+   if((b.querySelector('small')?.textContent||'').trim()==='INVITES'&&!InviteRegistryV98.read(document.documentElement.dataset.pool||'').length){
+     const strong=b.querySelector('strong'),span=b.querySelector('span');if(strong)strong.textContent='0';if(span)span.textContent='no saved invites';
+   }
+ });
+ document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v184 · DEEP REVEAL FIX</span>';if(x.innerHTML!==h)x.innerHTML=h});
+ document.documentElement.dataset.linksBuild='v184';
+}
+LinksLifecycleCallbacksV82.push(deepRevealFixV184);
+queueMicrotask(()=>{deepRevealFixV184();LinksLifecycleV82.queue()});
