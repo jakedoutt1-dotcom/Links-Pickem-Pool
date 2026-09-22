@@ -235,3 +235,6 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}.v32-pr
 
 /* Launch Polish v40 */
 .links-v27 :is(button,a,[role=button]){-webkit-tap-highlight-color:transparent}.links-v27 :is(button,a,[role=button]):focus-visible{outline:2px solid rgba(242,120,36,.72);outline-offset:3px}.links-v27 input:focus-visible,.links-v27 select:focus-visible,.links-v27 textarea:focus-visible{outline:1px solid rgba(126,165,129,.5);outline-offset:1px;box-shadow:0 0 0 3px rgba(79,126,84,.08)}@media(pointer:coarse){.links-v27 button,.links-v27 [role=button],.links-v27 a.btn{min-height:44px}}@media(prefers-reduced-motion:reduce){.links-v27 *,.links-v27 *:before,.links-v27 *:after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+/* Real Score Feed v41 */
+.v41-feed-state,.v41-home-feed{display:flex;align-items:center;justify-content:center;min-height:46px;padding:8px 18px;color:#83908a;font-size:3.8px;font-weight:900;letter-spacing:.1em}.v41-feed-state:before,.v41-home-feed:before{content:"";width:6px;height:6px;margin-right:8px;border-radius:50%;background:#6f9975;box-shadow:0 0 10px rgba(111,153,117,.35)}@media(max-width:700px){.v41-feed-state,.v41-home-feed{font-size:4px;min-width:180px}}
