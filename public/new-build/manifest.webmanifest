@@ -1,13 +1,18 @@
 {
   "name": "LINKS Pools",
   "short_name": "LINKS",
-  "description": "All your pools. All your games. All in one place.",
+  "description": "LINKS brings sports research, AI card building, live game-day tools, and free sports pools into one installable app.",
   "start_url": "./?view=home",
   "scope": "./",
   "display": "standalone",
   "background_color": "#06090d",
   "theme_color": "#090b0f",
   "shortcuts": [
+    {
+      "name": "Build a Card",
+      "short_name": "AI Card",
+      "url": "./?view=home&ai=card"
+    },
     {
       "name": "My Picks",
       "short_name": "Picks",
