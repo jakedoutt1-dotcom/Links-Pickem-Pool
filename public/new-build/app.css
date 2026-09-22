@@ -474,3 +474,10 @@ html,body{min-height:100%;min-height:calc(var(--links-vh,1vh)*100)}body{overscro
 
 .format-empty-v169{display:grid;gap:7px;padding:18px;margin-top:12px;border:1px solid rgba(255,137,24,.14);border-radius:16px;background:linear-gradient(135deg,rgba(255,137,24,.06),rgba(12,45,31,.12))}
 .format-empty-v169 b{font-size:12px;letter-spacing:.1em;color:#ff982f}.format-empty-v169 span{font-size:12px;line-height:1.45;color:#a8b2bc}
+
+/* v191 — desktop first-reveal scale repair. The legacy shell was authored at an undersized desktop scale. */
+@media (min-width:1000px){
+ body{font-size:15px!important}
+ .app-shell-v18{zoom:1.42!important;transform:none!important;transform-origin:top left!important;width:70.4225%!important;min-height:70.4225vh!important}
+ .mobile-gamebar-v122{zoom:.7042!important}
+}
