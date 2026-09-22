@@ -1091,3 +1091,25 @@ function mountHubQuick(){
  }));
 }
 const quickObserver=new MutationObserver(()=>mountHubQuick());quickObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountHubQuick);
+
+// Home Command v4 — visual, simple, action-first landing page.
+function homeCommandV4(){
+ const pools=Object.entries(PoolHubData),active=pools.length,next=pools[0]?.[1];
+ return '<section class="home-command-v4"><div class="home-stage"><div class="home-stadium"><i></i><i></i><i></i><i></i><div class="field-lines"></div></div><div class="home-stage-copy"><span>LINKS POOLS</span><h1>ALL YOUR POOLS.<br><em>ALL IN ONE PLACE.</em></h1><p>Make picks. Track the field. Run your pools. One account for every game.</p><div class="home-primary"><button data-home-go="my-picks">MAKE MY PICKS <b>1 DUE</b></button><button class="ghost" data-home-go="my-pools">MY POOLS</button></div></div><div class="home-scorebug"><span>YOUR WEEK</span><b>85%</b><small>READY</small><i style="--week:85%"></i></div></div><div class="home-now-grid"><button class="home-now urgent" data-home-go="my-picks"><div class="now-icon">✓</div><div><span>NEEDS YOU</span><b>1 PICK LEFT</b><small>Barnes Family · before Thursday lock</small></div><em>FINISH ›</em></button><button class="home-now" data-home-pool="Barnes Family"><div class="now-icon live">●</div><div><span>UP NEXT</span><b>'+((next&&next.game)||"NFL PICK’EM")+'</b><small>'+((next&&next.lock)||"THU · 7:15 PM")+'</small></div><em>OPEN ›</em></button><button class="home-now" data-home-go="results"><div class="now-icon trophy">★</div><div><span>LIVE BOARD</span><b>SEE RESULTS</b><small>Scores, standings and movement</small></div><em>WATCH ›</em></button></div><div class="home-section-head"><div><span>YOUR POOLS</span><h2>Jump back in.</h2></div><button data-home-go="my-pools">VIEW ALL '+active+' ›</button></div><div class="home-pool-rail">'+pools.slice(0,3).map(([name,p])=>{const g=gameIdentity(p.game);return '<button class="home-pool-card hpc-'+g.type+'" data-home-pool="'+name+'"><div class="hpc-art">'+networkGlyph(g.type)+'</div><div class="hpc-copy"><span>'+p.game+' · '+p.week+'</span><h3>'+name+'</h3><div><b>'+p.ready+'/'+p.members+' READY</b><b>'+p.lock+'</b></div></div><em>'+p.rank+'<small>'+p.record+'</small></em></button>'}).join("")+'</div><div class="home-explore"><div class="home-explore-art"><i></i><i></i><i></i><b>LINKS</b></div><div><span>GAME NETWORK</span><h2>There’s a pool for that.</h2><p>Football, brackets, racing, golf, fantasy, custom games and more.</p></div><button data-home-games>EXPLORE GAMES ›</button></div></section>';
+}
+function mountHomeCommandV4(){
+ if(document.documentElement.dataset.view!=="home")return;
+ const main=document.querySelector(".main");if(!main||main.querySelector(".home-command-v4"))return;
+ const old=main.querySelector(".player-launchpad");if(old)old.insertAdjacentHTML("beforebegin",homeCommandV4());else main.insertAdjacentHTML("afterbegin",homeCommandV4());
+ main.querySelectorAll("[data-home-go]").forEach(b=>b.addEventListener("click",()=>LinksRouter.navigate(b.dataset.homeGo)));
+ main.querySelectorAll("[data-home-pool]").forEach(b=>b.addEventListener("click",()=>LinksRouter.navigate("pool",b.dataset.homePool)));
+ main.querySelector("[data-home-games]")?.addEventListener("click",()=>main.querySelector(".game-network-v2")?.scrollIntoView({behavior:"smooth",block:"start"}));
+}
+const homeV4Observer=new MutationObserver(()=>mountHomeCommandV4());homeV4Observer.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountHomeCommandV4);
+
+// Home cleanup: modern command surface owns the top of Home; remove older duplicate hero/quick-launch surfaces only.
+function cleanHomeV4(){
+ if(document.documentElement.dataset.view!=="home"||!document.querySelector(".home-command-v4"))return;
+ document.querySelectorAll(".player-launchpad,.your-links-spotlight,.nightboard-hero,.live-impact-hero").forEach(x=>x.remove());
+}
+const homeCleanObserver=new MutationObserver(()=>cleanHomeV4());homeCleanObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(cleanHomeV4);
