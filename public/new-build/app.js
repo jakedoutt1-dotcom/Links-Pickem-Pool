@@ -4149,3 +4149,34 @@ function wholeSiteTruthV181(){
 }
 LinksLifecycleCallbacksV82.push(wholeSiteTruthV181);
 queueMicrotask(()=>{wholeSiteTruthV181();LinksLifecycleV82.queue()});
+
+
+// First Reveal Gate v182 — final first-impression hardening.
+// Keep truthful real-account surfaces; quarantine stale prototype language and misleading LIVE/readiness claims.
+function firstRevealGateV182(){
+ const hasPools=CreatedPools.all().length>0;
+ const stale=/LIVE PROTOTYPE|DEMO|TEST BUILD|Week 7|Thursday Night Football|TEN\s+at\s+IND|Jake vs Mike|59 of 64|85% READY|scoring healthy|CONNECTED EXPERIENCE/i;
+ document.querySelectorAll('.route-workspace section,.route-workspace article,.route-workspace .card,.route-workspace .panel,.main>.card').forEach(el=>{
+   if(stale.test(el.textContent||'')) el.remove();
+ });
+ // Empty accounts should never imply current sports activity or operational readiness.
+ if(!hasPools){
+   document.querySelectorAll('.livepulse,.hero-live-detail,.results-live,.pick-health-ring,.command-health').forEach(el=>el.remove());
+ }
+ // Fantasy/Dynasty are visible as products, but never presented as operational engines yet.
+ document.querySelectorAll('[data-network-game]').forEach(btn=>{
+   const n=(btn.dataset.networkGame||'').toUpperCase();
+   if(!/FANTASY|DYNASTY/.test(n)) return;
+   const d=btn.querySelector('small,span');
+   if(d) d.textContent='IN DEVELOPMENT · ROSTER & SCORING ENGINE';
+ });
+ // Never imply a delivery action sends externally when the backend is not connected.
+ document.querySelectorAll('[data-remind],[data-remind-all]').forEach(btn=>{
+   btn.dataset.delivery='local-only';
+   btn.title='Creates a local reminder action only; external delivery is not connected.';
+ });
+ document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v182 · FIRST REVEAL GATE</span>';if(x.innerHTML!==h)x.innerHTML=h});
+ document.documentElement.dataset.linksBuild='v182';
+}
+LinksLifecycleCallbacksV82.push(firstRevealGateV182);
+queueMicrotask(()=>{firstRevealGateV182();LinksLifecycleV82.queue()});
