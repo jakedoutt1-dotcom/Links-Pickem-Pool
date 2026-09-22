@@ -4021,3 +4021,25 @@ function premiumFinishV164(){
 }
 LinksLifecycleCallbacksV82.push(premiumFinishV164);
 queueMicrotask(()=>{premiumFinishV164();LinksLifecycleV82.queue()});
+
+
+// Reveal Finish v165 — remove stale prototype hero metrics and make the front door data-driven.
+function frontDoorTruthV165(){
+ const pools=CreatedPools.all(),due=pools.reduce((n,p)=>n+(pickStatusV101(p.name).due||0),0);
+ document.querySelectorAll('.home-command-v4').forEach(home=>{
+   home.querySelectorAll('.home-scorebug,.home-now.urgent').forEach(x=>x.remove());
+   const make=home.querySelector('[data-home-go="my-picks"]');
+   if(make){make.innerHTML=due?'MAKE MY PICKS <b>'+due+' DUE</b>':'MY PICKS <b>READY</b>';make.classList.toggle('all-ready-v165',due===0)}
+   const head=home.querySelector('.home-section-head button');if(head)head.textContent=pools.length?'VIEW ALL '+pools.length+' ›':'CREATE YOUR FIRST POOL ›';
+ });
+ // Created pool hubs never show seeded rank/activity/live-impact copy.
+ const pool=document.documentElement.dataset.pool||'',created=pools.some(p=>p.name===pool);
+ if(created){
+   document.querySelectorAll('.hub-live,.hub-activity').forEach(x=>x.remove());
+   document.querySelectorAll('.hub-overview .hub-scoreline,.hub-overview .hub-progress').forEach(x=>x.remove());
+ }
+ document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v165 · REVEAL FINISH</span>';if(x.innerHTML!==h)x.innerHTML=h});
+ document.documentElement.dataset.linksBuild='v165';
+}
+LinksLifecycleCallbacksV82.push(frontDoorTruthV165);
+queueMicrotask(()=>{frontDoorTruthV165();LinksLifecycleV82.queue()});
