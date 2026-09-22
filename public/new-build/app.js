@@ -2615,3 +2615,16 @@ function gameNetworkCompletionV64(){
 queueMicrotask(gameNetworkCompletionV64);
 new MutationObserver(gameNetworkCompletionV64).observe(document.querySelector("#app"),{childList:true,subtree:true});
 function stampV64(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v64 · GAME NETWORK COMPLETION</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV64);
+
+// Game Completeness v65 — unsupported formats never fall through to an NFL pick card.
+const LinksFormatSupportV65=new Set(["football","college","survivor"]);
+function formatSupportV65(){
+ if(document.documentElement.dataset.view!=="pool")return;
+ const pool=document.documentElement.dataset.pool||"",p=PoolHubData[pool];if(!p)return;
+ const type=gameIdentity(p.game||"").type;if(LinksFormatSupportV65.has(type))return;
+ const live=document.querySelector(".pool-tab-live");if(!live||live.dataset.v65)return;live.dataset.v65="1";
+ live.innerHTML='<div class="hub-panel-head"><span>'+linksEscape(p.game||"LINKS GAME")+'</span><h3>Game setup required.</h3><p>This format will not borrow NFL picks or scoring. Commissioner setup must provide the game-specific slate, rules and scoring before player picks open.</p></div><div class="links-empty picks"><i>◆</i><h3>WAITING FOR GAME SETUP</h3><p>Your commissioner controls this game’s slate and opening state.</p></div>';
+}
+queueMicrotask(formatSupportV65);
+new MutationObserver(formatSupportV65).observe(document.querySelector("#app"),{childList:true,subtree:true});
+function stampV65(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v65 · GAME COMPLETENESS</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV65);
