@@ -3933,21 +3933,12 @@ async function refreshOfficialWeekNumber(){
     return n;
   }catch(e){return officialWeek||week||1}
 }
-function removeWrongStandingsWeekCardsV658(sw){
-  const wanted=Number(sw||standingsWeek||week||1);
-  document.querySelectorAll("#standings .card .card").forEach(card=>{
-    const t=String(card.textContent||"");
-    const m=t.match(/Week\s+(\d+)\s+standings will appear after/i);
-    if(m&&Number(m[1])!==wanted)card.remove();
-  });
-}
 async function renderStandings(){
   // v656: clear any previous week markup immediately, before fresh week data loads.
   // This prevents a stale Week 2 card flashing above the current Week 3 state.
   const standingsBodyNow=$("#standingsBody");if(standingsBodyNow)standingsBodyNow.innerHTML="";
-  if(!standingsManualSelectionV198)standingsWeek=Number(standingsWeek||week||1);
-  const sw=Number(standingsWeek||week||1);
-  removeWrongStandingsWeekCardsV658(sw);
+  if(!standingsManualSelectionV198)standingsWeek=Number(officialWeek||week||1);
+  const sw=Math.max(1,Math.min(sport==="nfl"?22:15,Number(standingsWeek||officialWeek||week||1)));
   let d;try{d=await api(qForWeek(`/api/standings?_=${Date.now()}`,sw))}catch(e){return}
   // v652: The selected RESULTS WEEK is the single source of truth for the
   // standings message, lock state, table, and tiebreaker visibility.
@@ -3970,8 +3961,6 @@ async function renderStandings(){
   }
   const standingsWeekSelect=$("#standingsWeekSelect");
   if(standingsWeekSelect)standingsWeekSelect.onchange=()=>changeStandingsWeekInPlace(standingsWeekSelect.value);
-  removeWrongStandingsWeekCardsV658(sw);
-  requestAnimationFrame(()=>removeWrongStandingsWeekCardsV658(sw));
 }
 
 
@@ -4337,7 +4326,7 @@ async function loadTabData(tab){
     if(tab==="picks") return await refreshPickLockOnly();
     if(tab==="compare") return await renderCompare();
     if(tab==="scores") return await renderScores();
-    if(tab==="standings"){standingsManualSelectionV198=false;return await renderStandings();}
+    if(tab==="standings"){standingsManualSelectionV198=false;standingsWeek=Number(officialWeek||week||1);return await renderStandings();}
     if(tab==="projected") return await renderProjectedStandings();
     if(tab==="paid") return await renderPaid();
     if(tab==="rules") return await renderRules();
