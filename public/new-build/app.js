@@ -2423,3 +2423,11 @@ function cleanProductStateV42(){
 }
 function bootV42(){cleanProductStateV42()}const o42=new MutationObserver(bootV42);o42.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV42);
 function stampV42(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v42 · CLEAN PRODUCT STATE</span>")}const s42=new MutationObserver(stampV42);s42.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV42);
+
+// Near-Final QA v43 — prevent accidental double actions and expose reliable busy feedback.
+function nearFinalV43(){
+ document.querySelectorAll("button").forEach(b=>{if(b.dataset.v43)return;b.dataset.v43="1";b.addEventListener("click",()=>{if(b.disabled)return;b.classList.add("v43-pressed");setTimeout(()=>b.classList.remove("v43-pressed"),240)})});
+ document.querySelectorAll("form").forEach(f=>{if(f.dataset.v43)return;f.dataset.v43="1";f.addEventListener("submit",()=>{const b=f.querySelector('button[type="submit"],button:not([type])');if(b){b.classList.add("v43-busy");b.setAttribute("aria-busy","true");setTimeout(()=>{b.classList.remove("v43-busy");b.removeAttribute("aria-busy")},1800)}})});
+}
+function bootV43(){nearFinalV43()}const o43=new MutationObserver(bootV43);o43.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV43);
+function stampV43(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v43 · NEAR-FINAL QA</span>")}const s43=new MutationObserver(stampV43);s43.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV43);
