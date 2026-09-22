@@ -34,15 +34,36 @@ window.LinksGame33=(()=>{
    el("g33SaveAccessV601")?.addEventListener("click",saveAccess);
  }
  async function renderAddGamesV621(){
-   if(!commissioner())return;try{if(typeof refreshPoolGames==="function")await refreshPoolGames()}catch(e){}
-   const card=document.querySelector("#game33NewV601 .g33-games-manager-v619"),active=card?.querySelector(".pool-games-active"),add=card?.querySelector(".pool-games-add");if(!card||!add)return;
+   if(!commissioner())return;
+   const active=el("g33PoolGamesActiveV626"),grid=el("g33PoolGamesGridV626"),save=el("g33SavePoolGamesV626"),status=el("g33SavePoolGamesStatusV626");
+   if(!grid||!save)return;
+   try{if(typeof refreshPoolGames==="function")await refreshPoolGames()}catch(e){}
    const choices=["nfl","college","march","33","squares","survivor","confidence","props","playoff","masters","nascar","fantasy","dynasty"];
-   const games=typeof normalizePoolGames==="function"?normalizePoolGames(window.poolGames||poolGames||[],"33"):(window.poolGames||["33"]);
-   if(active)active.innerHTML='<div class="small"><b>ACTIVE NOW</b> — '+games.map(g=>esc(typeof poolGameName==="function"?poolGameName(g):g)).join(" • ")+'</div>';
+   const names={nfl:"NFL Pick’em",college:"College Pick’em",march:"March Madness","33":"Game 33",squares:"Football Squares",survivor:"NFL Survivor",confidence:"Confidence Pool",props:"Super Bowl Props",playoff:"NFL Playoff Challenge",masters:"Masters Golf Pool",nascar:"NASCAR Pool",fantasy:"Fantasy Football",dynasty:"Dynasty Fantasy Football"};
    const logos={nfl:"/nfl-pickem-logo.png",college:"/college-pickem-logo.png",march:"/march-madness-logo.png","33":"/game-33-logo.png",squares:"/football-squares-logo-v102.png",survivor:"/nfl-survivor-logo-v102.jpg",confidence:"/confidence-pool-logo-v102.jpg",props:"/super-bowl-props-logo-v102.jpg",playoff:"/nfl-playoff-challenge-logo-v102.jpg",masters:"/masters-golf-pool-logo-v102.jpg",nascar:"/nascar-pool-logo-v102.jpg",fantasy:"/fantasy-football-logo-v154.png",dynasty:"/dynasty-fantasy-football-logo-v157.png"};
-   add.innerHTML='<div class="small"><b>ADD / REMOVE GAMES</b> — tap each game you want.</div><div class="g33-add-grid-v625">'+choices.map(g=>'<label class="g33-game-card-v625 '+(games.includes(g)?"selected":"")+'"><input type="checkbox" value="'+g+'" '+(games.includes(g)?"checked":"")+'><img src="'+logos[g]+'" alt=""><span>'+esc(typeof poolGameName==="function"?poolGameName(g):g)+'</span><b>✓ SELECTED</b></label>').join("")+'</div><button id="g33SavePoolGamesV621" type="button" class="green">SAVE ACTIVE GAMES</button><div id="g33SavePoolGamesStatusV621" class="small"></div>';
-   add.querySelectorAll(".g33-game-card-v625 input").forEach(x=>x.onchange=()=>x.closest(".g33-game-card-v625")?.classList.toggle("selected",x.checked));
-   el("g33SavePoolGamesV621").onclick=async()=>{const selected=[...add.querySelectorAll('input:checked')].map(x=>x.value),st=el("g33SavePoolGamesStatusV621"),btn=el("g33SavePoolGamesV621");if(!selected.length){st.textContent="Keep at least one game checked.";return}btn.disabled=true;st.textContent="Checking package access…";try{let allowed=false;try{allowed=typeof refreshPackageAccessV363==="function"?await refreshPackageAccessV363():false}catch(e){}const ownerEmail=String(sessionStorage.getItem("linksCommissionerEmail")||"").trim().toLowerCase();if(ownerEmail==="jakedoutt@yahoo.com")allowed=true;if(selected.length>1&&!allowed){st.textContent="A LINKS package is required to add more games. Opening Packages…";setTimeout(()=>{if(typeof showOnly==="function")showOnly("home");requestAnimationFrame(()=>{const open=document.getElementById("openPlansV201");if(open)open.click();else{document.getElementById("home")?.classList.add("hide");document.getElementById("plansPageV201")?.classList.remove("hide");window.scrollTo(0,0)}})},250);return}st.textContent="Saving…";const d=await call("/api/admin/pool-games",{method:"POST",body:JSON.stringify({gameTypes:selected})});if(typeof savePoolGames==="function")savePoolGames(d.games,d.gameType||selected[0]);st.textContent=ownerEmail==="jakedoutt@yahoo.com"?"✅ LINKS OWNER — ALL ACCESS. Games saved.":"✅ Active games saved.";await renderAddGamesV621()}catch(e){st.textContent=e.message||"Could not save active games."}finally{btn.disabled=false}};
+   let games=["33"];try{games=typeof normalizePoolGames==="function"?normalizePoolGames(window.poolGames||poolGames||[],"33"):(window.poolGames||["33"])}catch(e){}
+   if(!games.includes("33"))games.push("33");
+   if(active)active.innerHTML='<b>ACTIVE NOW</b> — '+games.map(g=>esc(names[g]||g)).join(" • ");
+   grid.innerHTML=choices.map(g=>'<label class="g33-pool-game-card-v626 '+(games.includes(g)?"selected":"")+'"><input type="checkbox" value="'+g+'" '+(games.includes(g)?"checked":"")+(g==="33"?" disabled":"")+'><span class="g33-check-v626">'+(games.includes(g)?"✓":"")+'</span><img src="'+logos[g]+'" alt="'+esc(names[g]||g)+'"><strong>'+esc(names[g]||g)+'</strong></label>').join("");
+   grid.querySelectorAll('input[type="checkbox"]').forEach(x=>x.addEventListener("change",()=>{const card=x.closest(".g33-pool-game-card-v626"),mark=card?.querySelector(".g33-check-v626");card?.classList.toggle("selected",x.checked);if(mark)mark.textContent=x.checked?"✓":""}));
+   save.onclick=async()=>{
+     let selected=["33",...Array.from(grid.querySelectorAll('input:checked')).map(x=>x.value).filter(x=>x!=="33")];
+     selected=[...new Set(selected)];save.disabled=true;if(status)status.textContent="Checking package access…";
+     try{
+       let allowed=false;try{allowed=typeof refreshPackageAccessV363==="function"?await refreshPackageAccessV363():false}catch(e){}
+       const ownerEmail=String(sessionStorage.getItem("linksCommissionerEmail")||"").trim().toLowerCase();
+       if(ownerEmail==="jakedoutt@yahoo.com")allowed=true;
+       if(selected.length>1&&!allowed){
+         if(status)status.textContent="A LINKS package is required to add more games. Opening Packages…";
+         setTimeout(()=>{if(typeof showOnly==="function")showOnly("home");requestAnimationFrame(()=>{const open=document.getElementById("openPlansV201");if(open)open.click();else{document.getElementById("home")?.classList.add("hide");document.getElementById("plansPageV201")?.classList.remove("hide");window.scrollTo(0,0)}})},250);return;
+       }
+       if(status)status.textContent="Saving…";
+       const d=await call("/api/admin/pool-games",{method:"POST",body:JSON.stringify({gameTypes:selected})});
+       if(typeof savePoolGames==="function")savePoolGames(d.games,d.gameType||"33");
+       if(status)status.textContent=ownerEmail==="jakedoutt@yahoo.com"?"✅ LINKS OWNER — ALL ACCESS. Games saved.":"✅ Active games saved.";
+       await renderAddGamesV621();
+     }catch(e){if(status)status.textContent=e.message||"Could not save active games."}finally{save.disabled=false}
+   };
  }
 
  function row(a){
