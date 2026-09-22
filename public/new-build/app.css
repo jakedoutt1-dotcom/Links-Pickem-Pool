@@ -238,3 +238,6 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}.v32-pr
 
 /* Real Score Feed v41 */
 .v41-feed-state,.v41-home-feed{display:flex;align-items:center;justify-content:center;min-height:46px;padding:8px 18px;color:#83908a;font-size:3.8px;font-weight:900;letter-spacing:.1em}.v41-feed-state:before,.v41-home-feed:before{content:"";width:6px;height:6px;margin-right:8px;border-radius:50%;background:#6f9975;box-shadow:0 0 10px rgba(111,153,117,.35)}@media(max-width:700px){.v41-feed-state,.v41-home-feed{font-size:4px;min-width:180px}}
+
+/* Clean Product State v42 */
+[data-preview="true"]{position:relative}.v42-preview{position:absolute;z-index:4;right:9px;top:8px;padding:3px 6px;border:1px solid rgba(128,161,132,.12);border-radius:999px;background:rgba(7,13,12,.72);color:#74837c;font-size:3px;font-weight:1000;letter-spacing:.12em;pointer-events:none}@media(max-width:700px){.v42-preview{font-size:3.4px}}
