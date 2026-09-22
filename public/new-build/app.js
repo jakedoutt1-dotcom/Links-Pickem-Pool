@@ -3184,3 +3184,24 @@ function refreshConfiguredEngineV93(){if(document.documentElement.dataset.view!=
 LinksLifecycleCallbacksV82.push(refreshConfiguredEngineV93);
 function stampV93(){document.querySelectorAll('.app-build-v18').forEach(x=>{const html='<b>LINKS</b><span>NEW BUILD · v93 · CONFIGURED GAME ENGINES</span>';if(x.innerHTML!==html)x.innerHTML=html})}
 queueMicrotask(()=>{refreshConfiguredEngineV93();stampV93();LinksLifecycleV82.queue()});
+
+
+// Kickoff Lock Integrity v94 — commissioner slates store machine-readable kickoff times and individual games lock automatically.
+function parseKickV94(v){const t=Date.parse(String(v||""));return Number.isFinite(t)?t:null}
+function gameLockedV94(g){const t=parseKickV94(g?.kickAt);return t!==null&&Date.now()>=t}
+function slateBuilderV94(pool){
+ const saved=GameSlateStoreV86.read(pool),rows=saved.length?saved:[{away:"",home:"",kick:"",kickAt:""}];
+ return '<section class="slate-builder-v87"><div class="sb87-head"><div><span>GAME SETUP</span><h2>Publish the player slate.</h2><p>Add each matchup and its actual kickoff. LINKS locks that game automatically at kickoff.</p></div><b>'+rows.length+' GAME'+(rows.length===1?'':'S')+'</b></div><div class="sb87-rows">'+rows.map((g,i)=>'<div class="sb87-row" data-sb87-row><strong>'+(i+1)+'</strong><input data-sb87-away placeholder="Away team" value="'+linksEscape(g.away||'')+'"><span>VS</span><input data-sb87-home placeholder="Home team" value="'+linksEscape(g.home||'')+'"><input type="datetime-local" data-sb87-kickat value="'+linksEscape(g.kickAt||'')+'"><button type="button" data-sb87-remove aria-label="Remove game">×</button></div>').join('')+'</div><div class="sb87-actions"><button type="button" class="secondary" data-sb87-add>＋ ADD GAME</button><button type="button" class="primary" data-sb87-publish>PUBLISH SLATE ›</button></div></section>'
+}
+slateBuilderV87=slateBuilderV94;
+const wireSlateBuilderV87Legacy=wireSlateBuilderV87;
+wireSlateBuilderV87=function(h,pool){
+ const collect=()=>[...h.querySelectorAll('[data-sb87-row]')].map((r,i)=>{const kickAt=r.querySelector('[data-sb87-kickat]')?.value||'';return {id:'cfg-'+(i+1),away:r.querySelector('[data-sb87-away]')?.value.trim()||'',home:r.querySelector('[data-sb87-home]')?.value.trim()||'',kickAt,kick:kickAt?new Date(kickAt).toLocaleString([], {weekday:'short',hour:'numeric',minute:'2-digit'}):''}});
+ h.querySelector('[data-sb87-add]')?.addEventListener('click',()=>{const rows=collect();rows.push({away:'',home:'',kick:'',kickAt:''});GameSlateStoreV86.write(pool,rows);h.innerHTML=slateBuilderV87(pool);wireSlateBuilderV87(h,pool)});
+ h.querySelectorAll('[data-sb87-remove]').forEach((b,i)=>b.addEventListener('click',()=>{const rows=collect();rows.splice(i,1);GameSlateStoreV86.write(pool,rows.length?rows:[{away:'',home:'',kick:'',kickAt:''}]);h.innerHTML=slateBuilderV87(pool);wireSlateBuilderV87(h,pool)}));
+ h.querySelector('[data-sb87-publish]')?.addEventListener('click',()=>{const rows=collect();if(!rows.length||rows.some(x=>!x.away||!x.home||!x.kickAt)){AppStatus.show('warn','Slate incomplete','Every matchup needs two teams and a kickoff date/time.');return}if(rows.some(x=>x.away.toLowerCase()===x.home.toLowerCase())){AppStatus.show('warn','Check the matchup','A team cannot play itself.');return}if(rows.some(x=>parseKickV94(x.kickAt)===null)){AppStatus.show('warn','Kickoff needed','Enter a valid kickoff for every game.');return}GameSlateStoreV86.write(pool,rows);AuditLog.add('GAME SLATE PUBLISHED',pool+' · '+rows.length+' games');document.querySelector('.modal')?.remove();AppStatus.show('ok','Slate published',rows.length+' games with automatic kickoff locks.');document.querySelector('.pool-tab-live')?.removeAttribute('data-v86-protected');LinksLifecycleV82.queue()})
+};
+function enforcePerGameLocksV94(){if(document.documentElement.dataset.view!=="pool")return;const pool=document.documentElement.dataset.pool||"",games=GameSlateStoreV86.read(pool);if(!games.length)return;const byId=Object.fromEntries(games.map(g=>[g.id,g]));document.querySelectorAll('[data-adapter-game],[data-confidence-game]').forEach(b=>{const id=b.dataset.adapterGame||b.dataset.confidenceGame,g=byId[id];if(!g)return;const locked=gameLockedV94(g);b.disabled=locked;b.classList.toggle('kickoff-locked-v94',locked);if(locked)b.setAttribute('title','Locked at kickoff')});document.querySelectorAll('[data-adapter-row],[data-confidence-row]').forEach(r=>{const g=byId[r.dataset.adapterRow||r.dataset.confidenceRow];if(g&&gameLockedV94(g))r.classList.add('game-locked-v94')})}
+LinksLifecycleCallbacksV82.push(enforcePerGameLocksV94);
+function stampV94(){document.querySelectorAll('.app-build-v18').forEach(x=>{const html='<b>LINKS</b><span>NEW BUILD · v94 · AUTOMATIC KICKOFF LOCKS</span>';if(x.innerHTML!==html)x.innerHTML=html})}
+queueMicrotask(()=>{enforcePerGameLocksV94();stampV94();LinksLifecycleV82.queue()});
