@@ -2680,3 +2680,20 @@ function aiStadiumVisualV68(){
 document.addEventListener("click",e=>{if(e.target.closest("[data-ai-sport]"))setTimeout(aiStadiumVisualV68,0)},true);
 document.addEventListener("click",e=>{if(e.target.closest("[data-ai],[data-ai-studio],[data-ai-card],[data-parlay]"))setTimeout(aiStadiumVisualV68,0)},true);
 function stampV68(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v68 · AI STADIUM SPORTS</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV68);
+
+// AI Flow Finish v69 — sport-aware review/share and clear research workflow.
+function aiSportSummaryV69(){
+ const ids=AIStudio.load(),legs=AIStudio.legs.filter(x=>ids.includes(x.id));
+ return {sport:aiSportV66,ids,legs,calc:AIStudio.combined(ids)};
+}
+cardShareText=function(){
+ const x=aiSportSummaryV69();return "My LINKS "+x.sport+" research card\n"+x.legs.map(l=>"• "+l.pick+" ("+l.price+")").join("\n")+"\n\nBuilt with LINKS AI — preview research only; verify current lines and availability.";
+};
+function aiFlowFinishV69(){
+ const h=document.querySelector("#aiStudioMount");if(!h)return;
+ const studio=h.querySelector(".ai-studio-v19");if(!studio||studio.querySelector(".ai-flow-v69"))return;
+ const board=studio.querySelector(".ais-layout");board?.insertAdjacentHTML("beforebegin",'<div class="ai-flow-v69"><span class="active"><b>1</b>CHOOSE SPORT</span><i></i><span class="active"><b>2</b>RESEARCH</span><i></i><span><b>3</b>BUILD CARD</span><i></i><span><b>4</b>REVIEW / SHARE</span></div>');
+}
+document.addEventListener("click",e=>{if(e.target.closest("[data-ai-sport],[data-ai-leg]"))setTimeout(aiFlowFinishV69,0)},true);
+document.addEventListener("click",e=>{if(e.target.closest("[data-ai],[data-ai-studio],[data-ai-card],[data-parlay]"))setTimeout(aiFlowFinishV69,0)},true);
+function stampV69(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v69 · AI FLOW FINISH</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV69);
