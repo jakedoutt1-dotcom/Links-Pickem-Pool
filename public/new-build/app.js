@@ -1606,6 +1606,8 @@ function mountFormatAdapter(){
  if(document.documentElement.dataset.view!=="pool")return;
  const pool=document.documentElement.dataset.pool||"",type=gameIdentity(PoolHubData[pool]?.game||"").type;
  if(!FormatAdapters[type])return;
+ // v81: real game engines own their Picks screen; legacy preview adapters may never overwrite them.
+ if(typeof LinksFormatSupportV65!=="undefined"&&LinksFormatSupportV65.has(type))return;
  const live=document.querySelector(".pool-tab-live");if(!live||live.dataset.formatAdapter==="1")return;
  const active=[...document.querySelectorAll(".poolhub-tabs button,.pool-tabs button")].find(b=>b.classList.contains("active"))?.textContent.trim().toLowerCase();
  if(active!=="picks")return;
@@ -1617,7 +1619,8 @@ document.addEventListener("click",e=>{
  live?.querySelectorAll("[data-format-choice]").forEach(x=>x.classList.remove("selected"));b.classList.add("selected");
  AppStatus.show("ok","Selection saved",b.dataset.formatChoice);
 },true);
-const formatObserver=new MutationObserver(()=>mountFormatAdapter());formatObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountFormatAdapter);
+// v81: removed legacy format MutationObserver; route/tab lifecycle mounts previews only when needed.
+queueMicrotask(mountFormatAdapter);
 
 // Pool Hub visual state follows each format.
 function formatHubPolish(){
@@ -2815,3 +2818,13 @@ document.addEventListener("click",e=>{if(e.target.closest("[data-ai],[data-ai-st
 document.addEventListener("click",e=>{const b=e.target.closest("[data-book-go]");if(!b)return;e.preventDefault();const u=b.dataset.bookGo;if(!/^https?:\/\//i.test(u||""))return;window.open(u,"_blank","noopener,noreferrer")},true);
 queueMicrotask(launchTrustV80);
 function stampV80(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v80 · LAUNCH TRUST</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV80);
+
+// Engine Ownership v81 — one source of truth for supported game pick screens.
+function enforceEngineOwnershipV81(){
+ if(document.documentElement.dataset.view!=="pool")return;const pool=document.documentElement.dataset.pool||"",p=PoolHubData[pool];if(!p)return;const type=gameIdentity(p.game||"").type;
+ if(!LinksFormatSupportV65.has(type))return;const live=document.querySelector(".pool-tab-live");if(!live)return;
+ const active=[...document.querySelectorAll(".poolhub-tabs button,.pool-tabs button")].find(b=>b.classList.contains("active"))?.textContent.trim().toLowerCase();if(active!=="picks")return;
+ if(live.dataset.adapter!=="1"){live.dataset.formatAdapter="";mountGameAdapter()}
+}
+document.addEventListener("click",e=>{if(e.target.closest(".poolhub-tabs button,.pool-tabs button,[data-bracket-pick],[data-adapter-pick],[data-confidence-team],[data-game33-team],[data-square-v75]"))queueMicrotask(enforceEngineOwnershipV81)},true);queueMicrotask(enforceEngineOwnershipV81);
+function stampV81(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v81 · ENGINE STABILITY</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV81);
