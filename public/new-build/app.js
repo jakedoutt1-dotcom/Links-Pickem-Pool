@@ -3205,3 +3205,20 @@ function enforcePerGameLocksV94(){if(document.documentElement.dataset.view!=="po
 LinksLifecycleCallbacksV82.push(enforcePerGameLocksV94);
 function stampV94(){document.querySelectorAll('.app-build-v18').forEach(x=>{const html='<b>LINKS</b><span>NEW BUILD · v94 · AUTOMATIC KICKOFF LOCKS</span>';if(x.innerHTML!==html)x.innerHTML=html})}
 queueMicrotask(()=>{enforcePerGameLocksV94();stampV94();LinksLifecycleV82.queue()});
+
+
+// Launch Truth Home v95 — real accounts never see seeded urgency, fake readiness, or demo rankings on HOME.
+function homeTruthV95(){
+ const created=CreatedPools.all(),real=created.map(x=>PoolHubData[x.name]).filter(Boolean),picksDue=created.reduce((n,x)=>{const type=gameIdentity(x.game||"").type;if(["bracket","squares","custom"].includes(type))return n;const slate=GameSlateStoreV86.read(x.name);return n+slate.filter(g=>!PickEngine.get(x.name+"-"+g.id)&&!gameLockedV94(g)).length},0);return {created,real,picksDue};
+}
+function cleanHomeTruthV95(){
+ if(document.documentElement.dataset.view!=="home")return;const t=homeTruthV95();if(!t.created.length)return;const h=document.querySelector('.home-command-v4');if(!h)return;
+ const score=h.querySelector('.home-scorebug');if(score){const total=t.created.reduce((n,x)=>n+Math.max(1,GameSlateStoreV86.read(x.name).length),0),pct=total?Math.max(0,Math.min(100,Math.round((total-t.picksDue)/total*100))):0;score.querySelector('b').textContent=pct+'%';score.querySelector('i')?.style.setProperty('--week',pct+'%')}
+ const primary=h.querySelector('[data-home-go="my-picks"] b');if(primary)primary.textContent=t.picksDue?t.picksDue+' DUE':'READY';
+ const urgent=h.querySelector('.home-now.urgent');if(urgent){urgent.classList.toggle('urgent',t.picksDue>0);urgent.querySelector('span').textContent=t.picksDue?'NEEDS YOU':'YOU’RE SET';urgent.querySelector('b').textContent=t.picksDue?(t.picksDue+' PICK'+(t.picksDue===1?'':'S')+' LEFT'):'NO PICKS DUE';urgent.querySelector('small').textContent=t.picksDue?'Finish unlocked games before kickoff':'New games will appear when your pools publish them';urgent.querySelector('em').textContent=t.picksDue?'FINISH ›':'VIEW PICKS ›'}
+ const rail=h.querySelector('.home-pool-rail');if(rail)rail.innerHTML=t.created.slice(0,3).map(x=>{const p=PoolHubData[x.name]||{},g=gameIdentity(x.game||p.game||''),slate=GameSlateStoreV86.read(x.name),ready=gameSetupStatusV86(x.name).ready;return '<button class="home-pool-card hpc-'+g.type+'" data-home-pool="'+linksEscape(x.name)+'"><div class="hpc-art">'+networkGlyph(g.type)+'</div><div class="hpc-copy"><span>'+linksEscape(x.game||p.game||'LINKS POOL')+'</span><h3>'+linksEscape(x.name)+'</h3><div><b>'+(ready?'READY TO PLAY':'SETUP NEEDED')+'</b><b>'+slate.length+' GAME'+(slate.length===1?'':'S')+'</b></div></div><em>›<small>OPEN</small></em></button>'}).join('');
+ const head=h.querySelector('.home-section-head button');if(head)head.textContent='VIEW ALL '+t.created.length+' ›';
+}
+LinksLifecycleCallbacksV82.push(cleanHomeTruthV95);
+function stampV95(){document.querySelectorAll('.app-build-v18').forEach(x=>{const html='<b>LINKS</b><span>NEW BUILD · v95 · REAL HOME COMMAND</span>';if(x.innerHTML!==html)x.innerHTML=html})}
+queueMicrotask(()=>{cleanHomeTruthV95();stampV95();LinksLifecycleV82.queue()});
