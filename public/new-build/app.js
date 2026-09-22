@@ -1004,7 +1004,7 @@ const CreatePoolStudio={
   h.querySelectorAll("[data-create-privacy]").forEach(b=>b.onclick=()=>{this.draft.privacy=b.dataset.createPrivacy;this.render(h,2)});
   h.querySelectorAll("[data-create-deadline]").forEach(b=>b.onclick=()=>{this.draft.deadline=b.dataset.createDeadline;this.render(h,3)});
   h.querySelectorAll("[data-create-scoring]").forEach(b=>b.onclick=()=>{this.draft.scoring=b.dataset.createScoring;this.render(h,3)});
-  h.querySelectorAll("[data-create-next]").forEach(b=>b.onclick=()=>{if(step===2){const n=h.querySelector("[data-create-name]")?.value.trim();if(!n){AppStatus.show("warn","Pool name needed","Give this pool a name before continuing.");return}this.draft.name=n}this.render(h,+b.dataset.createNext)});
+  h.querySelectorAll("[data-create-next]").forEach(b=>b.onclick=()=>{if(step===2){const n=h.querySelector("[data-create-name]")?.value.trim();if(!n){AppStatus.show("warn","Pool name needed","Give this pool a name before continuing.");return}const duplicate=Object.keys(PoolHubData).some(x=>x.trim().toLowerCase()===n.toLowerCase())||CreatedPools.all().some(x=>(x.name||"").trim().toLowerCase()===n.toLowerCase());if(duplicate){AppStatus.show("warn","Pool name already used","Choose a unique pool name so invites and returning players always land in the right place.");return}this.draft.name=n}this.render(h,+b.dataset.createNext)});
   h.querySelector("[data-create-publish]")?.addEventListener("click",()=>{
    const d={...this.draft,id:"pool-"+Date.now(),createdAt:new Date().toISOString(),accent:this.accent(this.draft.game)};
    CreatedPools.save(d);PoolHubData[d.name]={game:d.game,week:"NEW POOL",members:1,ready:1,lock:"NOT SET",record:"0–0",rank:"—",accent:d.accent};
@@ -2955,3 +2955,23 @@ window.addEventListener("popstate",()=>LinksLifecycleV82.queue());
 document.addEventListener("links:picksaved",()=>LinksLifecycleV82.queue());
 function stampV82(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v82 · UNIFIED LIFECYCLE</span>";if(x.innerHTML!==html)x.innerHTML=html})}
 queueMicrotask(()=>LinksLifecycleV82.queue());
+
+
+// Pool Registry v83 — created pools immediately become first-class returning-player destinations.
+function poolGlyphV83(game=""){
+ const t=gameIdentity(game).type;return ({football:"🏈",college:"🎓",survivor:"🛡️",confidence:"🎯",game33:"3️⃣",squares:"▦",bracket:"🏀",golf:"⛳",racing:"🏁",fantasy:"🏈",dynasty:"👑",custom:"🧩"}[t]||"◆");
+}
+function syncCreatedPoolsV83(){
+ const created=CreatedPools.all();
+ created.slice().reverse().forEach(p=>{
+  if(!p?.name)return;
+  if(!PoolHubData[p.name])PoolHubData[p.name]={icon:poolGlyphV83(p.game),game:p.game||"CUSTOM POOL",week:"NEW POOL",members:1,ready:1,lock:"SETUP REQUIRED",record:"0–0",rank:"—",accent:p.accent||"LINKS"};
+  else if(!PoolHubData[p.name].icon)PoolHubData[p.name].icon=poolGlyphV83(p.game);
+  if(!pools.some(x=>String(x[1]).toLowerCase()===String(p.name).toLowerCase()))pools.unshift([poolGlyphV83(p.game),p.name,p.game||"Custom Pool","Setup in progress",p.deadline==="WEEKLY DEADLINE"?"Weekly deadline":"Per-game kickoff"]);
+ });
+}
+const saveCreatedPoolV83=CreatedPools.save.bind(CreatedPools);
+CreatedPools.save=function(p){const saved=saveCreatedPoolV83(p);syncCreatedPoolsV83();return saved};
+syncCreatedPoolsV83();
+function stampV83(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v83 · POOL CONTINUITY</span>";if(x.innerHTML!==html)x.innerHTML=html})}
+queueMicrotask(()=>{syncCreatedPoolsV83();stampV83();LinksLifecycleV82.queue()});
