@@ -1177,3 +1177,72 @@ const PublicLanding={
  }
 };
 setTimeout(()=>PublicLanding.mount(),5);
+
+// LINKS Visual System v5 — premium shared headers and page identity across the app.
+const PageIdentity={
+ "my-pools":{k:"MY LINKS",title:"Your Pools",sub:"Every pool. One command center.",mark:"rings"},
+ "my-picks":{k:"GAME DAY",title:"My Picks",sub:"Everything due, locked and ready.",mark:"check"},
+ "results":{k:"LINKS LIVE",title:"Scores & Results",sub:"Scores, standings and movement as they happen.",mark:"pulse"},
+ "messages":{k:"POOL ROOM",title:"Messages",sub:"Your pool conversations in one place.",mark:"chat"},
+ "notifications":{k:"SMART INBOX",title:"Needs Attention",sub:"Picks, invites, results and commissioner updates.",mark:"bell"},
+ "commissioner":{k:"COMMISSIONER",title:"Command Center",sub:"Run the pool without chasing the pool.",mark:"shield"}
+};
+function pageMark(type){
+ const shapes={rings:"◎",check:"✓",pulse:"⌁",chat:"••",bell:"!",shield:"L"};
+ return '<div class="page-mark pm-'+type+'"><i></i><i></i><b>'+shapes[type]+'</b></div>';
+}
+function routeIdentity(view){
+ const d=PageIdentity[view];if(!d)return "";
+ return '<section class="route-identity ri-'+d.mark+'"><div class="ri-glow"></div>'+pageMark(d.mark)+'<div class="ri-copy"><span>'+d.k+'</span><h1>'+d.title+'</h1><p>'+d.sub+'</p></div><div class="ri-links"><button data-ri-home>HOME</button><button data-ri-pools>MY POOLS</button></div></section>';
+}
+function mountRouteIdentity(){
+ const v=document.documentElement.dataset.view;
+ if(!PageIdentity[v])return;
+ const w=document.querySelector(".route-workspace");if(!w||w.querySelector(".route-identity"))return;
+ w.insertAdjacentHTML("afterbegin",routeIdentity(v));
+ w.querySelector("[data-ri-home]")?.addEventListener("click",()=>LinksRouter.navigate("home"));
+ w.querySelector("[data-ri-pools]")?.addEventListener("click",()=>LinksRouter.navigate("my-pools"));
+}
+const riObserver=new MutationObserver(()=>mountRouteIdentity());riObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountRouteIdentity);
+
+// Shared premium empty/loading artwork for places that do not yet have content.
+function linksStateArt(kind="empty"){
+ return '<div class="state-art sa-'+kind+'"><div class="sa-orbit"><i></i><i></i><b>L</b></div><span>'+(kind==="loading"?"LINKS IS GETTING IT READY":"READY WHEN YOU ARE")+'</span></div>';
+}
+function upgradeEmptyStates(){
+ document.querySelectorAll(".empty-state,.links-empty").forEach(x=>{
+  if(x.querySelector(".state-art"))return;
+  x.insertAdjacentHTML("afterbegin",linksStateArt("empty"));
+ });
+}
+const stateArtObserver=new MutationObserver(()=>upgradeEmptyStates());stateArtObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(upgradeEmptyStates);
+
+// Game Network presentation upgrade — category ribbons make the large catalog easier to scan.
+function networkCategory(name){
+ const n=name.toUpperCase();
+ if(/NFL|COLLEGE|SURVIVOR|CONFIDENCE|33|SQUARE/.test(n))return "FOOTBALL";
+ if(/FANTASY|DYNASTY/.test(n))return "FANTASY";
+ if(/MARCH|BRACKET/.test(n))return "BRACKETS";
+ if(/NASCAR|RACE/.test(n))return "RACING";
+ if(/GOLF/.test(n))return "GOLF";
+ return "MORE";
+}
+function decorateNetwork(){
+ document.querySelectorAll("[data-network-game]").forEach(card=>{
+  if(card.querySelector(".network-category"))return;
+  const name=card.dataset.networkGame||"";
+  card.insertAdjacentHTML("afterbegin",'<span class="network-category">'+networkCategory(name)+'</span>');
+ });
+}
+const netDecorObserver=new MutationObserver(()=>decorateNetwork());netDecorObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(decorateNetwork);
+
+// Home footer brand finish: a deliberate end to the page instead of an abrupt stack of cards.
+function homeFinish(){
+ if(document.documentElement.dataset.view!=="home")return;
+ const main=document.querySelector(".main");if(!main||main.querySelector(".home-finish"))return;
+ main.insertAdjacentHTML("beforeend",'<footer class="home-finish"><div class="hf-mark"><i></i><b>L</b></div><div><strong>LINKS</strong><span>YOU PICK. WE TRACK. YOU WIN.</span></div><nav><button data-hf-pools>POOLS</button><button data-hf-picks>PICKS</button><button data-hf-results>RESULTS</button></nav></footer>');
+ main.querySelector("[data-hf-pools]")?.addEventListener("click",()=>LinksRouter.navigate("my-pools"));
+ main.querySelector("[data-hf-picks]")?.addEventListener("click",()=>LinksRouter.navigate("my-picks"));
+ main.querySelector("[data-hf-results]")?.addEventListener("click",()=>LinksRouter.navigate("results"));
+}
+const hfObserver=new MutationObserver(()=>homeFinish());hfObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(homeFinish);
