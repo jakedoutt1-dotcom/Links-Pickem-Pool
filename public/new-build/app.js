@@ -2360,3 +2360,11 @@ function cohesionV36(){
 }
 function bootV36(){cohesionV36()}const o36=new MutationObserver(bootV36);o36.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV36);
 function stampV36(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v36 · FINAL COHESION</span>")}const s36=new MutationObserver(stampV36);s36.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV36);
+
+// Premium Detail v37 — scoreboard-grade accents without clutter.
+function premiumDetailV37(){
+ document.querySelectorAll(".platform-hero-v22,.game-center-v28,.comm-tools-v30").forEach(x=>{if(!x.querySelector(":scope > .v37-edge"))x.insertAdjacentHTML("afterbegin",'<span class="v37-edge" aria-hidden="true"></span>')});
+ document.querySelectorAll(".live-score-rail-v24").forEach(x=>x.setAttribute("aria-label","LINKS live scores"));
+}
+function bootV37(){premiumDetailV37()}const o37=new MutationObserver(bootV37);o37.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV37);
+function stampV37(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v37 · PREMIUM DETAIL</span>")}const s37=new MutationObserver(stampV37);s37.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV37);
