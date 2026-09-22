@@ -185,3 +185,29 @@ function mountDeadlineCenter(){
  tick();setInterval(tick,30000);
 }
 queueMicrotask(mountDeadlineCenter);
+
+// Pick Engine v5 — enforce lock state on selection + post-lock field reveal.
+function lockGuard(){
+ document.addEventListener("click",e=>{
+   const b=e.target.closest("[data-slate]");if(!b)return;
+   const id=b.dataset.slate;
+   if(LockEngine.isLocked(id)){
+     e.preventDefault();e.stopImmediatePropagation();
+     modal("PICK LOCKED",'<div class="connected-modal"><span class="badge live">🔒 '+id.toUpperCase()+'</span><h3>This game has already locked.</h3><p>Your saved selection is protected. Commissioner changes must use an audited override.</p></div>');
+   }
+ },true);
+}
+function mountFieldReveal(){
+ const anchor=document.querySelector(".deadline-center");if(!anchor)return;
+ const box=document.createElement("section");box.className="field-reveal card wide";
+ box.innerHTML='<div class="field-head"><div><span>FIELD REVEAL</span><b>Everybody stays hidden until lock.</b><small>After a game locks, the pool can see who picked each side.</small></div><em>FAIR PLAY</em></div><div class="field-games">'+DemoSlate.map(g=>'<div class="field-game" data-field="'+g.id+'"></div>').join("")+'</div>';
+ anchor.insertAdjacentElement("afterend",box);
+ const paint=()=>DemoSlate.forEach(g=>{const row=box.querySelector('[data-field="'+g.id+'"]'),locked=LockEngine.isLocked(g.id);
+   if(!locked){row.innerHTML='<div><small>'+g.kick+'</small><b>'+g.away+' at '+g.home+'</b></div><span class="hidden-picks">◉ PICKS HIDDEN</span><small>Reveals at lock</small>';return}
+   const a=ScoreDemo.players.filter(p=>p.picks[g.id]===g.away).map(p=>p.name);
+   const h=ScoreDemo.players.filter(p=>p.picks[g.id]===g.home).map(p=>p.name);
+   row.innerHTML='<div><small>'+g.kick+'</small><b>'+g.away+' at '+g.home+'</b></div><div class="field-side"><strong>'+g.away+' · '+a.length+'</strong><span>'+a.join(" · ")+'</span></div><div class="field-side"><strong>'+g.home+' · '+h.length+'</strong><span>'+h.join(" · ")+'</span></div>';
+ });
+ paint();setInterval(paint,30000);
+}
+queueMicrotask(()=>{lockGuard();mountFieldReveal()});
