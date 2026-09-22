@@ -1246,3 +1246,57 @@ function homeFinish(){
  main.querySelector("[data-hf-results]")?.addEventListener("click",()=>LinksRouter.navigate("results"));
 }
 const hfObserver=new MutationObserver(()=>homeFinish());hfObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(homeFinish);
+
+// Mobile First v6 — thumb-friendly LINKS shell for real game-day phone use.
+function mobileTopbar(){
+ return '<header class="mobile-topbar-v6"><button data-mob-home class="mt-brand"><b>L</b><span>LINKS<small>POOLS</small></span></button><div class="mt-status"><i></i><span>GAME DAY</span></div><button data-mob-inbox class="mt-inbox">!<b>'+Math.max(0,InboxStore.all().filter(x=>!x.read).length)+'</b></button></header>';
+}
+function mountMobileTopbar(){
+ if(document.documentElement.dataset.publicHome==="true")return;
+ const app=document.querySelector("#app");if(!app||app.querySelector(".mobile-topbar-v6"))return;
+ app.insertAdjacentHTML("afterbegin",mobileTopbar());
+ app.querySelector("[data-mob-home]")?.addEventListener("click",()=>LinksRouter.navigate("home"));
+ app.querySelector("[data-mob-inbox]")?.addEventListener("click",()=>LinksRouter.navigate("notifications"));
+}
+const mtObserver=new MutationObserver(()=>mountMobileTopbar());mtObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountMobileTopbar);
+
+// Mobile quick sheet keeps secondary navigation out of the bottom dock.
+function mobileMoreSheet(){
+ return '<div class="mobile-more-sheet"><div class="mms-handle"></div><div class="mms-head"><div><span>LINKS</span><b>MORE</b></div><button data-mms-close>×</button></div><div class="mms-grid"><button data-mms-route="notifications"><i>!</i><b>INBOX</b><span>Updates & invites</span></button><button data-mms-route="messages"><i>••</i><b>MESSAGES</b><span>Pool Room</span></button><button data-mms-route="commissioner"><i>L</i><b>COMMISSIONER</b><span>Run your pool</span></button><button data-mms-games><i>＋</i><b>GAME NETWORK</b><span>Start another pool</span></button></div></div>';
+}
+function openMobileMore(){
+ let x=document.querySelector(".mobile-more-sheet");if(!x){document.body.insertAdjacentHTML("beforeend",mobileMoreSheet());x=document.querySelector(".mobile-more-sheet")}
+ requestAnimationFrame(()=>x.classList.add("open"));
+ x.querySelector("[data-mms-close]").onclick=()=>x.classList.remove("open");
+ x.querySelectorAll("[data-mms-route]").forEach(b=>b.onclick=()=>{x.classList.remove("open");LinksRouter.navigate(b.dataset.mmsRoute)});
+ x.querySelector("[data-mms-games]").onclick=()=>{x.classList.remove("open");LinksRouter.navigate("home");setTimeout(()=>document.querySelector(".game-network-v2")?.scrollIntoView({behavior:"smooth"}),80)};
+}
+function upgradeMobileDock(){
+ const dock=document.querySelector(".mobile-dock");if(!dock||dock.dataset.v6)return;
+ dock.dataset.v6="1";
+ const buttons=[...dock.querySelectorAll("button")];
+ if(buttons.length){
+   const last=buttons[buttons.length-1];
+   last.innerHTML='<i class="dock-more-icon">•••</i><span>MORE</span>';
+   last.removeAttribute("data-route");last.removeAttribute("data-mobile-route");last.onclick=e=>{e.preventDefault();e.stopPropagation();openMobileMore()};
+ }
+}
+const md6Observer=new MutationObserver(()=>upgradeMobileDock());md6Observer.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(upgradeMobileDock);
+
+// Phone usability: all route changes return to top and pool tabs center themselves.
+window.addEventListener("popstate",()=>scrollTo({top:0,behavior:"instant"}));
+document.addEventListener("click",e=>{
+ const nav=e.target.closest("[data-home-go],[data-home-go2],[data-home-pool],[data-ri-home],[data-ri-pools]");
+ if(nav&&matchMedia("(max-width:700px)").matches)setTimeout(()=>scrollTo({top:0,behavior:"smooth"}),20);
+ const tab=e.target.closest(".pool-hub .tabs button,.pool-hub [data-pool-tab]");
+ if(tab&&matchMedia("(max-width:700px)").matches)setTimeout(()=>tab.scrollIntoView({behavior:"smooth",inline:"center",block:"nearest"}),20);
+});
+
+// Mobile Home v6: replace desktop-heavy scorebug with a compact readiness rail.
+function mobileReadiness(){
+ if(document.querySelector(".mobile-readiness-v6")||document.documentElement.dataset.view!=="home")return;
+ const hero=document.querySelector(".home-stage");if(!hero)return;
+ hero.insertAdjacentHTML("afterend",'<section class="mobile-readiness-v6"><div><span>YOUR WEEK</span><b>85% READY</b></div><i><em style="width:85%"></em></i><button data-mobile-finish>FINISH PICKS ›</button></section>');
+ document.querySelector("[data-mobile-finish]")?.addEventListener("click",()=>LinksRouter.navigate("my-picks"));
+}
+const mrObserver=new MutationObserver(()=>mobileReadiness());mrObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mobileReadiness);
