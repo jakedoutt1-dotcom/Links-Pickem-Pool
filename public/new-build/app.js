@@ -211,3 +211,27 @@ function mountFieldReveal(){
  paint();setInterval(paint,30000);
 }
 queueMicrotask(()=>{lockGuard();mountFieldReveal()});
+
+// Commissioner v2 — submission status + missing-pick reminder queue.
+const EntrantStatus=[
+ {name:"Jake",email:"jake@example.com",done:3,total:3,last:"Saved 12:42 AM"},
+ {name:"Amanda",email:"amanda@example.com",done:2,total:3,last:"1 pick missing"},
+ {name:"Mike",email:"mike@example.com",done:3,total:3,last:"Saved yesterday"},
+ {name:"Chris",email:"chris@example.com",done:0,total:3,last:"No picks yet"}
+];
+const ReminderQueue={
+ key:"links-reminders-v1",
+ all(){try{return JSON.parse(localStorage.getItem(this.key)||"[]")}catch{return[]}},
+ send(player){const a=this.all();a.unshift({player,at:new Date().toISOString(),type:"Missing picks"});localStorage.setItem(this.key,JSON.stringify(a.slice(0,50)));AuditLog.add("PICK REMINDER SENT",player+" · missing picks");return a[0]}
+};
+function mountEntrantManager(){
+ const anchor=document.querySelector(".field-reveal");if(!anchor)return;
+ const box=document.createElement("section");box.className="entrant-manager card wide";
+ box.innerHTML='<div class="entrant-head"><div><span>ENTRANT MANAGER</span><b>Who still needs to pick?</b><small>Submission status is separate from the picks themselves.</small></div><button class="ghost" data-remind-all>REMIND MISSING ›</button></div><div class="entrant-summary"><strong>'+EntrantStatus.filter(x=>x.done===x.total).length+'/'+EntrantStatus.length+'</strong><span>ENTRIES COMPLETE</span><i></i></div><div class="entrant-list">'+EntrantStatus.map(x=>'<div class="'+(x.done===x.total?"complete":"missing")+'"><div class="entrant-avatar">'+x.name[0]+'</div><div><b>'+x.name+'</b><small>'+x.last+'</small></div><strong>'+x.done+'/'+x.total+'</strong>'+(x.done===x.total?'<em>✓ COMPLETE</em>':'<button class="ghost" data-remind="'+x.name+'">REMIND</button>')+'</div>').join("")+'</div><div class="entrant-foot"><span>Reminders never expose another player’s selections.</span><b class="reminder-feedback"></b></div>';
+ anchor.insertAdjacentElement("afterend",box);
+ const feedback=box.querySelector(".reminder-feedback");
+ const send=name=>{ReminderQueue.send(name);feedback.textContent="Reminder queued for "+name;setTimeout(()=>feedback.textContent="",2500)};
+ box.querySelectorAll("[data-remind]").forEach(b=>b.addEventListener("click",()=>send(b.dataset.remind)));
+ box.querySelector("[data-remind-all]").addEventListener("click",()=>{const names=EntrantStatus.filter(x=>x.done<x.total).map(x=>x.name);names.forEach(ReminderQueue.send.bind(ReminderQueue));feedback.textContent=names.length+" missing-pick reminders queued";setTimeout(()=>feedback.textContent="",2500)});
+}
+queueMicrotask(mountEntrantManager);
