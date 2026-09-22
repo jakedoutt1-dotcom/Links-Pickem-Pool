@@ -157,3 +157,31 @@ function mountIntegrity(){
  paint();
 }
 queueMicrotask(mountIntegrity);
+
+// Pick Engine v4 — automatic kickoff locks + per-game countdown.
+const AutoLock={
+ // Demo kickoff times are generated relative to first visit so the lifecycle is testable.
+ key:"links-demo-kickoffs-v1",
+ times(){
+   let x;try{x=JSON.parse(localStorage.getItem(this.key)||"null")}catch{}
+   if(!x){const n=Date.now();x={"ten-ind":n+45*60e3,"dal-nyg":n+3*60*60e3,"buf-mia":n+26*60*60e3};localStorage.setItem(this.key,JSON.stringify(x))}
+   return x
+ },
+ sync(){
+   const t=this.times(),now=Date.now();
+   DemoSlate.forEach(g=>{if(now>=t[g.id]&&!LockEngine.isLocked(g.id))LockEngine.set(g.id,true,"Automatic kickoff lock")});
+ },
+ remaining(id){
+   const d=this.times()[id]-Date.now();if(d<=0)return"LOCKED";
+   const m=Math.floor(d/60000),h=Math.floor(m/60);return h?h+"h "+(m%60)+"m":m+"m";
+ }
+};
+function mountDeadlineCenter(){
+ const anchor=document.querySelector(".integrity");if(!anchor)return;
+ const box=document.createElement("section");box.className="deadline-center card wide";
+ box.innerHTML='<div class="deadline-head"><div><span>LOCK CENTER</span><b>Automatic kickoff protection</b><small>Each game locks independently at its scheduled kickoff.</small></div><em>AUTO · ON</em></div><div class="deadline-list">'+DemoSlate.map(g=>'<div data-deadline="'+g.id+'"><div><small>'+g.kick+'</small><b>'+g.away+' at '+g.home+'</b></div><strong></strong><span></span></div>').join("")+'</div>';
+ anchor.insertAdjacentElement("afterend",box);
+ const tick=()=>{AutoLock.sync();box.querySelectorAll("[data-deadline]").forEach(r=>{const id=r.dataset.deadline,locked=LockEngine.isLocked(id);r.classList.toggle("islocked",locked);r.querySelector("strong").textContent=locked?"🔒 LOCKED":AutoLock.remaining(id);r.querySelector("span").textContent=locked?"Picks read-only":"Picks open"})};
+ tick();setInterval(tick,30000);
+}
+queueMicrotask(mountDeadlineCenter);
