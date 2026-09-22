@@ -1,5 +1,5 @@
-const CACHE="links-new-build-shell-v149";
-const SHELL=["./","./index.html","./app.css","./app.js","./playmaker-splash.js","./playmaker-intro.mp3","./manifest.webmanifest"];
+const CACHE="links-new-build-shell-v150";
+const SHELL=["./","./index.html","./app.css","./app.js","./playmaker-splash.js","./reveal-guard.js","./playmaker-intro.mp3","./manifest.webmanifest"];
 self.addEventListener("install",event=>{
   self.skipWaiting();
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)));
