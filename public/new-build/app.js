@@ -2611,7 +2611,7 @@ function assetReadinessV62(){
  }
 }
 queueMicrotask(assetReadinessV62);
-new MutationObserver(assetReadinessV62).observe(document.querySelector("#app"),{childList:true,subtree:true});
+
 function stampV62(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v62 · ASSET READINESS</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV62);
 
 // Flow Completion v63 — persist the last meaningful destination so returning players resume naturally.
@@ -2633,7 +2633,7 @@ function gameNetworkCompletionV64(){
  });
 }
 queueMicrotask(gameNetworkCompletionV64);
-new MutationObserver(gameNetworkCompletionV64).observe(document.querySelector("#app"),{childList:true,subtree:true});
+
 function stampV64(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v64 · GAME NETWORK COMPLETION</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV64);
 
 // Game Completeness v65 — unsupported formats never fall through to an NFL pick card.
@@ -2646,7 +2646,7 @@ function formatSupportV65(){
  live.innerHTML='<div class="hub-panel-head"><span>'+linksEscape(p.game||"LINKS GAME")+'</span><h3>Game setup required.</h3><p>This format will not borrow NFL picks or scoring. Commissioner setup must provide the game-specific slate, rules and scoring before player picks open.</p></div><div class="links-empty picks"><i>◆</i><h3>WAITING FOR GAME SETUP</h3><p>Your commissioner controls this game’s slate and opening state.</p></div>';
 }
 queueMicrotask(formatSupportV65);
-new MutationObserver(formatSupportV65).observe(document.querySelector("#app"),{childList:true,subtree:true});
+
 function stampV65(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v65 · GAME COMPLETENESS</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV65);
 
 // AI Multi-Sport Flow v66 — make sport selection change the research board instead of only changing a label.
@@ -2975,3 +2975,9 @@ CreatedPools.save=function(p){const saved=saveCreatedPoolV83(p);syncCreatedPools
 syncCreatedPoolsV83();
 function stampV83(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v83 · POOL CONTINUITY</span>";if(x.innerHTML!==html)x.innerHTML=html})}
 queueMicrotask(()=>{syncCreatedPoolsV83();stampV83();LinksLifecycleV82.queue()});
+
+
+// Observer Finish v84 — anonymous legacy watchers join the unified lifecycle.
+LinksLifecycleCallbacksV82.push(assetReadinessV62,gameNetworkCompletionV64,formatSupportV65);
+function stampV84(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v84 · OBSERVER FINISH</span>";if(x.innerHTML!==html)x.innerHTML=html})}
+queueMicrotask(()=>{stampV84();LinksLifecycleV82.queue()});
