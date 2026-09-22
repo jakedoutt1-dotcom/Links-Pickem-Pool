@@ -3936,3 +3936,40 @@ function fieldTruthV161(){
 }
 LinksLifecycleCallbacksV82.push(fieldTruthV161);
 queueMicrotask(()=>{fieldTruthV161();LinksLifecycleV82.queue()});
+
+
+// Schedule Truth v162 — verified 2026 NASCAR Cup and PGA TOUR calendar context.
+// Schedule metadata is intentionally separate from entrant fields; no driver/golfer is invented.
+const SportsCalendarV162={
+ nascar:[
+  {date:"2026-09-19T19:30:00-04:00",name:"Bass Pro Shops Night Race",venue:"Bristol Motor Speedway"},
+  {date:"2026-09-27T15:00:00-04:00",name:"Hollywood Casino 400",venue:"Kansas Speedway"},
+  {date:"2026-10-04T17:30:00-04:00",name:"South Point 400",venue:"Las Vegas Motor Speedway"},
+  {date:"2026-10-11T15:00:00-04:00",name:"Bank of America ROVAL 400",venue:"Charlotte Motor Speedway Roval"},
+  {date:"2026-10-18T15:00:00-04:00",name:"Freeway Insurance 500",venue:"Phoenix Raceway"},
+  {date:"2026-10-25T14:00:00-04:00",name:"Yellawood 500",venue:"Talladega Superspeedway"},
+  {date:"2026-11-01T14:00:00-05:00",name:"Xfinity 500",venue:"Martinsville Speedway"},
+  {date:"2026-11-08T15:00:00-05:00",name:"NASCAR Cup Series Championship",venue:"Homestead-Miami Speedway"}
+ ],
+ golf:[
+  {start:"2026-09-24",end:"2026-09-27",name:"Presidents Cup",venue:"Medinah CC (No. 3)"},
+  {start:"2026-10-01",end:"2026-10-04",name:"Bank of Utah Championship",venue:"Black Desert Resort"},
+  {start:"2026-10-08",end:"2026-10-11",name:"Baycurrent Classic",venue:"Yokohama Country Club"},
+  {start:"2026-10-22",end:"2026-10-25",name:"Butterfield Bermuda Championship",venue:"Port Royal Golf Course"},
+  {start:"2026-10-29",end:"2026-11-01",name:"VidantaWorld Mexico Open",venue:"Vidanta Vallarta"},
+  {start:"2026-11-05",end:"2026-11-08",name:"World Wide Technology Championship",venue:"El Cardonal at Diamante"},
+  {start:"2026-11-12",end:"2026-11-15",name:"Austin Championship",venue:"Omni Barton Creek Resort & Spa"},
+  {start:"2026-11-19",end:"2026-11-22",name:"The RSM Classic",venue:"Sea Island Golf Club"}
+ ],
+ nextNascar(now=Date.now()){return this.nascar.find(x=>new Date(x.date).getTime()>now)||null},
+ nextGolf(now=new Date()){const day=now.toISOString().slice(0,10);return this.golf.find(x=>x.end>=day)||null}
+};
+function scheduleTruthV162(){
+ const race=SportsCalendarV162.nextNascar(),golf=SportsCalendarV162.nextGolf();
+ document.querySelectorAll('.nascar-setup-v110').forEach(x=>{if(race){const input=x.querySelector('[data-n110-title]');if(input&&!input.value.trim())input.value=race.name;const h=x.querySelector('h3');if(h)h.textContent='Publish the field for '+race.name+'.'}});
+ document.querySelectorAll('.golf-setup-v109').forEach(x=>{if(golf){const input=x.querySelector('[data-g109-title]');if(input&&!input.value.trim())input.value=golf.name;const h=x.querySelector('h3');if(h)h.textContent='Publish the field for '+golf.name+'.'}});
+ document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v162 · VERIFIED SPORTS CALENDAR</span>';if(x.innerHTML!==h)x.innerHTML=h});
+ document.documentElement.dataset.linksBuild='v162';
+}
+LinksLifecycleCallbacksV82.push(scheduleTruthV162);
+queueMicrotask(()=>{scheduleTruthV162();LinksLifecycleV82.queue()});
