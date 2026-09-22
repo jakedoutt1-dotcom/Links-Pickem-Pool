@@ -351,3 +351,37 @@ function syncAppBadge(){
  if("setAppBadge" in navigator)navigator.setAppBadge(incomplete).catch(()=>{});
 }
 queueMicrotask(syncAppBadge);
+
+// Game Art System v1 — scalable, branded category graphics without image downloads.
+const GameArt={
+ football:{label:"FOOTBALL",glyph:"laces",sub:"PICK · SURVIVE · WIN"},
+ college:{label:"COLLEGE",glyph:"goal",sub:"SATURDAY COMMAND"},
+ bracket:{label:"BRACKETS",glyph:"bracket",sub:"ROAD TO THE TITLE"},
+ racing:{label:"RACING",glyph:"flag",sub:"EVERY LAP MATTERS"},
+ golf:{label:"GOLF",glyph:"pin",sub:"MAJORS · ONE & DONE"},
+ fantasy:{label:"FANTASY",glyph:"crown",sub:"BUILD · TRADE · WIN"},
+ custom:{label:"CUSTOM",glyph:"grid",sub:"YOUR GAME · YOUR RULES"}
+};
+function gameCategory(name){
+ name=name.toLowerCase();
+ if(/college|bowl/.test(name))return"college";
+ if(/march|bracket|playoff precision|world cup bracket/.test(name))return"bracket";
+ if(/nascar|race|exacta|trifecta|stable|triple crown/.test(name))return"racing";
+ if(/golf|fedex/.test(name))return"golf";
+ if(/fantasy|dynasty|guillotine|salary cap|draft|start ’em/.test(name))return"fantasy";
+ if(/custom|pool lab|awards|oscars|box pool/.test(name))return"custom";
+ return"football";
+}
+function artHTML(cat){
+ const a=GameArt[cat]||GameArt.football;
+ return '<div class="gameart '+cat+'"><div class="gameart-sky"><i></i><i></i><i></i></div><div class="gameart-mark '+a.glyph+'"><u></u><u></u><u></u></div><div class="gameart-copy"><span>'+a.sub+'</span><b>'+a.label+'</b></div></div>';
+}
+function mountGameShowcase(){
+ const anchor=document.querySelector(".home-launch");if(!anchor)return;
+ const box=document.createElement("section");box.className="game-showcase";
+ box.innerHTML='<div class="showcase-head"><div><span>LINKS GAME NETWORK</span><h2>One home for every way you play.</h2></div><button class="ghost" data-all-games>EXPLORE ALL GAMES ›</button></div><div class="gameart-grid">'+["football","college","bracket","racing","golf","fantasy"].map(cat=>'<button data-gamecat="'+cat+'">'+artHTML(cat)+'</button>').join("")+'</div>';
+ anchor.insertAdjacentElement("afterend",box);
+ box.querySelectorAll("[data-gamecat]").forEach(b=>b.addEventListener("click",()=>{const cat=b.dataset.gamecat,list=games.filter(g=>gameCategory(g[1])===cat).slice(0,12);modal(GameArt[cat].label+' GAMES','<div class="art-game-list">'+list.map(g=>'<button><span>'+g[0]+'</span><div><b>'+g[1]+'</b><small>'+g[2]+'</small></div><em>›</em></button>').join("")+'</div>')}));
+ box.querySelector("[data-all-games]").addEventListener("click",()=>modal("ALL LINKS GAMES",'<div class="art-game-list">'+games.slice(0,24).map(g=>'<button><span>'+g[0]+'</span><div><b>'+g[1]+'</b><small>'+g[2]+'</small></div><em>›</em></button>').join("")+'</div>'));
+}
+queueMicrotask(mountGameShowcase);
