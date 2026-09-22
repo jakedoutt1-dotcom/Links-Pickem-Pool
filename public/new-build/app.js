@@ -1027,3 +1027,67 @@ document.addEventListener("click",e=>{
  e.preventDefault();e.stopImmediatePropagation();
  CreatePoolStudio.open(game?.dataset.networkGame||null);
 },true);
+
+// Game Identity v2 — every Pool Hub inherits the visual language of its actual game.
+function gameIdentity(game=""){
+ const n=game.toUpperCase();
+ if(n.includes("COLLEGE"))return {type:"college",eyebrow:"SATURDAY COMMAND",label:"COLLEGE PICK’EM"};
+ if(n.includes("SURVIVOR"))return {type:"survivor",eyebrow:"STAY ALIVE",label:"SURVIVOR"};
+ if(n.includes("SQUARE"))return {type:"squares",eyebrow:"GRID DAY",label:"FOOTBALL SQUARES"};
+ if(n.includes("MARCH")||n.includes("BRACKET"))return {type:"bracket",eyebrow:"ROAD TO THE TITLE",label:"BRACKET"};
+ if(n.includes("NASCAR")||n.includes("RACE"))return {type:"racing",eyebrow:"RACE DAY",label:"RACING"};
+ if(n.includes("GOLF"))return {type:"golf",eyebrow:"MAJOR WEEK",label:"GOLF"};
+ if(n.includes("DYNASTY"))return {type:"dynasty",eyebrow:"FRONT OFFICE",label:"DYNASTY"};
+ if(n.includes("FANTASY"))return {type:"fantasy",eyebrow:"GAME DAY",label:"FANTASY"};
+ if(n.includes("33"))return {type:"game33",eyebrow:"ONE NUMBER. ONE WINNER.",label:"GAME 33"};
+ return {type:"football",eyebrow:"GAME DAY",label:game||"NFL PICK’EM"};
+}
+function poolIdentityBand(name){
+ const p=PoolHubData[name];if(!p)return "";const g=gameIdentity(p.game);
+ return '<section class="pool-identity pi-'+g.type+'"><div class="pi-art">'+networkGlyph(g.type)+'</div><div class="pi-copy"><span>'+g.eyebrow+'</span><b>'+g.label+'</b><small>'+p.week+' · '+p.members+' PLAYERS</small></div><div class="pi-state"><span>NEXT LOCK</span><b>'+p.lock+'</b></div></section>';
+}
+function mountPoolIdentity(){
+ if(document.documentElement.dataset.view!=="pool")return;
+ const name=document.documentElement.dataset.pool||new URL(location.href).searchParams.get("pool");const hub=document.querySelector(".pool-hub");
+ if(!name||!hub||hub.querySelector(".pool-identity"))return;
+ const hero=hub.querySelector(".poolhub-hero");if(hero)hero.insertAdjacentHTML("afterend",poolIdentityBand(name));else hub.insertAdjacentHTML("afterbegin",poolIdentityBand(name));
+}
+const identityObserver=new MutationObserver(()=>mountPoolIdentity());identityObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountPoolIdentity);
+
+// Game-aware Pool Hub copy prevents NFL-specific language leaking into College/Survivor/etc.
+function gameHubTerms(name){
+ const p=PoolHubData[name],g=gameIdentity(p?.game||"");
+ const map={
+  college:{action:"MAKE COLLEGE PICKS",noun:"games",status:"Saturday slate"},
+  survivor:{action:"MAKE SURVIVOR PICK",noun:"selection",status:"Survival week"},
+  squares:{action:"OPEN SQUARES",noun:"squares",status:"Game grid"},
+  bracket:{action:"OPEN BRACKET",noun:"matchups",status:"Tournament"},
+  racing:{action:"MAKE RACE PICKS",noun:"drivers",status:"Race card"},
+  golf:{action:"MAKE GOLF PICKS",noun:"golfers",status:"Tournament"},
+  dynasty:{action:"OPEN TEAM",noun:"roster moves",status:"Front office"},
+  fantasy:{action:"OPEN LINEUP",noun:"lineup decisions",status:"Matchup"},
+  game33:{action:"MAKE GAME 33 PICK",noun:"selection",status:"Weekly number"},
+  football:{action:"MAKE NFL PICKS",noun:"games",status:"NFL week"}
+ };
+ return map[g.type]||map.football;
+}
+function correctPoolLanguage(){
+ if(document.documentElement.dataset.view!=="pool")return;
+ const name=document.documentElement.dataset.pool||"";const t=gameHubTerms(name);const p=PoolHubData[name];if(!p)return;
+ document.querySelectorAll(".pool-hub [data-generic-pick-action]").forEach(b=>b.textContent=t.action);
+ document.querySelectorAll(".pool-hub [data-game-status-copy]").forEach(x=>x.textContent=t.status);
+}
+const languageObserver=new MutationObserver(()=>correctPoolLanguage());languageObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(correctPoolLanguage);
+
+// Pool Hub quick actions: consistent placement directly under game identity.
+function hubQuickActions(){
+ return '<nav class="hub-quick"><button data-hub-quick="picks"><i>✓</i><span>PICKS</span></button><button data-hub-quick="standings"><i>★</i><span>STANDINGS</span></button><button data-hub-quick="compare"><i>⇄</i><span>COMPARE</span></button><button data-room-v2><i>✦</i><span>POOL ROOM</span></button></nav>';
+}
+function mountHubQuick(){
+ const hub=document.querySelector(".pool-hub");if(!hub||document.documentElement.dataset.view!=="pool"||hub.querySelector(".hub-quick"))return;
+ const id=hub.querySelector(".pool-identity");if(!id)return;id.insertAdjacentHTML("afterend",hubQuickActions());
+ hub.querySelectorAll("[data-hub-quick]").forEach(b=>b.addEventListener("click",()=>{
+   const tab=b.dataset.hubQuick.toUpperCase();const target=[...hub.querySelectorAll("button")].find(x=>x.textContent.trim().toUpperCase()===tab);target?.click();
+ }));
+}
+const quickObserver=new MutationObserver(()=>mountHubQuick());quickObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountHubQuick);
