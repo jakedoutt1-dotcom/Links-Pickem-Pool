@@ -670,7 +670,7 @@ function gameNetworkV2(){
 function mountGameNetworkV2(){
  const home=document.querySelector(".main");if(!home||document.documentElement.dataset.view!=="home"||home.querySelector(".game-network-v2"))return;
  const old=home.querySelector(".game-network-showcase");if(old)old.replaceWith(document.createRange().createContextualFragment(gameNetworkV2()));else home.insertAdjacentHTML("beforeend",gameNetworkV2());
- home.querySelectorAll("[data-network-game]").forEach(b=>b.addEventListener("click",()=>modal(b.dataset.networkGame,'<div class="connected-modal"><span class="badge live">LINKS GAME NETWORK</span><h3>'+b.dataset.networkGame+'</h3><p>This game lives inside the same LINKS account, pool and commissioner system. Game-specific setup opens from here.</p></div>')));
+ home.querySelectorAll("[data-network-game]").forEach(b=>b.addEventListener("click",()=>CreatePoolStudio.open(b.dataset.networkGame)));
  home.querySelector("[data-network-all]")?.addEventListener("click",()=>{document.querySelector("[data-category='all'],[data-game-category='all']")?.click()});
 }
 const networkObserver=new MutationObserver(()=>mountGameNetworkV2());networkObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountGameNetworkV2);
@@ -2604,3 +2604,14 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-route],[da
 window.addEventListener("links:picksaved",()=>LinksResumeV63.save("my-picks",new URL(location.href).searchParams.get("pool")||""));
 window.LinksResumeV63=LinksResumeV63;
 function stampV63(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v63 · FLOW COMPLETION</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV63);
+
+// Game Network Completion v64 — every advertised game starts a real setup flow, never an informational dead end.
+function gameNetworkCompletionV64(){
+ document.querySelectorAll("[data-network-game]").forEach(b=>{
+  if(b.dataset.v64)return;b.dataset.v64="1";
+  b.addEventListener("click",e=>{e.preventDefault();e.stopImmediatePropagation();CreatePoolStudio.open(b.dataset.networkGame)},true);
+ });
+}
+queueMicrotask(gameNetworkCompletionV64);
+new MutationObserver(gameNetworkCompletionV64).observe(document.querySelector("#app"),{childList:true,subtree:true});
+function stampV64(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v64 · GAME NETWORK COMPLETION</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV64);
