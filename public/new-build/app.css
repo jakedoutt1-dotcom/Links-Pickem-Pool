@@ -471,3 +471,6 @@ html,body{min-height:100%;min-height:calc(var(--links-vh,1vh)*100)}body{overscro
 .poolhub-tabs{scrollbar-width:none}.poolhub-tabs::-webkit-scrollbar{display:none}
 .poolhub-tabs button{min-height:43px}
 @media(max-width:700px){.home-command-v4 .home-stage-copy h1{font-size:clamp(34px,11vw,52px);line-height:.92}.home-command-v4 .home-stage-copy p{max-width:32ch}.home-command-v4 .home-primary{display:grid;grid-template-columns:1fr 1fr;gap:8px}.home-command-v4 .home-primary button{width:100%;padding-inline:10px}.home-pool-rail{scroll-snap-type:x mandatory}.home-pool-card{scroll-snap-align:start}.poolhub-tabs{overscroll-behavior-x:contain}}
+
+.format-empty-v169{display:grid;gap:7px;padding:18px;margin-top:12px;border:1px solid rgba(255,137,24,.14);border-radius:16px;background:linear-gradient(135deg,rgba(255,137,24,.06),rgba(12,45,31,.12))}
+.format-empty-v169 b{font-size:12px;letter-spacing:.1em;color:#ff982f}.format-empty-v169 span{font-size:12px;line-height:1.45;color:#a8b2bc}
