@@ -2509,3 +2509,11 @@ function reviewCandidateV51(){
 }
 function bootV51(){reviewCandidateV51()}const o51=new MutationObserver(bootV51);o51.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV51);
 function stampV51(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v51 · REVIEW CANDIDATE</span>")}const s51=new MutationObserver(stampV51);s51.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV51);
+
+// Review Lock v52 — keep the reveal clean and predictable.
+function reviewLockV52(){
+ document.querySelectorAll("input,textarea,select").forEach(el=>{if(!el.dataset.v52){el.dataset.v52="1";el.addEventListener("focus",()=>el.closest(".card,.panel,form")?.classList.add("v52-focus"));el.addEventListener("blur",()=>el.closest(".card,.panel,form")?.classList.remove("v52-focus"))}});
+ document.querySelectorAll("button").forEach(b=>{if(!b.dataset.v52){b.dataset.v52="1";b.addEventListener("pointerup",()=>{b.classList.add("v52-hit");setTimeout(()=>b.classList.remove("v52-hit"),180)})}});
+}
+function bootV52(){reviewLockV52()}const o52=new MutationObserver(bootV52);o52.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV52);
+function stampV52(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v52 · REVIEW LOCK</span>")}const s52=new MutationObserver(stampV52);s52.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV52);
