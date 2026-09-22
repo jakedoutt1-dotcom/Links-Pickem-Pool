@@ -7,3 +7,8 @@ body.links-college-standalone-v629 #app>.tabs,body.links-college-standalone-v629
 
 /* v631 College banner */
 .college-hero-v631{margin:0 0 10px;overflow:hidden;border-radius:16px;border:1px solid #3b4d5d;background:#0d151c}.college-hero-v631 img{display:block;width:100%;height:auto;max-height:260px;object-fit:cover}
+
+/* v637 College selection, player lock, and load feedback */
+.college-team-v629.selected img{filter:drop-shadow(0 0 3px #ff6a1a) drop-shadow(0 0 8px #ff6a1a);transform:scale(1.08)}
+#collegeLoadCandidatesV629.loaded{background:#168b50!important;border-color:#38d87a!important;color:#fff!important}
+.college-lock-v637{width:100%;margin-top:8px;font-weight:950;border:2px solid #ff8a32;background:#35200f;color:#fff}.college-lock-v637.locked{background:#6b1f27;border-color:#ff6675}.college-candidate-v629.disabled{opacity:.45;pointer-events:none}
