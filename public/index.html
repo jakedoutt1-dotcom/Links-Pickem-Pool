@@ -1949,6 +1949,14 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
 <script src="/games/nascar/game.js?v=643"></script>
 <script src="./games/game33/game33.js?v=627" defer></script>
 <link rel="stylesheet" href="/games/college/college.css?v=642">
+
+<style id="links-v645-game-card-loading">
+#sportChoice .sport-btn{position:relative!important;overflow:hidden!important}
+#sportChoice .sport-btn.links-game-loading-v645{border-color:#ff6a1a!important;box-shadow:0 0 0 3px rgba(255,106,26,.34),0 0 22px rgba(255,106,26,.55)!important;background:#6e2d08!important;transform:scale(.985)}
+#sportChoice .sport-btn.links-game-loading-v645 .sport-choice-art{filter:brightness(.48)!important}
+#sportChoice .sport-btn.links-game-loading-v645 .sport-choice-label{color:#fff!important}
+.links-game-loading-label-v645{position:absolute!important;inset:0!important;display:flex!important;align-items:center!important;justify-content:center!important;z-index:20!important;background:rgba(255,92,0,.78)!important;color:#fff!important;font-size:20px!important;font-weight:950!important;letter-spacing:1px!important;text-shadow:0 2px 4px #000!important;pointer-events:none!important}
+</style>
 </head>
 
 <body><div id="top"></div><div class="wrap">
@@ -2044,7 +2052,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#39ff88!important;font-weight:900">LINKS PICK’EM POOLS — v644</span></footer>
+  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#39ff88!important;font-weight:900">LINKS PICK’EM POOLS — v645</span></footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -5261,18 +5269,35 @@ $("#marchSaveResults").onclick=saveMarchResults;
 $("#marchSyncNow").onclick=syncMarchNow;
 $("#marchSetupSync").onclick=syncMarchNow;
 
-// v644: game-select routing guard. Keeps cards clickable even if an earlier init error prevents the legacy onclick assignments.
-document.addEventListener("click",e=>{
-  const b=e.target.closest("#sportChoice .sport-btn");if(!b)return;
+// v645: reliable game-card navigation + immediate tap feedback.
+function linksGameCardLoadingV645(b){
+  document.querySelectorAll("#sportChoice .sport-btn").forEach(x=>{x.classList.remove("links-game-loading-v645");x.removeAttribute("aria-busy")});
+  b.classList.add("links-game-loading-v645");b.setAttribute("aria-busy","true");
+  let tag=b.querySelector(".links-game-loading-label-v645");
+  if(!tag){tag=document.createElement("span");tag.className="links-game-loading-label-v645";b.appendChild(tag)}
+  tag.textContent="LOADING…";
+}
+async function linksOpenGameV645(b){
   const routes={chooseNFL:["app","nfl"],chooseCollege:["app","college"],choose33:["app","33"],chooseMarch:["march"],chooseSquares:["squares"],chooseSurvivor:["special","survivor"],chooseConfidence:["special","confidence"],chooseProps:["special","props"],choosePlayoff:["special","playoff"],chooseMasters:["special","masters"],chooseNascar:["special","nascar"],chooseFantasy:["special","fantasy"],chooseDynasty:["special","dynasty"]};
   const r=routes[b.id];if(!r)return;
-  e.preventDefault();
+  linksGameCardLoadingV645(b);
+  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
   try{
-    if(r[0]==="app")enterApp(r[1]);
-    else if(r[0]==="march")enterMarch();
-    else if(r[0]==="squares")enterSquares();
-    else enterSpecialGame(r[1]);
-  }catch(err){console.error("LINKS game route failed",b.id,err)}
+    if(r[0]==="app")await enterApp(r[1]);
+    else if(r[0]==="march")await enterMarch();
+    else if(r[0]==="squares")await enterSquares();
+    else await enterSpecialGame(r[1]);
+  }catch(err){
+    console.error("LINKS game route failed",b.id,err);
+    b.classList.remove("links-game-loading-v645");b.removeAttribute("aria-busy");
+    const tag=b.querySelector(".links-game-loading-label-v645");if(tag)tag.textContent="TRY AGAIN";
+    setTimeout(()=>{if(tag)tag.remove()},1800);
+  }
+}
+document.addEventListener("click",e=>{
+  const b=e.target.closest("#sportChoice .sport-btn");if(!b)return;
+  e.preventDefault();e.stopImmediatePropagation();
+  linksOpenGameV645(b);
 },true);
 $("#chooseMarch").onclick=()=>enterMarch();
 $("#chooseSquares").onclick=()=>enterSquares();
