@@ -2318,3 +2318,12 @@ function pageContextV32(){
 }
 function bootV32(){interactionFinishV32();pageContextV32()}const o32=new MutationObserver(bootV32);o32.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV32);
 function stampV32(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v32 · INTERACTION FINISH</span>")}const s32=new MutationObserver(stampV32);s32.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV32);
+
+// Mobile Finish v33 — thumb-first navigation and compact premium headers.
+function mobileFinishV33(){
+ const v=document.documentElement.dataset.view||"home";
+ document.querySelectorAll(".finish-dock-v26").forEach(d=>{d.setAttribute("aria-label","LINKS primary navigation");d.querySelectorAll("button").forEach(b=>{if(!b.title)b.title=(b.textContent||"LINKS").trim()})});
+ document.querySelectorAll(".route-workspace").forEach(w=>w.dataset.v33View=v);
+}
+function bootV33(){mobileFinishV33()}const o33=new MutationObserver(bootV33);o33.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV33);
+function stampV33(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v33 · MOBILE FINISH</span>")}const s33=new MutationObserver(stampV33);s33.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV33);
