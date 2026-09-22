@@ -3190,7 +3190,7 @@ queueMicrotask(()=>{refreshConfiguredEngineV93();stampV93();LinksLifecycleV82.qu
 
 // Kickoff Lock Integrity v94 — commissioner slates store machine-readable kickoff times and individual games lock automatically.
 function parseKickV94(v){const t=Date.parse(String(v||""));return Number.isFinite(t)?t:null}
-function gameLockedV94(g){const t=parseKickV94(g?.kickAt);return t!==null&&Date.now()>=t}
+function gameLockedV94(g){const t=parseKickV94(g?.kickAt||g?.kick);return t!==null&&Date.now()>=t}
 function slateBuilderV94(pool){
  const saved=GameSlateStoreV86.read(pool),rows=saved.length?saved:[{away:"",home:"",kick:"",kickAt:""}];
  return '<section class="slate-builder-v87"><div class="sb87-head"><div><span>GAME SETUP</span><h2>Publish the player slate.</h2><p>Add each matchup and its actual kickoff. LINKS locks that game automatically at kickoff.</p></div><b>'+rows.length+' GAME'+(rows.length===1?'':'S')+'</b></div><div class="sb87-rows">'+rows.map((g,i)=>'<div class="sb87-row" data-sb87-row><strong>'+(i+1)+'</strong><input data-sb87-away placeholder="Away team" value="'+linksEscape(g.away||'')+'"><span>VS</span><input data-sb87-home placeholder="Home team" value="'+linksEscape(g.home||'')+'"><input type="datetime-local" data-sb87-kickat value="'+linksEscape(g.kickAt||'')+'"><button type="button" data-sb87-remove aria-label="Remove game">×</button></div>').join('')+'</div><div class="sb87-actions"><button type="button" class="secondary" data-sb87-add>＋ ADD GAME</button><button type="button" class="primary" data-sb87-publish>PUBLISH SLATE ›</button></div></section>'
@@ -4057,3 +4057,12 @@ function revealGateV166(){
 }
 LinksLifecycleCallbacksV82.push(revealGateV166);
 queueMicrotask(()=>{revealGateV166();LinksLifecycleV82.queue()});
+
+
+// Reveal Candidate v167 — live-feed kickoff timestamps participate in the same hard-lock path as commissioner slates.
+function revealCandidateV167(){
+ document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v167 · REVEAL CANDIDATE</span>';if(x.innerHTML!==h)x.innerHTML=h});
+ document.documentElement.dataset.linksBuild='v167';
+}
+LinksLifecycleCallbacksV82.push(revealCandidateV167);
+queueMicrotask(()=>{revealCandidateV167();LinksLifecycleV82.queue()});
