@@ -2719,3 +2719,17 @@ function stampV70(){document.querySelectorAll(".app-build-v18").forEach(x=>{cons
 const LinksAffiliateV70={partners:{draftkings:{name:"DraftKings",base:"https://sportsbook.draftkings.com/",affiliate:"",enabled:true},fanduel:{name:"FanDuel",base:"https://sportsbook.fanduel.com/",affiliate:"",enabled:true},bet365:{name:"bet365",base:"https://www.bet365.com/",affiliate:"",enabled:true}},url(id){const p=this.partners[id];if(!p||!p.enabled)return"";return p.affiliate||p.base},configure(id,{affiliate="",enabled=true}={}){if(!this.partners[id])return false;this.partners[id].affiliate=affiliate;this.partners[id].enabled=enabled;return true},track(id,placement="ai-card"){try{const key="links-affiliate-events-v70",a=JSON.parse(localStorage.getItem(key)||"[]");a.unshift({partner:id,placement,sport:aiSportV66,at:new Date().toISOString()});localStorage.setItem(key,JSON.stringify(a.slice(0,100)))}catch{}}};window.LinksAffiliate=LinksAffiliateV70;
 document.addEventListener("click",e=>{const b=e.target.closest("[data-book]");if(!b)return;const url=LinksAffiliateV70.url(b.dataset.book);if(!url)return;LinksAffiliateV70.track(b.dataset.book);setTimeout(()=>{const go=document.querySelector("[data-book-go]");if(go)go.dataset.bookGo=url},0)},true);
 function stampV70(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v70 · AFFILIATE READY</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV70);
+
+// Mixed Card UX v71 — persistent dock keeps the all-sports card visible while researching.
+function mixDockV71(){
+ const h=document.querySelector("#aiStudioMount"),rows=AIMixV70.read();if(!h)return;h.querySelector(".ai-mix-dock-v71")?.remove();
+ if(!rows.length)return;const sports=[...new Set(rows.map(x=>x.sport))];
+ h.insertAdjacentHTML("beforeend",'<div class="ai-mix-dock-v71"><div><span>MULTI-SPORT CARD</span><b>'+rows.length+' LEG'+(rows.length===1?"":"S")+'</b><small>'+sports.join(" · ")+'</small></div><button data-mix-review-v71>REVIEW CARD ›</button></div>');
+}
+function mixReviewV71(){
+ const rows=AIMixV70.read(),calc=mixedCardMathV70(rows);if(!rows.length)return;
+ modal("REVIEW MULTI-SPORT CARD",'<div class="ai-review-v19 mix-review-v71"><span>LINKS AI · '+new Set(rows.map(x=>x.sport)).size+' SPORTS</span><h3>'+rows.length+'-leg research card</h3>'+rows.map(x=>'<div class="mix-review-leg"><em>'+linksEscape(x.sport)+'</em><b>'+linksEscape(x.pick)+'</b><span>'+linksEscape(x.price)+'</span></div>').join("")+'<div><b>COMBINED PRICE</b><strong>'+(calc.american>0?"+":"")+calc.american+'</strong></div><small>Research preview only. Current markets, prices and availability must be verified with the provider. Combined math does not account for correlation.</small><button data-share-card>SHARE CARD</button></div>');
+}
+document.addEventListener("click",e=>{if(e.target.closest("[data-ai-leg],[data-mix-remove],[data-mix-clear],[data-ai-sport]"))setTimeout(mixDockV71,0);if(e.target.closest("[data-mix-review-v71]")){e.preventDefault();mixReviewV71()}},true);
+document.addEventListener("click",e=>{if(e.target.closest("[data-ai],[data-ai-studio],[data-ai-card],[data-parlay]"))setTimeout(mixDockV71,0)},true);
+function stampV71(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v71 · MULTI-SPORT CARD DOCK</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV71);
