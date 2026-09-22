@@ -2032,7 +2032,12 @@ const AISports={
  MLB:["ATL · MONEYLINE","NYY @ BOS · OVER 8.5","LAD -1.5"],
  NHL:["EDM · MONEYLINE","NYR @ BOS · OVER 5.5","TOR +1.5"],
  NCAAF:["TENN · MONEYLINE","UGA -6.5","ALA @ LSU · OVER 51.5"],
- SOCCER:["ARSENAL · DRAW NO BET","OVER 2.5 GOALS","BOTH TEAMS TO SCORE"]
+ SOCCER:["ARSENAL · DRAW NO BET","OVER 2.5 GOALS","BOTH TEAMS TO SCORE"],
+ MMA:["FIGHT MONEYLINE","METHOD OF VICTORY","GOES THE DISTANCE"],
+ TENNIS:["MATCH WINNER","SET SPREAD","TOTAL GAMES"],
+ GOLF:["TO WIN","TOP 10 FINISH","MATCHUP WINNER"],
+ WNBA:["MONEYLINE","PLAYER POINTS","GAME TOTAL"],
+ NCAAB:["MONEYLINE","SPREAD","GAME TOTAL"]
 };
 function aiPlanStrip(){
  const pro=LinksAIPlan.plan()==="pro",left=LinksAIPlan.remaining();
@@ -2628,3 +2633,26 @@ function formatSupportV65(){
 queueMicrotask(formatSupportV65);
 new MutationObserver(formatSupportV65).observe(document.querySelector("#app"),{childList:true,subtree:true});
 function stampV65(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v65 · GAME COMPLETENESS</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV65);
+
+// AI Multi-Sport Flow v66 — make sport selection change the research board instead of only changing a label.
+const AISportPreviewV66={
+ NFL:[["BUF @ MIA","BUF · MONEYLINE","-145",59],["DAL @ NYG","OVER 45.5","-110",53],["PHI @ TB","PHI · TEAM TD 1+","-180",64]],
+ NBA:[["BOS @ MIA","BOS · MONEYLINE","-135",57],["LAL @ PHX","OVER 224.5","-110",54],["NYK @ CLE","NYK +4.5","-108",53]],
+ MLB:[["ATL @ NYM","ATL · MONEYLINE","-125",56],["NYY @ BOS","OVER 8.5","-105",52],["LAD @ SD","LAD -1.5","+120",48]],
+ NHL:[["EDM @ CGY","EDM · MONEYLINE","-130",57],["NYR @ BOS","OVER 5.5","-115",54],["TOR @ OTT","TOR +1.5","-175",63]],
+ NCAAF:[["TENN @ UGA","TENN · MONEYLINE","+135",45],["UGA @ AUB","UGA -6.5","-110",54],["ALA @ LSU","OVER 51.5","-108",53]],
+ NCAAB:[["DUKE @ UNC","DUKE · MONEYLINE","-120",55],["UK @ TENN","UNDER 149.5","-110",53],["KU @ BAY","BAY +3.5","-105",52]],
+ SOCCER:[["ARSENAL @ CHELSEA","ARSENAL · DRAW NO BET","-125",56],["LIVERPOOL @ CITY","OVER 2.5 GOALS","-120",55],["INTER @ MILAN","BOTH TEAMS TO SCORE","-115",54]],
+ MMA:[["MAIN EVENT","FIGHTER A · MONEYLINE","-140",58],["CO-MAIN","FIGHT GOES THE DISTANCE","+110",49],["FEATURED BOUT","FIGHTER B · BY DECISION","+175",38]],
+ TENNIS:[["TOUR MATCH","PLAYER A · MATCH WINNER","-135",57],["TOUR MATCH","OVER 22.5 GAMES","-110",53],["TOUR MATCH","PLAYER B +1.5 SETS","-160",61]],
+ GOLF:[["TOURNAMENT","PLAYER A · TOP 10","+180",36],["TOURNAMENT","PLAYER B · MATCHUP WINNER","-115",54],["TOURNAMENT","PLAYER C · TOP 20","+105",49]],
+ WNBA:[["NY @ LV","NY · MONEYLINE","-130",57],["IND @ PHX","OVER 163.5","-110",53],["MIN @ SEA","PLAYER POINTS OVER","-105",52]]
+};
+let aiSportV66="NFL";
+function applyAISportV66(sport){
+ const rows=AISportPreviewV66[sport]||AISportPreviewV66.NFL;aiSportV66=sport;
+ AIStudio.legs=rows.map((x,i)=>({id:"v66-"+sport.toLowerCase()+"-"+i,game:x[0],pick:x[1],price:x[2],prob:x[3],trend:"Preview research sample",why:"Illustrative "+sport+" research candidate. Verify current market data before acting.",corr:"CHECK"}));
+ AIStudio.save([]);const h=document.querySelector("#aiStudioMount");if(!h)return;h.innerHTML=AIStudio.html();AIStudio.wire(h);h.insertAdjacentHTML("afterbegin",aiPlanStrip());h.insertAdjacentHTML("beforeend",sportsbookHandoffV22());h.querySelector(".ai-studio-v19")?.insertAdjacentHTML("afterbegin",multiSportBar());h.querySelectorAll("[data-ai-sport]").forEach(b=>b.classList.toggle("active",b.dataset.aiSport===sport));
+}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-ai-sport]");if(!b)return;e.preventDefault();e.stopImmediatePropagation();applyAISportV66(b.dataset.aiSport);AppStatus.show("ok",b.dataset.aiSport+" selected","Research board switched to "+b.dataset.aiSport+".")},true);
+function stampV66(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v66 · AI MULTI-SPORT FLOW</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV66);
