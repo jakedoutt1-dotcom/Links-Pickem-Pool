@@ -268,3 +268,6 @@ html{background:#050908}body{min-height:100dvh}.links-v27{min-height:100dvh}.lin
 
 /* Review Finish v53 */
 .links-v27 button:disabled,.links-v27 [aria-disabled="true"]{cursor:not-allowed;filter:saturate(.65);opacity:.58}.links-v27 a,.links-v27 button{outline-offset:3px}.links-v27 img{max-width:100%}@media(max-width:700px){.links-v27 button,.links-v27 a{min-height:44px}.links-v27 .finish-dock-v26 button{min-height:48px}.links-v27 .route-workspace{width:100%;box-sizing:border-box}}
+
+/* Signature Finish v54 */
+.route-hero,.platform-hero-v22,.game-center-v28,.comm-tools-v30{position:relative}.v54-signature{position:absolute;left:8%;right:8%;bottom:0;height:1px;pointer-events:none;background:linear-gradient(90deg,transparent,rgba(241,117,33,.34) 28%,rgba(111,155,116,.22) 72%,transparent)}.links-v27 .primary,.links-v27 button.primary{box-shadow:0 8px 24px rgba(241,117,33,.09),inset 0 1px 0 rgba(255,255,255,.08)}.links-v27 .card:hover{border-color:rgba(255,255,255,.085)}@media(hover:none){.links-v27 .card:hover{border-color:inherit}}@media(max-width:700px){.v54-signature{left:12%;right:12%}}
