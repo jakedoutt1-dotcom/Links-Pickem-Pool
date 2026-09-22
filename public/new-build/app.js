@@ -487,7 +487,7 @@ function mountCommissionerV3(){
  ws.insertAdjacentHTML("beforeend",commissionerPanel());wireCommissionerV3(ws);
 }
 function wireCommissionerV3(ws){
- ws.querySelector('[data-cmd="remind"]')?.addEventListener("click",()=>{["Amanda","Chris"].forEach(n=>ReminderQueue.add?.(n));AuditLog.add("REMINDER BATCH","Missing-pick reminder sent");modal("REMINDERS SENT",'<div class="connected-modal"><span class="badge live">5 PLAYERS</span><h3>Missing-pick reminders queued.</h3><p>No selections were exposed. Players receive only the games they still need to complete.</p></div>')});
+ ws.querySelector('[data-cmd="remind"]')?.addEventListener("click",()=>{["Amanda","Chris"].forEach(n=>ReminderQueue.send?.(n));AuditLog.add("REMINDER BATCH","Missing-pick reminder sent");modal("REMINDERS SENT",'<div class="connected-modal"><span class="badge live">5 PLAYERS</span><h3>Missing-pick reminders queued.</h3><p>No selections were exposed. Players receive only the games they still need to complete.</p></div>')});
  ws.querySelector('[data-cmd="week"]')?.addEventListener("click",()=>{const s=CommissionerState.read(),open=s.open!==false;CommissionerState.write({open:!open});AuditLog.add(open?"WEEK CLOSED":"WEEK OPENED","Commissioner changed weekly access");ws.querySelector(".commander-v3").outerHTML=commissionerPanel();wireCommissionerV3(ws)});
  ws.querySelector('[data-cmd="audit"]')?.addEventListener("click",()=>modal("AUDIT HISTORY",'<div class="art-game-list">'+AuditLog.all().slice(0,20).map(a=>'<button><span>•</span><div><b>'+a.action+'</b><small>'+a.detail+'</small></div><em>'+new Date(a.at||a.time||Date.now()).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})+'</em></button>').join("")+'</div>'));
  ws.querySelector('[data-cmd="entrants"]')?.addEventListener("click",()=>document.querySelector(".entrant-manager")?.scrollIntoView({behavior:"smooth"}));
@@ -560,7 +560,7 @@ const inboxObserver=new MutationObserver(()=>mountInboxV2());inboxObserver.obser
 // Keep mobile unread badge tied to actual inbox state.
 function syncDockInbox(){
  const unread=InboxStore.all().filter(x=>!x.read).length;
- document.querySelectorAll(".mobile-dock [data-mobile-route='my-picks'] b").forEach(x=>{x.textContent=Math.max(1,unread);x.title=unread+" unread alerts"});
+ document.querySelectorAll(".mobile-dock [data-mobile-route='notifications'] b,.mobile-dock [data-mobile-route='notifications'] .badge,.mobile-more-sheet [data-mobile-route='notifications'] b").forEach(x=>{x.textContent=unread||"";x.hidden=unread===0;x.title=unread+" unread alerts"});
 }
 queueMicrotask(syncDockInbox);
 
@@ -698,10 +698,7 @@ document.addEventListener("click",e=>{
 },true);
 
 // Pick saves get a durable confirmation rather than relying only on color.
-document.addEventListener("click",e=>{
- const b=e.target.closest("[data-pick-team],[data-hub-team]");
- if(!b)return;setTimeout(()=>AppStatus.show("ok","Pick saved","Your selection is stored on this device."),90);
-},true);
+// Pick confirmation is emitted only by PickEngine.save below.
 
 // Empty-state component for future live-data gaps.
 function linksEmpty(kind="picks",title="Nothing here yet",detail="When activity arrives, LINKS will put it here."){
@@ -844,9 +841,9 @@ const weekGateObserver=new MutationObserver(()=>enforceWeekGate(document));weekG
 
 // Readiness is derived from entrant data instead of hard-coded reminder counts.
 function entrantReadiness(){
- const entries=Object.entries(EntrantStatus||{});let total=entries.length,ready=0,missing=[];
- entries.forEach(([name,v])=>{const done=typeof v==="object"?(v.done??v.picks??0):0;const need=typeof v==="object"?(v.total??3):3;if(done>=need)ready++;else missing.push(name)});
- return {total,ready,missing};
+ const rows=Array.isArray(EntrantStatus)?EntrantStatus:Object.values(EntrantStatus||{});
+ const missing=rows.filter(v=>{const done=v?.done??v?.picks??0,need=v?.total??3;return done<need});
+ return {total:rows.length,ready:rows.length-missing.length,missing:missing.map(v=>v?.name||"Player")};
 }
 function readinessStrip(){
  const r=entrantReadiness(),pct=r.total?Math.round(r.ready/r.total*100):100;
@@ -855,7 +852,7 @@ function readinessStrip(){
 function mountReadiness(){
  const cmd=document.querySelector(".commander-v3");if(!cmd||cmd.querySelector(".readiness-strip"))return;
  cmd.insertAdjacentHTML("beforeend",readinessStrip());
- cmd.querySelector("[data-ready-remind]")?.addEventListener("click",()=>{const r=entrantReadiness();r.missing.forEach(n=>ReminderQueue.add?.(n));AuditLog.add("REMINDERS SENT",r.missing.length+" incomplete players");AppStatus.show("ok","Reminders queued",r.missing.length+" incomplete player"+(r.missing.length===1?"":"s")+" targeted.")});
+ cmd.querySelector("[data-ready-remind]")?.addEventListener("click",()=>{const r=entrantReadiness();r.missing.forEach(n=>ReminderQueue.send?.(n));AuditLog.add("REMINDERS SENT",r.missing.length+" incomplete players");AppStatus.show("ok","Reminders queued",r.missing.length+" incomplete player"+(r.missing.length===1?"":"s")+" targeted.")});
 }
 const readinessObserver=new MutationObserver(()=>mountReadiness());readinessObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountReadiness);
 
@@ -1836,3 +1833,15 @@ document.addEventListener("click",()=>requestAnimationFrame(premiumDetails),true
 document.addEventListener("pointerdown",e=>{const card=e.target.closest(".home-pool-card,.portfolio-card,.pick-command-card,.public-game-grid button,.cf-steps button,.hub-quick button");if(card)card.classList.add("card-pressed")},true);
 document.addEventListener("pointerup",e=>e.target.closest?.(".card-pressed")?.classList.remove("card-pressed"),true);
 document.addEventListener("pointercancel",e=>e.target.closest?.(".card-pressed")?.classList.remove("card-pressed"),true);
+
+// Correctness v17 — source-level guardrails for saves, readiness, reminders, and generated text.
+function safeDynamicText(){
+ document.querySelectorAll(".room-v2 [data-message-text],.invite-history b").forEach(x=>{if(x.dataset.safeText==="1")return;x.dataset.safeText="1";x.textContent=x.textContent});
+}
+function commissionerTruthV17(){
+ const r=entrantReadiness();
+ document.querySelectorAll("[data-ready-remind]").forEach(b=>{b.textContent=r.missing.length?"REMIND "+r.missing.length:"ALL READY";b.disabled=!r.missing.length});
+ document.querySelectorAll(".readiness-strip small").forEach(x=>x.textContent=r.missing.length?r.missing.join(", ")+" still need picks.":"Everyone is ready.");
+}
+const CorrectnessV17={run(){commissionerTruthV17();syncDockInbox();safeDynamicText()},queue(){requestAnimationFrame(()=>this.run())}};
+document.addEventListener("click",()=>CorrectnessV17.queue(),true);window.addEventListener("links:picksaved",()=>CorrectnessV17.queue());queueMicrotask(()=>CorrectnessV17.queue());
