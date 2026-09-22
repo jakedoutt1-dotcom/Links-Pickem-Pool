@@ -385,3 +385,37 @@ function mountGameShowcase(){
  box.querySelector("[data-all-games]").addEventListener("click",()=>modal("ALL LINKS GAMES",'<div class="art-game-list">'+games.slice(0,24).map(g=>'<button><span>'+g[0]+'</span><div><b>'+g[1]+'</b><small>'+g[2]+'</small></div><em>›</em></button>').join("")+'</div>'));
 }
 queueMicrotask(mountGameShowcase);
+
+// Mobile App Shell v1 — thumb-first navigation and a persistent "Now" action.
+function mountMobileShell(){
+ if(document.querySelector(".mobile-dock"))return;
+ const dock=document.createElement("nav");dock.className="mobile-dock";
+ dock.innerHTML='<button data-mobile-route="home"><i>⌂</i><span>HOME</span></button><button data-mobile-route="my-pools"><i>▦</i><span>POOLS</span></button><button class="dock-now" data-mobile-route="my-picks"><i>✓</i><span>PICKS</span><b>1</b></button><button data-mobile-route="results"><i>🏆</i><span>RESULTS</span></button><button data-mobile-route="commissioner"><i>⚙</i><span>ADMIN</span></button>';
+ document.body.appendChild(dock);
+ const paint=()=>{const v=new URL(location.href).searchParams.get("view")||"home";dock.querySelectorAll("[data-mobile-route]").forEach(b=>b.classList.toggle("active",b.dataset.mobileRoute===v||(v==="pool"&&b.dataset.mobileRoute==="my-pools")))};
+ dock.querySelectorAll("[data-mobile-route]").forEach(b=>b.addEventListener("click",()=>{setRoute(b.dataset.mobileRoute);renderRouteWorkspace();paint();scrollTo({top:0,behavior:"smooth"})}));
+ addEventListener("popstate",paint);paint();
+}
+queueMicrotask(mountMobileShell);
+
+// Game-day NOW strip: remains useful without making Home noisy.
+function mountNowStrip(){
+ const top=document.querySelector(".top");if(!top||document.querySelector(".now-strip"))return;
+ const n=document.createElement("div");n.className="now-strip";
+ n.innerHTML='<span class="now-pulse"></span><b>NOW</b><div class="now-copy"><strong>1 PICK DUE</strong><span>Barnes Family · Thu 7:15 PM</span></div><button data-now-action>FINISH ›</button>';
+ top.insertAdjacentElement("afterend",n);
+ n.querySelector("[data-now-action]").addEventListener("click",()=>{setRoute("my-picks");renderRouteWorkspace()});
+}
+queueMicrotask(mountNowStrip);
+
+// Install prompt support for browsers that expose beforeinstallprompt.
+let linksInstallPrompt=null;
+addEventListener("beforeinstallprompt",e=>{e.preventDefault();linksInstallPrompt=e;document.documentElement.classList.add("can-install")});
+function mountInstallCard(){
+ const anchor=document.querySelector(".game-showcase");if(!anchor||document.querySelector(".install-card"))return;
+ const card=document.createElement("section");card.className="install-card";
+ card.innerHTML='<div class="install-emblem"><i>LINKS</i></div><div><span>PUT LINKS ON YOUR HOME SCREEN</span><b>Open your pools like an app.</b><small>Faster access · standalone display · your picks one tap away</small></div><button class="ghost" data-install-links>INSTALL</button>';
+ anchor.insertAdjacentElement("afterend",card);
+ card.querySelector("[data-install-links]").addEventListener("click",async()=>{if(linksInstallPrompt){linksInstallPrompt.prompt();await linksInstallPrompt.userChoice;linksInstallPrompt=null;card.remove();return}modal("INSTALL LINKS",'<div class="connected-modal"><span class="badge live">HOME SCREEN</span><h3>Keep LINKS one tap away.</h3><p>On iPhone: open the Share menu, choose Add to Home Screen, then confirm Add.</p></div>')});
+}
+queueMicrotask(mountInstallCard);
