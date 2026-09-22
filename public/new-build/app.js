@@ -2352,3 +2352,11 @@ function splashThemeV35(){
 document.addEventListener("pointerdown",()=>LinksSplashAudioV35.retry(),{once:true,passive:true});
 const o35=new MutationObserver(splashThemeV35);o35.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(splashThemeV35);
 function stampV35(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v35 · SPLASH THEME READY</span>")}const s35=new MutationObserver(stampV35);s35.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV35);
+
+// Final Cohesion v36 — consistent section rhythm, titles and navigation affordances.
+function cohesionV36(){
+ document.querySelectorAll(".route-workspace:not([data-v36])").forEach(w=>{w.dataset.v36="1";const h=w.querySelector("h1,h2");if(h&&!w.querySelector(".v36-route-kicker"))h.insertAdjacentHTML("beforebegin",'<span class="v36-route-kicker">LINKS SPORTS</span>')});
+ document.querySelectorAll(".main section:not([data-v36-section])").forEach(s=>s.dataset.v36Section="1");
+}
+function bootV36(){cohesionV36()}const o36=new MutationObserver(bootV36);o36.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV36);
+function stampV36(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v36 · FINAL COHESION</span>")}const s36=new MutationObserver(stampV36);s36.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV36);
