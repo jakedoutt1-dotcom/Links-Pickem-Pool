@@ -2245,3 +2245,24 @@ function routeIdentityV28(){
 function bootV28(){gameCenterV28();routeIdentityV28()}
 const v28o=new MutationObserver(bootV28);v28o.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV28);
 function stampV28(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v28 · GAME CENTER FINISH</span>")}const s28=new MutationObserver(stampV28);s28.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV28);
+
+// Finish Product v29 — reduce visual noise and make every major surface read like one product.
+function finishHierarchyV29(){
+ const view=document.documentElement.dataset.view||"home";
+ if(view==="home"){
+  const main=document.querySelector(".main");if(!main)return;
+  const primary=[".platform-hero-v22",".platform-choice-v23",".visitor-path-v27",".ai-card",".sport-world-v25"];
+  primary.forEach(s=>main.querySelector(s)?.classList.add("v29-primary"));
+  [".legacy-card",".recap-card",".pulse-hero",".rivalry-card",".nightboard-card",".picksafe-card",".personal-stream-card",".attention-card",".ai-gameday-card",".moment-card",".trophy-card",".pool-room-card",".commish-week-card",".spotlight-card",".join-card",".field-card",".exposure-card",".scenario-card",".lock-card",".social-card",".pulse-card"].forEach(s=>main.querySelectorAll(s).forEach(x=>x.classList.add("v29-secondary")));
+ }
+ document.querySelectorAll("button").forEach(b=>{if(!b.getAttribute("aria-label")&&!((b.textContent||"").trim()))b.setAttribute("aria-label","LINKS action")});
+}
+function homeFinishRailV29(){
+ if(document.documentElement.dataset.view!=="home"||document.documentElement.dataset.publicHome==="true")return;
+ const main=document.querySelector(".main");if(!main||main.querySelector(".finish-rail-v29"))return;
+ const target=main.querySelector(".visitor-path-v27")||main.querySelector(".platform-choice-v23");if(!target)return;
+ target.insertAdjacentHTML("afterend",'<section class="finish-rail-v29"><div><i>FREE</i><p><b>POOL PLAY</b><span>Create · Invite · Pick · Score</span></p></div><div><i>LIVE</i><p><b>GAME DAY</b><span>Scores · Impact · Standings</span></p></div><div><i>AI</i><p><b>CARD LAB</b><span>Research · Build · Share</span></p></div><div><i>✓</i><p><b>ONE ACCOUNT</b><span>Everything stays together</span></p></div></section>');
+}
+function bootV29(){finishHierarchyV29();homeFinishRailV29()}
+const v29o=new MutationObserver(bootV29);v29o.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV29);
+function stampV29(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v29 · PRODUCT FINISH</span>")}const s29=new MutationObserver(stampV29);s29.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV29);
