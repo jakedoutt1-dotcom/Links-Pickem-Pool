@@ -77,3 +77,34 @@ function pickDemo(){
  paint();
 }
 queueMicrotask(pickDemo);
+
+// Pick Engine v2 — slate completeness, lock rules, and one-page confirmation.
+const DemoSlate=[
+ {id:"ten-ind",away:"TEN",home:"IND",kick:"Thu 7:15 PM"},
+ {id:"dal-nyg",away:"DAL",home:"NYG",kick:"Sun 12:00 PM"},
+ {id:"buf-mia",away:"BUF",home:"MIA",kick:"Sun 3:25 PM"}
+];
+function slatePick(id,team){PickEngine.save("slate-"+id,team);renderSlateStatus()}
+function renderSlateStatus(){
+ const wrap=document.querySelector(".slate-engine");if(!wrap)return;
+ let done=0;
+ DemoSlate.forEach(g=>{const p=PickEngine.get("slate-"+g.id);if(p)done++;wrap.querySelectorAll('[data-slate="'+g.id+'"]').forEach(b=>b.classList.toggle("selected",p?.team===b.dataset.team))});
+ const missing=DemoSlate.length-done,pct=Math.round(done/DemoSlate.length*100);
+ wrap.querySelector(".slate-meter i").style.width=pct+"%";
+ wrap.querySelector(".slate-count").textContent=missing?missing+" PICK"+(missing>1?"S":"")+" MISSING":"ALL PICKS SAVED";
+ wrap.querySelector(".slate-count").classList.toggle("complete",!missing);
+}
+function showPickConfirmation(){
+ const rows=DemoSlate.map(g=>{const p=PickEngine.get("slate-"+g.id);return '<div class="confirm-row"><span>'+g.away+' vs '+g.home+'</span><b>'+(p?.team||"MISSING")+'</b><small>'+g.kick+'</small></div>'}).join("");
+ modal("WEEK 7 · PICK CONFIRMATION",'<div class="confirmation-sheet"><div class="confirm-brand">LINKS <span>OFFICIAL PICK RECORD</span></div>'+rows+'<p>Saved selections are shown above. Picks become read-only when their game locks.</p></div>');
+}
+function mountSlate(){
+ const anchor=document.querySelector(".pick-engine");if(!anchor)return;
+ const s=document.createElement("section");s.className="slate-engine card wide";
+ s.innerHTML='<div class="slate-top"><div><span>WEEK 7 · YOUR CARD</span><b>Finish every pick before kickoff.</b></div><button class="ghost" data-confirm>VIEW CONFIRMATION ›</button></div><div class="slate-meter"><i></i></div><strong class="slate-count"></strong><div class="slate-games">'+DemoSlate.map(g=>'<div class="slate-game"><div><small>'+g.kick+'</small><b>'+g.away+' <i>AT</i> '+g.home+'</b></div><div class="slate-actions"><button data-slate="'+g.id+'" data-team="'+g.away+'">'+g.away+'</button><button data-slate="'+g.id+'" data-team="'+g.home+'">'+g.home+'</button></div></div>').join("")+'</div>';
+ anchor.insertAdjacentElement("afterend",s);
+ s.querySelectorAll("[data-slate]").forEach(b=>b.addEventListener("click",()=>slatePick(b.dataset.slate,b.dataset.team)));
+ s.querySelector("[data-confirm]").addEventListener("click",showPickConfirmation);
+ renderSlateStatus();
+}
+queueMicrotask(mountSlate);
