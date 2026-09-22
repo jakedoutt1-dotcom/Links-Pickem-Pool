@@ -2116,3 +2116,56 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-share-card
 
 // If a shared AI link is opened, take the visitor straight to the research experience.
 setTimeout(()=>{const u=new URL(location.href);if(u.searchParams.get("ai")==="card"&&document.documentElement.dataset.publicHome!=="true")AIStudio.open()},120);
+
+// Game Identity v24 — one logo/score presentation system across ticker, picks and results.
+// Uses branded team marks now; the same API can accept official licensed image URLs when feeds/assets are connected.
+const TeamIdentity={
+ map:{
+  TEN:{name:"Titans",sport:"NFL",mark:"TEN",tone:"navy"},IND:{name:"Colts",sport:"NFL",mark:"IND",tone:"blue"},
+  DAL:{name:"Cowboys",sport:"NFL",mark:"★",tone:"blue"},NYG:{name:"Giants",sport:"NFL",mark:"NY",tone:"blue"},
+  BUF:{name:"Bills",sport:"NFL",mark:"BUF",tone:"blue"},MIA:{name:"Dolphins",sport:"NFL",mark:"MIA",tone:"aqua"},
+  PHI:{name:"Eagles",sport:"NFL",mark:"PHI",tone:"green"},TB:{name:"Buccaneers",sport:"NFL",mark:"TB",tone:"red"},
+  ATL:{name:"Braves",sport:"MLB",mark:"A",tone:"red"},NYY:{name:"Yankees",sport:"MLB",mark:"NY",tone:"navy"},BOS:{name:"Boston",sport:"MLB",mark:"B",tone:"red"},LAD:{name:"Dodgers",sport:"MLB",mark:"LA",tone:"blue"},
+  EDM:{name:"Oilers",sport:"NHL",mark:"EDM",tone:"orange"},NYR:{name:"Rangers",sport:"NHL",mark:"NYR",tone:"blue"},TOR:{name:"Maple Leafs",sport:"NHL",mark:"TOR",tone:"blue"},
+  LAL:{name:"Lakers",sport:"NBA",mark:"LA",tone:"gold"},PHX:{name:"Suns",sport:"NBA",mark:"PHX",tone:"orange"},NYK:{name:"Knicks",sport:"NBA",mark:"NY",tone:"blue"},
+  TENN:{name:"Tennessee",sport:"NCAA",mark:"T",tone:"orange"},UGA:{name:"Georgia",sport:"NCAA",mark:"G",tone:"red"},ALA:{name:"Alabama",sport:"NCAA",mark:"A",tone:"red"},LSU:{name:"LSU",sport:"NCAA",mark:"LSU",tone:"gold"}
+ },
+ get(code){return this.map[code]||{name:code,sport:"SPORT",mark:code.slice(0,3),tone:"neutral"}},
+ html(code,size="md"){const t=this.get(code);return '<span class="team-mark-v24 '+size+' '+t.tone+'" aria-label="'+linksEscape(t.name)+'"><b>'+linksEscape(t.mark)+'</b></span>'}
+};
+function identityPickSurfaces(){
+ document.querySelectorAll(".hub-pick-row,.prv-game,.gcv-match>button").forEach(row=>{
+  if(row.dataset.identityV24)return;row.dataset.identityV24="1";
+  const text=row.textContent||"";Object.keys(TeamIdentity.map).forEach(code=>{if(!new RegExp("\\b"+code+"\\b").test(text))return;
+   row.querySelectorAll("button").forEach(b=>{if((b.textContent||"").trim()===code&&!b.querySelector(".team-mark-v24"))b.insertAdjacentHTML("afterbegin",TeamIdentity.html(code,"sm"))});
+  });
+ });
+}
+function liveScoreRailV24(){
+ const existing=document.querySelector(".live-score-rail-v24");if(existing||document.documentElement.dataset.publicHome==="true")return;
+ const app=document.querySelector("#app");if(!app)return;
+ const games=[
+  {a:"TEN",as:17,h:"IND",hs:20,state:"3Q · 4:18",live:true},
+  {a:"DAL",as:24,h:"NYG",hs:21,state:"FINAL",final:true},
+  {a:"BUF",as:null,h:"MIA",hs:null,state:"SUN · 3:25",up:true},
+  {a:"PHI",as:null,h:"TB",hs:null,state:"SUN · 7:20",up:true}
+ ];
+ app.insertAdjacentHTML("afterbegin",'<section class="live-score-rail-v24"><div class="lsr-label"><i></i><b>LINKS LIVE</b></div><div class="lsr-track">'+games.map(g=>'<button class="'+(g.live?"live":g.final?"final":"upcoming")+'" data-lsr-game="'+g.a+'-'+g.h+'"><div>'+TeamIdentity.html(g.a,"xs")+'<span>'+g.a+'</span><b>'+(g.as??"—")+'</b></div><div>'+TeamIdentity.html(g.h,"xs")+'<span>'+g.h+'</span><b>'+(g.hs??"—")+'</b></div><em>'+g.state+'</em></button>').join("")+'</div><button class="lsr-all" data-lsr-all>ALL SCORES ›</button></section>');
+ document.querySelector("[data-lsr-all]")?.addEventListener("click",()=>LinksRouter.navigate("results"));
+ document.querySelectorAll("[data-lsr-game]").forEach(b=>b.addEventListener("click",()=>LinksRouter.navigate("results")));
+}
+function gameIdentityV24(){liveScoreRailV24();identityPickSurfaces()}
+document.addEventListener("click",()=>requestAnimationFrame(gameIdentityV24),true);window.addEventListener("popstate",()=>requestAnimationFrame(gameIdentityV24));queueMicrotask(gameIdentityV24);
+
+// Final preflight panel for commissioner: visible only in Commissioner, and based on actual prototype state.
+function commissionerPreflightV24(){
+ const r=entrantReadiness(),week=WeekGate.isOpen(),issues=[];
+ if(r.missing.length)issues.push(r.missing.length+" player"+(r.missing.length===1?"":"s")+" incomplete");
+ if(!week)issues.push("week closed");
+ return '<section class="preflight-v24 '+(issues.length?"attention":"ready")+'"><div class="pf-icon">'+(issues.length?"!":"✓")+'</div><div><span>WEEK PREFLIGHT</span><b>'+(issues.length?"Needs a quick check":"Ready for game day")+'</b><small>'+(issues.length?issues.join(" · "):"Players, week access and current pool state look ready.")+'</small></div><button data-pf-action>'+(issues.length?"REVIEW ›":"VIEW WEEK ›")+'</button></section>';
+}
+function mountPreflightV24(){
+ if(document.documentElement.dataset.view!=="commissioner")return;const w=document.querySelector(".route-workspace");if(!w||w.querySelector(".preflight-v24"))return;
+ const q=w.querySelector(".comm-quick-v23");q?.insertAdjacentHTML("afterend",commissionerPreflightV24());w.querySelector("[data-pf-action]")?.addEventListener("click",()=>w.querySelector(".commander-v3,.readiness-strip,.week-control-v2")?.scrollIntoView({behavior:"smooth",block:"center"}));
+}
+const pf24Observer=new MutationObserver(()=>mountPreflightV24());pf24Observer.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountPreflightV24);
