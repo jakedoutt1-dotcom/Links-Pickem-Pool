@@ -59,7 +59,8 @@ function revealTruthPass(){
 
 queueMicrotask(revealTruthPass);
 addEventListener("popstate",()=>setTimeout(revealTruthPass,0));
-const revealObserver=new MutationObserver(()=>revealTruthPass());
+let revealQueued=false;
+const revealObserver=new MutationObserver(()=>{if(revealQueued)return;revealQueued=true;requestAnimationFrame(()=>{revealQueued=false;revealObserver.disconnect();try{revealTruthPass()}finally{const a=document.querySelector("#app");if(a)revealObserver.observe(a,{childList:true,subtree:true})}})});
 const app=document.querySelector("#app");
 if(app) revealObserver.observe(app,{childList:true,subtree:true});
 
