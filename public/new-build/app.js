@@ -79,11 +79,7 @@ function pickDemo(){
 // v158: legacy pick demo disabled for launch.
 
 // Pick Engine v2 — slate completeness, lock rules, and one-page confirmation.
-const DemoSlate=[
- {id:"ten-ind",away:"TEN",home:"IND",kick:"Thu 7:15 PM"},
- {id:"dal-nyg",away:"DAL",home:"NYG",kick:"Sun 12:00 PM"},
- {id:"buf-mia",away:"BUF",home:"MIA",kick:"Sun 3:25 PM"}
-];
+const DemoSlate=[];
 function slatePick(id,team){PickEngine.save("slate-"+id,team);renderSlateStatus()}
 function renderSlateStatus(){
  const wrap=document.querySelector(".slate-engine");if(!wrap)return;
@@ -110,19 +106,7 @@ function mountSlate(){
 // v158: legacy demo slate disabled for launch.
 
 // Pick Engine v3 — game lifecycle, lock/reveal, deterministic scoring + standings demo.
-const ScoreDemo={
- games:{
-  "ten-ind":{status:"FINAL",awayScore:24,homeScore:20,winner:"TEN"},
-  "dal-nyg":{status:"FINAL",awayScore:17,homeScore:21,winner:"NYG"},
-  "buf-mia":{status:"LIVE · Q3",awayScore:20,homeScore:17,winner:null}
- },
- players:[
-  {name:"Jake",picks:{"ten-ind":"TEN","dal-nyg":"NYG","buf-mia":"BUF"}},
-  {name:"Mike",picks:{"ten-ind":"IND","dal-nyg":"NYG","buf-mia":"BUF"}},
-  {name:"Player 2",picks:{"ten-ind":"TEN","dal-nyg":"DAL","buf-mia":"MIA"}},
-  {name:"Player 3",picks:{"ten-ind":"IND","dal-nyg":"DAL","buf-mia":"BUF"}}
- ]
-};
+const ScoreDemo={games:{},players:[]};
 function scored(p){return Object.entries(p.picks).reduce((n,[id,t])=>n+(ScoreDemo.games[id]?.winner===t?1:0),0)}
 function mountScoreboard(){
  const anchor=document.querySelector(".slate-engine");if(!anchor)return;
@@ -213,12 +197,7 @@ function mountFieldReveal(){
 queueMicrotask(()=>{lockGuard();mountFieldReveal()});
 
 // Commissioner v2 — submission status + missing-pick reminder queue.
-const EntrantStatus=[
- {name:"Jake",email:"jake@example.com",done:3,total:3,last:"Saved 12:42 AM"},
- {name:"Player 2",email:"amanda@example.com",done:2,total:3,last:"1 pick missing"},
- {name:"Mike",email:"mike@example.com",done:3,total:3,last:"Saved yesterday"},
- {name:"Player 3",email:"chris@example.com",done:0,total:3,last:"No picks yet"}
-];
+const EntrantStatus=[];
 const ReminderQueue={
  key:"links-reminders-v1",
  all(){try{return JSON.parse(localStorage.getItem(this.key)||"[]")}catch{return[]}},
@@ -238,12 +217,12 @@ function mountEntrantManager(){
 
 // Route Workspace v1 — nav now opens focused product screens instead of only highlighting state.
 const RouteViews={
- "my-pools":()=>`<section class="route-hero"><div><span>MY POOLS</span><h1>Every pool. One account.</h1><p>Jump back into a pool, see the next lock, or start another game.</p></div><button class="primary" data-route-action="create">＋ CREATE POOL</button></section><section class="route-grid">${pools.map((p,i)=>`<article class="route-pool" data-open-pool="${p[1]}"><div class="route-icon">${p[0]}</div><div><small>${p[2]}</small><h3>${p[1]}</h3><p>${p[3]}</p></div><div class="route-pool-status"><b>${i===0?"PICKS OPEN":"ACTIVE"}</b><span>${p[4]}</span></div></article>`).join("")}<article class="route-join"><span>HAVE AN INVITE?</span><h3>Join a pool</h3><p>Invite links open the exact pool automatically. Pool codes work here too.</p><button class="ghost">ENTER POOL CODE ›</button></article></section>`,
- "my-picks":()=>`<section class="route-hero"><div><span>MY PICKS</span><h1>Your week at a glance.</h1><p>One place for unfinished cards, saved picks and upcoming locks.</p></div><div class="route-kpi"><strong>1</strong><small>CARD NEEDS YOU</small></div></section><section class="route-grid"><article class="route-focus"><span>NEXT DEADLINE</span><h2>My Pool · Week 3</h2><p>1 pick still missing before Thursday 7:15 PM.</p><button class="primary" data-jump-picks>FINISH PICKS ›</button></article><article class="route-status good"><span>SAVED</span><h3>College Pool</h3><p>10 of 10 college picks complete.</p><b>✓ PICK CARD COMPLETE</b></article><article class="route-status"><span>SURVIVOR</span><h3>Last One Standing</h3><p>Your selection is saved and protected.</p><b>LOCKS SUNDAY 12:00 PM</b></article></section>`,
- "results":()=>`<section class="route-hero"><div><span>RESULTS</span><h1>Scores, standings & history.</h1><p>Final results drive records automatically. Live games remain live until final.</p></div><div class="route-kpi"><strong>2–0</strong><small>WEEK 7 FINAL PICKS</small></div></section><section class="route-grid"><article class="route-focus"><span>LIVE STANDINGS</span><h2>My Pool</h2><p>You are currently tied for the weekly lead.</p><button class="primary" data-jump-results>OPEN LIVE SCORING ›</button></article><article class="route-status"><span>LEGACY</span><h3>Season record</h3><p>Permanent weekly history stays attached to your account.</p><b>VIEW HISTORY ›</b></article></section>`,
- "messages":()=>`<section class="route-hero"><div><span>MESSAGES</span><h1>Pool communication without the chaos.</h1><p>Commissioner announcements, reminders and pool conversation live together.</p></div></section><section class="route-stack"><article><b>Commissioner · My Pool</b><span>Week 3 is open. Get picks in before Thursday kickoff.</span><small>18 minutes ago</small></article><article><b>LINKS</b><span>Your College Pool pick card is complete.</span><small>Yesterday</small></article></section>`,
- "notifications":()=>`<section class="route-hero"><div><span>NOTIFICATIONS</span><h1>Only what needs your attention.</h1><p>Deadlines, results, invitations and commissioner activity.</p></div></section><section class="route-stack"><article><b>Pick deadline approaching</b><span>My Pool has 1 missing pick.</span><small>Action needed</small></article><article><b>Standings updated</b><span>Two Week 7 games are final.</span><small>31 minutes ago</small></article></section>`,
- "commissioner":()=>`<section class="route-hero"><div><span>COMMISSIONER</span><h1>Run the week from one screen.</h1><p>Entrants, locks, reminders, scoring health and audited overrides.</p></div><div class="route-kpi"><strong>5</strong><small>NEED PICKS</small></div></section><section class="route-grid"><article class="route-focus"><span>WEEK CONTROL</span><h2>My Pool · Week 3</h2><p>59 of 64 entries complete · scoring healthy.</p><button class="primary" data-jump-admin>OPEN WEEK CONTROLS ›</button></article>${adminStats.map(x=>`<article class="route-status"><span>${x[0]}</span><h3>${x[1]}</h3><p>${x[2]}</p></article>`).join("")}</section>`
+ "my-pools":()=>'<section class="route-hero"><div><span>MY POOLS</span><h1>Every pool. One account.</h1><p>Open a saved pool or create a new one.</p></div><button class="primary" data-route-action="create">＋ CREATE POOL</button></section><section class="route-grid">'+(CreatedPools.all().length?CreatedPools.all().map(p=>'<article class="route-pool" data-open-pool="'+linksEscape(p.name)+'"><div><small>'+linksEscape(p.game||"LINKS POOL")+'</small><h3>'+linksEscape(p.name)+'</h3><p>'+linksEscape(String(p.season||LinksSeasonV155.current()))+' season</p></div><div class="route-pool-status"><b>OPEN</b><span>VIEW POOL ›</span></div></article>').join(""):'<article class="route-join"><span>NO POOLS YET</span><h3>Create your first pool.</h3><p>Your real pools will appear here.</p></article>')+'</section>',
+ "my-picks":()=>'<section class="route-hero"><div><span>MY PICKS</span><h1>Your active pick cards.</h1><p>Open a pool to make or review picks. Deadlines come from its published schedule.</p></div></section>',
+ "results":()=>'<section class="route-hero"><div><span>RESULTS</span><h1>Scores, standings & history.</h1><p>Real pool results appear here as games become final.</p></div></section>',
+ "messages":()=>'<section class="route-hero"><div><span>MESSAGES</span><h1>Pool communication.</h1><p>Commissioner announcements and connected messaging will appear here.</p></div></section>',
+ "notifications":()=>'<section class="route-hero"><div><span>NOTIFICATIONS</span><h1>What needs your attention.</h1><p>Real deadlines, results and invitations will appear here.</p></div></section>',
+ "commissioner":()=>commissionerTruthPanelV155()
 };
 function renderRouteWorkspace(){
  const view=new URL(location.href).searchParams.get("view")||LinksState.read().route||"home";
@@ -4121,3 +4100,12 @@ function structuralTruthV169(){
 }
 LinksLifecycleCallbacksV82.push(structuralTruthV169);
 queueMicrotask(()=>{structuralTruthV169();LinksLifecycleV82.queue()});
+
+
+// Deep Demo Excavation v170 — dormant seed datasets and seeded route screens removed at source.
+function deepTruthV170(){
+ document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v170 · DEEP CLEAN</span>';if(x.innerHTML!==h)x.innerHTML=h});
+ document.documentElement.dataset.linksBuild='v170';
+}
+LinksLifecycleCallbacksV82.push(deepTruthV170);
+queueMicrotask(()=>{deepTruthV170();LinksLifecycleV82.queue()});
