@@ -2336,3 +2336,19 @@ function releaseReadinessV34(){
 }
 function bootV34(){releaseReadinessV34()}const o34=new MutationObserver(bootV34);o34.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV34);
 function stampV34(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v34 · RELEASE READINESS</span>")}const s34=new MutationObserver(stampV34);s34.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV34);
+
+// Splash Theme v35 — wired for the official Stadium Rumble MP3.
+const LinksSplashAudioV35={src:"./assets/stadium-rumble.mp3",audio:null,armed:false,
+ init(){if(this.audio)return;this.audio=new Audio(this.src);this.audio.preload="auto";this.audio.volume=.72;this.audio.setAttribute("playsinline","");},
+ play(){this.init();if(localStorage.getItem("linksSplashMuted")==="1")return;this.audio.currentTime=0;const p=this.audio.play();if(p&&p.catch)p.catch(()=>{this.armed=true})},
+ retry(){if(!this.armed)return;this.armed=false;this.play()},
+ toggle(){const muted=localStorage.getItem("linksSplashMuted")==="1";localStorage.setItem("linksSplashMuted",muted?"0":"1");if(!muted&&this.audio)this.audio.pause();return muted}
+};
+function splashThemeV35(){
+ LinksSplashAudioV35.init();
+ const splash=document.querySelector(".splash,.splash-screen,.intro-splash");
+ if(splash&&!splash.dataset.v35Audio){splash.dataset.v35Audio="1";LinksSplashAudioV35.play();splash.insertAdjacentHTML("beforeend",'<button class="splash-sound-v35" type="button" aria-label="Toggle LINKS splash sound">SOUND</button>');splash.querySelector(".splash-sound-v35")?.addEventListener("click",e=>{e.stopPropagation();LinksSplashAudioV35.toggle();e.currentTarget.classList.toggle("muted",localStorage.getItem("linksSplashMuted")==="1")})}
+}
+document.addEventListener("pointerdown",()=>LinksSplashAudioV35.retry(),{once:true,passive:true});
+const o35=new MutationObserver(splashThemeV35);o35.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(splashThemeV35);
+function stampV35(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v35 · SPLASH THEME READY</span>")}const s35=new MutationObserver(stampV35);s35.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV35);
