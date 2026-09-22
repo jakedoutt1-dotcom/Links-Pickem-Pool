@@ -76,7 +76,7 @@ function pickDemo(){
  host.querySelector("[data-clear-pick]").addEventListener("click",()=>{const all=PickEngine.load();delete all["week7-ten-ind"];localStorage.setItem(PickEngine.key,JSON.stringify(all));paint()});
  paint();
 }
-queueMicrotask(pickDemo);
+// v158: legacy pick demo disabled for launch.
 
 // Pick Engine v2 — slate completeness, lock rules, and one-page confirmation.
 const DemoSlate=[
@@ -107,7 +107,7 @@ function mountSlate(){
  s.querySelector("[data-confirm]").addEventListener("click",showPickConfirmation);
  renderSlateStatus();
 }
-queueMicrotask(mountSlate);
+// v158: legacy demo slate disabled for launch.
 
 // Pick Engine v3 — game lifecycle, lock/reveal, deterministic scoring + standings demo.
 const ScoreDemo={
@@ -132,7 +132,7 @@ function mountScoreboard(){
  anchor.insertAdjacentElement("afterend",box);
  box.querySelector("[data-score-detail]").addEventListener("click",()=>modal("SCORING DETAIL",'<div class="connected-modal"><span class="badge live">DETERMINISTIC ENGINE</span><h3>Scores come from game results—not AI.</h3><p>AI can explain movement and scenarios, but final winners, records and standings are computed from the result feed and stored picks.</p></div>'));
 }
-queueMicrotask(mountScoreboard);
+// v158: legacy demo scoreboard disabled for launch.
 
 // Commissioner integrity v1 — lock state + explicit audited overrides.
 const AuditLog={
@@ -234,7 +234,7 @@ function mountEntrantManager(){
  box.querySelectorAll("[data-remind]").forEach(b=>b.addEventListener("click",()=>send(b.dataset.remind)));
  box.querySelector("[data-remind-all]").addEventListener("click",()=>{const names=EntrantStatus.filter(x=>x.done<x.total).map(x=>x.name);names.forEach(ReminderQueue.send.bind(ReminderQueue));feedback.textContent=names.length+" reminder draft"+(names.length===1?"":"s")+" prepared · delivery not connected";setTimeout(()=>feedback.textContent="",2500)});
 }
-queueMicrotask(mountEntrantManager);
+// v158: seeded entrant manager disabled for launch.
 
 // Route Workspace v1 — nav now opens focused product screens instead of only highlighting state.
 const RouteViews={
@@ -443,7 +443,7 @@ function mountPoolGameDay(){
    else modal(tab==="compare"?"FIELD COMPARE":"POOL ROOM",tab==="compare"?'<div class="connected-modal"><span class="badge live">AFTER LOCK</span><h3>See the field without spoiling picks.</h3><p>Selections stay hidden until the game locks. Then LINKS reveals who took each side and updates the impact live.</p></div>':'<div class="connected-modal"><span class="badge">POOL ROOM</span><h3>Your pool, together.</h3><p>Announcements, commissioner notes, reactions and weekly conversation live here without exposing protected picks.</p></div>');
  }));
 }
-const poolDayObserver=new MutationObserver(()=>mountPoolGameDay());poolDayObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountPoolGameDay);
+const poolDayObserver={disconnect(){}}; // v158 legacy demo observer retired.// v158: seeded pool game-day module disabled for launch.
 
 // Pick celebration: subtle confirmation feedback, never blocks the workflow.
 function pickCelebration(team){
@@ -534,18 +534,13 @@ function mountResultsArena(){
  ws.insertAdjacentHTML("beforeend",resultsArena());
  ws.querySelector("[data-result-share]")?.addEventListener("click",()=>modal("SHARE WEEK 3",'<div class="connected-modal"><span class="badge live">LINKS RESULT</span><h3>'+ScoreDemo.players[0].name+' leads Week 3.</h3><p>'+scored(ScoreDemo.players[0]).wins+' correct with one game still live. A finished share card can be sent from here without exposing anyone’s protected picks.</p></div>'));
 }
-const resultsObserver=new MutationObserver(()=>mountResultsArena());resultsObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountResultsArena);
+const resultsObserver={disconnect(){}}; // v158 legacy demo observer retired.// v158: seeded results arena disabled for launch.
 
 // Smart Inbox v2 — one place for commissioner notices, lock alerts and results.
 const InboxStore={
  key:"links-inbox-v2",
- seed:[
-  {id:"lock",type:"urgent",icon:"⏱",title:"1 pick still missing",body:"My Pool · TEN at IND locks Thursday at 7:15 PM.",time:"NOW",action:"PICKS",read:false},
-  {id:"commish",type:"admin",icon:"L",title:"Commissioner update",body:"Week 3 is open. Get your picks in before kickoff.",time:"18m",action:"POOL",read:false},
-  {id:"result",type:"result",icon:"★",title:"You moved into T-1",body:"Two finals moved you up one spot in My Pool.",time:"42m",action:"RESULTS",read:true},
-  {id:"invite",type:"invite",icon:"+",title:"Pool invitation",body:"You were invited to Last One Standing.",time:"2h",action:"POOL",read:true}
- ],
- all(){try{const x=JSON.parse(localStorage.getItem(this.key));return Array.isArray(x)?x:this.seed}catch{return this.seed}},
+ seed:[],
+ all(){try{const x=JSON.parse(localStorage.getItem(this.key));return Array.isArray(x)?x:[]}catch{return[]}},
  save(x){localStorage.setItem(this.key,JSON.stringify(x))},
  mark(id){const a=this.all().map(x=>x.id===id?{...x,read:true}:x);this.save(a);return a}
 };
@@ -2016,7 +2011,7 @@ function mountGameCenterV21(){
  hub.querySelectorAll("[data-gcv-team]").forEach(b=>b.onclick=()=>{const game=DemoSlate[0];if(LockEngine.isLocked(game.id)){AppStatus.show("warn","Game locked","This selection can no longer be changed.");return}PickEngine.save(game.id,b.dataset.gcvTeam);const old=hub.querySelector(".game-center-v21"),box=document.createElement("div");box.innerHTML=gameCenterV21(pool);old?.replaceWith(box.firstElementChild);mountGameCenterV21()});
  hub.querySelector("[data-gcv-compare]")?.addEventListener("click",()=>{const t=hub.querySelector('[data-hubtab="compare"]');t?.click();t?.scrollIntoView({behavior:"smooth",block:"center"})});
 }
-const gcvObserver=new MutationObserver(()=>mountGameCenterV21());gcvObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountGameCenterV21);
+const gcvObserver={disconnect(){}}; // v158 legacy demo observer retired.// v158: legacy game center auto-mount disabled for launch.
 
 // Pool hub tab state is now reflected in the URL, making refresh/back behavior predictable.
 function syncPoolTabURL(tab){
@@ -3807,3 +3802,17 @@ function quarantineLegacyDemoV157(){
 }
 LinksLifecycleCallbacksV82.push(quarantineLegacyDemoV157);
 queueMicrotask(()=>{quarantineLegacyDemoV157();LinksLifecycleV82.queue()});
+
+
+// Reveal QA v158 — legacy demo engines are code-retired, not merely hidden.
+function retireLegacyDemoStateV158(){
+ const demoKeys=['links-demo-kickoffs-v1','links-reminders-v1','links-inbox-v2'];
+ try{demoKeys.forEach(k=>localStorage.removeItem(k))}catch{}
+ try{resultsObserver.disconnect()}catch{}
+ try{poolDayObserver.disconnect()}catch{}
+ try{gcvObserver.disconnect()}catch{}
+ document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v158 · DEMO ENGINES RETIRED</span>';if(x.innerHTML!==h)x.innerHTML=h});
+ document.documentElement.dataset.linksBuild='v158';
+}
+LinksLifecycleCallbacksV82.push(retireLegacyDemoStateV158);
+queueMicrotask(()=>{retireLegacyDemoStateV158();LinksLifecycleV82.queue()});
