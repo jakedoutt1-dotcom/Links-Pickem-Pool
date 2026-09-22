@@ -1541,7 +1541,7 @@ const GameAdapters={
 };
 function poolSlate(pool){
  const type=gameIdentity(PoolHubData[pool]?.game||"").type;
- if(type==="college")return GameAdapters.college;
+ if(type==="college"||type==="confidence")return GameAdapters.college;
  if(type==="survivor")return GameAdapters.survivor;
  return DemoSlate;
 }
@@ -1551,13 +1551,16 @@ function gameSpecificPickPanel(pool){
   const g=slate[0],saved=PickEngine.get(pool+"-"+g.id)?.team||"";
   return '<div class="hub-panel-head"><span>SURVIVOR · '+linksEscape(p.week)+'</span><h3>One team. Stay alive.</h3><p>Choose one eligible team. Your selection stays private until lock.</p></div><div class="survivor-choice">'+g.choices.map(t=>'<button data-adapter-pick="'+linksEscape(t)+'" data-adapter-game="'+g.id+'" class="'+(saved===t?"selected":"")+'"><i>'+linksEscape(t)+'</i><b>'+linksEscape(t)+'</b><span>'+(saved===t?"YOUR PICK":"SELECT")+'</span></button>').join("")+'</div><div class="adapter-proof"><b>'+(saved?"✓ "+linksEscape(saved)+" SAVED":"SELECTION NEEDED")+'</b><span>'+linksEscape(p.lock)+'</span></div>';
  }
+ if(type==="confidence"){
+  return '<div class="hub-panel-head"><span>CONFIDENCE · '+linksEscape(p.week)+'</span><h3>Pick every game. Rank your confidence.</h3><p>Each confidence number can be used once. Higher number = more points when correct.</p></div><div class="hub-pick-list">'+slate.map((g,i)=>{const key=pool+"-confidence-"+g.id,saved=PickEngine.get(key)||{},team=saved.team||"",rank=saved.rank||"";return '<div class="hub-pick-row" data-confidence-row="'+g.id+'"><div class="hub-game-meta"><b>'+g.away+' <i>VS</i> '+g.home+'</b><span>'+g.kick+'</span></div><div class="hub-choice"><button data-confidence-team="'+g.away+'" data-confidence-game="'+g.id+'" class="'+(team===g.away?"selected":"")+'">'+g.away+'</button><button data-confidence-team="'+g.home+'" data-confidence-game="'+g.id+'" class="'+(team===g.home?"selected":"")+'">'+g.home+'</button><select data-confidence-rank="'+g.id+'"><option value="">RANK</option>'+slate.map((_,n)=>'<option value="'+(n+1)+'" '+(String(rank)===String(n+1)?"selected":"")+' >'+(n+1)+'</option>').join("")+'</select></div><em>'+(team&&rank?"PICK: "+team+" · "+rank+" PTS":"PICK + RANK NEEDED")+'</em></div>'}).join("")+'</div>';
+ }
  if(type==="college"){
   return '<div class="hub-panel-head"><span>COLLEGE PICK’EM · '+linksEscape(p.week)+'</span><h3>Saturday card.</h3><p>Only games selected for this pool appear here.</p></div><div class="hub-pick-list">'+slate.map(g=>{const saved=PickEngine.get(pool+"-"+g.id)?.team||"";return '<div class="hub-pick-row" data-adapter-row="'+g.id+'"><div class="hub-game-meta"><b>'+g.away+' <i>VS</i> '+g.home+'</b><span>'+g.kick+'</span></div><div class="hub-choice"><button data-adapter-pick="'+g.away+'" data-adapter-game="'+g.id+'" class="'+(saved===g.away?"selected":"")+'">'+g.away+'</button><button data-adapter-pick="'+g.home+'" data-adapter-game="'+g.id+'" class="'+(saved===g.home?"selected":"")+'">'+g.home+'</button></div><em>'+(saved?"PICK: "+saved:"NEEDS PICK")+'</em></div>'}).join("")+'</div>';
  }
  return "";
 }
 function mountGameAdapter(){
- if(document.documentElement.dataset.view!=="pool")return;const pool=document.documentElement.dataset.pool||"";const type=gameIdentity(PoolHubData[pool]?.game||"").type;if(!["college","survivor"].includes(type))return;
+ if(document.documentElement.dataset.view!=="pool")return;const pool=document.documentElement.dataset.pool||"";const type=gameIdentity(PoolHubData[pool]?.game||"").type;if(!["college","survivor","confidence"].includes(type))return;
  const live=document.querySelector(".pool-tab-live");if(!live||live.dataset.adapter==="1")return;
  const active=[...document.querySelectorAll(".poolhub-tabs button,.pool-tabs button")].find(b=>b.classList.contains("active"))?.textContent.trim().toLowerCase();
  if(active!=="picks")return;live.dataset.adapter="1";live.innerHTML=gameSpecificPickPanel(pool);
@@ -2622,7 +2625,7 @@ new MutationObserver(gameNetworkCompletionV64).observe(document.querySelector("#
 function stampV64(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v64 · GAME NETWORK COMPLETION</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV64);
 
 // Game Completeness v65 — unsupported formats never fall through to an NFL pick card.
-const LinksFormatSupportV65=new Set(["football","college","survivor"]);
+const LinksFormatSupportV65=new Set(["football","college","survivor","confidence"]);
 function formatSupportV65(){
  if(document.documentElement.dataset.view!=="pool")return;
  const pool=document.documentElement.dataset.pool||"",p=PoolHubData[pool];if(!p)return;
@@ -2736,3 +2739,9 @@ function stampV71(){document.querySelectorAll(".app-build-v18").forEach(x=>{cons
 
 // Release Stability v72 — final stamp stays one-shot; older stamp observers were consolidated.
 function stampV72(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v72 · RELEASE STABILITY</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV72);
+
+// Confidence Engine v73 — persist team + unique rank and validate the card.
+const ConfidenceStoreV73={key:"links-confidence-v73",read(pool){try{return JSON.parse(localStorage.getItem(this.key+"-"+pool)||"{}")}catch{return{}}},write(pool,x){localStorage.setItem(this.key+"-"+pool,JSON.stringify(x))},set(pool,id,patch){const x=this.read(pool);x[id]={...(x[id]||{}),...patch};this.write(pool,x);PickEngine.save(pool+"-confidence-"+id,x[id]);return x}};
+document.addEventListener("click",e=>{const b=e.target.closest("[data-confidence-team]");if(!b)return;e.preventDefault();e.stopImmediatePropagation();const pool=document.documentElement.dataset.pool||"";if(!WeekGate.isOpen()){AppStatus.show("warn","Week is closed","The commissioner has paused pick changes.");return}ConfidenceStoreV73.set(pool,b.dataset.confidenceGame,{team:b.dataset.confidenceTeam});const live=b.closest(".pool-tab-live");if(live){live.innerHTML=gameSpecificPickPanel(pool);live.dataset.adapter="1"}},true);
+document.addEventListener("change",e=>{const s=e.target.closest("[data-confidence-rank]");if(!s)return;const pool=document.documentElement.dataset.pool||"",x=ConfidenceStoreV73.read(pool),rank=s.value;if(rank&&Object.entries(x).some(([id,v])=>id!==s.dataset.confidenceRank&&String(v.rank)===rank)){s.value="";AppStatus.show("warn","Rank already used","Each confidence number can only be used once.");return}ConfidenceStoreV73.set(pool,s.dataset.confidenceRank,{rank});const live=s.closest(".pool-tab-live");if(live){live.innerHTML=gameSpecificPickPanel(pool);live.dataset.adapter="1"}},true);
+function stampV73(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v73 · CONFIDENCE ENGINE</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV73);
