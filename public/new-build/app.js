@@ -2295,3 +2295,26 @@ function scoreStatusV31(){
 }
 function bootV31(){audioReadyV31();scoreStatusV31()}const o31=new MutationObserver(bootV31);o31.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV31);
 function stampV31(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v31 · BROADCAST FINISH</span>")}const s31=new MutationObserver(stampV31);s31.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV31);
+
+// Interaction Finish v32 — consistent loading feedback and safe double-click protection.
+function interactionFinishV32(){
+ document.querySelectorAll("button:not([data-v32-ready])").forEach(b=>{
+  b.dataset.v32Ready="1";
+  b.addEventListener("click",()=>{
+   if(b.disabled||b.dataset.noBusy==="1")return;
+   const t=(b.textContent||"").trim().toUpperCase();
+   if(/OPEN|CREATE|SIGN|JOIN|CONTINUE|SAVE|VIEW|BUILD|START|GO TO/.test(t)){
+    b.classList.add("v32-pressed");
+    setTimeout(()=>b.classList.remove("v32-pressed"),650);
+   }
+  },{passive:true});
+ });
+ document.querySelectorAll("input,select,textarea").forEach(el=>{if(!el.getAttribute("aria-label")&&!el.closest("label")){const p=el.getAttribute("placeholder");if(p)el.setAttribute("aria-label",p)}});
+}
+function pageContextV32(){
+ const v=document.documentElement.dataset.view||"home";
+ document.body.dataset.linksView=v;
+ const main=document.querySelector(".main");if(main)main.classList.toggle("v32-workspace",v!=="home");
+}
+function bootV32(){interactionFinishV32();pageContextV32()}const o32=new MutationObserver(bootV32);o32.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV32);
+function stampV32(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v32 · INTERACTION FINISH</span>")}const s32=new MutationObserver(stampV32);s32.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV32);
