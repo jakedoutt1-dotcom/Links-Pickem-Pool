@@ -1929,8 +1929,8 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
 @media(max-width:420px){#createPoolGames.create-v580-games{grid-template-columns:1fr!important}}
 .links-terms-v581{max-width:760px;margin:0 auto}.links-terms-v581 h3{margin-top:20px}.links-terms-v581 p,.links-terms-v581 li{line-height:1.55}
 </style><link rel="stylesheet" href="./games/game33/game33.css?v=628">
-<script src="./games/game33/game33.js?v=627" defer></script>
-</head>
+<script src="/games/college/college.js?v=629"></script>\n<script src="./games/game33/game33.js?v=627" defer></script>
+<link rel="stylesheet" href="/games/college/college.css?v=629">\n</head>
 
 <body><div id="top"></div><div class="wrap">
 
@@ -2025,7 +2025,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#ff8a32">LINKS PICK’EM POOLS — v628</span></footer>
+  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#ff8a32">LINKS PICK’EM POOLS — v629</span></footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -3171,12 +3171,18 @@ async function enterApp(selected){
   // Do not block the first paint on commissioner extras or league-tab metadata. Load them after the game page is usable.
 
   if(sport==="33"){
-    // v607: ONLY the clean self-contained /games/game33/ app renders Game 33.
-    // Do not re-enter the legacy #game33 renderer after mounting it.
     showOnly("app");setLinksRoute(LINKS_ROUTES.game33);
+    window.LinksCollege?.leave?.();
     await window.LinksGame33?.mount?.();
     return;
   }
+  if(sport==="college"){
+    showOnly("app");setLinksRoute(LINKS_ROUTES.college_picks);
+    window.LinksGame33?.leave?.();
+    await window.LinksCollege?.mount?.();
+    return;
+  }
+  window.LinksCollege?.leave?.();
   window.LinksGame33?.leave?.();
   $("#feeLine").classList.add("hide");
 
