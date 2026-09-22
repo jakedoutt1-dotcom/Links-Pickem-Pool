@@ -108,3 +108,28 @@ function mountSlate(){
  renderSlateStatus();
 }
 queueMicrotask(mountSlate);
+
+// Pick Engine v3 — game lifecycle, lock/reveal, deterministic scoring + standings demo.
+const ScoreDemo={
+ games:{
+  "ten-ind":{status:"FINAL",awayScore:24,homeScore:20,winner:"TEN"},
+  "dal-nyg":{status:"FINAL",awayScore:17,homeScore:21,winner:"NYG"},
+  "buf-mia":{status:"LIVE · Q3",awayScore:20,homeScore:17,winner:null}
+ },
+ players:[
+  {name:"Jake",picks:{"ten-ind":"TEN","dal-nyg":"NYG","buf-mia":"BUF"}},
+  {name:"Mike",picks:{"ten-ind":"IND","dal-nyg":"NYG","buf-mia":"BUF"}},
+  {name:"Amanda",picks:{"ten-ind":"TEN","dal-nyg":"DAL","buf-mia":"MIA"}},
+  {name:"Chris",picks:{"ten-ind":"IND","dal-nyg":"DAL","buf-mia":"BUF"}}
+ ]
+};
+function scored(p){return Object.entries(p.picks).reduce((n,[id,t])=>n+(ScoreDemo.games[id]?.winner===t?1:0),0)}
+function mountScoreboard(){
+ const anchor=document.querySelector(".slate-engine");if(!anchor)return;
+ const box=document.createElement("section");box.className="score-engine card wide";
+ const ranked=[...ScoreDemo.players].sort((a,b)=>scored(b)-scored(a));
+ box.innerHTML='<div class="score-head"><div><span>LIVE SCORING ENGINE</span><b>Week 7 standings</b><small>Finals score automatically. Live games stay projected until final.</small></div><em>● LIVE</em></div><div class="score-games">'+DemoSlate.map(g=>{const s=ScoreDemo.games[g.id];return '<div><span>'+s.status+'</span><b>'+g.away+' '+(s.awayScore??"—")+' · '+(s.homeScore??"—")+' '+g.home+'</b><small>'+(s.winner?"WINNER · "+s.winner:"SCORING IN PROGRESS")+'</small></div>'}).join("")+'</div><div class="standings-head"><span>RK</span><span>PLAYER</span><span>RECORD</span><span>STATUS</span></div><div class="standings">'+ranked.map((p,i)=>'<div class="'+(p.name==="Jake"?"you":"")+'"><strong>'+(i+1)+'</strong><b>'+p.name+(p.name==="Jake"?" · YOU":"")+'</b><span>'+scored(p)+'–'+(Object.values(ScoreDemo.games).filter(g=>g.winner).length-scored(p))+'</span><em>'+(i===0?"LEADER":"LIVE")+'</em></div>').join("")+'</div><div class="score-foot"><span>✓ Final winners are immutable unless commissioner override is audited.</span><button class="ghost" data-score-detail>VIEW SCORING DETAIL ›</button></div>';
+ anchor.insertAdjacentElement("afterend",box);
+ box.querySelector("[data-score-detail]").addEventListener("click",()=>modal("SCORING DETAIL",'<div class="connected-modal"><span class="badge live">DETERMINISTIC ENGINE</span><h3>Scores come from game results—not AI.</h3><p>AI can explain movement and scenarios, but final winners, records and standings are computed from the result feed and stored picks.</p></div>'));
+}
+queueMicrotask(mountScoreboard);
