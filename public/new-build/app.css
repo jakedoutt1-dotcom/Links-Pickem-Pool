@@ -241,3 +241,6 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}.v32-pr
 
 /* Clean Product State v42 */
 [data-preview="true"]{position:relative}.v42-preview{position:absolute;z-index:4;right:9px;top:8px;padding:3px 6px;border:1px solid rgba(128,161,132,.12);border-radius:999px;background:rgba(7,13,12,.72);color:#74837c;font-size:3px;font-weight:1000;letter-spacing:.12em;pointer-events:none}@media(max-width:700px){.v42-preview{font-size:3.4px}}
+
+/* Near-Final QA v43 */
+button.v43-pressed{transform:translateY(1px) scale(.99)!important;filter:brightness(1.08)}button.v43-busy{cursor:progress!important;opacity:.78!important;pointer-events:none!important}button.v43-busy:after{content:" · WORKING";font-size:.72em;letter-spacing:.08em}.links-v27 button:disabled{cursor:not-allowed;filter:saturate(.55);opacity:.48}.links-v27 [aria-busy="true"]{box-shadow:inset 0 0 0 1px rgba(241,117,33,.12)}
