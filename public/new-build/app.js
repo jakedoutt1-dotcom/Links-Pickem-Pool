@@ -528,3 +528,38 @@ function mountResultsArena(){
  ws.querySelector("[data-result-share]")?.addEventListener("click",()=>modal("SHARE WEEK 3",'<div class="connected-modal"><span class="badge live">LINKS RESULT</span><h3>'+ScoreDemo.players[0].name+' leads Week 3.</h3><p>'+scored(ScoreDemo.players[0]).wins+' correct with one game still live. A finished share card can be sent from here without exposing anyone’s protected picks.</p></div>'));
 }
 const resultsObserver=new MutationObserver(()=>mountResultsArena());resultsObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountResultsArena);
+
+// Smart Inbox v2 — one place for commissioner notices, lock alerts and results.
+const InboxStore={
+ key:"links-inbox-v2",
+ seed:[
+  {id:"lock",type:"urgent",icon:"⏱",title:"1 pick still missing",body:"Barnes Family · TEN at IND locks Thursday at 7:15 PM.",time:"NOW",action:"PICKS",read:false},
+  {id:"commish",type:"admin",icon:"L",title:"Commissioner update",body:"Week 3 is open. Get your picks in before kickoff.",time:"18m",action:"POOL",read:false},
+  {id:"result",type:"result",icon:"★",title:"You moved into T-1",body:"Two finals moved you up one spot in Barnes Family.",time:"42m",action:"RESULTS",read:true},
+  {id:"invite",type:"invite",icon:"+",title:"Pool invitation",body:"You were invited to Last One Standing.",time:"2h",action:"POOL",read:true}
+ ],
+ all(){try{const x=JSON.parse(localStorage.getItem(this.key));return Array.isArray(x)?x:this.seed}catch{return this.seed}},
+ save(x){localStorage.setItem(this.key,JSON.stringify(x))},
+ mark(id){const a=this.all().map(x=>x.id===id?{...x,read:true}:x);this.save(a);return a}
+};
+function inboxView(){
+ const items=InboxStore.all(),unread=items.filter(x=>!x.read).length;
+ return '<section class="smart-inbox-v2"><div class="inbox-hero"><div><span>SMART INBOX</span><h2>'+unread+' things need your attention.</h2><p>Deadlines, pool updates and results — without the noise.</p></div><div class="inbox-orb"><b>'+unread+'</b><span>UNREAD</span></div></div><div class="inbox-filter"><button class="active" data-ifilter="all">ALL</button><button data-ifilter="urgent">ACTION</button><button data-ifilter="admin">POOL</button><button data-ifilter="result">RESULTS</button></div><div class="inbox-list">'+items.map(x=>'<button class="inbox-item '+x.type+' '+(!x.read?'unread':'')+'" data-inbox="'+x.id+'" data-itype="'+x.type+'"><i>'+x.icon+'</i><div><b>'+x.title+'</b><span>'+x.body+'</span></div><time>'+x.time+'</time><em>'+x.action+' ›</em></button>').join("")+'</div></section>';
+}
+function mountInboxV2(){
+ const ws=document.querySelector(".route-workspace"),v=document.documentElement.dataset.view;
+ if(!ws||!(v==="messages"||v==="notifications")||ws.querySelector(".smart-inbox-v2"))return;
+ ws.insertAdjacentHTML("beforeend",inboxView());wireInboxV2(ws);
+}
+function wireInboxV2(ws){
+ ws.querySelectorAll("[data-ifilter]").forEach(b=>b.addEventListener("click",()=>{ws.querySelectorAll("[data-ifilter]").forEach(x=>x.classList.toggle("active",x===b));ws.querySelectorAll(".inbox-item").forEach(x=>x.hidden=b.dataset.ifilter!=="all"&&x.dataset.itype!==b.dataset.ifilter)}));
+ ws.querySelectorAll("[data-inbox]").forEach(b=>b.addEventListener("click",()=>{InboxStore.mark(b.dataset.inbox);const t=b.querySelector("em").textContent;if(t.includes("PICKS")){setRoute("my-picks");renderRouteWorkspace()}else if(t.includes("RESULTS")){setRoute("results");renderRouteWorkspace()}else{setRoute("my-pools");renderRouteWorkspace()}}));
+}
+const inboxObserver=new MutationObserver(()=>mountInboxV2());inboxObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountInboxV2);
+
+// Keep mobile unread badge tied to actual inbox state.
+function syncDockInbox(){
+ const unread=InboxStore.all().filter(x=>!x.read).length;
+ document.querySelectorAll(".mobile-dock [data-mobile-route='my-picks'] b").forEach(x=>{x.textContent=Math.max(1,unread);x.title=unread+" unread alerts"});
+}
+queueMicrotask(syncDockInbox);
