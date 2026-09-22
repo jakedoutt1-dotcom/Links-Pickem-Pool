@@ -2386,3 +2386,13 @@ function gameDayFinishV39(){
 }
 function bootV39(){gameDayFinishV39()}const o39=new MutationObserver(bootV39);o39.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV39);
 function stampV39(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v39 · GAME DAY FINISH</span>")}const s39=new MutationObserver(stampV39);s39.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV39);
+
+// Launch Polish v40 — keyboard flow, reduced-motion respect and touch-first usability.
+function launchPolishV40(){
+ document.querySelectorAll('a[target="_blank"]').forEach(a=>a.rel="noopener noreferrer");
+ document.querySelectorAll("button,[role=button],a").forEach(el=>{if(!el.dataset.v40){el.dataset.v40="1";if(el.tagName!=="A"&&!el.hasAttribute("type"))el.setAttribute("type","button")}});
+ document.querySelectorAll("input,select,textarea").forEach(el=>{el.setAttribute("autocomplete",el.getAttribute("autocomplete")||"off")});
+}
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){document.querySelectorAll(".modal.open,.modal.show,[aria-modal=true]").forEach(m=>{const x=m.querySelector('[aria-label*="close" i],.close,[data-close]');if(x)x.click()})}});
+function bootV40(){launchPolishV40()}const o40=new MutationObserver(bootV40);o40.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV40);
+function stampV40(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v40 · LAUNCH POLISH</span>")}const s40=new MutationObserver(stampV40);s40.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV40);
