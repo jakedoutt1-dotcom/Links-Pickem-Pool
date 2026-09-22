@@ -496,3 +496,23 @@ function wireCommissionerV3(ws){
  ws.querySelectorAll("[data-cmdlock]").forEach(b=>b.addEventListener("click",()=>{const id=b.dataset.cmdlock,locked=LockEngine.isLocked(id);LockEngine.set(id,!locked,locked?"Commissioner manual unlock":"Commissioner manual lock");const sec=ws.querySelector(".commander-v3");sec.outerHTML=commissionerPanel();wireCommissionerV3(ws)}));
 }
 const commissionerObserver=new MutationObserver(()=>mountCommissionerV3());commissionerObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountCommissionerV3);
+
+// LINKS Graphics Pass v2 — shared premium visual language for live, locked, winner and commissioner states.
+function mountVisualFX(){
+ if(document.querySelector(".links-ambient"))return;
+ const fx=document.createElement("div");fx.className="links-ambient";fx.innerHTML='<i></i><i></i><i></i><span></span>';document.body.prepend(fx);
+ document.querySelectorAll(".card,.panel,.pool,.route-pool,.commander-v3,.pool-gameday").forEach(el=>el.classList.add("links-surface"));
+}
+const visualObserver=new MutationObserver(()=>mountVisualFX());visualObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountVisualFX);
+
+function linksBadge(type,label){
+ const icons={live:"●",locked:"◆",winner:"★",admin:"⌁",saved:"✓"};
+ return '<span class="links-state '+type+'"><i>'+icons[type]+'</i>'+label+'</span>';
+}
+// Add branded state badges to key surfaces as they appear.
+function paintStateGraphics(){
+ document.querySelectorAll(".gameday-status").forEach(x=>{if(!x.dataset.fx){x.dataset.fx=1;x.innerHTML=linksBadge("live","PICKS OPEN")}});
+ document.querySelectorAll(".command-health").forEach(x=>x.classList.add("command-emblem"));
+ document.querySelectorAll(".hub-pick-row").forEach(row=>{const id=row.dataset.hubgame;if(id&&LockEngine.isLocked(id))row.classList.add("is-locked")});
+}
+const stateObserver=new MutationObserver(()=>paintStateGraphics());stateObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(paintStateGraphics);
