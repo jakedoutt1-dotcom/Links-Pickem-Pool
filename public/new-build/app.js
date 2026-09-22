@@ -1706,3 +1706,40 @@ function routeLoadingPulse(){
  x.classList.add("show");setTimeout(()=>x.classList.remove("show"),180);
 }
 document.addEventListener("click",e=>{if(e.target.closest("[data-home-go],[data-home-go2],[data-open-pool],[data-pickpool],.mobile-dock button,[data-ri-home],[data-ri-pools]"))routeLoadingPulse()},true);
+
+// Stability v14 — centralized enhancement coordinator for the newest surfaces.
+const LinksEnhance={
+ queued:false,
+ run(){this.queued=false;try{
+  accessibilityPass();if(document.documentElement.dataset.publicHome==="true")return;
+  const v=document.documentElement.dataset.view||"home";
+  if(v==="home"){tightenHomeTruth();dedupeModernHome();fixNetworkCTAs()}
+  if(v==="my-picks"){patchMyPicksTruth();mountPickReview()}
+  if(v==="my-pools")patchMyPoolsTruth();
+  if(v==="results")mountResultsBoard();
+  if(v==="commissioner"){patchCommissionerTruth();mountCommissionerFlow()}
+  if(v==="pool"){mountPoolIdentity();mountPoolStatusRibbon();mountHubQuick();mountPoolSetupSummary();formatHubPolish();correctPoolLanguage();mountGameAdapter();mountFormatAdapter();patchStandingsTruth()}
+ }catch(err){console.warn("LINKS enhance",err)}},
+ queue(){if(this.queued)return;this.queued=true;requestAnimationFrame(()=>this.run())}
+};
+document.addEventListener("click",()=>LinksEnhance.queue(),true);window.addEventListener("popstate",()=>LinksEnhance.queue());window.addEventListener("links:picksaved",()=>LinksEnhance.queue());queueMicrotask(()=>LinksEnhance.queue());
+
+function syncMobileChrome(){
+ const unread=typeof InboxStore!=="undefined"?InboxStore.read().filter(x=>!x.read).length:0;
+ document.querySelectorAll("[data-unread-count],.mobile-unread,.more-unread").forEach(x=>{x.textContent=unread;x.hidden=unread===0});
+}
+document.addEventListener("click",()=>setTimeout(syncMobileChrome,20),true);queueMicrotask(syncMobileChrome);
+
+document.addEventListener("click",e=>{
+ const b=e.target.closest(".public-home [data-public-start],.public-home [data-public-game]");if(!b)return;
+ e.preventDefault();e.stopImmediatePropagation();const game=b.dataset.publicGame||"";
+ modal("START A POOL",'<div class="public-account-gate"><div class="pag-mark">L</div><span>COMMISSIONER ACCOUNT</span><h3>Start your free pool.</h3><p>Create or sign in to your LINKS account first. Your pool setup will be waiting next.</p><label><span>EMAIL</span><input type="email" data-pag-email autocomplete="email" placeholder="you@example.com"></label><button data-pag-continue>CONTINUE ›</button><small>One commissioner pool free for life.</small></div>');
+ document.querySelector("[data-pag-continue]")?.addEventListener("click",()=>{const email=document.querySelector("[data-pag-email]")?.value.trim();if(!email||!email.includes("@")){AppStatus.show("warn","Email needed","Enter a valid email to continue.");return}document.querySelector(".modal")?.remove();const u=new URL(location.href);u.searchParams.delete("welcome");u.searchParams.delete("guest");u.searchParams.set("view","home");history.replaceState({route:"home"},"",u);document.documentElement.dataset.publicHome="false";LinksRouter.apply("home","",true);setTimeout(()=>CreatePoolStudio.open(game||null),100)});
+},true);
+
+function validatePoolRoute(){
+ const u=new URL(location.href);if(u.searchParams.get("view")!=="pool")return;const pool=u.searchParams.get("pool")||"";
+ if(pool&&PoolHubData[pool])return;u.searchParams.set("view","my-pools");u.searchParams.delete("pool");history.replaceState({route:"my-pools"},"",u);
+ AppStatus.show("warn","Pool unavailable","That pool is not available on this device. Showing your pools instead.");LinksRouter.apply("my-pools","",true);
+}
+setTimeout(validatePoolRoute,30);
