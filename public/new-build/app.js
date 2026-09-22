@@ -1670,3 +1670,39 @@ function accessibilityPass(){
  document.querySelectorAll("[data-network-game],[data-open-pool],[data-pickpool]").forEach(x=>{if(!x.getAttribute("aria-label"))x.setAttribute("aria-label",(x.dataset.networkGame?"Start "+x.dataset.networkGame+" pool":x.dataset.openPool||x.dataset.pickpool||"Open pool"))});
 }
 const a11yObserver=new MutationObserver(()=>accessibilityPass());a11yObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(accessibilityPass);
+
+// Results + Pick Review v13 — finish the game-day loop from selection to final result.
+function pickReviewPanel(){
+ const s=currentPickSummary();
+ return '<section class="pick-review-v13"><div class="prv-head"><div><span>YOUR CARD</span><h2>'+(s.due?"Finish your picks.":"Card ready.")+'</h2><p>'+(s.due?"Review every selection before the next lock.":"Everything on this card has a saved selection.")+'</p></div><div class="prv-ring" style="--pct:'+s.pct+'"><b>'+s.pct+'%</b><small>COMPLETE</small></div></div><div class="prv-games">'+DemoSlate.map(g=>{const pick=PickEngine.get(g.id)?.team||"";return '<div class="prv-game '+(pick?"saved":"missing")+'"><div><span>'+g.kick+'</span><b>'+g.away+' <i>VS</i> '+g.home+'</b></div><div><small>YOUR PICK</small><strong>'+(pick?linksEscape(pick):"NEEDED")+'</strong></div><button data-prv-game="'+g.id+'">'+(pick?"CHANGE":"PICK")+' ›</button></div>'}).join("")+'</div><div class="prv-safe"><i>✓</i><div><b>PICK SAFE</b><span>Saved selections stay on this device in New Build testing.</span></div><button data-prv-review>OPEN POOL ›</button></div></section>';
+}
+function mountPickReview(){
+ if(document.documentElement.dataset.view!=="my-picks")return;const w=document.querySelector(".route-workspace");if(!w||w.querySelector(".pick-review-v13"))return;
+ const hero=w.querySelector(".mypicks-hero")||w.querySelector(".route-identity");hero?.insertAdjacentHTML("afterend",pickReviewPanel());
+ w.querySelectorAll("[data-prv-game],[data-prv-review]").forEach(b=>b.onclick=()=>LinksRouter.navigate("pool","Barnes Family"));
+}
+function refreshPickReview(){
+ const old=document.querySelector(".pick-review-v13");if(!old)return;const wrap=document.createElement("div");wrap.innerHTML=pickReviewPanel();old.replaceWith(wrap.firstElementChild);mountPickReview();
+}
+window.addEventListener("links:picksaved",()=>setTimeout(refreshPickReview,30));
+const prvObserver=new MutationObserver(()=>mountPickReview());prvObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountPickReview);
+
+function finalResultsBoard(){
+ const ranked=rankedDemoPlayers(),me=ranked.findIndex(x=>x.p.name==="Jake"),leader=ranked[0];
+ return '<section class="results-board-v13"><div class="rbv-hero"><div><span>WEEK 3 · RESULTS</span><h2>Scoreboard</h2><p>One clean view of the week, your position and the current leader.</p></div><div class="rbv-leader"><small>LEADER</small><b>'+linksEscape(leader?.p.name||"—")+'</b><span>'+(leader?.s.wins||0)+' WINS</span></div></div><div class="rbv-table"><div class="rbv-row head"><span>RANK</span><span>PLAYER</span><span>CORRECT</span><span>STATUS</span></div>'+ranked.map((x,i)=>'<div class="rbv-row '+(x.p.name==="Jake"?"me":"")+'"><strong>'+(i+1)+'</strong><b>'+linksEscape(x.p.name)+'</b><span>'+x.s.wins+'</span><em>'+(x.p.name==="Jake"?"YOU":i===0?"LEADER":"—")+'</em></div>').join("")+'</div><div class="rbv-you"><div><span>YOUR POSITION</span><b>#'+(me+1)+'</b></div><div><span>YOUR SCORE</span><b>'+(me>=0?ranked[me].s.wins:0)+'</b></div><div><span>GAMES FINAL</span><b>'+ScoreDemo.games.filter(g=>g.status==="final").length+'/'+ScoreDemo.games.length+'</b></div><button data-rbv-picks>REVIEW PICKS ›</button></div></section>';
+}
+function mountResultsBoard(){
+ if(document.documentElement.dataset.view!=="results")return;const w=document.querySelector(".route-workspace");if(!w||w.querySelector(".results-board-v13"))return;
+ const identity=w.querySelector(".route-identity");identity?.insertAdjacentHTML("afterend",finalResultsBoard());
+ w.querySelector("[data-rbv-picks]")?.addEventListener("click",()=>LinksRouter.navigate("my-picks"));
+ // Hide older contradictory demo leader/standings blocks; v13 is the source of truth.
+ w.querySelectorAll(".results-v2 .results-standings,.results-v2 .weekly-leader,.results-v2 .results-truth-strip").forEach(x=>x.classList.add("legacy-results-hidden"));
+}
+const rbvObserver=new MutationObserver(()=>mountResultsBoard());rbvObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountResultsBoard);
+
+// Small route loading veil gives phone navigation an intentional app feel.
+function routeLoadingPulse(){
+ let x=document.querySelector(".route-pulse-v13");if(!x){document.body.insertAdjacentHTML("beforeend",'<div class="route-pulse-v13"><i></i></div>');x=document.querySelector(".route-pulse-v13")}
+ x.classList.add("show");setTimeout(()=>x.classList.remove("show"),180);
+}
+document.addEventListener("click",e=>{if(e.target.closest("[data-home-go],[data-home-go2],[data-open-pool],[data-pickpool],.mobile-dock button,[data-ri-home],[data-ri-pools]"))routeLoadingPulse()},true);
