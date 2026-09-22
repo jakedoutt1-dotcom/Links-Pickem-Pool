@@ -347,8 +347,15 @@ const brandObserver=new MutationObserver(()=>applySportMarks());brandObserver.ob
 
 // Installed-app attention badge: progressive enhancement only.
 function syncAppBadge(){
- const incomplete=EntrantStatus?.filter?.(x=>x.name==="Jake"&&x.done<x.total).length||1;
- if("setAppBadge" in navigator)navigator.setAppBadge(incomplete).catch(()=>{});
+ let due=0;
+ try{
+   due=CreatedPools.all().reduce((n,p)=>{
+     if(typeof pickStatusV101!=="function")return n;
+     return n+pickStatusV101(p.name,p.game).due;
+   },0);
+ }catch{}
+ if("setAppBadge" in navigator&&due)navigator.setAppBadge(due).catch(()=>{});
+ else if("clearAppBadge" in navigator)navigator.clearAppBadge().catch(()=>{});
 }
 queueMicrotask(syncAppBadge);
 
@@ -3771,3 +3778,32 @@ function revealTruthV156(){
 }
 LinksLifecycleCallbacksV82.push(revealTruthV156);
 queueMicrotask(()=>{revealTruthV156();LinksLifecycleV82.queue()});
+
+
+// Reveal QA v157 — hard quarantine legacy demo engines from every real launch route.
+function quarantineLegacyDemoV157(){
+ const created=CreatedPools.all();
+ const currentPool=document.documentElement.dataset.pool||new URL(location.href).searchParams.get('pool')||'';
+ const isExplicitTest=/^(qa|test|demo)[ -]/i.test(currentPool);
+ if(!isExplicitTest){
+   [
+    '.slate-engine','.score-engine','.entrant-manager','.field-reveal','.results-arena',
+    '.pool-gameday','.game-center-v21','.smart-inbox-v2','.commissioner-quick',
+    '.pool-room-card','.rivalry-card','.nightboard-card','.exposure-card'
+   ].forEach(sel=>document.querySelectorAll(sel).forEach(x=>x.remove()));
+ }
+ // Old seeded pool registry must not count as user data.
+ ['My Pool','College Pool','Last One Standing'].forEach(name=>{
+   if(!created.some(p=>String(p.name).toLowerCase()===name.toLowerCase())) delete PoolHubData[name];
+ });
+ // No prototype identities or addresses survive into DOM text/attributes.
+ const banned=/jake@example\.com|amanda@example\.com|mike@example\.com|chris@example\.com|Player 2|Player 3/i;
+ document.querySelectorAll('#app *').forEach(el=>{
+   if(el.children.length===0&&banned.test(el.textContent||''))el.closest('.card,.panel,article,.hub-chat,.entrant-list,.route-grid')?.remove();
+   [...el.attributes||[]].forEach(a=>{if(banned.test(a.value||''))el.removeAttribute(a.name)});
+ });
+ document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v157 · DEMO QUARANTINE</span>';if(x.innerHTML!==h)x.innerHTML=h});
+ document.documentElement.dataset.linksBuild='v157';
+}
+LinksLifecycleCallbacksV82.push(quarantineLegacyDemoV157);
+queueMicrotask(()=>{quarantineLegacyDemoV157();LinksLifecycleV82.queue()});
