@@ -905,3 +905,17 @@ function contextualBack(){
  b.onclick=()=>LinksRouter.navigate(v==="pool"?"my-pools":"home");
 }
 const iaObserver=new MutationObserver(()=>{mountPlayerLaunchpad();mountAdminNav();contextualBack()});iaObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(()=>{mountPlayerLaunchpad();mountAdminNav();contextualBack()});
+
+// My Pools v3 — organized portfolio of every competition with status-first navigation.
+function myPoolsV3(){
+ const pools=Object.entries(PoolHubData);
+ return '<section class="mypools-v3"><div class="mypools-hero"><div><span>MY POOLS</span><h2>Everything you’re playing.</h2><p>See what needs attention, what locks next and where you stand.</p></div><button data-new-pool>+ CREATE POOL</button></div><div class="pool-summary"><div><b>'+pools.length+'</b><span>ACTIVE POOLS</span></div><div><b>2</b><span>PICKS DUE</span></div><div><b>1</b><span>TOP 3</span></div><div><b>THU</b><span>NEXT LOCK</span></div></div><div class="pool-portfolio">'+pools.map(([name,p],i)=>'<button class="portfolio-card '+(i===0?"attention":"")+'" data-open-pool="'+name+'"><div class="portfolio-art '+gameCategory(p.game)+'">'+networkGlyph(gameCategory(p.game)==="football"?"football":gameCategory(p.game))+'<span>'+p.accent+'</span></div><div class="portfolio-main"><span>'+p.game+' · '+p.week+'</span><h3>'+name+'</h3><div class="portfolio-meta"><b>'+p.members+' PLAYERS</b><b>'+p.ready+' READY</b><b>'+p.lock+'</b></div><div class="portfolio-progress"><i style="width:'+Math.round(p.ready/p.members*100)+'%"></i></div></div><div class="portfolio-rank"><span>YOUR STATUS</span><b>'+p.rank+'</b><small>'+p.record+'</small><em>'+(i===0?"1 PICK DUE":"OPEN POOL")+' ›</em></div></button>').join("")+'</div><div class="pool-discover"><div><span>LINKS GAME NETWORK</span><h3>Start another kind of pool.</h3><p>Pick’em, Survivor, Squares, brackets, racing, golf, fantasy and more all use the same LINKS account.</p></div><button data-browse-games>BROWSE GAMES ›</button></div></section>';
+}
+function mountMyPoolsV3(){
+ const ws=document.querySelector(".route-workspace");if(!ws||document.documentElement.dataset.view!=="my-pools"||ws.querySelector(".mypools-v3"))return;
+ ws.insertAdjacentHTML("beforeend",myPoolsV3());
+ ws.querySelectorAll("[data-open-pool]").forEach(b=>b.addEventListener("click",e=>{e.preventDefault();e.stopImmediatePropagation();LinksRouter.navigate("pool",b.dataset.openPool)}));
+ ws.querySelector("[data-new-pool]")?.addEventListener("click",()=>modal("CREATE A POOL",'<div class="connected-modal"><span class="badge live">LINKS GAME NETWORK</span><h3>Choose the game first.</h3><p>Your account and commissioner tools carry across every format.</p><button onclick="this.closest(\'.modal\')?.remove()">BROWSE GAME NETWORK</button></div>'));
+ ws.querySelector("[data-browse-games]")?.addEventListener("click",()=>LinksRouter.navigate("home"));
+}
+const poolsObserver=new MutationObserver(()=>mountMyPoolsV3());poolsObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountMyPoolsV3);
