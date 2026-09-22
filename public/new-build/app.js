@@ -1153,3 +1153,27 @@ function trimHome(){
  [".your-week",".links-brief",".pool-pulse",".broadcast-rail",".needs-attention",".my-links-stream",".pick-safe",".rivalry-watch",".legacy-panel",".ai-game-plan",".ai-card-lab",".weekly-recap",".exposure-panel"].forEach(sel=>document.querySelectorAll(".main "+sel).forEach(x=>x.remove()));
 }
 const trimHomeObserver=new MutationObserver(()=>trimHome());trimHomeObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(trimHome);
+
+// Public Landing v1 — a professional front door for people who do not have LINKS yet.
+const PublicLanding={
+ isGuest(){
+  const u=new URL(location.href);
+  return u.searchParams.get("welcome")==="1"||u.searchParams.get("guest")==="1";
+ },
+ html(){
+  return '<section class="public-home"><div class="public-hero"><div class="public-sky"><i></i><i></i><i></i><i></i><div class="public-field"></div></div><nav class="public-nav"><b>LINKS<span>POOLS</span></b><div><button data-public-games>GAMES</button><button data-public-signin>SIGN IN</button></div></nav><div class="public-copy"><span>THE SPORTS POOL APP</span><h1>YOU PICK.<br><em>WE TRACK.</em><br>YOU WIN.</h1><p>Run your pools, make your picks and follow the action from one place. No spreadsheets. No chasing screenshots. No wondering who is winning.</p><div><button data-public-start>START A POOL</button><button class="ghost" data-public-join>JOIN A POOL</button></div><small>PLAYERS JOIN FREE · ONE COMMISSIONER POOL FREE FOR LIFE</small></div><div class="public-phone"><div class="phone-top"><b>LINKS</b><span>LIVE</span></div><div class="phone-card"><span>NEEDS YOU</span><b>1 PICK LEFT</b><small>Barnes Family · NFL Pick’em</small><i>MAKE PICK ›</i></div><div class="phone-card live"><span>LIVE STANDINGS</span><b>#2 JAKE</b><small>8 correct · 1 game live</small><i>WATCH ›</i></div><div class="phone-pools"><i></i><i></i><i></i></div></div></div><div class="public-proof"><div><b>ONE ACCOUNT</b><span>Every pool and every game</span></div><div><b>AUTO TRACKING</b><span>Picks, locks, scores and standings</span></div><div><b>COMMISSIONER TOOLS</b><span>Invites, rules and reminders</span></div><div><b>BUILT FOR MOBILE</b><span>Fast on game day</span></div></div><div class="public-games" id="publicGames"><div class="public-section-title"><span>LINKS GAME NETWORK</span><h2>Whatever your group plays.</h2><p>Start with the game. LINKS handles the rest.</p></div><div class="public-game-grid">'+NetworkGames.slice(0,8).map(x=>'<button data-public-game="'+x[0]+'"><div>'+networkGlyph(x[1])+'</div><span>'+x[1].toUpperCase()+'</span><b>'+x[0]+'</b><em>START ›</em></button>').join("")+'</div></div><div class="public-how"><div class="public-section-title"><span>HOW LINKS WORKS</span><h2>Three steps. Game on.</h2></div><div><article><b>01</b><h3>CREATE OR JOIN</h3><p>Commissioners choose a game and share one direct invite link.</p></article><article><b>02</b><h3>MAKE YOUR PICKS</h3><p>Players see exactly what is due and when each selection locks.</p></article><article><b>03</b><h3>FOLLOW IT LIVE</h3><p>LINKS handles scores, standings, comparison and pool activity.</p></article></div></div><div class="public-cta"><span>READY WHEN YOUR GROUP IS.</span><h2>Bring the pool. Lose the paperwork.</h2><div><button data-public-start>CREATE YOUR FIRST POOL</button><button class="ghost" data-public-signin>ALREADY HAVE LINKS? SIGN IN</button></div></div></section>';
+ },
+ mount(){
+  if(!this.isGuest())return;
+  document.documentElement.dataset.publicHome="true";
+  const app=document.querySelector("#app");if(!app||app.querySelector(".public-home"))return;
+  app.innerHTML=this.html();
+  app.querySelectorAll("[data-public-start]").forEach(b=>b.onclick=()=>CreatePoolStudio.open());
+  app.querySelectorAll("[data-public-game]").forEach(b=>b.onclick=()=>CreatePoolStudio.open(b.dataset.publicGame));
+  app.querySelectorAll("[data-public-games]").forEach(b=>b.onclick=()=>document.querySelector("#publicGames")?.scrollIntoView({behavior:"smooth"}));
+  app.querySelectorAll("[data-public-signin]").forEach(b=>b.onclick=()=>modal("SIGN IN TO LINKS",'<div class="connected-modal"><span class="badge live">WELCOME BACK</span><h3>Your pools are waiting.</h3><p>Account sign-in will connect here. For New Build testing, open your member Home.</p><button data-enter-member>OPEN MEMBER HOME</button></div>'));
+  app.querySelectorAll("[data-public-join]").forEach(b=>b.onclick=()=>modal("JOIN A POOL",'<div class="connected-modal"><span class="badge live">DIRECT INVITES</span><h3>Open your commissioner’s invite link.</h3><p>LINKS invite links take you straight to the correct pool—no searching through pool names.</p></div>'));
+  document.addEventListener("click",e=>{if(e.target.closest("[data-enter-member]")){const u=new URL(location.href);u.searchParams.delete("welcome");u.searchParams.delete("guest");u.searchParams.set("view","home");location.href=u.toString()}},{once:true});
+ }
+};
+setTimeout(()=>PublicLanding.mount(),5);
