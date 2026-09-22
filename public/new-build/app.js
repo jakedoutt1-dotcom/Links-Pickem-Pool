@@ -1551,6 +1551,9 @@ function gameSpecificPickPanel(pool){
   const g=slate[0],saved=PickEngine.get(pool+"-"+g.id)?.team||"";
   return '<div class="hub-panel-head"><span>SURVIVOR · '+linksEscape(p.week)+'</span><h3>One team. Stay alive.</h3><p>Choose one eligible team. Your selection stays private until lock.</p></div><div class="survivor-choice">'+g.choices.map(t=>'<button data-adapter-pick="'+linksEscape(t)+'" data-adapter-game="'+g.id+'" class="'+(saved===t?"selected":"")+'"><i>'+linksEscape(t)+'</i><b>'+linksEscape(t)+'</b><span>'+(saved===t?"YOUR PICK":"SELECT")+'</span></button>').join("")+'</div><div class="adapter-proof"><b>'+(saved?"✓ "+linksEscape(saved)+" SAVED":"SELECTION NEEDED")+'</b><span>'+linksEscape(p.lock)+'</span></div>';
  }
+ if(type==="bracket"){
+  const b=BracketStoreV76.read(pool),rounds=BracketStoreV76.rounds;return '<div class="hub-panel-head"><span>MARCH MADNESS · '+linksEscape(p.week)+'</span><h3>Build your bracket.</h3><p>Choose a winner from every matchup. Each round advances from the selections before it.</p></div><div class="bracket-live-v76">'+rounds.map((r,ri)=>'<section><header><span>ROUND '+(ri+1)+'</span><b>'+r.name+'</b></header>'+r.games.map((g,gi)=>{const id="r"+ri+"g"+gi,teams=BracketStoreV76.teamsFor(b,ri,gi);return '<div class="bracket-game-v76"><small>GAME '+(gi+1)+'</small>'+teams.map(t=>'<button data-bracket-pick="'+linksEscape(t)+'" data-bracket-id="'+id+'" class="'+(b[id]===t?"selected":"")+'">'+linksEscape(t)+'</button>').join("")+'</div>'}).join("")+'</section>').join("")+'</div>';
+ }
  if(type==="squares"){
   const s=SquaresStoreV75.read(pool),claimed=s.claimed||{};return '<div class="hub-panel-head"><span>FOOTBALL SQUARES · '+linksEscape(p.week)+'</span><h3>Claim your squares.</h3><p>Open squares can be claimed until the grid locks. Numbers stay hidden until the commissioner reveals them.</p></div><div class="squares-live-v75"><div class="squares-axis-v75"><span>AWAY</span><b>'+(s.revealed?"NUMBERS REVEALED":"NUMBERS HIDDEN")+'</b><span>HOME</span></div><div class="squares-grid-v75">'+Array.from({length:100},(_,i)=>{const n=i+1,owner=claimed[n]||"";return '<button data-square-v75="'+n+'" class="'+(owner?"claimed":"")+'" '+(owner?"disabled":"")+'><small>'+n+'</small><b>'+(owner?linksEscape(owner):"OPEN")+'</b></button>'}).join("")+'</div><div class="adapter-proof"><b>'+Object.keys(claimed).length+' / 100 CLAIMED</b><span>'+linksEscape(p.lock)+'</span></div></div>';
  }
@@ -1566,7 +1569,7 @@ function gameSpecificPickPanel(pool){
  return "";
 }
 function mountGameAdapter(){
- if(document.documentElement.dataset.view!=="pool")return;const pool=document.documentElement.dataset.pool||"";const type=gameIdentity(PoolHubData[pool]?.game||"").type;if(!["college","survivor","confidence","game33","squares"].includes(type))return;
+ if(document.documentElement.dataset.view!=="pool")return;const pool=document.documentElement.dataset.pool||"";const type=gameIdentity(PoolHubData[pool]?.game||"").type;if(!["college","survivor","confidence","game33","squares","bracket"].includes(type))return;
  const live=document.querySelector(".pool-tab-live");if(!live||live.dataset.adapter==="1")return;
  const active=[...document.querySelectorAll(".poolhub-tabs button,.pool-tabs button")].find(b=>b.classList.contains("active"))?.textContent.trim().toLowerCase();
  if(active!=="picks")return;live.dataset.adapter="1";live.innerHTML=gameSpecificPickPanel(pool);
@@ -2631,7 +2634,7 @@ new MutationObserver(gameNetworkCompletionV64).observe(document.querySelector("#
 function stampV64(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v64 · GAME NETWORK COMPLETION</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV64);
 
 // Game Completeness v65 — unsupported formats never fall through to an NFL pick card.
-const LinksFormatSupportV65=new Set(["football","college","survivor","confidence","game33","squares"]);
+const LinksFormatSupportV65=new Set(["football","college","survivor","confidence","game33","squares","bracket"]);
 function formatSupportV65(){
  if(document.documentElement.dataset.view!=="pool")return;
  const pool=document.documentElement.dataset.pool||"",p=PoolHubData[pool];if(!p)return;
@@ -2761,3 +2764,8 @@ function stampV74(){document.querySelectorAll(".app-build-v18").forEach(x=>{cons
 const SquaresStoreV75={key:"links-squares-v75",read(pool){try{return JSON.parse(localStorage.getItem(this.key+"-"+pool)||'{"claimed":{},"revealed":false}')}catch{return{claimed:{},revealed:false}}},write(pool,x){localStorage.setItem(this.key+"-"+pool,JSON.stringify(x))},claim(pool,n){const x=this.read(pool);x.claimed=x.claimed||{};if(x.claimed[n])return false;const who=(window.LinksSession?.playerName||window.LinksSession?.name||"YOU");x.claimed[n]=who;this.write(pool,x);return true}};
 document.addEventListener("click",e=>{const b=e.target.closest("[data-square-v75]");if(!b)return;e.preventDefault();e.stopImmediatePropagation();const pool=document.documentElement.dataset.pool||"";if(!WeekGate.isOpen()){AppStatus.show("warn","Grid is locked","Squares can no longer be claimed.");return}if(!SquaresStoreV75.claim(pool,b.dataset.squareV75)){AppStatus.show("warn","Square unavailable","That square has already been claimed.");return}AppStatus.show("ok","Square claimed","#"+b.dataset.squareV75);const live=b.closest(".pool-tab-live");if(live){live.innerHTML=gameSpecificPickPanel(pool);live.dataset.adapter="1"}},true);
 function stampV75(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v75 · SQUARES ENGINE</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV75);
+
+// Bracket Engine v76 — advancing tournament selections with persistent round state.
+const BracketStoreV76={key:"links-bracket-v76",seed:["TEN","UK","DUKE","UNC","HOU","KU","UCONN","GONZ"],rounds:[{name:"OPENING ROUND",games:[0,1,2,3]},{name:"SEMIFINALS",games:[0,1]},{name:"CHAMPIONSHIP",games:[0]}],read(pool){try{return JSON.parse(localStorage.getItem(this.key+"-"+pool)||"{}")}catch{return{}}},write(pool,x){localStorage.setItem(this.key+"-"+pool,JSON.stringify(x))},teamsFor(b,r,g){if(r===0)return this.seed.slice(g*2,g*2+2);const prev="r"+(r-1)+"g"+(g*2),prev2="r"+(r-1)+"g"+(g*2+1);return [b[prev],b[prev2]].filter(Boolean)},pick(pool,id,team){const b=this.read(pool),m=id.match(/r(\d+)g(\d+)/),r=+m[1],g=+m[2];b[id]=team;for(let rr=r+1;rr<this.rounds.length;rr++){Object.keys(b).filter(k=>k.startsWith("r"+rr+"g")).forEach(k=>delete b[k])}this.write(pool,b);return b}};
+document.addEventListener("click",e=>{const x=e.target.closest("[data-bracket-pick]");if(!x)return;e.preventDefault();e.stopImmediatePropagation();const pool=document.documentElement.dataset.pool||"";if(!WeekGate.isOpen()){AppStatus.show("warn","Bracket is locked","Tournament selections can no longer be changed.");return}BracketStoreV76.pick(pool,x.dataset.bracketId,x.dataset.bracketPick);AppStatus.show("ok","Bracket updated",x.dataset.bracketPick+" advances");const live=x.closest(".pool-tab-live");if(live){live.innerHTML=gameSpecificPickPanel(pool);live.dataset.adapter="1"}},true);
+function stampV76(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v76 · BRACKET ENGINE</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV76);
