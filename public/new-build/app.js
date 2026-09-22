@@ -2828,3 +2828,130 @@ function enforceEngineOwnershipV81(){
 }
 document.addEventListener("click",e=>{if(e.target.closest(".poolhub-tabs button,.pool-tabs button,[data-bracket-pick],[data-adapter-pick],[data-confidence-team],[data-game33-team],[data-square-v75]"))queueMicrotask(enforceEngineOwnershipV81)},true);queueMicrotask(enforceEngineOwnershipV81);
 function stampV81(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v81 · ENGINE STABILITY</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV81);
+
+
+// Unified Lifecycle v82 — replace competing DOM observers with one scheduled enhancement pass.
+// Historical mount functions remain intact for compatibility; they now run at most once per animation frame.
+const LinksLegacyObserversV82=[brandObserver,poolDayObserver,hubTabObserver,commissionerObserver,visualObserver,stateObserver,resultsObserver,inboxObserver,myPicksObserver,autoObserver,networkObserver,weekGateObserver,readinessObserver,iaObserver,poolsObserver,cleanupObserver,resultObserver,identityObserver,languageObserver,quickObserver,homeV4Observer,homeCleanObserver,homeLiveObserver,briefObserver,trimHomeObserver,riObserver,stateArtObserver,netDecorObserver,hfObserver,mtObserver,md6Observer,mrObserver,sectionObserver,padObserver,statusObserver,bridgeObserver,truthObserver,introObserver,ctaObserver,densityObserver,commissionerTruthObserver,standingTruthObserver,poolTruthObserver,picksTruthObserver,adapterObserver,formatPolishObserver,cfObserver,pssObserver,psrObserver,a11yObserver,prvObserver,rbvObserver,finishObserver,moreObserver,v18Observer,aiHomeObserver,aiToolsObserver,imageQAObserver,gcvObserver,installObserver,ph22Observer,pcvObserver,cqvObserver,pf24Observer,rf25Observer,stamp25Observer,v26o,stamp26o,v27o,stamp27o,v28o,v29o,v30o,o31,o32,o33,o34,o35,o36,o37,o38,o39,o40,o42,o43,o44,o45,o46,o47,o48,o51,o52,o53,o54,o55,o56,o58,premiumObserverV79];
+LinksLegacyObserversV82.forEach(o=>{try{o.disconnect()}catch{}});
+const LinksLifecycleCallbacksV82=[
+  ()=>applySportMarks(),
+  ()=>mountPoolGameDay(),
+  ()=>activatePoolTabs(),
+  ()=>mountCommissionerV3(),
+  ()=>mountVisualFX(),
+  ()=>paintStateGraphics(),
+  ()=>mountResultsArena(),
+  ()=>mountInboxV2(),
+  ()=>mountMyPicksV3(),
+  ()=>mountAutopilot(),
+  ()=>mountGameNetworkV2(),
+  ()=>enforceWeekGate(document),
+  ()=>mountReadiness(),
+  ()=>{mountPlayerLaunchpad();mountAdminNav();contextualBack()},
+  ()=>mountMyPoolsV3(),
+  ()=>cleanupLayout(),
+  ()=>correctResultsUI(),
+  ()=>mountPoolIdentity(),
+  ()=>correctPoolLanguage(),
+  ()=>mountHubQuick(),
+  ()=>mountHomeCommandV4(),
+  ()=>cleanHomeV4(),
+  ()=>mountHomeLive(),
+  ()=>mountHomeBrief(),
+  ()=>trimHome(),
+  ()=>mountRouteIdentity(),
+  ()=>upgradeEmptyStates(),
+  ()=>decorateNetwork(),
+  ()=>homeFinish(),
+  ()=>mountMobileTopbar(),
+  ()=>upgradeMobileDock(),
+  ()=>mobileReadiness(),
+  ()=>polishSectionHeadings(),
+  ()=>mountPoolActionDock(),
+  ()=>normalizeStatusChips(),
+  ()=>homeBridge(),
+  ()=>tightenHomeTruth(),
+  ()=>removeRedundantIntros(),
+  ()=>fixNetworkCTAs(),
+  ()=>dedupeModernHome(),
+  ()=>patchCommissionerTruth(),
+  ()=>patchStandingsTruth(),
+  ()=>patchMyPoolsTruth(),
+  ()=>patchMyPicksTruth(),
+  ()=>mountGameAdapter(),
+  ()=>formatHubPolish(),
+  ()=>mountCommissionerFlow(),
+  ()=>mountPoolSetupSummary(),
+  ()=>mountPoolStatusRibbon(),
+  ()=>accessibilityPass(),
+  ()=>mountPickReview(),
+  ()=>mountResultsBoard(),
+  ()=>mountHomeFinish(),
+  ()=>refineMobileMore(),
+  ()=>appBuildStamp(),
+  ()=>mountAIHome(),
+  ()=>installAITools(),
+  ()=>imageFallbacks(),
+  ()=>mountGameCenterV21(),
+  ()=>mountInstallV21(),
+  ()=>mountPlatformHeroV22(),
+  ()=>mountPlatformChoiceV23(),
+  ()=>mountCommissionerQuickV23(),
+  ()=>mountPreflightV24(),
+  ()=>revealFinishV25(),
+  ()=>stampV25(),
+  ()=>v26Boot(),
+  stampV26,
+  bootV27,
+  stampV27,
+  bootV28,
+  bootV29,
+  bootV30,
+  bootV31,
+  bootV32,
+  bootV33,
+  bootV34,
+  splashThemeV35,
+  bootV36,
+  bootV37,
+  bootV38,
+  bootV39,
+  bootV40,
+  bootV42,
+  bootV43,
+  bootV44,
+  bootV45,
+  bootV46,
+  bootV47,
+  bootV48,
+  bootV51,
+  bootV52,
+  bootV53,
+  bootV54,
+  bootV55,
+  bootV56,
+  bootV58,
+  premiumControlsV79
+];
+const LinksLifecycleV82={
+ pending:false,running:false,
+ queue(){
+  if(this.pending||this.running)return;this.pending=true;
+  requestAnimationFrame(()=>{this.pending=false;this.run()});
+ },
+ run(){
+  if(this.running)return;this.running=true;
+  try{
+   LinksLifecycleCallbacksV82.forEach(fn=>{try{fn()}catch(err){console.warn("LINKS lifecycle",err)}});
+   try{enforceEngineOwnershipV81()}catch{}
+   stampV82();
+  }finally{this.running=false}
+ }
+};
+const unifiedObserverV82=new MutationObserver(()=>LinksLifecycleV82.queue());
+unifiedObserverV82.observe(document.querySelector("#app"),{childList:true,subtree:true});
+window.addEventListener("popstate",()=>LinksLifecycleV82.queue());
+document.addEventListener("links:picksaved",()=>LinksLifecycleV82.queue());
+function stampV82(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v82 · UNIFIED LIFECYCLE</span>";if(x.innerHTML!==html)x.innerHTML=html})}
+queueMicrotask(()=>LinksLifecycleV82.queue());
