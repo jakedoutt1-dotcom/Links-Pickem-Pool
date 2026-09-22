@@ -52,3 +52,28 @@ function wireRouting(){
   addEventListener("popstate",hydrateRoute);
 }
 queueMicrotask(wireRouting);
+
+// Pick Engine v1 — isolated, persistent, deadline-aware demo surface.
+const PickEngine={
+ key:"links-picks-v1",
+ load(){try{return JSON.parse(localStorage.getItem(this.key)||"{}")}catch{return{}}},
+ save(game,team){const all=this.load();all[game]={team,savedAt:new Date().toISOString()};localStorage.setItem(this.key,JSON.stringify(all));return all[game]},
+ get(game){return this.load()[game]||null}
+};
+function pickDemo(){
+ const host=document.createElement("section");host.className="pick-engine card wide";
+ host.innerHTML='<div class="pick-head"><div><span>PICK ENGINE · LIVE PROTOTYPE</span><b>Thursday Night Football</b><small>Your selection saves instantly on this device.</small></div><em>LOCKS 7:15 PM</em></div><div class="pick-match"><button data-team="TEN"><i>TEN</i><b>TITANS</b><span>3–2</span></button><div class="pick-vs"><small>WEEK 7</small><strong>VS</strong><span>Nashville · 7:15 PM</span></div><button data-team="IND"><i>IND</i><b>COLTS</b><span>4–1</span></button></div><div class="pick-proof"><span>○ CHOOSE A TEAM</span><button class="ghost" data-clear-pick>CLEAR</button></div>';
+ const anchor=document.querySelector(".picksafe-card")||document.querySelector(".grid");
+ anchor?.parentNode.insertBefore(host,anchor);
+ const proof=host.querySelector(".pick-proof span");
+ const paint=()=>{
+   const saved=PickEngine.get("week7-ten-ind");
+   host.querySelectorAll("[data-team]").forEach(b=>b.classList.toggle("selected",saved?.team===b.dataset.team));
+   proof.textContent=saved?"✓ SAVED · "+saved.team+" · "+new Date(saved.savedAt).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}):"○ CHOOSE A TEAM";
+   proof.classList.toggle("saved",!!saved);
+ };
+ host.querySelectorAll("[data-team]").forEach(b=>b.addEventListener("click",()=>{PickEngine.save("week7-ten-ind",b.dataset.team);paint()}));
+ host.querySelector("[data-clear-pick]").addEventListener("click",()=>{const all=PickEngine.load();delete all["week7-ten-ind"];localStorage.setItem(PickEngine.key,JSON.stringify(all));paint()});
+ paint();
+}
+queueMicrotask(pickDemo);
