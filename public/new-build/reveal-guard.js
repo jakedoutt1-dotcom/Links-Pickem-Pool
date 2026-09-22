@@ -4,7 +4,8 @@ const DEMO_SELECTORS=[
   ".pick-engine",".slate-engine",".score-engine",".integrity",".deadline-center",
   ".field-reveal",".entrant-manager",".rivalry-card",".nightboard-card",".moment-card",
   ".pool-room-card",".spotlight-card",".field-card",".exposure-card",".broadcast-rail",
-  ".stadium-hero .hero-score",".legacy-card",".recap-card",".trophy-card"
+  ".stadium-hero .hero-score",".legacy-card",".recap-card",".trophy-card",
+  ".home-live-strip",".home-brief",".mobile-readiness-v6"
 ];
 
 function removePrototypeSurfaces(){
@@ -61,3 +62,32 @@ addEventListener("popstate",()=>setTimeout(revealTruthPass,0));
 const revealObserver=new MutationObserver(()=>revealTruthPass());
 const app=document.querySelector("#app");
 if(app) revealObserver.observe(app,{childList:true,subtree:true});
+
+
+// v152 — one-time cleanup of prototype-only browser state.
+// Deliberately preserves created pools, commissioner setup, invites, and New Build navigation state.
+(function clearLegacyPrototypeState(){
+  const marker="links-reveal-clean-v152";
+  try{
+    if(localStorage.getItem(marker)==="1") return;
+    [
+      "links-demo-kickoffs-v1",
+      "links-picks-v1",
+      "links-reminders-v1"
+    ].forEach(key=>localStorage.removeItem(key));
+    localStorage.setItem(marker,"1");
+  }catch{}
+})();
+
+function neutralizePrototypeCopy(){
+  document.querySelectorAll(".home-scorebug,.home-radar").forEach(el=>{
+    if(/85%|LIVE|4\s*games|1\s*due/i.test(el.textContent||"")) el.remove();
+  });
+  document.querySelectorAll(".app-build-v18").forEach(x=>{
+    x.innerHTML="<b>LINKS</b><span>NEW BUILD · v152 · REVEAL CLEAN</span>";
+  });
+}
+queueMicrotask(neutralizePrototypeCopy);
+const copyObserverV152=new MutationObserver(()=>neutralizePrototypeCopy());
+const appV152=document.querySelector("#app");
+if(appV152) copyObserverV152.observe(appV152,{childList:true,subtree:true});
