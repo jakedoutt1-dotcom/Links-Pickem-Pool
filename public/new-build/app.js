@@ -3583,7 +3583,7 @@ function launchFinishV136(){try{cardPulseSyncV130()}catch{}try{modalFinishV131()
 let launchTickV136;const launchObserverV136=new MutationObserver(()=>{clearTimeout(launchTickV136);launchTickV136=setTimeout(launchFinishV136,55)});launchObserverV136.observe(document.querySelector('#app'),{childList:true,subtree:true});LinksLifecycleCallbacksV82.push(launchFinishV136);queueMicrotask(()=>{launchFinishV136();LinksLifecycleV82.queue()});
 
 // Slate Date Integrity v137 — require machine-readable kickoff timestamps before weekly games can publish.
-function slateDateIntegrityV137(){document.querySelectorAll('[data-sb87-kick]').forEach(x=>{if(x.dataset.v137)return;x.dataset.v137='1';x.placeholder='Kickoff date/time · e.g. 2026-09-24 7:15 PM';x.setAttribute('inputmode','text')})}
+function slateDateIntegrityV137(){document.querySelectorAll('[data-sb87-kick]').forEach(x=>{if(x.dataset.v137)return;x.dataset.v137='1';x.placeholder='Kickoff date/time · e.g. 2027-09-24 7:15 PM';x.setAttribute('inputmode','text')})}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-sb87-publish]');if(!b)return;const rows=[...document.querySelectorAll('[data-sb87-row]')],bad=rows.filter(r=>{const v=r.querySelector('[data-sb87-kick]')?.value.trim();return v&&!Number.isFinite(Date.parse(v))});if(bad.length){e.preventDefault();e.stopImmediatePropagation();bad[0].querySelector('[data-sb87-kick]')?.focus();AppStatus.show('warn','Kickoff needs a date','Use a full kickoff date and time so LINKS can lock the game correctly and carry seasons forward.');}},true);
 function releaseV137(){slateDateIntegrityV137();document.documentElement.dataset.linksBuild='v137';document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v137 · DATE INTEGRITY</span>';if(x.innerHTML!==h)x.innerHTML=h})}
 LinksLifecycleCallbacksV82.push(releaseV137);queueMicrotask(()=>{releaseV137();LinksLifecycleV82.queue()});
@@ -3696,3 +3696,47 @@ function revealQaV154(){
  document.documentElement.dataset.linksBuild='v154';
 }
 const revealQaObserverV154=new MutationObserver(()=>revealQaV154());revealQaObserverV154.observe(document.querySelector('#app'),{childList:true,subtree:true});queueMicrotask(revealQaV154);
+
+
+// Reveal QA v155 — season-safe pool history + commissioner truth surface.
+const LinksSeasonV155={
+ current(){return new Date().getFullYear()},
+ keyFor(pool,year=this.current()){return String(pool||'pool')+'::'+year},
+ label(year=this.current()){return String(year)}
+};
+
+const saveCreatedPoolV155=CreatedPools.save.bind(CreatedPools);
+CreatedPools.save=function(p){
+ const next={...p,season:p.season||LinksSeasonV155.current(),seasonKey:p.seasonKey||LinksSeasonV155.keyFor(p.name,p.season||LinksSeasonV155.current())};
+ return saveCreatedPoolV155(next);
+};
+
+function commissionerTruthPanelV155(){
+ const created=CreatedPools.all();
+ const requested=new URL(location.href).searchParams.get('pool')||document.documentElement.dataset.pool||'';
+ const pool=created.find(x=>x.name===requested)||created[0];
+ if(!pool)return '<section class="commander-v3 truth-v155"><div class="command-hero"><div><span>COMMISSIONER COMMAND</span><h2>No pool selected yet.</h2><p>Create a pool first. Commissioner controls will use that pool’s saved slate, players, locks and season.</p></div></div><div class="links-empty picks"><i>＋</i><h3>CREATE YOUR FIRST POOL</h3><p>No fake players, scores or deadlines are shown here.</p></div></section>';
+ const truth=poolTruthV90(pool.name),slate=GameSlateStoreV86.read(pool.name),season=pool.season||LinksSeasonV155.current();
+ const locked=slate.filter(g=>gameLockedV94(g)).length;
+ const next=slate.map(g=>parseKickV94(g.kick||g.kickoff||g.time)).filter(Number.isFinite).filter(t=>t>Date.now()).sort((a,b)=>a-b)[0];
+ const nextLock=next?new Date(next).toLocaleString([], {weekday:'short',hour:'numeric',minute:'2-digit'}):'NOT SET';
+ return '<section class="commander-v3 truth-v155"><div class="command-hero"><div><span>COMMISSIONER COMMAND · '+linksEscape(String(season))+'</span><h2>'+linksEscape(pool.name)+'</h2><p>'+linksEscape(pool.game||'LINKS POOL')+' · controls are derived from saved pool data.</p></div><div class="command-health"><i></i><b>'+(truth.setup?'READY':'SETUP NEEDED')+'</b><small>'+slate.length+' PUBLISHED GAME'+(slate.length===1?'':'S')+'</small></div></div><div class="command-metrics"><button data-cmd="entrants"><small>PLAYERS</small><strong>'+truth.members+'</strong><span>'+truth.ready+' ready</span></button><button data-cmd="invites"><small>INVITES</small><strong>'+Math.max(0,truth.members-1)+'</strong><span>saved for this pool</span></button><button data-cmd="locks"><small>NEXT LOCK</small><strong>'+linksEscape(nextLock)+'</strong><span>'+locked+' / '+slate.length+' locked</span></button><button data-cmd="audit"><small>AUDIT</small><strong>'+AuditLog.all().length+'</strong><span>local test events</span></button></div><div class="command-actions"><button data-cmd="invites">INVITE PLAYERS</button><button data-open-slate-v87>MANAGE SLATE</button><button data-cmd="settings">POOL SETTINGS</button></div><div class="command-feed"><div class="command-feed-head"><b>WEEK / EVENT CONTROL</b><span>Kickoff locks use published timestamps</span></div>'+(slate.length?slate.map(g=>'<div class="command-game"><div><b>'+linksEscape(g.away||g.label||'GAME')+(g.home?' <i>VS</i> '+linksEscape(g.home):'')+'</b><span>'+linksEscape(g.kick||g.kickoff||'Kickoff not set')+'</span></div><em class="'+(gameLockedV94(g)?'locked':'')+'">'+(gameLockedV94(g)?'LOCKED':'OPEN')+'</em></div>').join(''):'<div class="links-empty"><h3>NO SLATE PUBLISHED</h3><p>Publish real games before picks open.</p></div>')+'</div></section>';
+}
+
+commissionerPanel=commissionerTruthPanelV155;
+
+function seasonBackfillV155(){
+ const rows=CreatedPools.all();let changed=false;
+ const fixed=rows.map(p=>{if(p.season&&p.seasonKey)return p;changed=true;const season=Number((p.createdAt||'').slice(0,4))||LinksSeasonV155.current();return {...p,season,seasonKey:LinksSeasonV155.keyFor(p.name,season)}});
+ if(changed)try{localStorage.setItem(CreatedPools.key,JSON.stringify(fixed))}catch{}
+}
+
+function releaseV155(){
+ seasonBackfillV155();
+ if(document.documentElement.dataset.view==='commissioner'){
+   const old=document.querySelector('.commander-v3');if(old){old.outerHTML=commissionerTruthPanelV155();wireCommissionerV3(document.querySelector('.route-workspace'))}
+ }
+ document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v155 · SEASON + COMMISSIONER TRUTH</span>';if(x.innerHTML!==h)x.innerHTML=h});
+ document.documentElement.dataset.linksBuild='v155';
+}
+LinksLifecycleCallbacksV82.push(releaseV155);queueMicrotask(()=>{releaseV155();LinksLifecycleV82.queue()});
