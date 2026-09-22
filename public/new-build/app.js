@@ -1596,13 +1596,13 @@ const FormatAdapters={
 function formatPanel(pool,type){
  const p=PoolHubData[pool],d=FormatAdapters[type];if(!d)return "";
  const head='<div class="format-head fh-'+type+'"><div>'+networkGlyph(type)+'</div><span>'+d.kicker+'</span><h3>'+d.title+'</h3><p>'+d.copy+'</p></div>';
- if(type==="squares")return head+'<div class="squares-preview"><div class="sq-axis"><b>HOME</b><span>?</span><span>?</span><span>?</span></div><div class="sq-grid">'+Array.from({length:16},(_,i)=>'<button data-format-choice="Square '+(i+1)+'"><small>'+(i+1)+'</small><b>'+(i===5?"YOU":"OPEN")+'</b></button>').join("")+'</div><div class="format-foot"><span>NUMBERS ASSIGNED AFTER GRID FILLS</span><button>VIEW FULL GRID ›</button></div></div>';
- if(type==="bracket")return head+'<div class="bracket-preview"><div><button data-format-choice="TEN">TEN</button><i></i><button data-format-choice="UK">UK</button></div><b>→</b><div class="br-next"><span>YOUR WINNER</span><strong>SELECT</strong></div></div><div class="format-foot"><span>BRACKET SAVES AS YOU GO</span><button>OPEN FULL BRACKET ›</button></div>';
- if(type==="racing")return head+'<div class="race-preview">'+["5","9","11","22"].map((n,i)=>'<button data-format-choice="CAR '+n+'"><i>'+n+'</i><b>'+(["Larson","Elliott","Hamlin","Logano"][i])+'</b><span>SELECT DRIVER</span></button>').join("")+'</div><div class="format-foot"><span>RACE CARD · '+linksEscape(p?.week||"")+'</span><button>VIEW FIELD ›</button></div>';
- if(type==="golf")return head+'<div class="golf-preview">'+["SCHEFFLER","MCILROY","SCHAUFFELE","MORIKAWA"].map((n,i)=>'<button data-format-choice="'+n+'"><i>'+(i+1)+'</i><b>'+n+'</b><span>SELECT</span></button>').join("")+'</div><div class="format-foot"><span>TOURNAMENT FIELD</span><button>VIEW ALL GOLFERS ›</button></div>';
+ if(type==="squares")return head+'<div class="squares-preview"><div class="sq-axis"><b>HOME</b><span>?</span><span>?</span><span>?</span></div><div class="sq-grid">'+Array.from({length:16},(_,i)=>'<button data-format-choice="Square '+(i+1)+'"><small>'+(i+1)+'</small><b>OPEN</b></button>').join("")+'</div><div class="format-foot"><span>NUMBERS ASSIGNED AFTER GRID FILLS</span><button>VIEW FULL GRID ›</button></div></div>';
+ if(type==="bracket")return head+'<div class="format-empty-v169"><b>TOURNAMENT FIELD</b><span>Commissioner publishes the verified field before picks open.</span></div>';
+ if(type==="racing")return head+'<div class="format-empty-v169"><b>RACE FIELD</b><span>Commissioner publishes the verified driver field for '+linksEscape(p?.week||"race day")+'.</span></div>';
+ if(type==="golf")return head+'<div class="format-empty-v169"><b>TOURNAMENT FIELD</b><span>Commissioner publishes the verified golfer field before picks open.</span></div>';
  if(type==="game33")return head+'<div class="g33-preview"><div><span>CURRENT TARGET</span><b>33</b><small>POINTS</small></div><div><span>YOUR PICK</span><strong>—</strong><small>NOT SELECTED</small></div></div><button class="format-primary" data-format-choice="OPEN GAME 33">MAKE GAME 33 PICK ›</button>';
- if(type==="fantasy"||type==="dynasty")return head+'<div class="fantasy-preview"><div><span>'+((type==="dynasty")?"ROSTER":"STARTERS")+'</span><b>'+((type==="dynasty")?"24":"9")+'</b><small>'+((type==="dynasty")?"PLAYERS":"ACTIVE")+'</small></div><div><span>'+((type==="dynasty")?"CAP ROOM":"PROJECTED")+'</span><b>'+((type==="dynasty")?"$18":"127.4")+'</b><small>'+((type==="dynasty")?"AVAILABLE":"POINTS")+'</small></div><div><span>'+((type==="dynasty")?"DRAFT PICKS":"MATCHUP")+'</span><b>'+((type==="dynasty")?"7":"1–0")+'</b><small>'+((type==="dynasty")?"NEXT 2 YRS":"RECORD")+'</small></div></div><div class="format-foot"><span>'+((type==="dynasty")?"FRONT OFFICE READY":"LINEUP READY")+'</span><button>'+((type==="dynasty")?"OPEN TEAM":"SET LINEUP")+' ›</button></div>';
- return "";
+ if(type==="fantasy"||type==="dynasty")return head+'<div class="format-empty-v169"><b>ENGINE IN DEVELOPMENT</b><span>This format opens after its full roster and scoring engine passes launch QA.</span></div>';
+ return head;
 }
 function mountFormatAdapter(){
  if(document.documentElement.dataset.view!=="pool")return;
@@ -4112,3 +4112,12 @@ function rolloverTruthV168(){
 }
 LinksLifecycleCallbacksV82.push(rolloverTruthV168);
 queueMicrotask(()=>{rolloverTruthV168();LinksLifecycleV82.queue()});
+
+
+// Structural Demo Removal v169 — legacy format fallbacks are now truthful at source, not hidden after render.
+function structuralTruthV169(){
+ document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v169 · STRUCTURAL TRUTH</span>';if(x.innerHTML!==h)x.innerHTML=h});
+ document.documentElement.dataset.linksBuild='v169';
+}
+LinksLifecycleCallbacksV82.push(structuralTruthV169);
+queueMicrotask(()=>{structuralTruthV169();LinksLifecycleV82.queue()});
