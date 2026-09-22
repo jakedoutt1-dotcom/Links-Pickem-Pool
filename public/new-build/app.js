@@ -2080,3 +2080,39 @@ function mountPlatformHeroV22(){
  main.querySelectorAll(".home-command-v4,.stadium-command-hero").forEach(x=>x.classList.add("v22-secondary-hero"));
 }
 const ph22Observer=new MutationObserver(()=>mountPlatformHeroV22());ph22Observer.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountPlatformHeroV22);
+
+// Finish Line v23 — clarify FREE Pools vs LINKS AI and tighten commissioner onboarding.
+function platformChoiceV23(){
+ return '<section class="platform-choice-v23"><div class="pcv-title"><span>CHOOSE YOUR LINKS</span><b>Two ways to play game day.</b><small>No confusion: Pools are free. AI research is a separate optional tool.</small></div><div class="pcv-grid"><button class="pcv-ai" data-ai-studio><i>AI</i><div><span>LINKS AI</span><b>BUILD A RESEARCH CARD</b><small>Multi-sport research · Share cards · Sportsbook handoff</small></div><em>3 FREE CARDS / DAY ›</em></button><button class="pcv-pools" data-pcv-pools><i>FREE</i><div><span>LINKS POOLS</span><b>CREATE OR PLAY A POOL</b><small>Pick’em · Survivor · Squares · Fantasy · More</small></div><em>POOLS STAY FREE ›</em></button></div></section>';
+}
+function mountPlatformChoiceV23(){
+ if(document.documentElement.dataset.view!=="home"||document.documentElement.dataset.publicHome==="true")return;const main=document.querySelector(".main");if(!main||main.querySelector(".platform-choice-v23"))return;
+ const hero=main.querySelector(".platform-hero-v22");hero?.insertAdjacentHTML("afterend",platformChoiceV23());main.querySelector("[data-pcv-pools]")?.addEventListener("click",()=>LinksRouter.navigate("my-pools"));
+}
+const pcvObserver=new MutationObserver(()=>mountPlatformChoiceV23());pcvObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountPlatformChoiceV23);
+
+// Commissioner quick-start keeps setup, invites, readiness and week control in one obvious sequence.
+function commissionerQuickStartV23(){
+ const r=entrantReadiness(),pct=r.total?Math.round(r.ready/r.total*100):100;
+ return '<section class="comm-quick-v23"><div class="cqv-head"><div><span>COMMISSIONER QUICK START</span><h2>Run the pool from here.</h2><p>Setup, players, picks and weekly control in the order you actually need them.</p></div><strong>'+pct+'%<small>READY</small></strong></div><div class="cqv-steps"><button data-cqv="setup"><i>1</i><div><b>POOL SETUP</b><span>Game, rules, deadline</span></div><em>OPEN ›</em></button><button data-cqv="invite"><i>2</i><div><b>ADD PLAYERS</b><span>Invite link, email or text</span></div><em>INVITE ›</em></button><button data-cqv="players"><i>3</i><div><b>PLAYER READINESS</b><span>'+r.ready+' of '+r.total+' complete</span></div><em>CHECK ›</em></button><button data-cqv="week"><i>4</i><div><b>WEEK CONTROL</b><span>Open, close and lock</span></div><em>MANAGE ›</em></button></div></section>';
+}
+function mountCommissionerQuickV23(){
+ if(document.documentElement.dataset.view!=="commissioner")return;const w=document.querySelector(".route-workspace");if(!w||w.querySelector(".comm-quick-v23"))return;
+ const flow=w.querySelector(".commissioner-flow-v12")||w.querySelector(".route-identity");flow?.insertAdjacentHTML("afterend",commissionerQuickStartV23());
+ w.querySelectorAll("[data-cqv]").forEach(b=>b.onclick=()=>{const k=b.dataset.cqv;if(k==="setup"){typeof openSetupStudio==="function"?openSetupStudio():CreatePoolStudio.open()}else if(k==="invite"){const pool=Object.keys(PoolHubData)[0]||"Barnes Family";modal("INVITE PLAYERS",inviteCenter(pool))}else if(k==="players"){document.querySelector(".entrant-manager,.readiness-strip")?.scrollIntoView({behavior:"smooth",block:"center"})}else{document.querySelector(".week-control-v2,.week-control,.commander-v3")?.scrollIntoView({behavior:"smooth",block:"center"})}});
+}
+const cqvObserver=new MutationObserver(()=>mountCommissionerQuickV23());cqvObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountCommissionerQuickV23);
+
+// Share a real LINKS URL alongside card text, using native share when available.
+function cardShareURL(){
+ const u=new URL(location.href);u.searchParams.set("view","home");u.searchParams.set("ai","card");return u.toString();
+}
+async function shareAICardV23(){
+ const text=cardShareText(),url=cardShareURL();
+ if(navigator.share){try{await navigator.share({title:"My LINKS Research Card",text,url});return}catch{}}
+ try{await navigator.clipboard.writeText(text+"\n"+url);AppStatus.show("ok","Card copied","Card details and a LINKS link are ready to paste.")}catch{modal("SHARE CARD",'<div class="ai-share-fallback"><pre>'+linksEscape(text+"\n"+url)+'</pre></div>')}
+}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-share-card]");if(!b)return;e.preventDefault();e.stopImmediatePropagation();shareAICardV23()},true);
+
+// If a shared AI link is opened, take the visitor straight to the research experience.
+setTimeout(()=>{const u=new URL(location.href);if(u.searchParams.get("ai")==="card"&&document.documentElement.dataset.publicHome!=="true")AIStudio.open()},120);
