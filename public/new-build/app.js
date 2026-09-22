@@ -3740,3 +3740,34 @@ function releaseV155(){
  document.documentElement.dataset.linksBuild='v155';
 }
 LinksLifecycleCallbacksV82.push(releaseV155);queueMicrotask(()=>{releaseV155();LinksLifecycleV82.queue()});
+
+
+// Reveal QA v156 — final demo quarantine and truthful notification/badge states.
+function revealTruthV156(){
+ const realPools=CreatedPools.all();
+ // Never seed notifications or app badges from prototype entrants.
+ if(!realPools.length){
+   try{localStorage.removeItem(InboxStore.key)}catch{}
+   document.querySelectorAll('.smart-inbox-v2,.inbox-card,.notification-rail').forEach(x=>x.remove());
+   if('clearAppBadge' in navigator)navigator.clearAppBadge().catch(()=>{});
+ }
+ // Demo pool names are never valid launch destinations unless explicitly created by the user.
+ DemoPoolNamesV89.forEach(name=>{
+   if(!realPools.some(p=>String(p.name).toLowerCase()===String(name).toLowerCase())) delete PoolHubData[name];
+ });
+ // Hide legacy route shells that still contain seeded operational copy; real v101+ surfaces replace them.
+ document.querySelectorAll('.route-workspace .route-hero,.route-workspace .route-grid').forEach(x=>{
+   const t=x.textContent||'';
+   if(/59 of 64|scoring healthy|5\s*NEED PICKS|My Pool · Week 3|Pending invites/i.test(t))x.remove();
+ });
+ // Keep the installed-app badge derived only from real due picks.
+ const due=realPools.reduce((n,p)=>n+pickStatusV101(p.name,p.game).due,0);
+ if('setAppBadge' in navigator){
+   if(due)navigator.setAppBadge(due).catch(()=>{});
+   else if('clearAppBadge' in navigator)navigator.clearAppBadge().catch(()=>{});
+ }
+ document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v156 · REVEAL INTEGRITY</span>';if(x.innerHTML!==h)x.innerHTML=h});
+ document.documentElement.dataset.linksBuild='v156';
+}
+LinksLifecycleCallbacksV82.push(revealTruthV156);
+queueMicrotask(()=>{revealTruthV156();LinksLifecycleV82.queue()});
