@@ -718,3 +718,27 @@ if("serviceWorker" in navigator){
   });
  }).catch(()=>{});
 }
+
+// Invite Center v2 — commissioner growth flow with link, email/SMS handoff and join preview.
+const InviteState={key:"links-invites-v2",read(){try{return JSON.parse(localStorage.getItem(this.key)||"[]")}catch{return[]}},add(v){const a=this.read();a.unshift({value:v,at:new Date().toISOString(),status:"sent"});localStorage.setItem(this.key,JSON.stringify(a.slice(0,30)));return a}};
+function inviteCenter(pool="Barnes Family"){
+ const base=location.origin+location.pathname+"?view=pool&pool="+encodeURIComponent(pool)+"&invite=1";
+ const sent=InviteState.read();
+ return '<section class="invite-v2"><div class="invite-hero"><div><span>INVITE CENTER</span><h2>Bring the whole group in.</h2><p>One link opens the right pool. Existing members sign in; new players get a short setup.</p></div><div class="invite-mark">+</div></div><div class="invite-link"><div><span>POOL INVITE LINK</span><b data-invite-url></b></div><button data-copy-invite>COPY LINK</button></div><div class="invite-actions"><button data-share-invite="text"><i>↗</i><div><b>SHARE INVITE</b><span>Text, email or any installed app</span></div></button><button data-share-invite="email"><i>@</i><div><b>EMAIL</b><span>Open a prefilled invitation</span></div></button></div><form class="invite-direct"><div><span>DIRECT INVITE</span><h3>Email or mobile number</h3></div><input type="text" placeholder="player@email.com or mobile number" autocomplete="off"><button>SEND INVITE</button></form><div class="join-preview"><span>WHAT PLAYERS SEE</span><div><i>L</i><div><b>'+pool+'</b><small>You’ve been invited to join</small></div><em>JOIN POOL ›</em></div><p>No pool searching. The invitation takes them directly to the correct pool.</p></div>'+(sent.length?'<div class="invite-history"><span>RECENT INVITES</span>'+sent.slice(0,3).map(x=>'<div><b></b><em>SENT</em></div>').join("")+'</div>':'')+'</section>';
+}
+function openInviteCenter(pool){
+ modal("INVITE PLAYERS",'<div id="inviteV2Mount"></div>');const h=document.querySelector("#inviteV2Mount");h.innerHTML=inviteCenter(pool);wireInvite(h,pool);
+}
+function wireInvite(h,pool){
+ const url=location.origin+location.pathname+"?view=pool&pool="+encodeURIComponent(pool)+"&invite=1";
+ const urlEl=h.querySelector("[data-invite-url]");if(urlEl)urlEl.textContent=url;
+ h.querySelectorAll(".invite-history div b").forEach((b,i)=>b.textContent=InviteState.read()[i]?.value||"");
+ h.querySelector("[data-copy-invite]")?.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(url);AppStatus.show("ok","Invite link copied","Ready to paste into a message.")}catch{AppStatus.show("warn","Copy unavailable","Select the invite link and copy it manually.")}});
+ h.querySelector('[data-share-invite="text"]')?.addEventListener("click",async()=>{const data={title:"Join "+pool+" on LINKS",text:"Join my "+pool+" pool on LINKS.",url};if(navigator.share){try{await navigator.share(data)}catch{}}else{AppStatus.show("warn","Share menu unavailable","Use Copy Link instead.")}});
+ h.querySelector('[data-share-invite="email"]')?.addEventListener("click",()=>{location.href="mailto:?subject="+encodeURIComponent("Join "+pool+" on LINKS")+"&body="+encodeURIComponent("Join my pool on LINKS:\n\n"+url)});
+ h.querySelector(".invite-direct")?.addEventListener("submit",e=>{e.preventDefault();const input=e.currentTarget.querySelector("input"),v=input.value.trim();if(!v)return;InviteState.add(v);AuditLog.add("INVITE SENT","Invite queued for "+v);AppStatus.show("ok","Invite queued",v);h.innerHTML=inviteCenter(pool);wireInvite(h,pool)});
+}
+document.addEventListener("click",e=>{
+ const b=e.target.closest("[data-invite-players],[data-cmd='invite'],.invite-players");
+ if(!b)return;const pool=new URL(location.href).searchParams.get("pool")||"Barnes Family";e.preventDefault();e.stopImmediatePropagation();openInviteCenter(pool);
+},true);
