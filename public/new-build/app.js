@@ -2368,3 +2368,12 @@ function premiumDetailV37(){
 }
 function bootV37(){premiumDetailV37()}const o37=new MutationObserver(bootV37);o37.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV37);
 function stampV37(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v37 · PREMIUM DETAIL</span>")}const s37=new MutationObserver(stampV37);s37.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV37);
+
+// Resilience Finish v38 — graceful UI recovery for missing media and network states.
+function resilienceV38(){
+ document.querySelectorAll("img:not([data-v38])").forEach(img=>{img.dataset.v38="1";img.addEventListener("error",()=>{img.classList.add("v38-media-failed");img.setAttribute("aria-hidden","true")},{once:true})});
+ document.querySelectorAll("button:not([data-v38-title])").forEach(b=>{b.dataset.v38Title="1";if(!b.title){const t=(b.textContent||"").replace(/\s+/g," ").trim();if(t)b.title=t}});
+}
+window.addEventListener("offline",()=>document.body.classList.add("links-offline-v38"));window.addEventListener("online",()=>document.body.classList.remove("links-offline-v38"));if(!navigator.onLine)document.body.classList.add("links-offline-v38");
+function bootV38(){resilienceV38()}const o38=new MutationObserver(bootV38);o38.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV38);
+function stampV38(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v38 · RESILIENCE FINISH</span>")}const s38=new MutationObserver(stampV38);s38.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV38);
