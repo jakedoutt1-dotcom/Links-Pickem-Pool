@@ -426,3 +426,6 @@ html,body{min-height:100%;min-height:calc(var(--links-vh,1vh)*100)}body{overscro
 
 /* v131 launch candidate */
 .touch-ready-v131{min-height:44px}.modalback{overscroll-behavior:contain}.modalbox{max-height:min(88vh,760px);max-height:min(calc(var(--links-vh,1vh)*88),760px);overflow:auto;scrollbar-width:thin}.modalbox::-webkit-scrollbar{width:5px}.modalbox::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:8px}@media(max-width:560px){.modalback{align-items:flex-end!important;padding:0!important}.modalbox{width:100%!important;max-width:none!important;max-height:92vh!important;border-radius:20px 20px 0 0!important;padding-bottom:max(18px,env(safe-area-inset-bottom))!important}}
+
+/* v132 truth sweep */
+.hub-live.truth-v132 div b{font-variant-numeric:tabular-nums}.hub-activity.truth-v132 p{display:flex;justify-content:space-between;gap:12px;align-items:center}.hub-activity.truth-v132 small{text-align:right;color:#8e9aa6}.hub-live.truth-v132,.hub-activity.truth-v132{border-color:rgba(255,255,255,.08)!important}@media(max-width:560px){.hub-activity.truth-v132 p{align-items:flex-start;flex-direction:column;gap:3px}.hub-activity.truth-v132 small{text-align:left}}
