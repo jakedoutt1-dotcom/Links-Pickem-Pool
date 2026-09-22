@@ -4066,3 +4066,49 @@ function revealCandidateV167(){
 }
 LinksLifecycleCallbacksV82.push(revealCandidateV167);
 queueMicrotask(()=>{revealCandidateV167();LinksLifecycleV82.queue()});
+
+
+// Slate Rollover Integrity v168 — ESPN-fed pools advance automatically; commissioner-published slates never get overwritten.
+const AutoSlateMetaV168={
+ key:"links-auto-slate-meta-v168",
+ all(){try{return JSON.parse(localStorage.getItem(this.key)||"{}")||{}}catch{return{}}},
+ read(pool){return this.all()[pool]||null},
+ write(pool,v){const a=this.all();a[pool]=v;localStorage.setItem(this.key,JSON.stringify(a))}
+};
+function slateFingerprintV168(rows){return (rows||[]).map(g=>String(g.id||"")+"@"+String(g.kick||g.kickAt||"")).sort().join("|")}
+function syncAutoSlateV168(pool,rows,league){
+ if(!rows?.length)return;
+ const current=GameSlateStoreV86.read(pool),meta=AutoSlateMetaV168.read(pool);
+ const legacyAuto=current.length&&current.every(g=>g?.source==="ESPN");
+ const auto=!current.length||meta?.mode==="auto"||legacyAuto;
+ if(!auto)return;
+ const fp=slateFingerprintV168(rows);
+ if(slateFingerprintV168(current)!==fp)GameSlateStoreV86.write(pool,rows);
+ AutoSlateMetaV168.write(pool,{mode:"auto",league,fingerprint:fp,updated:Date.now()});
+}
+function liveNflPoolSetupV168(){
+ if(NflLiveV159.status!=="ready"||!NflLiveV159.events.length)return;
+ CreatedPools.all().filter(p=>nflPoolV159(p.name)).forEach(p=>syncAutoSlateV168(p.name,NflLiveV159.slate(),"NFL"));
+ LinksLifecycleV82.queue();
+}
+function liveCollegePoolSetupV168(){
+ if(CollegeLiveV160.status!=="ready"||!CollegeLiveV160.events.length)return;
+ CreatedPools.all().filter(p=>collegePoolV160(p.name)).forEach(p=>syncAutoSlateV168(p.name,CollegeLiveV160.slate(),"COLLEGE"));
+ LinksLifecycleV82.queue();
+}
+liveNflPoolSetupV159=liveNflPoolSetupV168;
+liveCollegePoolSetupV160=liveCollegePoolSetupV168;
+
+// Any commissioner-published slate becomes manual and is protected from future feed rollover.
+document.addEventListener("click",e=>{
+ if(!e.target.closest("[data-sb87-publish]"))return;
+ const pool=document.documentElement.dataset.pool||"";
+ if(pool)setTimeout(()=>{const rows=GameSlateStoreV86.read(pool);if(rows.length)AutoSlateMetaV168.write(pool,{mode:"manual",fingerprint:slateFingerprintV168(rows),updated:Date.now()})},0);
+},true);
+
+function rolloverTruthV168(){
+ document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v168 · LIVE SLATE ROLLOVER</span>';if(x.innerHTML!==h)x.innerHTML=h});
+ document.documentElement.dataset.linksBuild='v168';
+}
+LinksLifecycleCallbacksV82.push(rolloverTruthV168);
+queueMicrotask(()=>{rolloverTruthV168();LinksLifecycleV82.queue()});
