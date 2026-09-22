@@ -2189,3 +2189,23 @@ document.addEventListener("click",e=>{if(!e.target.closest("[data-route],[data-m
 // Give the build stamp an accurate finish-line label.
 function stampV25(){document.querySelectorAll(".app-build-v18").forEach(x=>{x.innerHTML="<b>LINKS</b><span>NEW BUILD · v25 · FINISHING PASS</span>"})}
 const stamp25Observer=new MutationObserver(()=>stampV25());stamp25Observer.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV25);
+
+
+// Finish Product v26 — interaction guardrails + polished quick actions.
+function finishProductV26(){
+  if(document.querySelector(".finish-dock-v26")||document.documentElement.dataset.publicHome==="true")return;
+  document.body.insertAdjacentHTML("beforeend",'<nav class="finish-dock-v26" aria-label="Quick actions"><button data-v26="home"><i>⌂</i><span>HOME</span></button><button data-v26="pools"><i>▦</i><span>POOLS</span></button><button class="ai" data-ai-studio><i>AI</i><span>CREATE CARD</span></button><button data-v26="scores"><i>●</i><span>LIVE</span></button><button data-v26="commish"><i>⚙</i><span>COMMISH</span></button></nav>');
+  document.querySelectorAll("[data-v26]").forEach(b=>b.addEventListener("click",()=>{const k=b.dataset.v26;if(k==="home")LinksRouter.navigate("home");else if(k==="pools")LinksRouter.navigate("my-pools");else if(k==="scores")LinksRouter.navigate("results");else LinksRouter.navigate("commissioner")}));
+}
+function polishActionsV26(){
+ document.querySelectorAll("button").forEach(b=>{
+  if(b.dataset.v26Bound||b.disabled)return;
+  const t=(b.textContent||"").trim().toUpperCase();
+  const map=t.includes("VIEW CONFIRMATION")||t==="FINISH MY PICKS"?"my-picks":t.includes("OPEN MATCHUP")||t.includes("OPEN POOL ROOM")||t.includes("GAME ROOM")?"my-pools":t.includes("VIEW LEGACY")||t.includes("SPORTS HISTORY")?"results":t.includes("PREVIEW JOIN FLOW")?"my-pools":null;
+  if(map){b.dataset.v26Bound="1";b.addEventListener("click",()=>LinksRouter.navigate(map))}
+ });
+}
+function v26Boot(){finishProductV26();polishActionsV26()}
+const v26o=new MutationObserver(()=>v26Boot());v26o.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(v26Boot);
+function stampV26(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v26 · FINISH PRODUCT</span>")}
+const stamp26o=new MutationObserver(stampV26);stamp26o.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV26);
