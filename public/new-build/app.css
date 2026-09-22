@@ -274,3 +274,6 @@ html{background:#050908}body{min-height:100dvh}.links-v27{min-height:100dvh}.lin
 
 /* Final Review v55 */
 html{scroll-behavior:smooth}.links-v27 [aria-busy="true"],.links-v27 .v55-busy{cursor:progress}.links-v27 [aria-busy="true"]::after{content:"";display:inline-block;width:10px;height:10px;margin-left:8px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;vertical-align:-1px;animation:v55spin .7s linear infinite}@keyframes v55spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.links-v27 [aria-busy="true"]::after{animation:none}}@media(max-width:700px){.links-v27 .route-workspace{padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))}}
+
+/* Presentation Lock v56 */
+.links-review-v56 .route-workspace[data-review-ready="true"]{animation:v56in .2s ease-out}@keyframes v56in{from{opacity:.985;transform:translateY(2px)}to{opacity:1;transform:none}}.links-review-v56 .primary:focus-visible,.links-review-v56 button:focus-visible,.links-review-v56 a:focus-visible{outline:2px solid rgba(241,117,33,.8);outline-offset:3px}@media(prefers-reduced-motion:reduce){.links-review-v56 .route-workspace[data-review-ready="true"]{animation:none}}
