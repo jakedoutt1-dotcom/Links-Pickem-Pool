@@ -2054,7 +2054,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#39ff88!important;font-weight:900">LINKS PICK’EM POOLS — v655</span></footer>
+  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#39ff88!important;font-weight:900">LINKS PICK’EM POOLS — v656</span></footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2780,7 +2780,7 @@ function ensureHomeAd(){const w=document.querySelector("#linksHomeAd1");if(w)req
 function ensureSectionAd(id){const el=document.getElementById(id);if(!el)return;el.querySelectorAll(".links-fixed-ad").forEach(requestAdIn)}
 function tryInitManualAd(id){const el=document.getElementById(id);if(el)requestAdIn(el)}
 window.addEventListener("load",()=>setTimeout(ensureHomeAd,600));
-const LINKS_BUILD_V653="v655";
+const LINKS_BUILD_V653="v656";
 let linksVersionCheckV653Busy=false;
 async function checkLinksVersionV653(){
   if(linksVersionCheckV653Busy)return;
@@ -3934,6 +3934,9 @@ async function refreshOfficialWeekNumber(){
   }catch(e){return officialWeek||week||1}
 }
 async function renderStandings(){
+  // v656: clear any previous week markup immediately, before fresh week data loads.
+  // This prevents a stale Week 2 card flashing above the current Week 3 state.
+  const standingsBodyNow=$("#standingsBody");if(standingsBodyNow)standingsBodyNow.innerHTML="";
   if(!standingsManualSelectionV198)standingsWeek=Number(standingsWeek||week||1);
   const sw=Number(standingsWeek||week||1);
   let d;try{d=await api(qForWeek(`/api/standings?_=${Date.now()}`,sw))}catch(e){return}
