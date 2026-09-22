@@ -1933,3 +1933,52 @@ function mountAIHome(){
  const bridge=main.querySelector(".home-bridge-v7")||main.querySelector(".home-live-strip");if(bridge)bridge.insertAdjacentHTML("afterend",aiHomeV19());else main.insertAdjacentHTML("beforeend",aiHomeV19());
 }
 const aiHomeObserver=new MutationObserver(()=>mountAIHome());aiHomeObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountAIHome);
+
+// Product Finish v20 — one consistent command rail and clear empty/error states.
+const PrimaryNav=[
+ {view:"home",label:"HOME",icon:"⌂"},
+ {view:"my-pools",label:"POOLS",icon:"P"},
+ {view:"my-picks",label:"PICKS",icon:"✓"},
+ {view:"results",label:"RESULTS",icon:"▥"}
+];
+function desktopCommandRail(){
+ if(document.documentElement.dataset.publicHome==="true"||innerWidth<900)return;
+ if(document.querySelector(".desktop-rail-v20"))return;
+ document.body.insertAdjacentHTML("afterbegin",'<aside class="desktop-rail-v20"><button class="drv-brand" data-drv="home"><b>L</b><span>LINKS</span></button><nav>'+PrimaryNav.map(x=>'<button data-drv="'+x.view+'"><i>'+x.icon+'</i><span>'+x.label+'</span></button>').join("")+'</nav><div class="drv-bottom"><button data-drv="notifications"><i>•</i><span>INBOX</span></button><button data-drv="commissioner"><i>C</i><span>ADMIN</span></button></div></aside>');
+ document.querySelectorAll("[data-drv]").forEach(b=>b.addEventListener("click",()=>LinksRouter.navigate(b.dataset.drv)));
+ syncDesktopRail();
+}
+function syncDesktopRail(){
+ const v=document.documentElement.dataset.view||"home";document.querySelectorAll("[data-drv]").forEach(b=>b.classList.toggle("active",b.dataset.drv===v));
+}
+function workspaceFrame(){
+ if(document.documentElement.dataset.publicHome==="true")return;
+ document.body.classList.toggle("has-desktop-rail",innerWidth>=900);desktopCommandRail();syncDesktopRail();
+}
+window.addEventListener("resize",()=>{if(innerWidth<900){document.querySelector(".desktop-rail-v20")?.remove();document.body.classList.remove("has-desktop-rail")}else workspaceFrame()});
+document.addEventListener("click",()=>requestAnimationFrame(syncDesktopRail),true);window.addEventListener("popstate",()=>requestAnimationFrame(syncDesktopRail));queueMicrotask(workspaceFrame);
+
+// AI Studio gets a proper entry in secondary navigation.
+function installAITools(){
+ document.querySelectorAll(".mobile-more-sheet").forEach(sheet=>{
+  if(sheet.querySelector("[data-ai-studio]"))return;
+  const head=sheet.querySelector(".mobile-more-head");const b=document.createElement("button");b.className="mobile-ai-v20";b.dataset.aiStudio="1";b.innerHTML='<i>AI</i><div><b>LINKS AI</b><span>Research & card builder</span></div><em>›</em>';head?.after(b);
+ });
+}
+const aiToolsObserver=new MutationObserver(()=>installAITools());aiToolsObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(installAITools);
+
+// Friendly empty-state repair for routes that would otherwise look broken.
+function finishEmptyStates(){
+ const w=document.querySelector(".route-workspace");if(!w)return;const v=document.documentElement.dataset.view||"";
+ const configs={messages:["messages","No messages yet","Pool conversations and commissioner announcements will appear here."],notifications:["messages","You’re caught up","Deadlines, invites and important pool updates will appear here."],"my-pools":["pools","No pools yet","Create a pool or open an invite to get started."]};
+ const cfg=configs[v];if(!cfg||w.querySelector(".links-empty"))return;
+ const meaningful=[...w.children].filter(x=>!x.matches(".route-identity,.links-context-v15,.route-hero,.v15-superseded")).some(x=>x.textContent.trim().length>40);
+ if(!meaningful)w.insertAdjacentHTML("beforeend",linksEmpty(...cfg));
+}
+document.addEventListener("click",()=>requestAnimationFrame(finishEmptyStates),true);window.addEventListener("popstate",()=>requestAnimationFrame(finishEmptyStates));queueMicrotask(finishEmptyStates);
+
+// Visual QA: mark broken images quietly and replace them with a branded fallback.
+function imageFallbacks(){
+ document.querySelectorAll("img").forEach(img=>{if(img.dataset.linksFallback)return;img.dataset.linksFallback="1";img.addEventListener("error",()=>{img.classList.add("links-img-broken");img.alt=img.alt||"LINKS";})});
+}
+const imageQAObserver=new MutationObserver(()=>imageFallbacks());imageQAObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(imageFallbacks);
