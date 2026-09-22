@@ -2460,3 +2460,12 @@ function finalFlowGuardV46(){
 }
 function bootV46(){finalFlowGuardV46()}const o46=new MutationObserver(bootV46);o46.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV46);
 function stampV46(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v46 · FINAL FLOW GUARD</span>")}const s46=new MutationObserver(stampV46);s46.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV46);
+
+// Reveal Readiness v47 — stable visual viewport, safe-area finish and last-route continuity.
+function revealReadyV47(){
+ const v=document.documentElement.dataset.view||"home";try{sessionStorage.setItem("links-last-view-v47",v)}catch{}
+ document.querySelectorAll("img").forEach(i=>{if(!i.hasAttribute("draggable"))i.draggable=false});
+ document.querySelectorAll("button").forEach(b=>{if(!b.hasAttribute("type"))b.type="button"});
+}
+function bootV47(){revealReadyV47()}const o47=new MutationObserver(bootV47);o47.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV47);
+function stampV47(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v47 · REVEAL READINESS</span>")}const s47=new MutationObserver(stampV47);s47.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV47);
