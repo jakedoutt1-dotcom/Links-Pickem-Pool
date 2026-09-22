@@ -3039,3 +3039,29 @@ LinksLifecycleCallbacksV82.push(protectUnconfiguredPoolsV86);
 document.addEventListener("click",e=>{if(e.target.closest(".poolhub-tabs button,.pool-tabs button"))queueMicrotask(protectUnconfiguredPoolsV86)},true);
 function stampV86(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v86 · GAME SETUP INTEGRITY</span>";if(x.innerHTML!==html)x.innerHTML=html})}
 queueMicrotask(()=>{protectUnconfiguredPoolsV86();stampV86();LinksLifecycleV82.queue()});
+
+
+// Commissioner Slate Builder v87 — publish the actual weekly matchups for newly created pools.
+function slateBuilderV87(pool){
+ const saved=GameSlateStoreV86.read(pool),rows=saved.length?saved:[{away:"",home:"",kick:""}];
+ return '<section class="slate-builder-v87"><div class="sb87-head"><div><span>GAME SETUP</span><h2>Publish the player slate.</h2><p>Add the matchups that belong in this pool. Player picks stay closed until you publish.</p></div><b>'+rows.length+' GAME'+(rows.length===1?'':'S')+'</b></div><div class="sb87-rows">'+rows.map((g,i)=>'<div class="sb87-row" data-sb87-row><strong>'+(i+1)+'</strong><input data-sb87-away placeholder="Away team" value="'+linksEscape(g.away||'')+'"><span>VS</span><input data-sb87-home placeholder="Home team" value="'+linksEscape(g.home||'')+'"><input data-sb87-kick placeholder="Kickoff · e.g. Sat 6:30 PM" value="'+linksEscape(g.kick||'')+'"><button type="button" data-sb87-remove aria-label="Remove game">×</button></div>').join('')+'</div><div class="sb87-actions"><button type="button" class="secondary" data-sb87-add>＋ ADD GAME</button><button type="button" class="primary" data-sb87-publish>PUBLISH SLATE ›</button></div></section>';
+}
+function openSlateBuilderV87(pool){
+ modal("GAME SETUP",'<div id="slateBuilderV87Mount"></div>');const h=document.querySelector("#slateBuilderV87Mount");if(!h)return;h.innerHTML=slateBuilderV87(pool);wireSlateBuilderV87(h,pool);
+}
+function wireSlateBuilderV87(h,pool){
+ const collect=()=>[...h.querySelectorAll("[data-sb87-row]")].map((r,i)=>({id:"cfg-"+(i+1),away:r.querySelector("[data-sb87-away]")?.value.trim()||"",home:r.querySelector("[data-sb87-home]")?.value.trim()||"",kick:r.querySelector("[data-sb87-kick]")?.value.trim()||""}));
+ h.querySelector("[data-sb87-add]")?.addEventListener("click",()=>{const rows=collect();rows.push({away:"",home:"",kick:""});GameSlateStoreV86.write(pool,rows);h.innerHTML=slateBuilderV87(pool);wireSlateBuilderV87(h,pool)});
+ h.querySelectorAll("[data-sb87-remove]").forEach((b,i)=>b.addEventListener("click",()=>{const rows=collect();rows.splice(i,1);GameSlateStoreV86.write(pool,rows.length?rows:[{away:"",home:"",kick:""}]);h.innerHTML=slateBuilderV87(pool);wireSlateBuilderV87(h,pool)}));
+ h.querySelector("[data-sb87-publish]")?.addEventListener("click",()=>{const rows=collect().filter(x=>x.away&&x.home&&x.kick);if(!rows.length){AppStatus.show("warn","Slate incomplete","Add at least one matchup with both teams and kickoff time.");return}if(rows.some(x=>x.away.toLowerCase()===x.home.toLowerCase())){AppStatus.show("warn","Check the matchup","A team cannot play itself.");return}GameSlateStoreV86.write(pool,rows);AuditLog.add("GAME SLATE PUBLISHED",pool+" · "+rows.length+" games");document.querySelector(".modal")?.remove();AppStatus.show("ok","Slate published",rows.length+" game"+(rows.length===1?"":"s")+" ready for players.");document.querySelector(".pool-tab-live")?.removeAttribute("data-v86-protected");LinksLifecycleV82.queue()});
+}
+function commissionerSlateActionV87(){
+ if(document.documentElement.dataset.view!=="pool")return;const pool=document.documentElement.dataset.pool||"",p=PoolHubData[pool];if(!p||!CreatedPools.all().some(x=>x.name===pool))return;
+ const type=gameIdentity(p.game||"").type;if(!["football","college","confidence","survivor","game33"].includes(type))return;
+ const hub=document.querySelector(".pool-hub"),hero=hub?.querySelector(".poolhub-hero");if(!hero||hub.querySelector("[data-open-slate-v87]"))return;
+ hero.insertAdjacentHTML("afterend",'<div class="pool-setup-action-v87"><div><span>COMMISSIONER SETUP</span><b>'+(GameSlateStoreV86.has(pool)?'SLATE PUBLISHED':'PLAYER PICKS ARE WAITING')+'</b><small>'+(GameSlateStoreV86.has(pool)?'Edit this week’s games anytime before locks.':'Publish the actual games before opening picks.')+'</small></div><button data-open-slate-v87>'+ (GameSlateStoreV86.has(pool)?'EDIT GAME SLATE':'SET UP GAMES') +' ›</button></div>');
+}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-open-slate-v87]");if(!b)return;e.preventDefault();openSlateBuilderV87(document.documentElement.dataset.pool||"")},true);
+LinksLifecycleCallbacksV82.push(commissionerSlateActionV87);
+function stampV87(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v87 · COMMISSIONER SLATE BUILDER</span>";if(x.innerHTML!==html)x.innerHTML=html})}
+queueMicrotask(()=>{commissionerSlateActionV87();stampV87();LinksLifecycleV82.queue()});
