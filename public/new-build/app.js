@@ -3461,3 +3461,23 @@ homeBrief=homeBriefV117;
 function replaceHomeBroadcastV117(){if(document.documentElement.dataset.view!=='home')return;const cmd=document.querySelector('.home-command-v4');if(!cmd)return;const live=cmd.querySelector('.home-live-strip');if(live&&!live.classList.contains('real-v117'))live.outerHTML=homeLiveTruthV117();const brief=cmd.querySelector('.home-brief');if(brief&&!brief.classList.contains('real-v117'))brief.outerHTML=homeBriefV117();cmd.querySelectorAll('[data-home-pool]').forEach(b=>b.onclick=()=>LinksRouter.navigate('pool',b.dataset.homePool));cmd.querySelectorAll('[data-live-results]').forEach(b=>b.onclick=()=>LinksRouter.navigate('results'));cmd.querySelectorAll('[data-home-go2]').forEach(b=>b.onclick=()=>LinksRouter.navigate(b.dataset.homeGo2));cmd.querySelector('[data-brief-inbox]')?.addEventListener('click',()=>LinksRouter.navigate('notifications'))}
 function suppressLegacyHomeObserversV117(){document.querySelectorAll('.home-launch,.game-showcase').forEach(x=>x.remove())}
 LinksLifecycleCallbacksV82.push(replaceHomeBroadcastV117,suppressLegacyHomeObserversV117);function stampV117(){document.querySelectorAll('.app-build-v18').forEach(x=>{const html='<b>LINKS</b><span>NEW BUILD · v117 · HOME BROADCAST TRUTH</span>';if(x.innerHTML!==html)x.innerHTML=html});document.documentElement.dataset.linksBuild='v117'}LinksLifecycleCallbacksV82.push(stampV117);queueMicrotask(()=>{replaceHomeBroadcastV117();suppressLegacyHomeObserversV117();stampV117();LinksLifecycleV82.queue()});
+
+
+// LINKS Card Builder Placement v119 — make the multi-sport research card visible where players naturally act.
+function cardBuilderCTA119(context='home'){
+ const rows=AIMixV70.read(),count=rows.length,sports=new Set(rows.map(x=>x.sport)).size;
+ return '<section class="card-builder-v119 '+context+'"><div class="cb119-mark"><i>+</i><b>LINKS</b></div><div class="cb119-copy"><span>LINKS CARD BUILDER</span><h2>Build one card across your sports.</h2><p>Research selections, mix sports, review the combined card, then share it or continue to an available sportsbook partner.</p><div class="cb119-state"><b>'+(count?count+' LEG'+(count===1?'':'S')+' SAVED':'START A NEW CARD')+'</b><small>'+(count?(sports+' SPORT'+(sports===1?'':'S')+' ON YOUR CARD'):'NFL · COLLEGE · NBA · NHL · MLB · GOLF · MORE')+'</small></div></div><button data-card-builder-v119>'+(count?'CONTINUE CARD':'BUILD A CARD')+' ›</button></section>';
+}
+function mountCardBuilder119(){
+ const view=document.documentElement.dataset.view;
+ if(view==='home'){
+  const home=document.querySelector('.home-command-v4,.home-command');if(home&&!home.querySelector('.card-builder-v119')){const anchor=home.querySelector('.visual-network-v118')||home.querySelector('.home-live-strip');anchor?.insertAdjacentHTML('afterend',cardBuilderCTA119('home'))}
+ }
+ if(view==='pool'){
+  const hub=document.querySelector('.pool-hub');if(hub&&!hub.querySelector('.card-builder-v119')){const hero=hub.querySelector('.game-day-header-v118')||hub.querySelector('.poolhub-hero');hero?.insertAdjacentHTML('afterend',cardBuilderCTA119('pool'))}
+ }
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-card-builder-v119]');if(!b)return;e.preventDefault();e.stopImmediatePropagation();AIStudio.open();setTimeout(()=>{mountMixedCardV70();mixDockV71();launchTrustV80();aiStadiumVisualV68?.()},0)},true);
+LinksLifecycleCallbacksV82.push(mountCardBuilder119);
+function stampV119(){document.querySelectorAll('.app-build-v18').forEach(x=>{const html='<b>LINKS</b><span>NEW BUILD · v119 · CARD BUILDER PLACEMENT</span>';if(x.innerHTML!==html)x.innerHTML=html});document.documentElement.dataset.linksBuild='v119'}
+LinksLifecycleCallbacksV82.push(stampV119);queueMicrotask(()=>{mountCardBuilder119();stampV119();LinksLifecycleV82.queue()});
