@@ -2054,7 +2054,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#39ff88!important;font-weight:900">LINKS PICK’EM POOLS — v659</span></footer>
+  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#39ff88!important;font-weight:900">LINKS PICK’EM POOLS — v660</span></footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2705,7 +2705,7 @@ let poolName=sessionStorage.getItem("poolName")||"";
 let sport=sessionStorage.getItem("poolSport")||"";
 let poolGames=[];try{poolGames=JSON.parse(sessionStorage.getItem("poolGames")||"[]")}catch(e){poolGames=[]}
 let week=1,officialWeek=1,adminWeek=1,standingsWeek=1,boot=null,me=null,collegeCandidates=[],scoreTimer=null,liveRefreshBusy=false,lastScoreHasLive=false,venmoStarted=false,poolDisplayTimezone="auto";
-let pickLockCountdownTimerV198=null,standingsManualSelectionV198=false;
+let pickLockCountdownTimerV198=null,standingsManualSelectionV198=false,standingsRenderTokenV660=0;
 let linksPaidPackageV363=sessionStorage.getItem("linksPaidPackageV363")==="1";
 let linksPackageNameV364=sessionStorage.getItem("linksPackageNameV364")||"free";
 function packageLabelV364(p){return ({free:"FREE FOR LIFE",plus:"LINKS PLUS",nfl_package:"NFL PACKAGE",all_access:"ALL ACCESS"})[String(p||"free").toLowerCase()]||String(p||"FREE").replaceAll("_"," ").toUpperCase()}
@@ -2780,7 +2780,7 @@ function ensureHomeAd(){const w=document.querySelector("#linksHomeAd1");if(w)req
 function ensureSectionAd(id){const el=document.getElementById(id);if(!el)return;el.querySelectorAll(".links-fixed-ad").forEach(requestAdIn)}
 function tryInitManualAd(id){const el=document.getElementById(id);if(el)requestAdIn(el)}
 window.addEventListener("load",()=>setTimeout(ensureHomeAd,600));
-const LINKS_BUILD_V653="v659";
+const LINKS_BUILD_V653="v660";
 let linksVersionCheckV653Busy=false;
 async function checkLinksVersionV653(){
   if(linksVersionCheckV653Busy)return;
@@ -3926,7 +3926,7 @@ async function changeStandingsWeekInPlace(nextWeek){
 async function refreshOfficialWeekNumber(){
   const max=sport==="nfl"?22:15;
   try{
-    const d=await api(qForWeek("/api/default-week",officialWeek||week||1));
+    const d=await api(`/api/default-week?_=${Date.now()}`);
     const n=Math.max(1,Math.min(max,Number(d?.week||officialWeek||week||1)));
     officialWeek=n;week=n;
     const master=$("#weekSelect");if(master)master.value=String(n);
@@ -3934,15 +3934,19 @@ async function refreshOfficialWeekNumber(){
   }catch(e){return officialWeek||week||1}
 }
 async function renderStandings(){
-  // v659: standingsWeek is resolved before renderStandings is called. Never render a prior week while current week is being resolved.
-  const standingsBodyNow=$("#standingsBody");if(standingsBodyNow&&!standingsBodyNow.innerHTML.trim())standingsBodyNow.innerHTML=`<div class="small" style="text-align:center;padding:18px 8px">Loading standings…</div>`;
+  // v660: one atomic standings render. A stale async request is never allowed to paint an older week.
+  const renderToken=++standingsRenderTokenV660;
+  const standingsBodyNow=$("#standingsBody");
+  if(standingsBodyNow)standingsBodyNow.innerHTML=`<div class="small" style="text-align:center;padding:18px 8px">Loading standings…</div>`;
   if(!standingsManualSelectionV198)standingsWeek=Number(officialWeek||week||1);
   const sw=Math.max(1,Math.min(sport==="nfl"?22:15,Number(standingsWeek||officialWeek||week||1)));
   let d;try{d=await api(qForWeek(`/api/standings?_=${Date.now()}`,sw))}catch(e){return}
+  if(renderToken!==standingsRenderTokenV660)return;
   // v652: The selected RESULTS WEEK is the single source of truth for the
   // standings message, lock state, table, and tiebreaker visibility.
   let lockInfo=null;
   try{lockInfo=await api(qForWeek(`/api/bootstrap?_=${Date.now()}`,sw))}catch(e){}
+  if(renderToken!==standingsRenderTokenV660)return;
   const selectedLock=lockInfo?.locks?.[sw]||lockInfo?.sourceKickoff||null;
   const selectedLocked=!!(selectedLock&&Date.now()>=Date.parse(selectedLock));
   $("#standingsTitle").textContent="Standings";$("#potBadge").textContent="";$("#potBadge").classList.add("hide");
@@ -4297,7 +4301,7 @@ $("#adminBackToPoolV372")?.addEventListener("click",exitAdminModeV372);
 
 function showTab(name){
   // v657: never expose stale standings from the previously viewed week while fresh data is loading.
-  if(name==="standings"){const sb=$("#standingsBody");if(sb)sb.innerHTML=`<div class="small" style="text-align:center;padding:18px 8px">Loading standings…</div>`;const st=$("#standingsTitle");if(st)st.textContent="Standings";}
+  if(name==="standings"){standingsRenderTokenV660++;const sb=$("#standingsBody");if(sb)sb.innerHTML=`<div class="small" style="text-align:center;padding:18px 8px">Loading standings…</div>`;const st=$("#standingsTitle");if(st)st.textContent="Standings";}
   // v512: Games That Matter is injected dynamically, so explicitly hide it whenever a normal NFL tab opens.
   document.getElementById("gamesThatMatterV505")?.classList.add("hide");
   setTimeout(()=>ensureSectionAd(name),350);
