@@ -2526,3 +2526,10 @@ function reviewFinishV53(){
 }
 function bootV53(){reviewFinishV53()}const o53=new MutationObserver(bootV53);o53.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV53);
 function stampV53(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v53 · REVIEW FINISH</span>")}const s53=new MutationObserver(stampV53);s53.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV53);
+
+// Signature Finish v54 — restrained stadium signature across primary experiences.
+function signatureFinishV54(){
+ document.querySelectorAll(".route-hero,.platform-hero-v22,.game-center-v28,.comm-tools-v30").forEach(x=>{if(!x.querySelector(":scope > .v54-signature"))x.insertAdjacentHTML("beforeend",'<span class="v54-signature" aria-hidden="true"></span>')});
+}
+function bootV54(){signatureFinishV54()}const o54=new MutationObserver(bootV54);o54.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV54);
+function stampV54(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v54 · SIGNATURE FINISH</span>")}const s54=new MutationObserver(stampV54);s54.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV54);
