@@ -595,3 +595,20 @@ function wireSetup(host){
  host.querySelector("[data-save-setup]")?.addEventListener("click",()=>{AuditLog.add("POOL RULES SAVED","Commissioner updated scoring and deadline configuration");modal("RULES SAVED",'<div class="connected-modal"><span class="badge live">READY</span><h3>Pool rules saved.</h3><p>Players will see the same rules in their Pool Hub before making picks.</p></div>')});
 }
 document.addEventListener("click",e=>{if(e.target.closest('[data-cmd="settings"]')){e.preventDefault();e.stopImmediatePropagation();openSetupStudio()}},true);
+
+// Commissioner Autopilot v1 — researched weekly checklist + resilient no-show policy.
+const AutopilotState={key:"links-autopilot-v1",read(){try{return JSON.parse(localStorage.getItem(this.key)||"{}")}catch{return{}}},write(p){const n={...this.read(),...p};localStorage.setItem(this.key,JSON.stringify(n));return n}};
+function autopilotPanel(){
+ const s={reminders:true,recap:true,autopick:false,...AutopilotState.read()};
+ const tasks=[["SLATE","Week 3 games loaded","done"],["ACCESS","Picks are open","done"],["PLAYERS","5 players still need picks","action"],["SCORING","Feed healthy","done"],["RECAP","Send after final game",s.recap?"armed":"off"]];
+ return '<section class="autopilot-v1"><div class="auto-head"><div><span>COMMISSIONER AUTOPILOT</span><h2>Run the week by exception.</h2><p>LINKS handles routine work and puts only the exceptions in front of you.</p></div><div class="auto-orbit"><i></i><b>AUTO</b><small>WATCHING</small></div></div><div class="auto-task-list">'+tasks.map(t=>'<div class="'+t[2]+'"><i>'+(t[2]==="done"?"✓":t[2]==="action"?"!":"●")+'</i><b>'+t[0]+'</b><span>'+t[1]+'</span><em>'+t[2].toUpperCase()+'</em></div>').join("")+'</div><div class="auto-controls"><button data-auto="reminders" class="'+(s.reminders?"on":"")+'"><i></i><div><b>MISSING-PICK REMINDERS</b><span>Only contact players who still need picks.</span></div><em>'+(s.reminders?"ON":"OFF")+'</em></button><button data-auto="recap" class="'+(s.recap?"on":"")+'"><i></i><div><b>WEEKLY RECAP</b><span>Prepare standings and winner recap after finals.</span></div><em>'+(s.recap?"ON":"OFF")+'</em></button><button data-auto="autopick" class="'+(s.autopick?"on":"")+'"><i></i><div><b>NO-SHOW AUTO PICK</b><span>Optional fallback policy; commissioner controlled.</span></div><em>'+(s.autopick?"ON":"OFF")+'</em></button></div><div class="auto-next"><span>NEXT AUTOMATION</span><b>Missing-pick check</b><em>Before Thursday lock</em><button data-auto-run>RUN CHECK NOW ›</button></div></section>';
+}
+function mountAutopilot(){
+ const ws=document.querySelector(".route-workspace");if(!ws||document.documentElement.dataset.view!=="commissioner"||ws.querySelector(".autopilot-v1"))return;
+ const cmd=ws.querySelector(".commander-v3");if(cmd)cmd.insertAdjacentHTML("afterend",autopilotPanel());else ws.insertAdjacentHTML("beforeend",autopilotPanel());wireAutopilot(ws);
+}
+function wireAutopilot(ws){
+ ws.querySelectorAll("[data-auto]").forEach(b=>b.addEventListener("click",()=>{const k=b.dataset.auto,s=AutopilotState.read();AutopilotState.write({[k]:!(s[k]??(k!=="autopick"))});AuditLog.add("AUTOPILOT UPDATED",k+" setting changed");const old=ws.querySelector(".autopilot-v1");old.outerHTML=autopilotPanel();wireAutopilot(ws)}));
+ ws.querySelector("[data-auto-run]")?.addEventListener("click",()=>{AuditLog.add("AUTOPILOT CHECK","Weekly readiness check completed");modal("WEEK CHECK COMPLETE",'<div class="connected-modal"><span class="badge live">5 NEED PICKS</span><h3>Everything else is ready.</h3><p>Games are loaded, picks are open, scoring is healthy and only the five missing players need attention.</p></div>')});
+}
+const autoObserver=new MutationObserver(()=>mountAutopilot());autoObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountAutopilot);
