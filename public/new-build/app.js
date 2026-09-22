@@ -806,3 +806,55 @@ routeStateObserver.observe(document.querySelector("#app"),{childList:true,subtre
 
 // Run after legacy startup code has had a chance to initialize.
 setTimeout(()=>LinksRouter.boot(),0);
+
+// Week Control v2 — commissioner open/close now actually governs pick interaction.
+const WeekGate={
+ state(){return {open:true,...CommissionerState.read()}},
+ isOpen(){return this.state().weekOpen!==false},
+ reason(){return this.isOpen()?"":"Commissioner has closed Week 3."}
+};
+function enforceWeekGate(root=document){
+ const closed=!WeekGate.isOpen();
+ root.querySelectorAll("[data-pick-team],[data-hub-team]").forEach(b=>{
+   b.classList.toggle("week-closed",closed);b.setAttribute("aria-disabled",closed?"true":"false");
+ });
+ root.querySelectorAll(".week-gate-banner").forEach(x=>x.remove());
+ if(closed){
+   root.querySelectorAll(".mypicks-v3,.pool-hub,.pool-tab-live").forEach(host=>{
+     if(host.querySelector(":scope > .week-gate-banner"))return;
+     host.insertAdjacentHTML("afterbegin",'<div class="week-gate-banner"><i>◆</i><div><b>WEEK 3 CLOSED</b><span>The commissioner has paused new or changed picks. Existing saved picks remain intact.</span></div><em>COMMISSIONER CONTROL</em></div>');
+   });
+ }
+}
+document.addEventListener("click",e=>{
+ const b=e.target.closest("[data-pick-team],[data-hub-team]");
+ if(!b||WeekGate.isOpen())return;
+ e.preventDefault();e.stopImmediatePropagation();
+ AppStatus.show("warn","Week 3 is closed","Your saved picks are unchanged. The commissioner must reopen the week.");
+},true);
+
+// Make the existing commissioner open/close control enforce the state immediately.
+document.addEventListener("click",e=>{
+ const b=e.target.closest("[data-week-toggle],[data-cmd='week']");
+ if(!b)return;
+ setTimeout(()=>{enforceWeekGate(document);AppStatus.show(WeekGate.isOpen()?"ok":"warn",WeekGate.isOpen()?"Week reopened":"Week closed",WeekGate.isOpen()?"Unlocked games can be edited again.":"New pick changes are paused.")},60);
+},true);
+
+const weekGateObserver=new MutationObserver(()=>enforceWeekGate(document));weekGateObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(()=>enforceWeekGate(document));
+
+// Readiness is derived from entrant data instead of hard-coded reminder counts.
+function entrantReadiness(){
+ const entries=Object.entries(EntrantStatus||{});let total=entries.length,ready=0,missing=[];
+ entries.forEach(([name,v])=>{const done=typeof v==="object"?(v.done??v.picks??0):0;const need=typeof v==="object"?(v.total??3):3;if(done>=need)ready++;else missing.push(name)});
+ return {total,ready,missing};
+}
+function readinessStrip(){
+ const r=entrantReadiness(),pct=r.total?Math.round(r.ready/r.total*100):100;
+ return '<div class="readiness-strip"><div class="readiness-ring" style="--ready:'+pct+'%"><b>'+pct+'%</b></div><div><span>PLAYER READINESS</span><b>'+r.ready+' OF '+r.total+' COMPLETE</b><small>'+(r.missing.length?r.missing.join(", ")+" still need picks.":"Everyone is ready.")+'</small></div><button data-ready-remind '+(!r.missing.length?'disabled':'')+'>'+(r.missing.length?'REMIND '+r.missing.length:'ALL READY')+'</button></div>';
+}
+function mountReadiness(){
+ const cmd=document.querySelector(".commander-v3");if(!cmd||cmd.querySelector(".readiness-strip"))return;
+ cmd.insertAdjacentHTML("beforeend",readinessStrip());
+ cmd.querySelector("[data-ready-remind]")?.addEventListener("click",()=>{const r=entrantReadiness();r.missing.forEach(n=>ReminderQueue.add?.(n));AuditLog.add("REMINDERS SENT",r.missing.length+" incomplete players");AppStatus.show("ok","Reminders queued",r.missing.length+" incomplete player"+(r.missing.length===1?"":"s")+" targeted.")});
+}
+const readinessObserver=new MutationObserver(()=>mountReadiness());readinessObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountReadiness);
