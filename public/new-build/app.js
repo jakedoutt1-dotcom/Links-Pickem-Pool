@@ -612,3 +612,36 @@ function wireAutopilot(ws){
  ws.querySelector("[data-auto-run]")?.addEventListener("click",()=>{AuditLog.add("AUTOPILOT CHECK","Weekly readiness check completed");modal("WEEK CHECK COMPLETE",'<div class="connected-modal"><span class="badge live">5 NEED PICKS</span><h3>Everything else is ready.</h3><p>Games are loaded, picks are open, scoring is healthy and only the five missing players need attention.</p></div>')});
 }
 const autoObserver=new MutationObserver(()=>mountAutopilot());autoObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountAutopilot);
+
+// Pool Room v2 — persistent, safe, game-day conversation.
+const RoomStore={
+ key:"links-room-v2",
+ load(pool){try{const x=JSON.parse(localStorage.getItem(this.key)||"{}");return x[pool]||[]}catch{return[]}},
+ add(pool,text){let all={};try{all=JSON.parse(localStorage.getItem(this.key)||"{}")}catch{};const arr=all[pool]||[];arr.push({who:"Jake",text:String(text).slice(0,280),at:new Date().toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})});all[pool]=arr.slice(-40);localStorage.setItem(this.key,JSON.stringify(all));return all[pool]}
+};
+function roomV2(pool){
+ const seed=[{who:"Commissioner",text:"Week 3 is open. Picks lock at each game kickoff.",at:"9:04 AM"},{who:"Amanda",text:"That Thursday game is tougher than it looks.",at:"11:18 AM"},{who:"Mike",text:"I’m locked in. Good luck everybody.",at:"1:42 PM"}];
+ const msgs=[...seed,...RoomStore.load(pool)];
+ return '<section class="room-v2"><div class="room-hero"><div><span>POOL ROOM</span><h2>'+pool+'</h2><p>Game-day talk, commissioner updates and bragging rights.</p></div><div class="room-live"><i></i><b>64</b><span>MEMBERS</span></div></div><div class="room-pinned"><i>L</i><div><span>PINNED BY COMMISSIONER</span><b>Week 3 picks lock at each game kickoff.</b></div><em>RULES ›</em></div><div class="room-feed">'+msgs.map((m,i)=>'<div class="room-message '+(m.who==="Jake"?"mine":"")+'"><i>'+m.who.charAt(0)+'</i><div><b>'+m.who+(m.who==="Commissioner"?' <small>COMMISSIONER</small>':'')+'</b><p></p><time>'+m.at+'</time></div></div>').join("")+'</div><form class="room-compose"><i>J</i><input maxlength="280" placeholder="Message the pool…" autocomplete="off"><button>SEND</button></form><div class="room-foot"><span>Keep it fun. Commissioner can moderate the room.</span><b>GAME DAY CHAT</b></div></section>';
+}
+function hydrateRoomText(host,pool){
+ const seed=["Week 3 is open. Picks lock at each game kickoff.","That Thursday game is tougher than it looks.","I’m locked in. Good luck everybody."];
+ const texts=[...seed,...RoomStore.load(pool).map(x=>x.text)];
+ host.querySelectorAll(".room-message p").forEach((p,i)=>p.textContent=texts[i]||"");
+}
+function openRoomV2(pool){
+ const html='<div id="roomV2Mount"></div>';modal("POOL ROOM",html);
+ const host=document.querySelector("#roomV2Mount");host.innerHTML=roomV2(pool);hydrateRoomText(host,pool);
+ host.querySelector(".room-compose")?.addEventListener("submit",e=>{e.preventDefault();const input=e.currentTarget.querySelector("input"),v=input.value.trim();if(!v)return;RoomStore.add(pool,v);host.innerHTML=roomV2(pool);hydrateRoomText(host,pool);openRoomWire(host,pool);host.querySelector(".room-feed")?.scrollTo(0,99999)});
+ openRoomWire(host,pool);
+}
+function openRoomWire(host,pool){
+ host.querySelector(".room-pinned")?.addEventListener("click",()=>{modal("POOL RULES",'<div class="connected-modal"><span class="badge live">WEEK 3</span><h3>Kickoff lock is active.</h3><p>Each selection becomes final when that game begins. Other unlocked games remain editable.</p></div>')});
+}
+document.addEventListener("click",e=>{
+ const btn=e.target.closest("[data-room-v2], .gameday-card.room");
+ if(!btn)return;
+ const hub=document.querySelector(".poolhub-hero h1,.poolhub-hero h2");
+ const pool=hub?.textContent?.trim()||new URL(location.href).searchParams.get("pool")||"Barnes Family";
+ e.preventDefault();e.stopImmediatePropagation();openRoomV2(pool);
+},true);
