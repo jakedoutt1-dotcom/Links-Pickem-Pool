@@ -3816,3 +3816,66 @@ function retireLegacyDemoStateV158(){
 }
 LinksLifecycleCallbacksV82.push(retireLegacyDemoStateV158);
 queueMicrotask(()=>{retireLegacyDemoStateV158();LinksLifecycleV82.queue()});
+
+
+// Live Data v159 — current NFL schedule + scores become the source for NFL pool slates.
+const NflLiveV159={
+ url:"https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard",
+ events:[],season:null,week:null,status:"idle",updated:0,
+ async refresh(){
+  try{
+   const r=await fetch(this.url,{cache:"no-store"});if(!r.ok)throw new Error("NFL scoreboard unavailable");
+   const d=await r.json();this.season=d.season?.year||d.leagues?.[0]?.season?.year||new Date().getFullYear();this.week=d.week?.number||null;
+   this.events=(d.events||[]).map(e=>{
+    const comp=e.competitions?.[0]||{},teams=comp.competitors||[],away=teams.find(x=>x.homeAway==="away")||{},home=teams.find(x=>x.homeAway==="home")||{},st=e.status?.type||{};
+    return {id:String(e.id),away:away.team?.abbreviation||away.team?.shortDisplayName||"AWAY",home:home.team?.abbreviation||home.team?.shortDisplayName||"HOME",kick:e.date||comp.date||"",awayScore:away.score??null,homeScore:home.score??null,state:st.shortDetail||st.description||"SCHEDULED",live:st.state==="in",final:st.completed===true,winner:st.completed?(away.winner?away.team?.abbreviation:home.winner?home.team?.abbreviation:null):null};
+   });
+   this.status="ready";this.updated=Date.now();
+  }catch(err){this.status="unavailable";this.events=[]}
+  this.paint();
+ },
+ slate(){return this.events.map(g=>({id:g.id,away:g.away,home:g.home,kick:g.kick,source:"ESPN",season:this.season,week:this.week}))},
+ paint(){
+  const stamp=this.updated?new Date(this.updated).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}):"";
+  document.querySelectorAll(".live-score-rail-v24 .lsr-label,.hls-brand").forEach(x=>{x.title=this.status==="ready"?"NFL feed refreshed "+stamp:"NFL live feed unavailable"});
+ }
+};
+
+function nflPoolV159(pool){
+ const p=PoolHubData[pool],created=CreatedPools.all().find(x=>x.name===pool),name=(created?.game||p?.game||"").toUpperCase();
+ return /NFL PICK|SURVIVOR|GAME 33|CONFIDENCE/.test(name)&&!/COLLEGE/.test(name);
+}
+
+const normalizedSlateBeforeV159=normalizedSlateV86;
+normalizedSlateV86=function(pool){
+ const configured=GameSlateStoreV86.read(pool);if(configured.length)return configured;
+ if(nflPoolV159(pool)&&NflLiveV159.status==="ready"&&NflLiveV159.events.length)return NflLiveV159.slate();
+ return normalizedSlateBeforeV159(pool).filter(g=>g?.source!=="DEMO"&&!/^(ten-ind|dal-nyg|buf-mia)$/.test(String(g?.id||"")));
+};
+poolSlate=function(pool){return normalizedSlateV86(pool)};
+
+function liveNflPoolSetupV159(){
+ if(NflLiveV159.status!=="ready"||!NflLiveV159.events.length)return;
+ CreatedPools.all().filter(p=>nflPoolV159(p.name)).forEach(p=>{
+   if(!GameSlateStoreV86.has(p.name))GameSlateStoreV86.write(p.name,NflLiveV159.slate());
+ });
+ LinksLifecycleV82.queue();
+}
+
+const liveFeedLoadBeforeV159=LiveFeedV41.load.bind(LiveFeedV41);
+LiveFeedV41.load=async function(){
+ await liveFeedLoadBeforeV159();
+ await NflLiveV159.refresh();
+ liveNflPoolSetupV159();
+};
+
+function liveTruthV159(){
+ const live=NflLiveV159.events.filter(g=>g.live).length,scheduled=NflLiveV159.events.length;
+ document.querySelectorAll(".badge.live").forEach(x=>{if(/^●?\s*LIVE$/i.test((x.textContent||"").trim())){x.textContent=live?"● "+live+" NFL LIVE":"NFL · "+scheduled+" GAMES";x.classList.toggle("live",live>0)}});
+ document.querySelectorAll(".app-build-v18").forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v159 · LIVE NFL DATA</span>';if(x.innerHTML!==h)x.innerHTML=h});
+ document.documentElement.dataset.linksBuild="v159";
+}
+LinksLifecycleCallbacksV82.push(liveTruthV159);
+NflLiveV159.refresh().then(liveNflPoolSetupV159);
+setInterval(()=>NflLiveV159.refresh().then(liveNflPoolSetupV159),60000);
+queueMicrotask(()=>{liveTruthV159();LinksLifecycleV82.queue()});
