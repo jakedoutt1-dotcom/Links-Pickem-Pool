@@ -2008,7 +2008,6 @@ function restorePoolTab(){
 setTimeout(restorePoolTab,50);
 
 // Installable app polish: expose a quiet install action when the browser supports it.
-let linksInstallPrompt=null;
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();linksInstallPrompt=e;document.documentElement.dataset.installReady="true";mountInstallV21()});
 function mountInstallV21(){
  if(!linksInstallPrompt||document.querySelector(".install-v21")||document.documentElement.dataset.publicHome==="true")return;
@@ -2549,3 +2548,6 @@ function presentationLockV56(){
 }
 function bootV56(){presentationLockV56()}const o56=new MutationObserver(bootV56);o56.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV56);
 function stampV56(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v56 · PRESENTATION LOCK</span>")}const s56=new MutationObserver(stampV56);s56.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV56);
+
+// Functional QA v57 — duplicate declaration removed after full-file syntax audit.
+function stampV57(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v57 · FUNCTIONAL QA</span>")}const s57=new MutationObserver(stampV57);s57.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV57);
