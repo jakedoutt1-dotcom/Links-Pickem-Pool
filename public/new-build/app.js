@@ -645,3 +645,32 @@ document.addEventListener("click",e=>{
  const pool=hub?.textContent?.trim()||new URL(location.href).searchParams.get("pool")||"Barnes Family";
  e.preventDefault();e.stopImmediatePropagation();openRoomV2(pool);
 },true);
+
+// Game Network v2 — richer scalable visual identities for the full LINKS catalog.
+const NetworkGames=[
+ ["NFL PICK’EM","football","Pick every matchup. LINKS tracks the rest."],
+ ["COLLEGE PICK’EM","college","Saturday slate built for your group."],
+ ["SURVIVOR","survivor","One team. One life. Keep moving."],
+ ["CONFIDENCE","confidence","Rank the card. Make every point matter."],
+ ["SQUARES","squares","Classic grid. Automatic quarter results."],
+ ["MARCH MADNESS","bracket","Build the bracket. Follow every round."],
+ ["GOLF MAJORS","golf","One & Done, Pick X and majors pools."],
+ ["NASCAR","racing","Drivers, stages and race-day pools."],
+ ["FANTASY FOOTBALL","fantasy","Lineups, matchups and weekly decisions."],
+ ["DYNASTY","dynasty","Contracts, picks and long-term roster building."],
+ ["GAME 33","game33","Chase 33 points through the NFL week."],
+ ["CUSTOM POOL","custom","Your rules. Your people. Your game."]
+];
+function networkGlyph(type){
+ const g={football:"<i class='ball-mark'></i>",college:"<i class='goal-mark'></i>",survivor:"<i class='shield-mark'>1</i>",confidence:"<i class='rank-mark'>1<br>2<br>3</i>",squares:"<i class='grid-mark'></i>",bracket:"<i class='bracket-mark'>⌜<br>⌞</i>",golf:"<i class='golf-mark'>⚑</i>",racing:"<i class='race-mark'>▥</i>",fantasy:"<i class='crown-mark'>♛</i>",dynasty:"<i class='dynasty-mark'>D</i>",game33:"<i class='thirtythree-mark'>33</i>",custom:"<i class='custom-mark'>＋</i>"};return g[type]||g.custom;
+}
+function gameNetworkV2(){
+ return '<section class="game-network-v2"><div class="network-head"><div><span>LINKS GAME NETWORK</span><h2>One app. Every kind of competition.</h2><p>Each format gets its own identity without leaving the LINKS universe.</p></div><button data-network-all>EXPLORE ALL GAMES ›</button></div><div class="network-grid">'+NetworkGames.map((x,i)=>'<button class="network-game ng-'+x[1]+'" data-network-game="'+x[0]+'"><div class="network-art"><span>LINKS</span>'+networkGlyph(x[1])+'<em>0'+(i+1)+'</em></div><div class="network-copy"><span>'+x[1].toUpperCase()+'</span><h3>'+x[0]+'</h3><p>'+x[2]+'</p><b>OPEN GAME ›</b></div></button>').join("")+'</div></section>';
+}
+function mountGameNetworkV2(){
+ const home=document.querySelector(".main");if(!home||document.documentElement.dataset.view!=="home"||home.querySelector(".game-network-v2"))return;
+ const old=home.querySelector(".game-network-showcase");if(old)old.replaceWith(document.createRange().createContextualFragment(gameNetworkV2()));else home.insertAdjacentHTML("beforeend",gameNetworkV2());
+ home.querySelectorAll("[data-network-game]").forEach(b=>b.addEventListener("click",()=>modal(b.dataset.networkGame,'<div class="connected-modal"><span class="badge live">LINKS GAME NETWORK</span><h3>'+b.dataset.networkGame+'</h3><p>This game lives inside the same LINKS account, pool and commissioner system. Game-specific setup opens from here.</p></div>')));
+ home.querySelector("[data-network-all]")?.addEventListener("click",()=>{document.querySelector("[data-category='all'],[data-game-category='all']")?.click()});
+}
+const networkObserver=new MutationObserver(()=>mountGameNetworkV2());networkObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountGameNetworkV2);
