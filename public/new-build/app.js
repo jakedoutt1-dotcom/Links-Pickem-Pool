@@ -4241,3 +4241,38 @@ function deepRevealFixV184(){
 }
 LinksLifecycleCallbacksV82.push(deepRevealFixV184);
 queueMicrotask(()=>{deepRevealFixV184();LinksLifecycleV82.queue()});
+
+
+// Go/No-Go Reveal v185 — neutral empty states and final customer-facing truth pass.
+function goNoGoRevealV185(){
+ // A pool with no published slate is not 100% complete.
+ document.querySelectorAll('.mypicks-v3.real-v101').forEach(host=>{
+   const rows=createdPoolRowsV101().map(x=>({...x,ps:pickStatusV101(x.c.name,x.c.game)}));
+   const total=rows.reduce((n,x)=>n+x.ps.total,0);
+   if(total===0){
+     const ring=host.querySelector('.pick-health-ring');if(ring)ring.innerHTML='<b>—</b><span>WAITING FOR GAMES</span>';
+     host.querySelectorAll('.pick-progress i').forEach(i=>i.style.width='0%');
+     const h=host.querySelector('.mypicks-hero h2');if(h)h.textContent=rows.length?'Your pools are waiting for games.':'Your picks will appear here.';
+   }
+ });
+ // Fresh pools derive player/readiness truth from actual registry, never old 1/1 placeholders.
+ CreatedPools.all().forEach(p=>{
+   const row=PoolHubData[p.name];if(!row)return;
+   const truth=poolTruthV90(p.name);
+   row.members=truth.members;row.ready=truth.ready;
+   if(row.record==='0–0')row.record='—';
+ });
+ // Internal launch vocabulary never reaches the first reveal.
+ document.querySelectorAll('.route-workspace *, .home-command-v4 *, .public-home *').forEach(x=>{
+   if(x.children.length)return;
+   const t=x.textContent||'';
+   if(/FINAL ENGINE QA|FINAL DEVELOPMENT/i.test(t))x.textContent=t.replace(/FINAL ENGINE QA/gi,'IN DEVELOPMENT').replace(/FINAL DEVELOPMENT/gi,'IN DEVELOPMENT');
+ });
+ // Do not present a scores rail as live when the current feed has no live games.
+ const actualLive=(NflLiveV159?.events||[]).some(g=>g.live)||(CollegeLiveV160?.events||[]).some(g=>g.live);
+ if(!actualLive)document.querySelectorAll('.live-score-rail-v24 .lsr-label b,.home-live-strip .hls-brand span').forEach(x=>x.textContent='LINKS SCORES');
+ document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v185 · REVEAL READY</span>';if(x.innerHTML!==h)x.innerHTML=h});
+ document.documentElement.dataset.linksBuild='v185';
+}
+LinksLifecycleCallbacksV82.push(goNoGoRevealV185);
+queueMicrotask(()=>{goNoGoRevealV185();LinksLifecycleV82.queue()});
