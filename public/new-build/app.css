@@ -262,3 +262,6 @@ html{background:#050908}body{min-height:100dvh}.links-v27{min-height:100dvh}.lin
 
 /* Review Candidate v51 */
 .v51-reviewed{backface-visibility:hidden}.links-v27 button,.links-v27 a{-webkit-tap-highlight-color:transparent}.links-v27 [data-copy-invite]{min-width:108px}.links-v27 .card,.links-v27 .panel{contain:layout style}@media(max-width:700px){.links-v27 h1{font-size:clamp(27px,8vw,38px);line-height:1.02}.links-v27 h2{line-height:1.08}.links-v27 p{line-height:1.5}}
+
+/* Review Lock v52 */
+.links-v27 .v52-focus{border-color:rgba(241,117,33,.2)!important;box-shadow:0 16px 42px rgba(0,0,0,.18),inset 0 0 0 1px rgba(241,117,33,.035)}.links-v27 button.v52-hit{transform:translateY(1px) scale(.995)}.links-v27 input,.links-v27 textarea,.links-v27 select{caret-color:#f17521}.links-v27 .route-workspace>:last-child{margin-bottom:0}@media(max-width:700px){.links-v27 input,.links-v27 textarea,.links-v27 select{font-size:16px}.links-v27 .card,.links-v27 .panel{scroll-margin-top:70px}}
