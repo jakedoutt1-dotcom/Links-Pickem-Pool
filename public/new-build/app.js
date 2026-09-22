@@ -4043,3 +4043,17 @@ function frontDoorTruthV165(){
 }
 LinksLifecycleCallbacksV82.push(frontDoorTruthV165);
 queueMicrotask(()=>{frontDoorTruthV165();LinksLifecycleV82.queue()});
+
+
+// Reveal Gate v166 — final first-look cleanup.
+function revealGateV166(){
+ const created=new Set(CreatedPools.all().map(x=>x.name));
+ document.querySelectorAll('.route-workspace,.main').forEach(root=>root.querySelectorAll('.card,.panel,article,section').forEach(x=>{
+   const t=(x.textContent||'');
+   if(!created.size&&/Player 2|Player 3|59 of 64|85% READY|My Pool · Week 3/.test(t)&&!x.closest('.create-pool-studio'))x.remove();
+ }));
+ document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v166 · REVEAL GATE</span>';if(x.innerHTML!==h)x.innerHTML=h});
+ document.documentElement.dataset.linksBuild='v166';
+}
+LinksLifecycleCallbacksV82.push(revealGateV166);
+queueMicrotask(()=>{revealGateV166();LinksLifecycleV82.queue()});
