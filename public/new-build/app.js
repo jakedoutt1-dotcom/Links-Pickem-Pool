@@ -3973,3 +3973,34 @@ function scheduleTruthV162(){
 }
 LinksLifecycleCallbacksV82.push(scheduleTruthV162);
 queueMicrotask(()=>{scheduleTruthV162();LinksLifecycleV82.queue()});
+
+
+// Multi-game Calendar v163 — truthful season context for every launch format.
+const GameCalendarV163={
+ football:{season:2026,source:"LIVE",label:"2026 NFL REGULAR SEASON"},
+ college:{season:2026,source:"LIVE",label:"2026 COLLEGE FOOTBALL"},
+ survivor:{season:2026,source:"NFL LIVE",label:"2026 NFL SURVIVOR"},
+ confidence:{season:2026,source:"NFL / COLLEGE LIVE",label:"2026 CONFIDENCE"},
+ game33:{season:2026,source:"NFL LIVE",label:"2026 GAME 33"},
+ squares:{season:2026,source:"COMMISSIONER GAME",label:"FOOTBALL SQUARES"},
+ bracket:{season:2027,source:"NCAA",label:"2027 MARCH MADNESS",selection:"2027-03-14",open:"2027-03-16",first:"2027-03-18",final:"2027-04-05",teams:76},
+ golf:{season:2026,source:"PGA TOUR",label:"2026 PGA TOUR"},
+ racing:{season:2026,source:"NASCAR",label:"2026 NASCAR CUP"}
+};
+function calendarForV163(pool){const p=CreatedPools.all().find(x=>x.name===pool)||PoolHubData[pool]||{};return GameCalendarV163[gameIdentity(p.game||"").type]||null}
+function calendarTruthV163(){
+ const pool=document.documentElement.dataset.pool||"",cal=calendarForV163(pool);
+ if(cal){
+  document.querySelectorAll('.poolhub-hero,.pool-identity,.pool-setup-action-v87').forEach(root=>{
+   if(root.querySelector('.calendar-v163'))return;
+   root.insertAdjacentHTML('beforeend','<div class="calendar-v163"><b>'+linksEscape(cal.label)+'</b><span>'+linksEscape(cal.source)+'</span></div>');
+  });
+ }
+ // 2027 is a 76-team NCAA men's tournament; do not present the old 68-team era as current.
+ document.querySelectorAll('.march-scoreboard-v77 small').forEach(x=>x.textContent='2027 · 76-TEAM TOURNAMENT · 64-TEAM FIRST ROUND');
+ document.querySelectorAll('.march-arena-v77').forEach(x=>x.dataset.tournamentYear='2027');
+ document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v163 · ALL-GAME CALENDAR TRUTH</span>';if(x.innerHTML!==h)x.innerHTML=h});
+ document.documentElement.dataset.linksBuild='v163';
+}
+LinksLifecycleCallbacksV82.push(calendarTruthV163);
+queueMicrotask(()=>{calendarTruthV163();LinksLifecycleV82.queue()});
