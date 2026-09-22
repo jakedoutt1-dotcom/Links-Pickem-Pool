@@ -302,3 +302,32 @@ function wirePoolHubs(){
  const u=new URL(location.href);if((u.searchParams.get("view")==="pool")&&u.searchParams.get("pool"))openPoolHub(u.searchParams.get("pool"));
 }
 queueMicrotask(wirePoolHubs);
+
+// Home Launch v1 — normal launches resolve to HOME; intentional deep links keep context.
+const LaunchRouter={
+ deepViews:new Set(["pool","my-picks","results","commissioner"]),
+ init(){
+   const u=new URL(location.href),view=u.searchParams.get("view"),pool=u.searchParams.get("pool");
+   const nav=performance.getEntriesByType?.("navigation")?.[0];
+   const isReload=nav?.type==="reload";
+   const intentional=!!pool||u.searchParams.has("invite")||u.searchParams.has("notification")||u.searchParams.has("deep");
+   if(!intentional&&!isReload&&(view&&view!=="home")){
+     u.searchParams.set("view","home");u.searchParams.delete("pool");
+     history.replaceState({route:"home",pool:""},"",u);
+     LinksState.write({route:"home",pool:""});
+     document.documentElement.dataset.view="home";delete document.documentElement.dataset.pool;
+   }
+ }
+};
+LaunchRouter.init();
+
+// Home Spotlight — a concise first screen that answers: what do I need to do now?
+function mountHomeLaunch(){
+ const hero=document.querySelector(".hero");if(!hero)return;
+ const panel=document.createElement("section");panel.className="home-launch";
+ panel.innerHTML='<div class="home-now"><span>GOOD MORNING · YOUR LINKS</span><h2>One pick needs you.</h2><p>Barnes Family locks Thursday at 7:15 PM. Everything else is ready.</p><div class="home-actions"><button class="primary" data-home-pick>FINISH MY PICKS ›</button><button class="ghost" data-home-pools>OPEN MY POOLS</button></div></div><div class="home-radar"><div><small>POOLS</small><strong>3</strong><span>active</span></div><div><small>PICKS</small><strong>1</strong><span>due</span></div><div><small>LIVE</small><strong>4</strong><span>games</span></div><div><small>INBOX</small><strong>2</strong><span>unread</span></div></div>';
+ hero.insertAdjacentElement("afterend",panel);
+ panel.querySelector("[data-home-pick]").addEventListener("click",()=>{setRoute("my-picks");renderRouteWorkspace()});
+ panel.querySelector("[data-home-pools]").addEventListener("click",()=>{setRoute("my-pools");renderRouteWorkspace()});
+}
+queueMicrotask(mountHomeLaunch);
