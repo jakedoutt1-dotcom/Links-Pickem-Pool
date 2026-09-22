@@ -2580,3 +2580,16 @@ if(window.LinksEmailV49){
 }
 function stampV61(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v61 · EMAIL SAFETY</span>";if(x.innerHTML!==html)x.innerHTML=html})}
 queueMicrotask(stampV61);
+
+// Asset Readiness v62 — splash audio degrades cleanly until the production asset is present.
+function assetReadinessV62(){
+ const audio=document.querySelector("audio[src*='stadium-rumble.mp3']");
+ if(audio&&!audio.dataset.v62){
+  audio.dataset.v62="1";
+  audio.addEventListener("error",()=>{document.documentElement.classList.add("links-audio-unavailable");document.querySelectorAll("[data-splash-sound],.splash-sound,.sound-toggle").forEach(b=>{b.hidden=true;b.setAttribute("aria-hidden","true")})},{once:true});
+  audio.addEventListener("canplay",()=>document.documentElement.classList.remove("links-audio-unavailable"),{once:true});
+ }
+}
+queueMicrotask(assetReadinessV62);
+new MutationObserver(assetReadinessV62).observe(document.querySelector("#app"),{childList:true,subtree:true});
+function stampV62(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v62 · ASSET READINESS</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV62);
