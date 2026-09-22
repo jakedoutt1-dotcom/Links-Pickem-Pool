@@ -2266,3 +2266,20 @@ function homeFinishRailV29(){
 function bootV29(){finishHierarchyV29();homeFinishRailV29()}
 const v29o=new MutationObserver(bootV29);v29o.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV29);
 function stampV29(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v29 · PRODUCT FINISH</span>")}const s29=new MutationObserver(stampV29);s29.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV29);
+
+// Navigation Architecture v30 — keep primary destinations obvious and context actions where they belong.
+function navigationArchitectureV30(){
+ const view=document.documentElement.dataset.view||"home";
+ document.querySelectorAll(".finish-dock-v26").forEach(d=>d.dataset.context=view);
+ const rail=document.querySelector(".live-score-rail-v24");if(rail)rail.classList.toggle("v30-compact",view==="commissioner");
+ document.querySelectorAll(".v29-secondary").forEach((x,i)=>{if(view==="home"&&i>7)x.classList.add("v30-deep")});
+}
+function commissionerToolsV30(){
+ if(document.documentElement.dataset.view!=="commissioner")return;
+ const w=document.querySelector(".route-workspace");if(!w||w.querySelector(".comm-tools-v30"))return;
+ const anchor=w.querySelector(".preflight-v24")||w.querySelector(".comm-quick-v23");if(!anchor)return;
+ anchor.insertAdjacentHTML("afterend",'<section class="comm-tools-v30"><button data-v30="players"><i>01</i><b>PLAYERS</b><span>Invite · readiness · reminders</span></button><button data-v30="game"><i>02</i><b>GAME SETUP</b><span>Slate · rules · deadlines</span></button><button data-v30="week"><i>03</i><b>WEEK CONTROL</b><span>Open · lock · score</span></button><button data-v30="activity"><i>04</i><b>ACTIVITY</b><span>Changes · audit · history</span></button></section>');
+ w.querySelectorAll("[data-v30]").forEach(b=>b.addEventListener("click",()=>{const k=b.dataset.v30,sel=k==="players"?".entrant-manager,.readiness-strip":k==="game"?".week-control-v2,.week-control":k==="week"?".commander-v3,.week-control-v2":".activity,.audit,.commissioner-activity";w.querySelector(sel)?.scrollIntoView({behavior:"smooth",block:"center"})}));
+}
+function bootV30(){navigationArchitectureV30();commissionerToolsV30()}const v30o=new MutationObserver(bootV30);v30o.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV30);
+function stampV30(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v30 · NAVIGATION ARCHITECTURE</span>")}const s30=new MutationObserver(stampV30);s30.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV30);
