@@ -295,3 +295,13 @@ html{scroll-behavior:smooth}.links-v27 [aria-busy="true"],.links-v27 .v55-busy{c
 
 /* Launch Trust v80 */
 .affiliate-trust-v80{margin:12px 0 0;padding:11px 12px;border-top:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.16);border-radius:0 0 12px 12px}.affiliate-trust-v80 b,.affiliate-trust-v80 span,.affiliate-trust-v80 small{display:block}.affiliate-trust-v80 b{color:#f17521;font-size:9px;letter-spacing:.14em}.affiliate-trust-v80 span{margin-top:4px;color:#b8c0bb;font-size:10px;line-height:1.35}.affiliate-trust-v80 small{margin-top:5px;color:#7f8983;font-size:8px;line-height:1.35}
+
+
+/* Full Tournament Field v85 — regional arena hierarchy */
+.bracket-live-v76 section:first-child .bracket-game-v76{position:relative;padding-top:28px}
+.bracket-region-v85{position:absolute;top:8px;left:10px;font-size:9px;font-weight:900;letter-spacing:.16em;color:var(--orange,#ff7a18);opacity:.92}
+.bracket-live-v76 section{scroll-margin-top:110px}
+.bracket-live-v76 section header{position:sticky;top:76px;z-index:3;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.bracket-live-v76 .bracket-game-v76 button{min-height:46px;touch-action:manipulation}
+.bracket-live-v76 .bracket-game-v76 button.selected{transform:translateY(-1px);box-shadow:0 0 0 1px rgba(255,122,24,.62),0 10px 28px rgba(0,0,0,.3)}
+@media(max-width:720px){.bracket-live-v76{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:14px;padding-bottom:10px}.bracket-live-v76 section{min-width:min(88vw,390px);scroll-snap-align:start}.bracket-live-v76 section header{top:64px}.bracket-game-v76{border-radius:14px}}
