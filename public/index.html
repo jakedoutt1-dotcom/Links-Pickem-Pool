@@ -2054,7 +2054,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#39ff88!important;font-weight:900">LINKS PICK’EM POOLS — v652</span></footer>
+  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#39ff88!important;font-weight:900">LINKS PICK’EM POOLS — v653</span></footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -2780,6 +2780,24 @@ function ensureHomeAd(){const w=document.querySelector("#linksHomeAd1");if(w)req
 function ensureSectionAd(id){const el=document.getElementById(id);if(!el)return;el.querySelectorAll(".links-fixed-ad").forEach(requestAdIn)}
 function tryInitManualAd(id){const el=document.getElementById(id);if(el)requestAdIn(el)}
 window.addEventListener("load",()=>setTimeout(ensureHomeAd,600));
+const LINKS_BUILD_V653="v653";
+let linksVersionCheckV653Busy=false;
+async function checkLinksVersionV653(){
+  if(linksVersionCheckV653Busy)return;
+  linksVersionCheckV653Busy=true;
+  try{
+    const r=await fetch("/version.json?_="+Date.now(),{cache:"no-store",headers:{"cache-control":"no-cache"}});
+    if(!r.ok)return;
+    const d=await r.json(),remote=String(d?.version||"").trim();
+    if(remote&&remote!==LINKS_BUILD_V653){
+      const key="linksReloadedForVersion:"+remote;
+      if(sessionStorage.getItem(key)!=="1"){
+        sessionStorage.setItem(key,"1");
+        const u=new URL(location.href);u.searchParams.set("links_v",remote);location.replace(u.toString());
+      }
+    }
+  }catch(e){}finally{linksVersionCheckV653Busy=false}
+}
 function showOnly(id,opts={}){
   const screens=["home","demoPage","commissionerWelcome","createPoolPage","termsPageV581","linksAdmin","publicScoresPage","categoryInfoPageV554","gameInfoPage","inviteJoinPage","playerSetupPage","login","sportChoice","specialGameApp","squaresApp","marchApp","app"];
   screens.forEach(x=>$("#"+x).classList.toggle("hide",x!==id));
@@ -2789,7 +2807,7 @@ function showOnly(id,opts={}){
   currentScreen=id;forceTop();
   const screen=$("#"+id);
   if(screen)setTimeout(()=>screen.querySelectorAll(".links-fixed-ad,.links-manual-ad-zone").forEach(ad=>requestAdIn(ad)),250);
-  if(id==="home")setTimeout(ensureHomeAd,250);
+  if(id==="home"){setTimeout(ensureHomeAd,250);setTimeout(checkLinksVersionV653,50);}
 }
 window.addEventListener("popstate",e=>{
   const id=e.state?.linksScreen||"home";
@@ -3929,8 +3947,8 @@ async function renderStandings(){
   $("#standingsWinnerAdmin")?.classList.toggle("hide",role!=="admin"||!selectedLocked);
   const picker=`<div class="standings-week-picker-v184"><span class="week-picker-kicker-v184">RESULTS WEEK</span><select id="standingsWeekSelect" aria-label="Standings week">${weekOptionMarkup(sw)}</select></div>`;
   if(!selectedLocked&&role!=="admin"){
-    $("#autoTieStatus").textContent=`🔒 Week ${sw} standings will appear after Week ${sw} picks lock.`;
-    $("#standingsBody").innerHTML=picker+`<div class="card" style="text-align:center;margin-top:10px"><b>Week ${sw} standings are protected until picks lock.</b><div class="small" style="margin-top:6px">Wins, losses, picks and tiebreakers will appear after the deadline.</div></div>`;
+    $("#autoTieStatus").textContent="";
+    $("#standingsBody").innerHTML=`<div class="card" style="text-align:center;margin-bottom:10px"><b>🔒 Week ${sw} standings will appear after Week ${sw} picks lock.</b><div class="small" style="margin-top:6px">Wins, losses, picks and tiebreakers will appear after the deadline.</div></div>`+picker;
   }else{
     $("#autoTieStatus").textContent=d.actualTie!=null?`Final-game combined score: ${d.actualTie}`:"Wins and losses count only after a game is FINAL. Tiebreaker settles equal win totals after the final game.";
     const hasOfficialWinner=!!d.finalizedWinner;
@@ -5062,7 +5080,7 @@ if("serviceWorker" in navigator){
       // whenever iOS resumes the app instead of waiting for the five-minute timer.
       document.addEventListener("visibilitychange",()=>{if(!document.hidden)checkLinksUpdateV495()});
       window.addEventListener("pageshow",checkLinksUpdateV495);
-      window.addEventListener("focus",checkLinksUpdateV195);
+      window.addEventListener("focus",checkLinksUpdateV495);
       setInterval(checkLinksUpdateV495,5*60*1000);
     }catch(e){}
   });
