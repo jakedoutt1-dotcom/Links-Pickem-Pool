@@ -2502,7 +2502,7 @@ function stampV50(){document.querySelectorAll(".app-build-v18").forEach(x=>x.inn
 
 // Review Candidate v51 — final presentation guardrails.
 function reviewCandidateV51(){
- document.querySelectorAll("a[href='#']").forEach(a=>{if(!a.dataset.v51){a.dataset.v51="1";a.addEventListener("click",e=>e.preventDefault())}});
+ document.querySelectorAll("a[href='#']").forEach(a=>{a.setAttribute("role","button");a.setAttribute("aria-disabled","true");a.removeAttribute("href");});
  document.querySelectorAll("[data-copy-invite]").forEach(b=>{if(b.dataset.v51)return;b.dataset.v51="1";b.addEventListener("click",()=>{const old=b.textContent;b.textContent="COPIED ✓";setTimeout(()=>b.textContent=old,1400)})});
  document.querySelectorAll(".route-workspace,.platform-hero-v22,.game-center-v28").forEach(x=>x.classList.add("v51-reviewed"));
 }
@@ -2558,3 +2558,13 @@ function productIntegrityV58(){
 }
 function bootV58(){productIntegrityV58()}const o58=new MutationObserver(bootV58);o58.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV58);
 function stampV58(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v58 · PRODUCT INTEGRITY</span>")}const s58=new MutationObserver(stampV58);s58.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV58);
+
+// Release Stabilization v60 — one guarded finalizer for persistent release state.
+function releaseFinalizeV60(){
+ const root=document.querySelector("#app"); if(!root)return;
+ document.body.classList.add("links-release-v60");
+ document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v60 · RELEASE STABILIZATION</span>";if(x.innerHTML!==html)x.innerHTML=html});
+ document.querySelectorAll("a[target='_blank']").forEach(a=>a.rel="noopener noreferrer");
+ document.querySelectorAll("button:not([type])").forEach(b=>b.type="button");
+}
+queueMicrotask(releaseFinalizeV60);
