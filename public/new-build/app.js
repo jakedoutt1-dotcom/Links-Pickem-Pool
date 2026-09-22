@@ -2669,3 +2669,14 @@ applyAISportV66=function(sport){
  const h=document.querySelector("#aiStudioMount");if(!h)return;h.innerHTML=AIStudio.html();AIStudio.wire(h);h.insertAdjacentHTML("afterbegin",aiPlanStrip());h.insertAdjacentHTML("beforeend",sportsbookHandoffV22());h.querySelector(".ai-studio-v19")?.insertAdjacentHTML("afterbegin",multiSportBar());h.querySelectorAll("[data-ai-sport]").forEach(b=>b.classList.toggle("active",b.dataset.aiSport===sport));
 };
 function stampV67(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v67 · AI CARD CONTINUITY</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV67);
+
+// AI Stadium Sports v68 — sport-specific stadium identity without external image dependencies.
+const AISportVisualV68={NFL:["🏈","PRO FOOTBALL"],NCAAF:["🏈","COLLEGE FOOTBALL"],NBA:["🏀","PRO BASKETBALL"],WNBA:["🏀","WOMEN'S BASKETBALL"],NCAAB:["🏀","COLLEGE BASKETBALL"],MLB:["⚾","BASEBALL"],NHL:["●","HOCKEY"],SOCCER:["⚽","SOCCER"],MMA:["🥊","MMA"],TENNIS:["●","TENNIS"],GOLF:["●","GOLF"]};
+function aiStadiumVisualV68(){
+ const h=document.querySelector("#aiStudioMount .ai-studio-v19");if(!h)return;let v=h.querySelector(".ai-stadium-v68");const [mark,label]=AISportVisualV68[aiSportV66]||AISportVisualV68.NFL;
+ if(!v){h.insertAdjacentHTML("afterbegin",'<div class="ai-stadium-v68"><div class="aiv-lights"><i></i><i></i><i></i><i></i></div><div class="aiv-field"></div><div class="aiv-sport"><strong></strong><span></span><b>LINKS AI</b></div></div>');v=h.querySelector(".ai-stadium-v68")}
+ v.dataset.sport=aiSportV66;v.querySelector("strong").textContent=mark;v.querySelector("span").textContent=label;
+}
+document.addEventListener("click",e=>{if(e.target.closest("[data-ai-sport]"))setTimeout(aiStadiumVisualV68,0)},true);
+document.addEventListener("click",e=>{if(e.target.closest("[data-ai],[data-ai-studio],[data-ai-card],[data-parlay]"))setTimeout(aiStadiumVisualV68,0)},true);
+function stampV68(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v68 · AI STADIUM SPORTS</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV68);
