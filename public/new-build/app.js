@@ -3162,3 +3162,25 @@ document.addEventListener('click',e=>{if(!e.target.closest('[data-bf92-open]'))r
 LinksLifecycleCallbacksV82.push(protectBracketV92,commissionerBracketV92);
 function stampV92(){document.querySelectorAll('.app-build-v18').forEach(x=>{const html='<b>LINKS</b><span>NEW BUILD · v92 · MARCH FIELD CONTROL</span>';if(x.innerHTML!==html)x.innerHTML=html})}
 queueMicrotask(()=>{protectBracketV92();commissionerBracketV92();stampV92();LinksLifecycleV82.queue()});
+
+
+// Configured Team Engines v93 — Survivor and Game 33 consume the commissioner-published slate, never DemoSlate.
+function configuredTeamsV93(pool){return [...new Set(GameSlateStoreV86.read(pool).flatMap(g=>[g.away,g.home]).map(x=>String(x||"").trim()).filter(Boolean))]}
+const gameSpecificPickPanelV92=gameSpecificPickPanel;
+gameSpecificPickPanel=function(pool){
+ const p=PoolHubData[pool],type=gameIdentity(p?.game||"").type;
+ if(type==="survivor"){
+  const slate=GameSlateStoreV86.read(pool),teams=configuredTeamsV93(pool);if(!slate.length||!teams.length)return '<div class="hub-panel-head"><span>SURVIVOR</span><h3>Waiting for the weekly slate.</h3><p>The commissioner must publish eligible games before survivor picks open.</p></div>';
+  const key=pool+"-survivor-week",saved=PickEngine.get(key)?.team||"";
+  return '<div class="hub-panel-head"><span>SURVIVOR · '+linksEscape(p.week)+'</span><h3>One team. Stay alive.</h3><p>Choose one eligible team from this week’s commissioner-published slate.</p></div><div class="survivor-choice">'+teams.map(t=>'<button data-adapter-pick="'+linksEscape(t)+'" data-adapter-game="survivor-week" class="'+(saved===t?'selected':'')+'"><i>'+linksEscape(t)+'</i><b>'+linksEscape(t)+'</b><span>'+(saved===t?'YOUR PICK':'SELECT')+'</span></button>').join('')+'</div><div class="adapter-proof"><b>'+(saved?'✓ '+linksEscape(saved)+' SAVED':'SELECTION NEEDED')+'</b><span>'+linksEscape(p.lock)+'</span></div>';
+ }
+ if(type==="game33"){
+  const teams=configuredTeamsV93(pool),saved=Game33StoreV74.read(pool);if(!teams.length)return '<div class="hub-panel-head"><span>GAME 33</span><h3>Waiting for the weekly slate.</h3><p>The commissioner must publish eligible NFL games before selections open.</p></div>';
+  return '<div class="hub-panel-head"><span>GAME 33 · '+linksEscape(p.week)+'</span><h3>Chase 33.</h3><p>Choose one eligible NFL team from this week’s published games.</p></div><div class="g33-live-v74"><div class="g33-target-v74"><span>TARGET</span><b>33</b><small>POINTS</small></div><div class="g33-team-grid-v74">'+teams.map(t=>'<button data-g33-team="'+linksEscape(t)+'" class="'+(saved.team===t?'selected':'')+'"><b>'+linksEscape(t)+'</b><span>'+(saved.team===t?'YOUR PICK':'SELECT')+'</span></button>').join('')+'</div><div class="adapter-proof"><b>'+(saved.team?'✓ '+linksEscape(saved.team)+' SAVED':'SELECTION NEEDED')+'</b><span>'+linksEscape(p.lock)+'</span></div></div>';
+ }
+ return gameSpecificPickPanelV92(pool);
+};
+function refreshConfiguredEngineV93(){if(document.documentElement.dataset.view!=="pool")return;const pool=document.documentElement.dataset.pool||"",type=gameIdentity(PoolHubData[pool]?.game||"").type;if(!["survivor","game33"].includes(type))return;const live=document.querySelector('.pool-tab-live');if(!live)return;const active=[...document.querySelectorAll('.poolhub-tabs button,.pool-tabs button')].find(b=>b.classList.contains('active'))?.textContent.trim().toLowerCase();if(active!=="picks")return;live.innerHTML=gameSpecificPickPanel(pool);live.dataset.adapter="1"}
+LinksLifecycleCallbacksV82.push(refreshConfiguredEngineV93);
+function stampV93(){document.querySelectorAll('.app-build-v18').forEach(x=>{const html='<b>LINKS</b><span>NEW BUILD · v93 · CONFIGURED GAME ENGINES</span>';if(x.innerHTML!==html)x.innerHTML=html})}
+queueMicrotask(()=>{refreshConfiguredEngineV93();stampV93();LinksLifecycleV82.queue()});
