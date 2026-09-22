@@ -2442,3 +2442,11 @@ function releaseCandidateV44(){
 let lastV44="";function bootV44(){const v=document.documentElement.dataset.view||"home";releaseCandidateV44();if(v!==lastV44){lastV44=v;requestAnimationFrame(()=>window.scrollTo({top:0,behavior:"auto"}))}}
 const o44=new MutationObserver(bootV44);o44.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV44);
 function stampV44(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v44 · RELEASE CANDIDATE</span>")}const s44=new MutationObserver(stampV44);s44.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV44);
+
+// Broadcast Finish v45 — restrained stadium depth and readable status hierarchy.
+function broadcastFinishV45(){
+ document.querySelectorAll(".route-hero,.platform-hero-v22,.game-center-v28").forEach(x=>{if(!x.querySelector(":scope > .v45-light"))x.insertAdjacentHTML("afterbegin",'<span class="v45-light" aria-hidden="true"></span>')});
+ document.querySelectorAll(".badge").forEach(x=>{const t=(x.textContent||"").toLowerCase();x.classList.toggle("v45-live",/live|open|ready|free/.test(t));x.classList.toggle("v45-warn",/missing|lock|pending/.test(t))});
+}
+function bootV45(){broadcastFinishV45()}const o45=new MutationObserver(bootV45);o45.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV45);
+function stampV45(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v45 · BROADCAST FINISH</span>")}const s45=new MutationObserver(stampV45);s45.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV45);
