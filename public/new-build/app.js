@@ -20,3 +20,35 @@ function wireNewBuild(){
   }));
 }
 queueMicrotask(wireNewBuild);
+
+// Completion pass: real URL state + persistence for the New Build shell.
+const LinksState={
+  key:"links-new-build-state-v1",
+  read(){try{return JSON.parse(localStorage.getItem(this.key)||"{}")}catch{return{}}},
+  write(patch){const next={...this.read(),...patch};localStorage.setItem(this.key,JSON.stringify(next));return next}
+};
+function setRoute(route,pool=""){
+  const u=new URL(location.href);u.searchParams.set("view",route);
+  pool?u.searchParams.set("pool",pool):u.searchParams.delete("pool");
+  history.pushState({route,pool},"",u);
+  LinksState.write({route,pool});
+  document.documentElement.dataset.view=route;
+  document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.textContent.trim().toLowerCase().includes(route.replace("-"," "))));
+}
+function hydrateRoute(){
+  const u=new URL(location.href),saved=LinksState.read();
+  const route=u.searchParams.get("view")||saved.route||"home";
+  const pool=u.searchParams.get("pool")||saved.pool||"";
+  document.documentElement.dataset.view=route;
+  if(pool) document.documentElement.dataset.pool=pool;
+}
+function wireRouting(){
+  hydrateRoute();
+  const navRoutes=["home","my-pools","my-picks","results","messages","notifications","commissioner"];
+  document.querySelectorAll(".nav button").forEach((b,i)=>b.addEventListener("click",()=>setRoute(navRoutes[i]||"home")));
+  document.querySelectorAll(".pool").forEach(row=>row.addEventListener("dblclick",()=>{
+    const pool=row.querySelector("b")?.textContent||"Pool";setRoute("my-pools",pool);
+  }));
+  addEventListener("popstate",hydrateRoute);
+}
+queueMicrotask(wireRouting);
