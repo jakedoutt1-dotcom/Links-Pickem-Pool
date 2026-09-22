@@ -1617,3 +1617,56 @@ function formatHubPolish(){
  const hero=hub.querySelector(".poolhub-hero");if(hero)hero.setAttribute("data-game-type",type);
 }
 const formatPolishObserver=new MutationObserver(()=>formatHubPolish());formatPolishObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(formatHubPolish);
+
+// Commissioner Flow v12 — turn the admin page into a clear operating sequence.
+const CommFlow=[
+ {id:"players",n:"01",title:"PLAYERS",sub:"Invites, access and readiness",sel:".entrant-manager,.readiness-strip"},
+ {id:"week",n:"02",title:"WEEK CONTROL",sub:"Open, close and game locks",sel:".week-control-v2,.week-control"},
+ {id:"rules",n:"03",title:"POOL RULES",sub:"Scoring, deadlines and tiebreakers",sel:".setup-studio,.pool-rules"},
+ {id:"auto",n:"04",title:"AUTOPILOT",sub:"Reminders and commissioner checks",sel:".autopilot-v1"}
+];
+function commissionerFlow(){
+ const r=readinessTruth();
+ return '<section class="commissioner-flow-v12"><div class="cf-head"><div><span>RUN THE POOL</span><h2>Commissioner workflow</h2><p>Everything needed for the week, in the order you use it.</p></div><div class="cf-health '+(r.missing.length?"attention":"ready")+'"><i></i><b>'+(r.missing.length?r.missing.length+" NEED PICKS":"POOL READY")+'</b></div></div><div class="cf-steps">'+CommFlow.map(x=>'<button data-cf-jump="'+x.id+'"><i>'+x.n+'</i><div><b>'+x.title+'</b><span>'+x.sub+'</span></div><em>›</em></button>').join("")+'</div></section>';
+}
+function mountCommissionerFlow(){
+ if(document.documentElement.dataset.view!=="commissioner")return;const w=document.querySelector(".route-workspace");if(!w||w.querySelector(".commissioner-flow-v12"))return;
+ const id=w.querySelector(".route-identity");if(id)id.insertAdjacentHTML("afterend",commissionerFlow());else w.insertAdjacentHTML("afterbegin",commissionerFlow());
+ w.querySelectorAll("[data-cf-jump]").forEach(b=>b.onclick=()=>{
+   const item=CommFlow.find(x=>x.id===b.dataset.cfJump),target=item&&document.querySelector(item.sel);
+   if(target)target.scrollIntoView({behavior:"smooth",block:"start"});
+   else if(item?.id==="rules")openSetupStudio();
+ });
+}
+const cfObserver=new MutationObserver(()=>mountCommissionerFlow());cfObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountCommissionerFlow);
+
+// Pool setup summary belongs in Pool Hub so commissioners do not have to hunt for the rules.
+function poolSetupSummary(pool){
+ const s=SetupState.read(),p=PoolHubData[pool];if(!p)return "";
+ return '<section class="pool-setup-summary"><div><span>POOL SETUP</span><b>HOW THIS POOL PLAYS</b></div><div class="pss-items"><span><small>STYLE</small><b>'+linksEscape((s.style||s.scoring||"STRAIGHT UP").replaceAll("-"," "))+'</b></span><span><small>DEADLINE</small><b>'+linksEscape((s.deadline||"PER-GAME KICKOFF").replaceAll("-"," "))+'</b></span><span><small>WEEK</small><b>'+linksEscape(p.week)+'</b></span></div><button data-edit-pool-rules>EDIT RULES ›</button></section>';
+}
+function mountPoolSetupSummary(){
+ if(document.documentElement.dataset.view!=="pool")return;const pool=document.documentElement.dataset.pool||"",hub=document.querySelector(".pool-hub");if(!pool||!hub||hub.querySelector(".pool-setup-summary"))return;
+ const dock=hub.querySelector(".pool-action-dock");if(!dock)return;dock.insertAdjacentHTML("afterend",poolSetupSummary(pool));
+ hub.querySelector("[data-edit-pool-rules]")?.addEventListener("click",()=>openSetupStudio());
+}
+const pssObserver=new MutationObserver(()=>mountPoolSetupSummary());pssObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountPoolSetupSummary);
+
+// Pool Hub overview: one compact status ribbon replaces scattered repeated facts.
+function poolStatusRibbon(pool){
+ const p=PoolHubData[pool];if(!p)return "";
+ const pct=p.members?Math.round((p.ready/p.members)*100):100;
+ return '<section class="pool-status-ribbon"><span><small>FIELD</small><b>'+p.ready+'/'+p.members+' READY</b></span><span><small>READINESS</small><b>'+pct+'%</b></span><span><small>YOUR RANK</small><b>'+linksEscape(p.rank)+'</b></span><span><small>RECORD</small><b>'+linksEscape(p.record)+'</b></span><span><small>NEXT LOCK</small><b>'+linksEscape(p.lock)+'</b></span></section>';
+}
+function mountPoolStatusRibbon(){
+ if(document.documentElement.dataset.view!=="pool")return;const pool=document.documentElement.dataset.pool||"",hub=document.querySelector(".pool-hub");if(!pool||!hub||hub.querySelector(".pool-status-ribbon"))return;
+ const identity=hub.querySelector(".pool-identity");if(identity)identity.insertAdjacentHTML("afterend",poolStatusRibbon(pool));
+}
+const psrObserver=new MutationObserver(()=>mountPoolStatusRibbon());psrObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountPoolStatusRibbon);
+
+// Accessible keyboard/focus polish for all modern interactive surfaces.
+function accessibilityPass(){
+ document.querySelectorAll('button:not([type])').forEach(b=>b.type="button");
+ document.querySelectorAll("[data-network-game],[data-open-pool],[data-pickpool]").forEach(x=>{if(!x.getAttribute("aria-label"))x.setAttribute("aria-label",(x.dataset.networkGame?"Start "+x.dataset.networkGame+" pool":x.dataset.openPool||x.dataset.pickpool||"Open pool"))});
+}
+const a11yObserver=new MutationObserver(()=>accessibilityPass());a11yObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(accessibilityPass);
