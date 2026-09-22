@@ -425,7 +425,7 @@ function mountPoolGameDay(){
  const workspace=document.querySelector(".route-workspace");
  if(!workspace||document.documentElement.dataset.view!=="pool"||workspace.querySelector(".pool-gameday"))return;
  const pool=document.documentElement.dataset.pool||new URL(location.href).searchParams.get("pool")||"My Pool";
- const p=PoolHubData[pool]||PoolHubData["My Pool"];
+ const p=PoolHubData[pool];if(!p)return;
  const wrap=document.createElement("section");wrap.className="pool-gameday";
  wrap.innerHTML='<div class="gameday-title"><div><span>GAME DAY</span><h2>Your week at a glance.</h2></div><div class="gameday-status"><i></i>PICKS OPEN</div></div><div class="gameday-grid"><button data-pg="picks"><small>MY PICKS</small><strong>2 / 3</strong><span>1 still needs you</span><em>FINISH ›</em></button><button data-pg="standings"><small>STANDINGS</small><strong>'+p.rank+'</strong><span>'+p.record+' this season</span><em>VIEW ›</em></button><button data-pg="compare"><small>FIELD</small><strong>'+p.ready+'/'+p.members+'</strong><span>players ready</span><em>COMPARE ›</em></button><button data-pg="room"><small>POOL ROOM</small><strong>3</strong><span>new messages</span><em>OPEN ›</em></button></div><div class="matchup-feature"><div class="matchup-kicker"><span>NEXT LOCK</span><b>'+p.lock+'</b></div><div class="matchup-teams"><div><i>TEN</i><strong>TITANS</strong><span>AWAY</span></div><div class="versus"><b>VS</b><span>WEEK 3</span></div><div><i>IND</i><strong>COLTS</strong><span>HOME</span></div></div><div class="matchup-foot"><span>YOUR PICK</span><b>'+(PickEngine.get("ten-ind")?.team||"NOT PICKED")+'</b><button data-pg="picks">MAKE PICK ›</button></div></div>';
  workspace.appendChild(wrap);
@@ -448,7 +448,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-slate] but
 
 // Pool Hub v3 — real in-context tabs instead of bouncing the player around the app.
 function poolTabPanel(tab,pool){
- const p=PoolHubData[pool]||PoolHubData["My Pool"];
+ const p=PoolHubData[pool];if(!p)return '<div class="links-empty"><h3>POOL UNAVAILABLE</h3><p>LINKS will not substitute another pool.</p></div>';
  if(tab==="picks") return '<div class="hub-panel-head"><span>MY PICKS · '+p.week+'</span><h3>Finish your card.</h3><p>Your choices save as you go. Locked games cannot be changed.</p></div><div class="hub-pick-list">'+DemoSlate.map(g=>{const saved=PickEngine.get(g.id)?.team||"";const locked=LockEngine.isLocked(g.id);return '<div class="hub-pick-row" data-hubgame="'+g.id+'"><div class="hub-game-meta"><b>'+g.away+' <i>VS</i> '+g.home+'</b><span>'+g.kick+(locked?' · LOCKED':' · OPEN')+'</span></div><div class="hub-choice"><button '+(locked?'disabled':'')+' data-hubpick="'+g.away+'">'+g.away+'</button><button '+(locked?'disabled':'')+' data-hubpick="'+g.home+'">'+g.home+'</button></div><em>'+(saved?'PICK: '+saved:'NEEDS PICK')+'</em></div>'}).join("")+'</div><button class="primary hub-confirm" data-hubconfirm>REVIEW PICKS ›</button>';
  if(tab==="standings") return '<div class="hub-panel-head"><span>LIVE STANDINGS</span><h3>Every result, one table.</h3><p>Finals score automatically. Live games stay visible without counting early.</p></div><div class="hub-standings">'+ScoreDemo.players.map((x,i)=>{const s=scored(x);return '<div class="'+(x.name==="Jake"?'me':'')+'"><strong>'+(i+1)+'</strong><b>'+x.name+'</b><span>'+s.wins+' WINS</span><em>'+(x.name==="Jake"?'YOU':'')+'</em></div>'}).join("")+'</div>';
  if(tab==="compare") return '<div class="hub-panel-head"><span>FIELD COMPARE</span><h3>Know where the pool stands.</h3><p>Before lock, other selections stay private. After lock, the field opens automatically.</p></div><div class="hub-field">'+DemoSlate.map(g=>'<div><b>'+g.away+' vs '+g.home+'</b><span>'+(LockEngine.isLocked(g.id)?'FIELD REVEALED':'PICKS HIDDEN UNTIL LOCK')+'</span><i class="'+(LockEngine.isLocked(g.id)?'open':'')+'"></i></div>').join("")+'</div>';
@@ -2000,7 +2000,7 @@ const imageQAObserver=new MutationObserver(()=>imageFallbacks());imageQAObserver
 
 // Game Center v21 — one polished place for a pool's next matchup, pick state and consequences.
 function gameCenterV21(pool){
- const p=PoolHubData[pool]||PoolHubData["My Pool"],g=DemoSlate[0],saved=PickEngine.get(g.id)?.team||"",locked=LockEngine.isLocked(g.id);
+ const p=PoolHubData[pool];if(!p)return "";const g=DemoSlate[0],saved=PickEngine.get(g.id)?.team||"",locked=LockEngine.isLocked(g.id);
  return '<section class="game-center-v21"><div class="gcv-top"><div><span>GAME CENTER · '+linksEscape(p.week)+'</span><h2>'+g.away+' <i>VS</i> '+g.home+'</h2><p>'+g.kick+' · '+(locked?"PICKS LOCKED":"PICKS OPEN")+'</p></div><div class="gcv-state '+(locked?"locked":"open")+'"><i></i><b>'+(locked?"LOCKED":"OPEN")+'</b></div></div><div class="gcv-match"><button '+(locked?"disabled":"")+' data-gcv-team="'+g.away+'"><span>'+g.away+'</span><b>'+g.away+'</b><small>'+(saved===g.away?"YOUR PICK":"SELECT")+'</small></button><div class="gcv-middle"><span>WEEK IMPACT</span><strong>HIGH</strong><i></i><small>Pick’em · Results · Pool Room</small></div><button '+(locked?"disabled":"")+' data-gcv-team="'+g.home+'"><span>'+g.home+'</span><b>'+g.home+'</b><small>'+(saved===g.home?"YOUR PICK":"SELECT")+'</small></button></div><div class="gcv-foot"><div><span>YOUR PICK</span><b>'+(saved?saved:"NOT SET")+'</b></div><div><span>POOL STATUS</span><b>'+p.ready+'/'+p.members+' READY</b></div><button data-gcv-compare>COMPARE FIELD ›</button></div></section>';
 }
 function mountGameCenterV21(){
@@ -3095,8 +3095,8 @@ function replaceEntrantManagerV88(){
  if(!rows.length){box.innerHTML='<div class="entrant-head"><div><span>PLAYER READINESS</span><b>No invited players yet.</b><small>Invite players to start tracking joins and pick completion here.</small></div><button class="ghost" data-invite-players>INVITE PLAYERS ›</button></div><div class="links-empty messages"><i>＋</i><h3>BUILD YOUR POOL</h3><p>LINKS will show real player readiness after invitations are sent.</p></div>';return}
  const ready=rows.filter(x=>x.done===x.total).length;
  box.innerHTML='<div class="entrant-head"><div><span>PLAYER READINESS</span><b>Who still needs to pick?</b><small>Only real invited players appear here.</small></div><button class="ghost" data-remind-all-v88>REMIND MISSING ›</button></div><div class="entrant-summary"><strong>'+ready+'/'+rows.length+'</strong><span>ENTRIES COMPLETE</span><i></i></div><div class="entrant-list">'+rows.map(x=>'<div class="'+(x.done===x.total?'complete':'missing')+'"><div class="entrant-avatar">'+linksEscape((x.name||'P')[0])+'</div><div><b>'+linksEscape(x.name||'Invited player')+'</b><small>'+linksEscape(x.contact||'')+'</small></div><strong>'+x.done+'/'+x.total+'</strong>'+(x.done===x.total?'<em>✓ COMPLETE</em>':'<button class="ghost" data-remind-v88="'+linksEscape(x.contact||x.name||'Player')+'">REMIND</button>')+'</div>').join('')+'</div><div class="entrant-foot"><span>Reminders never expose another player’s selections.</span><b class="reminder-feedback"></b></div>';
- box.querySelectorAll("[data-remind-v88]").forEach(b=>b.addEventListener("click",()=>{ReminderQueue.send(b.dataset.remindV88);AppStatus.show("ok","Reminder queued",b.dataset.remindV88)}));
- box.querySelector("[data-remind-all-v88]")?.addEventListener("click",()=>{const missing=rows.filter(x=>x.done<x.total);missing.forEach(x=>ReminderQueue.send(x.contact||x.name));AppStatus.show("ok","Reminders queued",missing.length+" player"+(missing.length===1?'':'s'))});
+ box.querySelectorAll("[data-remind-v88]").forEach(b=>b.addEventListener("click",()=>{ReminderQueue.send(b.dataset.remindV88);AppStatus.show("warn","Reminder prepared",b.dataset.remindV88+" · delivery not connected")}));
+ box.querySelector("[data-remind-all-v88]")?.addEventListener("click",()=>{const missing=rows.filter(x=>x.done<x.total);missing.forEach(x=>ReminderQueue.send(x.contact||x.name));AppStatus.show("warn","Reminder drafts prepared",missing.length+" player"+(missing.length===1?'':'s')+" · delivery not connected")});
 }
 LinksLifecycleCallbacksV82.push(replaceEntrantManagerV88);
 function stampV88(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v88 · REAL PLAYER READINESS</span>";if(x.innerHTML!==html)x.innerHTML=html})}
@@ -3682,3 +3682,17 @@ function revealQaV153(){
  document.documentElement.dataset.linksBuild='v153';
 }
 const revealQaObserverV153=new MutationObserver(()=>revealQaV153());revealQaObserverV153.observe(document.querySelector('#app'),{childList:true,subtree:true});queueMicrotask(revealQaV153);
+
+// Reveal QA v154 — eliminate silent pool substitution and demo operational claims.
+function revealQaV154(){
+ document.querySelectorAll('.autopilot-v1,.results-arena,.smart-inbox-v2,.pool-gameday,.game-center-v21').forEach(el=>{
+   const t=el.textContent||'';
+   if(/Feed healthy|scoring is healthy|You moved to #2|Player 2|Mike|Week 7 standings|TEN|IND/i.test(t)) el.remove();
+ });
+ document.querySelectorAll('.poolhub-lock em').forEach(x=>{if(/PICKS OPEN/i.test(x.textContent||''))x.textContent='POOL STATUS'});
+ document.querySelectorAll('.hub-live,.hub-activity').forEach(x=>x.remove());
+ document.querySelectorAll('.hub-tile small').forEach(x=>{if(/Updates live/i.test(x.textContent||''))x.textContent='Updates from saved pool data'});
+ document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v154 · INTEGRITY SWEEP</span>';if(x.innerHTML!==h)x.innerHTML=h});
+ document.documentElement.dataset.linksBuild='v154';
+}
+const revealQaObserverV154=new MutationObserver(()=>revealQaV154());revealQaObserverV154.observe(document.querySelector('#app'),{childList:true,subtree:true});queueMicrotask(revealQaV154);
