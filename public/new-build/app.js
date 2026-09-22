@@ -1894,3 +1894,42 @@ const v18Observer=new MutationObserver(()=>appBuildStamp());v18Observer.observe(
 const ScrollMemory={key:"links-scroll-v18",read(){try{return JSON.parse(sessionStorage.getItem(this.key)||"{}")}catch{return{}}},save(){const a=this.read(),v=document.documentElement.dataset.view||"home";a[v]=scrollY;sessionStorage.setItem(this.key,JSON.stringify(a))},restore(v){const y=this.read()[v];requestAnimationFrame(()=>scrollTo({top:Number.isFinite(y)?y:0,behavior:"instant"}))}};
 document.addEventListener("click",e=>{if(e.target.closest("[data-home-go],[data-home-go2],[data-open-pool],[data-pickpool],[data-ri-home],[data-ri-pools],.mobile-dock button"))ScrollMemory.save()},true);
 window.addEventListener("popstate",()=>setTimeout(()=>ScrollMemory.restore(document.documentElement.dataset.view||"home"),30));
+
+// LINKS AI Studio v19 — research-first card builder with transparent math and no fake certainty.
+const AIStudio={
+ key:"links-ai-card-v19",
+ legs:[
+  {id:"buf-ml",game:"BUF @ MIA",pick:"BUF · MONEYLINE",price:"-145",prob:59,trend:"4–1 last 5",why:"More stable recent win profile in the demo research set.",corr:"BASE"},
+  {id:"dal-nyg-o",game:"DAL @ NYG",pick:"OVER 45.5",price:"-110",prob:53,trend:"3 of last 5 over",why:"Demo total profile is slightly above this number.",corr:"LOW"},
+  {id:"phi-td",game:"PHI @ TB",pick:"PHI · TEAM TD 1+",price:"-180",prob:64,trend:"Scored TD in 5/5",why:"High-frequency demo event; price is correspondingly expensive.",corr:"LOW"},
+  {id:"kc-ml",game:"KC @ BAL",pick:"KC · MONEYLINE",price:"+105",prob:51,trend:"3–2 last 5",why:"Near-coin-flip demo matchup with plus-price exposure.",corr:"BASE"}
+ ],
+ load(){try{return JSON.parse(localStorage.getItem(this.key)||"[]")}catch{return[]}},
+ save(ids){localStorage.setItem(this.key,JSON.stringify(ids))},
+ implied(price){const n=Number(price);return n<0?Math.round((-n/(-n+100))*100):Math.round((100/(n+100))*100)},
+ decimal(price){const n=Number(price);return n<0?1+100/(-n):1+n/100},
+ combined(ids){const rows=this.legs.filter(x=>ids.includes(x.id));const dec=rows.reduce((a,x)=>a*this.decimal(x.price),1);return {dec,american:dec>=2?Math.round((dec-1)*100):Math.round(-100/(dec-1)),model:Math.round(rows.reduce((a,x)=>a*(x.prob/100),1)*1000)/10}},
+ html(){
+  const saved=this.load(),ids=saved.length?saved:[this.legs[0].id,this.legs[1].id],calc=this.combined(ids);
+  return '<section class="ai-studio-v19"><div class="ais-hero"><div class="ais-orbit"><i></i><i></i><b>AI</b></div><div><span>LINKS INTELLIGENCE</span><h2>Research. Build. Understand.</h2><p>Use evidence to assemble a card, then see the price, implied probability and correlation before you decide anything.</p></div><div class="ais-mode"><small>MODE</small><b>RESEARCH</b><em>NO GUARANTEES</em></div></div><div class="ais-layout"><div class="ais-research"><div class="ais-title"><span>RESEARCH BOARD</span><b>Demo market candidates</b><small>Illustrative data until live sportsbook/data feeds are connected.</small></div>'+this.legs.map(x=>'<button class="ais-leg '+(ids.includes(x.id)?"selected":"")+'" data-ai-leg="'+x.id+'"><div><span>'+x.game+'</span><b>'+x.pick+'</b><small>'+x.trend+'</small></div><div class="ais-evidence"><span>MODEL</span><b>'+x.prob+'%</b><small>IMPLIED '+this.implied(x.price)+'%</small></div><strong>'+x.price+'</strong><i>'+(ids.includes(x.id)?"✓":"+")+'</i></button>').join("")+'</div><div class="ais-card"><div class="ais-title"><span>CARD BUILDER</span><b>'+ids.length+'-LEG RESEARCH CARD</b><small>Tap candidates to add or remove.</small></div><div class="ais-card-legs">'+ids.map(id=>{const x=this.legs.find(y=>y.id===id);return x?'<div><span>'+x.game+'</span><b>'+x.pick+'</b><em>'+x.price+'</em><small>'+x.why+'</small></div>':""}).join("")+'</div><div class="ais-math"><div><span>COMBINED PRICE</span><b>'+(calc.american>0?"+":"")+calc.american+'</b></div><div><span>NAIVE MODEL*</span><b>'+calc.model+'%</b></div><div><span>LEGS</span><b>'+ids.length+'</b></div></div><div class="ais-warning"><i>i</i><p><b>Correlation matters.</b><span>*The simple model multiplies leg probabilities and does not adjust for correlation. It is a research aid, not a prediction.</span></p></div><button class="ais-primary" data-ai-review '+(!ids.length?"disabled":"")+'>REVIEW CARD ›</button></div></div><div class="ais-foot"><span>RECENT FORM</span><span>SEASON SAMPLE</span><span>PRICE / IMPLIED %</span><span>CORRELATION CHECK</span><span>TRACK RESULTS</span></div></section>';
+ },
+ open(){modal("LINKS AI",'<div id="aiStudioMount"></div>');const h=document.querySelector("#aiStudioMount");h.innerHTML=this.html();this.wire(h)},
+ wire(h){
+  h.querySelectorAll("[data-ai-leg]").forEach(b=>b.onclick=()=>{let ids=this.load();if(!ids.length)ids=[this.legs[0].id,this.legs[1].id];const id=b.dataset.aiLeg;ids=ids.includes(id)?ids.filter(x=>x!==id):[...ids,id].slice(0,6);this.save(ids);h.innerHTML=this.html();this.wire(h)});
+  h.querySelector("[data-ai-review]")?.addEventListener("click",()=>{const ids=this.load(),calc=this.combined(ids);modal("REVIEW RESEARCH CARD",'<div class="ai-review-v19"><span>LINKS AI · CARD REVIEW</span><h3>'+ids.length+' selections</h3><p>This card is built from the demo research board. Check current lines, injuries and availability with your provider before making any decision.</p><div><b>COMBINED PRICE</b><strong>'+(calc.american>0?"+":"")+calc.american+'</strong></div><small>LINKS does not promise winners. The purpose of this screen is to make the reasoning and uncertainty visible.</small></div>')});
+ }
+};
+document.addEventListener("click",e=>{
+ const b=e.target.closest("[data-ai],[data-ai-studio],[data-ai-card],[data-parlay]");if(!b)return;
+ e.preventDefault();e.stopImmediatePropagation();AIStudio.open();
+},true);
+
+// Give AI a permanent, intentional home on member Home instead of scattered prototype cards.
+function aiHomeV19(){
+ return '<section class="ai-home-v19"><div class="aih-copy"><span>LINKS AI</span><h2>Build smarter cards.</h2><p>Research matchups, compare price to probability, inspect trends and assemble a multi-leg card with the assumptions shown.</p><div><button data-ai-studio>OPEN AI RESEARCH ›</button><button class="ghost" data-ai-studio>CREATE A CARD</button></div></div><div class="aih-graphic"><div class="aih-node n1">FORM</div><div class="aih-node n2">PRICE</div><div class="aih-node n3">MATCHUP</div><div class="aih-core">AI<small>RESEARCH</small></div><i></i><i></i><i></i></div></section>';
+}
+function mountAIHome(){
+ if(document.documentElement.dataset.view!=="home"||document.documentElement.dataset.publicHome==="true")return;const main=document.querySelector(".main");if(!main||main.querySelector(".ai-home-v19"))return;
+ const bridge=main.querySelector(".home-bridge-v7")||main.querySelector(".home-live-strip");if(bridge)bridge.insertAdjacentHTML("afterend",aiHomeV19());else main.insertAdjacentHTML("beforeend",aiHomeV19());
+}
+const aiHomeObserver=new MutationObserver(()=>mountAIHome());aiHomeObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountAIHome);
