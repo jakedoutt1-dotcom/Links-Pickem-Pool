@@ -1683,6 +1683,14 @@ body:not(.links-game33-active-v373) #collegeSetup .college-mode-v379{display:gri
  }
 }
 </style>
+<style id="links-v633-college-hero-fix">
+/* v633 — the legacy v530 rule hard-forced the NFL artwork. College overrides it only while College is active. */
+body.links-college-standalone-v629 #app>#appHeroImage.pool-logo{
+ content:url("/college-page-banner.jpg?v=633")!important;
+ object-fit:contain!important;
+ object-position:center!important;
+}
+</style>
 <style id="links-v532-account-button-art">
 /* v532 — use uploaded account artwork at the same compact size as the existing controls. */
 #app .app-head-right #signOut,
