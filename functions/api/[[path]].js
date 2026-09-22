@@ -3261,6 +3261,19 @@ export async function onRequest(context){
       const t=await DB.prepare("SELECT guess FROM pool_ties WHERE pool_id=? AND sport=? AND player_name=? COLLATE NOCASE AND week=?").bind(pid,sport,pickPlayer,w).first();
       return json({picks,tie:t?.guess??"",player:pickPlayer});
     }
+    if(path==="college-player-lock"&&method==="GET"){
+      if(sport!=="college"||!sessionCanPlay(s))return json({locked:false});
+      const key=`college_player_lock_${w}_${String(s.player_name||"").trim().toLowerCase()}`;
+      const row=await DB.prepare("SELECT value FROM pool_settings WHERE pool_id=? AND key=?").bind(pid,key).first();
+      return json({locked:String(row?.value||"")==="1"});
+    }
+    if(path==="college-player-lock"&&method==="POST"){
+      if(sport!=="college"||!sessionCanPlay(s))return json({error:"Player sign-in required."},403);
+      if(await locked(DB,pid,sport,w))return json({error:"The deadline has passed. Picks are permanently locked."},403);
+      const want=!!body.locked,key=`college_player_lock_${w}_${String(s.player_name||"").trim().toLowerCase()}`;
+      await DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,?,?) ON CONFLICT(pool_id,key) DO UPDATE SET value=excluded.value").bind(pid,key,want?"1":"0").run();
+      return json({ok:true,locked:want});
+    }
     if(path==="picks"&&method==="POST"){
       if(!sessionCanPlay(s))return json({error:"Player sign-in required."},403);
       if(s.role!=="admin"){
