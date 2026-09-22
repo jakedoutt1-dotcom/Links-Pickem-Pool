@@ -3879,3 +3879,40 @@ LinksLifecycleCallbacksV82.push(liveTruthV159);
 NflLiveV159.refresh().then(liveNflPoolSetupV159);
 setInterval(()=>NflLiveV159.refresh().then(liveNflPoolSetupV159),60000);
 queueMicrotask(()=>{liveTruthV159();LinksLifecycleV82.queue()});
+
+
+// Live Data v160 — current Top-25 college scoreboard/schedule; no sample college slate fallback.
+const CollegeLiveV160={
+ url:"https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?groups=80&limit=100",
+ events:[],status:"idle",updated:0,
+ async refresh(){
+  try{
+   const r=await fetch(this.url,{cache:"no-store"});if(!r.ok)throw new Error("college feed unavailable");
+   const d=await r.json();this.events=(d.events||[]).map(e=>{const comp=e.competitions?.[0]||{},teams=comp.competitors||[],a=teams.find(x=>x.homeAway==="away")||{},h=teams.find(x=>x.homeAway==="home")||{},st=e.status?.type||{};return {id:String(e.id),away:a.team?.abbreviation||a.team?.shortDisplayName||"AWAY",home:h.team?.abbreviation||h.team?.shortDisplayName||"HOME",kick:e.date||comp.date||"",awayScore:a.score??null,homeScore:h.score??null,state:st.shortDetail||st.description||"SCHEDULED",live:st.state==="in",final:st.completed===true,source:"ESPN"}});
+   this.status="ready";this.updated=Date.now();
+  }catch{this.status="unavailable";this.events=[]}
+ },
+ slate(){return this.events.map(g=>({id:g.id,away:g.away,home:g.home,kick:g.kick,source:"ESPN"}))}
+};
+function collegePoolV160(pool){const p=PoolHubData[pool],created=CreatedPools.all().find(x=>x.name===pool),name=(created?.game||p?.game||"").toUpperCase();return /COLLEGE/.test(name)}
+const normalizedSlateBeforeV160=normalizedSlateV86;
+normalizedSlateV86=function(pool){
+ const configured=GameSlateStoreV86.read(pool);if(configured.length)return configured;
+ if(collegePoolV160(pool)&&CollegeLiveV160.status==="ready"&&CollegeLiveV160.events.length)return CollegeLiveV160.slate();
+ const fallback=normalizedSlateBeforeV160(pool);
+ return fallback.filter(g=>!/^(col-ten-uga|col-bama-lsu|col-ore-psu)$/.test(String(g?.id||"")));
+};
+poolSlate=function(pool){return normalizedSlateV86(pool)};
+function liveCollegePoolSetupV160(){
+ if(CollegeLiveV160.status!=="ready"||!CollegeLiveV160.events.length)return;
+ CreatedPools.all().filter(p=>collegePoolV160(p.name)).forEach(p=>{if(!GameSlateStoreV86.has(p.name))GameSlateStoreV86.write(p.name,CollegeLiveV160.slate())});
+ LinksLifecycleV82.queue();
+}
+function liveStatusV160(){
+ document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v160 · NFL + COLLEGE LIVE DATA</span>';if(x.innerHTML!==h)x.innerHTML=h});
+ document.documentElement.dataset.linksBuild='v160';
+}
+LinksLifecycleCallbacksV82.push(liveStatusV160);
+CollegeLiveV160.refresh().then(liveCollegePoolSetupV160);
+setInterval(()=>CollegeLiveV160.refresh().then(liveCollegePoolSetupV160),60000);
+queueMicrotask(()=>{liveStatusV160();LinksLifecycleV82.queue()});
