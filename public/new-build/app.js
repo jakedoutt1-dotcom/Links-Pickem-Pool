@@ -1804,3 +1804,35 @@ function refineMobileMore(){
  if(!sheet.querySelector(".mobile-more-head"))sheet.insertAdjacentHTML("afterbegin",'<div class="mobile-more-head"><div><span>LINKS</span><b>MORE</b></div><small>ACCOUNT & TOOLS</small></div>');
 }
 const moreObserver=new MutationObserver(()=>refineMobileMore());moreObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(refineMobileMore);
+
+// Premium Details v16 — restrained game-day atmosphere and clearer active states.
+function liveAtmosphere(){
+ if(document.documentElement.dataset.publicHome==="true")return;
+ const v=document.documentElement.dataset.view||"home";if(!["home","pool","results"].includes(v))return;
+ if(document.querySelector(".links-atmosphere-v16"))return;
+ document.body.insertAdjacentHTML("afterbegin",'<div class="links-atmosphere-v16" aria-hidden="true"><i></i><i></i><i></i><b></b></div>');
+}
+function activeTabPolish(){
+ document.querySelectorAll(".poolhub-tabs,.pool-tabs").forEach(nav=>{
+   const active=nav.querySelector("button.active");nav.querySelectorAll("button").forEach(b=>b.setAttribute("aria-selected",b===active?"true":"false"));
+   if(active)nav.style.setProperty("--tab-x",active.offsetLeft+"px");
+ });
+ document.querySelectorAll(".mobile-dock button").forEach(b=>b.setAttribute("aria-current",b.classList.contains("active")?"page":"false"));
+}
+function poolHeroDetails(){
+ if(document.documentElement.dataset.view!=="pool")return;const pool=document.documentElement.dataset.pool||"",p=PoolHubData[pool],hero=document.querySelector(".poolhub-hero");if(!p||!hero||hero.querySelector(".hero-live-detail"))return;
+ const type=gameIdentity(p.game).type;
+ hero.insertAdjacentHTML("beforeend",'<div class="hero-live-detail"><span><i></i>'+(/fantasy|dynasty/.test(type)?"TEAM ACTIVE":"POOL ACTIVE")+'</span><b>'+linksEscape(p.week)+'</b></div>');
+}
+function resultMomentum(){
+ const board=document.querySelector(".results-board-v13");if(!board||board.querySelector(".result-momentum-v16"))return;
+ const ranked=rankedDemoPlayers(),me=ranked.find(x=>x.p.name==="Jake"),lead=ranked[0],gap=Math.max(0,(lead?.s.wins||0)-(me?.s.wins||0));
+ board.querySelector(".rbv-hero")?.insertAdjacentHTML("afterend",'<div class="result-momentum-v16"><div><span>LIVE PICTURE</span><b>'+(gap===0?"TIED FOR THE LEAD":gap+" BACK")+'</b></div><div class="momentum-track"><i style="width:'+Math.max(12,100-gap*18)+'%"></i></div><em>'+(gap===0?"Right in it.":"Every final matters.")+'</em></div>');
+}
+function premiumDetails(){liveAtmosphere();activeTabPolish();poolHeroDetails();resultMomentum()}
+document.addEventListener("click",()=>requestAnimationFrame(premiumDetails),true);window.addEventListener("popstate",()=>requestAnimationFrame(premiumDetails));queueMicrotask(premiumDetails);
+
+// Tap cards behave like cards: focus/pressed state is consistent without adding visual clutter.
+document.addEventListener("pointerdown",e=>{const card=e.target.closest(".home-pool-card,.portfolio-card,.pick-command-card,.public-game-grid button,.cf-steps button,.hub-quick button");if(card)card.classList.add("card-pressed")},true);
+document.addEventListener("pointerup",e=>e.target.closest?.(".card-pressed")?.classList.remove("card-pressed"),true);
+document.addEventListener("pointercancel",e=>e.target.closest?.(".card-pressed")?.classList.remove("card-pressed"),true);
