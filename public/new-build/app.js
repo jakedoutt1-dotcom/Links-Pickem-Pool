@@ -1506,3 +1506,68 @@ document.addEventListener("click",e=>{
  if(!b)return;
  if(!WeekGate.isOpen()||LockEngine.isLocked(b.closest("[data-hubgame]")?.dataset.hubgame||b.dataset.slate||""))document.querySelectorAll(".app-status.ok,.status-toast.ok").forEach(x=>{if(/pick saved/i.test(x.textContent))x.remove()});
 },true);
+
+// Join Gateway v10 — invite links now have a real, focused front door instead of dropping strangers into a member pool.
+const JoinGateway={
+ requested(){const u=new URL(location.href);return u.searchParams.get("invite")==="1"&&u.searchParams.get("pool")},
+ pool(){return new URL(location.href).searchParams.get("pool")||""},
+ html(pool){
+  const p=PoolHubData[pool],g=gameIdentity(p?.game||"");
+  return '<section class="join-gateway"><div class="join-stage jg-'+g.type+'"><div class="jg-lights"><i></i><i></i><i></i></div><div class="jg-brand"><b>L</b><span>LINKS<small>POOLS</small></span></div><div class="jg-game">'+networkGlyph(g.type)+'</div><span class="jg-kicker">YOU’VE BEEN INVITED</span><h1>'+linksEscape(pool)+'</h1><p>'+(p?linksEscape(p.game)+' · '+linksEscape(p.week):'A LINKS SPORTS POOL')+'</p><div class="jg-proof"><span><b>FREE</b><small>TO JOIN</small></span><span><b>PRIVATE</b><small>PICKS</small></span><span><b>LIVE</b><small>STANDINGS</small></span></div><button data-join-existing>ALREADY HAVE LINKS · SIGN IN</button><button class="secondary" data-join-new>NEW TO LINKS · JOIN POOL</button><small class="jg-note">This invite opens '+linksEscape(pool)+' directly. No pool searching.</small></div><div class="join-side"><span>WHAT HAPPENS NEXT</span><div><i>1</i><p><b>OPEN YOUR ACCOUNT</b><small>Sign in or make a quick player account.</small></p></div><div><i>2</i><p><b>JOIN THIS POOL</b><small>LINKS keeps you attached to the correct pool.</small></p></div><div><i>3</i><p><b>MAKE YOUR PICKS</b><small>Deadlines and locks are shown automatically.</small></p></div></div></section>';
+ },
+ mount(){
+  if(!this.requested())return false;const pool=this.pool(),app=document.querySelector("#app");if(!app)return false;
+  document.documentElement.dataset.joinGateway="true";document.documentElement.dataset.publicHome="true";
+  app.innerHTML=this.html(pool);
+  app.querySelector("[data-join-existing]")?.addEventListener("click",()=>this.auth(pool,false));
+  app.querySelector("[data-join-new]")?.addEventListener("click",()=>this.auth(pool,true));
+  return true;
+ },
+ auth(pool,isNew){
+  modal(isNew?"JOIN "+pool:"SIGN IN TO LINKS",'<div class="join-auth"><div class="join-auth-mark">L</div><span>'+(isNew?"PLAYER SETUP":"WELCOME BACK")+'</span><h3>'+(isNew?"Join "+linksEscape(pool):"Open "+linksEscape(pool))+'</h3><p>'+(isNew?"Use your email to create your LINKS player profile.":"Sign in and LINKS will return you directly to this invitation.")+'</p><label><span>EMAIL</span><input type="email" data-join-email autocomplete="email" placeholder="you@example.com"></label>'+(isNew?'<label><span>DISPLAY NAME</span><input data-join-name maxlength="28" placeholder="Your name"></label>':'<label><span>PASSWORD</span><input type="password" data-join-pass autocomplete="current-password" placeholder="Password"></label>')+'<button data-join-continue>CONTINUE TO POOL ›</button><small>Prototype account screen · live authentication connects here next.</small></div>');
+  document.querySelector("[data-join-continue]")?.addEventListener("click",()=>{const email=document.querySelector("[data-join-email]")?.value.trim();if(!email||!email.includes("@")){AppStatus.show("warn","Email needed","Enter a valid email to continue.");return}document.querySelector(".modal")?.remove();const u=new URL(location.href);u.searchParams.delete("invite");u.searchParams.set("view","pool");u.searchParams.set("pool",pool);history.replaceState({route:"pool",pool},"",u);document.documentElement.dataset.publicHome="false";delete document.documentElement.dataset.joinGateway;LinksRouter.apply("pool",pool,true);AppStatus.show("ok","Invitation accepted","Welcome to "+pool+".")});
+ }
+};
+// It must win before the normal public/member boot paints over an invite.
+setTimeout(()=>JoinGateway.mount(),1);
+
+// Game Adapter v1 — pool tabs now respect the actual format instead of showing NFL games everywhere.
+const GameAdapters={
+ college:[
+  {id:"col-ten-uga",away:"TEN",home:"UGA",kick:"Sat · 2:30 PM"},
+  {id:"col-bama-lsu",away:"ALA",home:"LSU",kick:"Sat · 6:30 PM"},
+  {id:"col-ore-psu",away:"ORE",home:"PSU",kick:"Sat · 7:00 PM"}
+ ],
+ survivor:[
+  {id:"survivor-week",away:"BUF",home:"GB",kick:"Sun · 12:00 PM",choices:["BUF","GB","KC","PHI","DET","BAL"]}
+ ]
+};
+function poolSlate(pool){
+ const type=gameIdentity(PoolHubData[pool]?.game||"").type;
+ if(type==="college")return GameAdapters.college;
+ if(type==="survivor")return GameAdapters.survivor;
+ return DemoSlate;
+}
+function gameSpecificPickPanel(pool){
+ const p=PoolHubData[pool],type=gameIdentity(p?.game||"").type,slate=poolSlate(pool);
+ if(type==="survivor"){
+  const g=slate[0],saved=PickEngine.get(pool+"-"+g.id)?.team||"";
+  return '<div class="hub-panel-head"><span>SURVIVOR · '+linksEscape(p.week)+'</span><h3>One team. Stay alive.</h3><p>Choose one eligible team. Your selection stays private until lock.</p></div><div class="survivor-choice">'+g.choices.map(t=>'<button data-adapter-pick="'+linksEscape(t)+'" data-adapter-game="'+g.id+'" class="'+(saved===t?"selected":"")+'"><i>'+linksEscape(t)+'</i><b>'+linksEscape(t)+'</b><span>'+(saved===t?"YOUR PICK":"SELECT")+'</span></button>').join("")+'</div><div class="adapter-proof"><b>'+(saved?"✓ "+linksEscape(saved)+" SAVED":"SELECTION NEEDED")+'</b><span>'+linksEscape(p.lock)+'</span></div>';
+ }
+ if(type==="college"){
+  return '<div class="hub-panel-head"><span>COLLEGE PICK’EM · '+linksEscape(p.week)+'</span><h3>Saturday card.</h3><p>Only games selected for this pool appear here.</p></div><div class="hub-pick-list">'+slate.map(g=>{const saved=PickEngine.get(pool+"-"+g.id)?.team||"";return '<div class="hub-pick-row" data-adapter-row="'+g.id+'"><div class="hub-game-meta"><b>'+g.away+' <i>VS</i> '+g.home+'</b><span>'+g.kick+'</span></div><div class="hub-choice"><button data-adapter-pick="'+g.away+'" data-adapter-game="'+g.id+'" class="'+(saved===g.away?"selected":"")+'">'+g.away+'</button><button data-adapter-pick="'+g.home+'" data-adapter-game="'+g.id+'" class="'+(saved===g.home?"selected":"")+'">'+g.home+'</button></div><em>'+(saved?"PICK: "+saved:"NEEDS PICK")+'</em></div>'}).join("")+'</div>';
+ }
+ return "";
+}
+function mountGameAdapter(){
+ if(document.documentElement.dataset.view!=="pool")return;const pool=document.documentElement.dataset.pool||"";const type=gameIdentity(PoolHubData[pool]?.game||"").type;if(!["college","survivor"].includes(type))return;
+ const live=document.querySelector(".pool-tab-live");if(!live||live.dataset.adapter==="1")return;
+ const active=[...document.querySelectorAll(".poolhub-tabs button,.pool-tabs button")].find(b=>b.classList.contains("active"))?.textContent.trim().toLowerCase();
+ if(active!=="picks")return;live.dataset.adapter="1";live.innerHTML=gameSpecificPickPanel(pool);
+}
+document.addEventListener("click",e=>{
+ const b=e.target.closest("[data-adapter-pick]");if(!b)return;e.preventDefault();e.stopImmediatePropagation();
+ const pool=document.documentElement.dataset.pool||"",id=b.dataset.adapterGame;if(!WeekGate.isOpen()){AppStatus.show("warn","Week is closed","The commissioner has paused pick changes.");return}
+ PickEngine.save(pool+"-"+id,b.dataset.adapterPick);const live=b.closest(".pool-tab-live");if(live){live.innerHTML=gameSpecificPickPanel(pool);live.dataset.adapter="1"}
+},true);
+const adapterObserver=new MutationObserver(()=>mountGameAdapter());adapterObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountGameAdapter);
