@@ -471,3 +471,28 @@ function wireHubPanel(host,pool){
  const send=host.querySelector(".hub-compose button"),input=host.querySelector(".hub-compose input");send?.addEventListener("click",()=>{if(!input.value.trim())return;const chat=host.querySelector(".hub-chat"),d=document.createElement("div");d.innerHTML='<i>JD</i><p><b>You</b><span>'+input.value.replace(/[<>]/g,"")+'</span></p><time>NOW</time>';chat.appendChild(d);input.value=""});
 }
 const hubTabObserver=new MutationObserver(()=>activatePoolTabs());hubTabObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(activatePoolTabs);
+
+// Commissioner Command v3 — operational week control, readiness and one-tap actions.
+const CommissionerState={
+ key:"links-commissioner-v1",
+ read(){try{return JSON.parse(localStorage.getItem(this.key)||"{}")}catch{return{}}},
+ write(p){const n={...this.read(),...p};localStorage.setItem(this.key,JSON.stringify(n));return n}
+};
+function commissionerPanel(){
+ const s=CommissionerState.read(),week=s.week||3,open=s.open!==false;
+ return '<section class="commander-v3"><div class="command-hero"><div><span>COMMISSIONER COMMAND</span><h2>Week '+week+' is '+(open?'open.':'closed.')+'</h2><p>Run the pool without hunting through settings.</p></div><div class="command-health"><i class="'+(open?'live':'')+'"></i><b>'+(open?'HEALTHY':'CLOSED')+'</b><small>SCORING FEED · '+(open?'LIVE':'PAUSED')+'</small></div></div><div class="command-metrics"><button data-cmd="entrants"><small>READY</small><strong>59 / 64</strong><span>5 need picks</span></button><button data-cmd="invites"><small>INVITES</small><strong>2</strong><span>still unopened</span></button><button data-cmd="locks"><small>NEXT LOCK</small><strong>7:15</strong><span>Thursday PM</span></button><button data-cmd="audit"><small>AUDIT</small><strong>'+AuditLog.all().length+'</strong><span>recorded events</span></button></div><div class="command-actions"><button class="primary" data-cmd="remind">REMIND 5 MISSING</button><button data-cmd="week">'+(open?'CLOSE WEEK':'OPEN WEEK')+'</button><button data-cmd="message">MESSAGE POOL</button><button data-cmd="settings">POOL SETTINGS</button></div><div class="command-feed"><div class="command-feed-head"><b>WEEK CONTROL</b><span>Automatic kickoff locks are ON</span></div>'+DemoSlate.map(g=>'<div class="command-game"><div><b>'+g.away+' <i>VS</i> '+g.home+'</b><span>'+g.kick+'</span></div><em class="'+(LockEngine.isLocked(g.id)?'locked':'')+'">'+(LockEngine.isLocked(g.id)?'LOCKED':'AUTO LOCK')+'</em><button data-cmdlock="'+g.id+'">'+(LockEngine.isLocked(g.id)?'UNLOCK':'LOCK NOW')+'</button></div>').join("")+'</div></section>';
+}
+function mountCommissionerV3(){
+ const ws=document.querySelector(".route-workspace");if(!ws||document.documentElement.dataset.view!=="commissioner"||ws.querySelector(".commander-v3"))return;
+ ws.insertAdjacentHTML("beforeend",commissionerPanel());wireCommissionerV3(ws);
+}
+function wireCommissionerV3(ws){
+ ws.querySelector('[data-cmd="remind"]')?.addEventListener("click",()=>{["Amanda","Chris"].forEach(n=>ReminderQueue.add?.(n));AuditLog.add("REMINDER BATCH","Missing-pick reminder sent");modal("REMINDERS SENT",'<div class="connected-modal"><span class="badge live">5 PLAYERS</span><h3>Missing-pick reminders queued.</h3><p>No selections were exposed. Players receive only the games they still need to complete.</p></div>')});
+ ws.querySelector('[data-cmd="week"]')?.addEventListener("click",()=>{const s=CommissionerState.read(),open=s.open!==false;CommissionerState.write({open:!open});AuditLog.add(open?"WEEK CLOSED":"WEEK OPENED","Commissioner changed weekly access");ws.querySelector(".commander-v3").outerHTML=commissionerPanel();wireCommissionerV3(ws)});
+ ws.querySelector('[data-cmd="audit"]')?.addEventListener("click",()=>modal("AUDIT HISTORY",'<div class="art-game-list">'+AuditLog.all().slice(0,20).map(a=>'<button><span>•</span><div><b>'+a.action+'</b><small>'+a.detail+'</small></div><em>'+new Date(a.at||a.time||Date.now()).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})+'</em></button>').join("")+'</div>'));
+ ws.querySelector('[data-cmd="entrants"]')?.addEventListener("click",()=>document.querySelector(".entrant-manager")?.scrollIntoView({behavior:"smooth"}));
+ ws.querySelector('[data-cmd="message"]')?.addEventListener("click",()=>modal("MESSAGE POOL",'<div class="connected-modal"><span class="badge">64 PLAYERS</span><h3>Send a pool announcement.</h3><p>Messages can appear in Pool Room and later route through email or text notification services.</p></div>'));
+ ws.querySelector('[data-cmd="settings"]')?.addEventListener("click",()=>modal("POOL SETTINGS",'<div class="connected-modal"><span class="badge">BARNES FAMILY</span><h3>Core settings stay protected.</h3><p>Pool name, rules, active games, commissioner contact, tie-breaker and notification controls will live here.</p></div>'));
+ ws.querySelectorAll("[data-cmdlock]").forEach(b=>b.addEventListener("click",()=>{const id=b.dataset.cmdlock,locked=LockEngine.isLocked(id);LockEngine.set(id,!locked,locked?"Commissioner manual unlock":"Commissioner manual lock");const sec=ws.querySelector(".commander-v3");sec.outerHTML=commissionerPanel();wireCommissionerV3(ws)}));
+}
+const commissionerObserver=new MutationObserver(()=>mountCommissionerV3());commissionerObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountCommissionerV3);
