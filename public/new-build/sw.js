@@ -1,4 +1,4 @@
-const CACHE="links-new-build-shell-v59";
+const CACHE="links-new-build-shell-v146";
 const SHELL=["./","./index.html","./app.css","./app.js","./manifest.webmanifest"];
 self.addEventListener("install",event=>{
   self.skipWaiting();
