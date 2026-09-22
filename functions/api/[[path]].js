@@ -1368,12 +1368,12 @@ async function fastBootstrapWeek(DB,pid,sport,w){
     return {liveGames,records,sourceKickoff:meta.lock_time||OFFICIAL_FIRST_KICKOFF_FALLBACK[w]||null,source:"LINKS FAST CACHE"};
   }
   if(sport==="college"){
-    const base=(await selectedCollegeGames(DB,pid,w)).map(x=>({gameIndex:x.game_index,eventId:x.event_id,away:x.away,home:x.home,awayName:x.away_name||x.away,homeName:x.home_name||x.home,kickoff:x.kickoff}));
+    let base=(await selectedCollegeGames(DB,pid,w)).map(x=>({gameIndex:x.game_index,eventId:x.event_id,away:x.away,home:x.home,awayName:x.away_name||x.away,homeName:x.home_name||x.home,awayId:String(x.away_id||""),homeId:String(x.home_id||""),kickoff:x.kickoff}));const records={};try{const feed=await fetchCollegeWeek(w);const byId=new Map(feed.map(g=>[String(g.eventId),g]));base=base.map(g=>{const live=byId.get(String(g.eventId));if(live){Object.assign(records,live.records||{});return {...g,awayRank:live.awayRank||null,homeRank:live.homeRank||null,records:live.records||{}}}return g})}catch(e){}
     const snaps=(await DB.prepare("SELECT game_index,winner,away_score,home_score,status FROM pool_final_snapshots WHERE pool_id=? AND sport=? AND week=? ORDER BY game_index").bind(pid,sport,w).all()).results||[];
     const snapBy=new Map(snaps.map(r=>[Number(r.game_index),r]));
     const liveGames=base.map(g=>{const r=snapBy.get(Number(g.gameIndex)),winner=r?.winner||null,completed=!!winner;return {...g,completed,winner,status:completed?"FINAL":"",state:completed?"post":"pre",clock:"",awayScore:r?.away_score==null?null:Number(r.away_score),homeScore:r?.home_score==null?null:Number(r.home_score)}});
     const sourceKickoff=base.map(x=>x.kickoff).filter(Boolean).sort()[0]||null;
-    return {liveGames,records:{},sourceKickoff,source:"LINKS FAST CACHE"};
+    return {liveGames,records,sourceKickoff,source:"LINKS FAST CACHE"};
   }
   return await syncWeek(DB,pid,sport,w);
 }
