@@ -516,3 +516,15 @@ function paintStateGraphics(){
  document.querySelectorAll(".hub-pick-row").forEach(row=>{const id=row.dataset.hubgame;if(id&&LockEngine.isLocked(id))row.classList.add("is-locked")});
 }
 const stateObserver=new MutationObserver(()=>paintStateGraphics());stateObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(paintStateGraphics);
+
+// Results Experience v2 — live scoreboard, movement, winners and weekly recap.
+function resultsArena(){
+ const rows=ScoreDemo.players.map((p,i)=>{const s=scored(p);const move=i===0?"+1":i===1?"−1":"—";return '<div class="result-rank '+(p.name==="Jake"?"me":"")+'"><strong>'+(i+1)+'</strong><div><b>'+p.name+'</b><span>'+(p.name==="Jake"?"YOU · ":"")+s.wins+' correct</span></div><em class="'+(move.includes("+")?"up":move.includes("−")?"down":"")+'">'+move+'</em><i>'+s.wins+'<small>PTS</small></i></div>'}).join("");
+ return '<section class="results-arena"><div class="results-hero"><div><span>LINKS LIVE</span><h2>Every game changes the board.</h2><p>Finals score automatically. Live games show impact without counting early.</p></div><div class="results-live"><i></i><b>1 LIVE</b><small>2 FINAL</small></div></div><div class="score-ribbon">'+ScoreDemo.games.map(g=>'<div class="'+(g.final?"final":"live")+'"><span>'+(g.final?"FINAL":"LIVE")+'</span><b>'+g.away+' '+g.awayScore+'</b><b>'+g.home+' '+g.homeScore+'</b><em>'+(g.final?"SCORING COMPLETE":"4TH · 8:42")+'</em></div>').join("")+'</div><div class="results-body"><div class="leaderboard-v2"><div class="section-cap"><span>LIVE STANDINGS</span><b>WEEK 3</b></div>'+rows+'</div><aside class="weekly-winner"><span>WEEKLY LEADER</span><div class="winner-mark">★</div><h3>'+ScoreDemo.players[0].name+'</h3><b>'+scored(ScoreDemo.players[0]).wins+' CORRECT</b><p>Currently on top with one game still live.</p><button data-result-share>SHARE RESULT</button></aside></div><div class="result-impact"><div><span>LIVE IMPACT</span><h3>TEN at IND</h3><p>A Tennessee result moves 18 players up. Indianapolis keeps 31 players ahead of the field.</p></div><div class="impact-meter"><i style="width:37%"></i><span>37% TEN</span><b>63% IND</b></div></div></section>';
+}
+function mountResultsArena(){
+ const ws=document.querySelector(".route-workspace");if(!ws||document.documentElement.dataset.view!=="results"||ws.querySelector(".results-arena"))return;
+ ws.insertAdjacentHTML("beforeend",resultsArena());
+ ws.querySelector("[data-result-share]")?.addEventListener("click",()=>modal("SHARE WEEK 3",'<div class="connected-modal"><span class="badge live">LINKS RESULT</span><h3>'+ScoreDemo.players[0].name+' leads Week 3.</h3><p>'+scored(ScoreDemo.players[0]).wins+' correct with one game still live. A finished share card can be sent from here without exposing anyone’s protected picks.</p></div>'));
+}
+const resultsObserver=new MutationObserver(()=>mountResultsArena());resultsObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountResultsArena);
