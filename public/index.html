@@ -1941,6 +1941,12 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
 .links-terms-v581{max-width:760px;margin:0 auto}.links-terms-v581 h3{margin-top:20px}.links-terms-v581 p,.links-terms-v581 li{line-height:1.55}
 </style><link rel="stylesheet" href="./games/game33/game33.css?v=628">
 <script src="/games/college/college.js?v=642"></script>
+<script src="/games/survivor/game.js?v=643"></script>
+<script src="/games/confidence/game.js?v=643"></script>
+<script src="/games/props/game.js?v=643"></script>
+<script src="/games/playoff/game.js?v=643"></script>
+<script src="/games/masters/game.js?v=643"></script>
+<script src="/games/nascar/game.js?v=643"></script>
 <script src="./games/game33/game33.js?v=627" defer></script>
 <link rel="stylesheet" href="/games/college/college.css?v=642">
 </head>
@@ -2038,7 +2044,7 @@ body[data-active-sport="college"] #adminControls #collegeSetup{display:block!imp
     <img src="./IMG_5865.jpeg?v=337" alt="LINKS Pick’em Pools" style="display:block;width:100%;height:auto;border-radius:14px">
   </section>
 
-  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#39ff88!important;font-weight:900">LINKS PICK’EM POOLS — v642</span></footer>
+  <footer class="links-build-footer" aria-label="Links build version"><span style="color:#39ff88!important;font-weight:900">LINKS PICK’EM POOLS — v643</span></footer>
 
 </div>
 <div id="plansPageV201" class="hide links-plans-page-v201">
@@ -3353,7 +3359,7 @@ async function initSpecialLivePicker(kind,settings){
   }
 }
 function renderSpecialSettingsImmediate(kind,settings={}){
-  const fields=SPECIAL_SETTINGS_FIELDS[kind]||[],form=$("#specialSettingsForm"),status=$("#specialSettingsStatus"),title=$("#specialSettingsTitle"),help=$("#specialSettingsHelp");
+  const fields=window.LinksDedicatedGames?.[kind]?.settings||SPECIAL_SETTINGS_FIELDS[kind]||[],form=$("#specialSettingsForm"),status=$("#specialSettingsStatus"),title=$("#specialSettingsTitle"),help=$("#specialSettingsHelp");
   if(!form)return;
   if(title)title.textContent=`${poolGameLabel(kind).replace(/^[^A-Za-z0-9]+/,"")} Settings`;
   if(help)help.textContent=kind==="props"?"Create the Super Bowl prop sheet here: questions and answer choices, pick-lock deadline, points, tiebreaker and official answers.":"Set this game's commissioner rules here. These controls are available immediately and saved only for this pool.";
@@ -3362,7 +3368,7 @@ function renderSpecialSettingsImmediate(kind,settings={}){
 }
 async function loadSpecialSettings(kind){
   if(!isCommissioner)return;
-  const fields=SPECIAL_SETTINGS_FIELDS[kind]||[],form=$("#specialSettingsForm"),status=$("#specialSettingsStatus"),title=$("#specialSettingsTitle"),help=$("#specialSettingsHelp");
+  const fields=window.LinksDedicatedGames?.[kind]?.settings||SPECIAL_SETTINGS_FIELDS[kind]||[],form=$("#specialSettingsForm"),status=$("#specialSettingsStatus"),title=$("#specialSettingsTitle"),help=$("#specialSettingsHelp");
   if(!form)return;
   if(title)title.textContent=`${poolGameLabel(kind).replace(/^[^A-Za-z0-9]+/,"")} Settings`;
   if(help)help.textContent=kind==="props"?"Create the Super Bowl prop sheet here: questions and answer choices, pick-lock deadline, points, tiebreaker and official answers. These controls are commissioner-only.":"These settings apply only to this game in this pool. Saving them does not change or delete existing picks or other stored pool data.";
@@ -3565,7 +3571,7 @@ async function enterSpecialGame(kind){
   if(token)await refreshPoolGames();
   const active=normalizePoolGames(poolGames,kind);
   if(!active.includes(kind))return enterPoolGames(active,active[0]);
-  const d=SPECIAL_GAME_DATA[kind]||SPECIAL_GAME_DATA.survivor; sport=kind;
+  const module=window.LinksDedicatedGames?.[kind]||null,d=module?{...(SPECIAL_GAME_DATA[kind]||SPECIAL_GAME_DATA.survivor),title:module.title||SPECIAL_GAME_DATA[kind]?.title,rules:module.rules||SPECIAL_GAME_DATA[kind]?.rules}:SPECIAL_GAME_DATA[kind]||SPECIAL_GAME_DATA.survivor; sport=kind;
   const specialApp=$("#specialGameApp"); if(specialApp)specialApp.dataset.activeGame=kind;
   $("#specialGameLogo").src=SPECIAL_GAME_BANNERS_V381[kind]||d.logo; $("#specialGameLogo").alt=d.title; $("#specialGameLogo").classList.toggle("fantasy-hero-v157",kind==="fantasy"); $("#specialGameLogo").classList.toggle("dynasty-hero-v157",kind==="dynasty"); $("#specialPoolLine").textContent=poolName; $("#specialGameSubline").textContent=poolGameLabel(kind);
   $("#specialGameTitle").textContent=d.title; $("#specialGameLead").textContent=d.lead; $("#specialRulesText").textContent=d.rules;
@@ -3586,7 +3592,7 @@ async function enterSpecialGame(kind){
   if(kind==="fantasy"){
     const labels={picks:["🏈","MY TEAM"],compare:["⚔️","MATCHUPS"],scores:["⚡","LIVE"],standings:["🏆","LEAGUE"],projected:["📋","ROSTERS"],paid:["👥","ACCESS"],rules:["📜","RULES"],admin:["⚙️","COMMISH"]};
     $$("#specialTabs [data-special-tab]").forEach(b=>{const x=labels[b.dataset.specialTab];if(x){b.classList.add("fantasy-art-tab-v186");b.innerHTML=`<span class="fantasy-tab-icon-v186">${x[0]}</span><span class="fantasy-tab-label-v186">${x[1]}</span>`}});
-  }else{const gameLabels={survivor:{picks:"🏈 MY PICK",scores:"📊 RESULTS",standings:"🏆 SURVIVORS",rules:"📜 RULES",admin:"⚙️ ADMIN"},confidence:{picks:"🏈 PICKS",compare:"📋 COMPARE",scores:"📊 SCORES",standings:"🏆 STANDINGS",rules:"📜 RULES",admin:"⚙️ ADMIN"},props:{picks:"🎯 MY PROPS",compare:"📋 ANSWERS",standings:"🏆 STANDINGS",rules:"📜 RULES",admin:"⚙️ ADMIN"},playoff:{picks:"🏈 PLAYOFF PICKS",compare:"📋 COMPARE",scores:"📊 RESULTS",standings:"🏆 STANDINGS",rules:"📜 RULES",admin:"⚙️ ADMIN"},masters:{picks:"⛳ MY GOLFERS",scores:"📊 LEADERBOARD",standings:"🏆 POOL STANDINGS",rules:"📜 RULES",admin:"⚙️ ADMIN"},nascar:{picks:"🏁 MY DRIVERS",scores:"📊 RACE RESULTS",standings:"🏆 STANDINGS",rules:"📜 RULES",admin:"⚙️ ADMIN"}};const labels=gameLabels[kind]||{picks:"🏈 PICKS",compare:"📋 COMPARE PICKS",scores:"📊 SCORES",standings:"🏆 STANDINGS",projected:"🔮 PROJECTED",rules:"📜 RULES",admin:"⚙️ ADMIN"};$("#specialTabs [data-special-tab]").forEach(b=>{if(labels[b.dataset.specialTab])b.textContent=labels[b.dataset.specialTab]})}
+  }else{const moduleLabels=window.LinksDedicatedGames?.[kind]?.tabs||null;const gameLabels={survivor:{picks:"🏈 MY PICK",scores:"📊 RESULTS",standings:"🏆 SURVIVORS",rules:"📜 RULES",admin:"⚙️ ADMIN"},confidence:{picks:"🏈 PICKS",compare:"📋 COMPARE",scores:"📊 SCORES",standings:"🏆 STANDINGS",rules:"📜 RULES",admin:"⚙️ ADMIN"},props:{picks:"🎯 MY PROPS",compare:"📋 ANSWERS",standings:"🏆 STANDINGS",rules:"📜 RULES",admin:"⚙️ ADMIN"},playoff:{picks:"🏈 PLAYOFF PICKS",compare:"📋 COMPARE",scores:"📊 RESULTS",standings:"🏆 STANDINGS",rules:"📜 RULES",admin:"⚙️ ADMIN"},masters:{picks:"⛳ MY GOLFERS",scores:"📊 LEADERBOARD",standings:"🏆 POOL STANDINGS",rules:"📜 RULES",admin:"⚙️ ADMIN"},nascar:{picks:"🏁 MY DRIVERS",scores:"📊 RACE RESULTS",standings:"🏆 STANDINGS",rules:"📜 RULES",admin:"⚙️ ADMIN"}};const labels=moduleLabels||gameLabels[kind]||{picks:"🏈 PICKS",compare:"📋 COMPARE PICKS",scores:"📊 SCORES",standings:"🏆 STANDINGS",projected:"🔮 PROJECTED",rules:"📜 RULES",admin:"⚙️ ADMIN"};$("#specialTabs [data-special-tab]").forEach(b=>{if(labels[b.dataset.specialTab])b.textContent=labels[b.dataset.specialTab]})}
   showSpecialTab("picks");
   if(kind==="fantasy")renderFantasyLeagueV154();
   if(kind==="dynasty"){
