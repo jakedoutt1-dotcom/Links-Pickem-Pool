@@ -2533,3 +2533,11 @@ function signatureFinishV54(){
 }
 function bootV54(){signatureFinishV54()}const o54=new MutationObserver(bootV54);o54.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV54);
 function stampV54(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v54 · SIGNATURE FINISH</span>")}const s54=new MutationObserver(stampV54);s54.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV54);
+
+// Final Review v55 — preserve scroll quality and clarify loading/action state.
+function finalReviewV55(){
+ document.querySelectorAll("button").forEach(b=>{if(!b.dataset.v55){b.dataset.v55="1";b.addEventListener("click",()=>{if(b.disabled)return;b.setAttribute("data-last-action",Date.now())})}});
+ document.querySelectorAll("[aria-busy='true']").forEach(x=>x.classList.add("v55-busy"));
+}
+function bootV55(){finalReviewV55()}const o55=new MutationObserver(bootV55);o55.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV55);
+function stampV55(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v55 · FINAL REVIEW</span>")}const s55=new MutationObserver(stampV55);s55.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV55);
