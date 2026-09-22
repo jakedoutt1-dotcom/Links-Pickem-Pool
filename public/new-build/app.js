@@ -3004,3 +3004,38 @@ LinksLifecycleCallbacksV82.push(marchRegionLabelsV85);
 document.addEventListener("click",e=>{if(e.target.closest("[data-bracket-pick]"))queueMicrotask(marchRegionLabelsV85)},true);
 function stampV85(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v85 · FULL TOURNAMENT FIELD</span>";if(x.innerHTML!==html)x.innerHTML=html})}
 queueMicrotask(()=>{marchRegionLabelsV85();stampV85();LinksLifecycleV82.queue()});
+
+
+// Game Setup Integrity v86 — commissioner-controlled slates for weekly team-based formats.
+const GameSlateStoreV86={
+ key:"links-game-slates-v86",
+ readAll(){try{return JSON.parse(localStorage.getItem(this.key)||"{}")||{}}catch{return{}}},
+ read(pool){return this.readAll()[pool]||[]},
+ write(pool,games){const all=this.readAll();all[pool]=games;localStorage.setItem(this.key,JSON.stringify(all));return games},
+ has(pool){return this.read(pool).length>0}
+};
+function normalizedSlateV86(pool){
+ const configured=GameSlateStoreV86.read(pool);if(configured.length)return configured;
+ const type=gameIdentity(PoolHubData[pool]?.game||"").type;
+ if(type==="college"||type==="confidence")return GameAdapters.college;
+ if(type==="survivor")return GameAdapters.survivor;
+ return DemoSlate;
+}
+poolSlate=function(pool){return normalizedSlateV86(pool)};
+function gameSetupStatusV86(pool){
+ const p=PoolHubData[pool],type=gameIdentity(p?.game||"").type,created=CreatedPools.all().some(x=>x.name===pool);
+ if(!created)return {ready:true};
+ if(["bracket","squares"].includes(type))return {ready:true};
+ if(["football","college","confidence","survivor","game33"].includes(type)&&!GameSlateStoreV86.has(pool))return {ready:false,title:"Commissioner setup needed",detail:"Add this pool’s games before player picks open. LINKS will not substitute sample matchups in a newly created pool."};
+ return {ready:true};
+}
+function protectUnconfiguredPoolsV86(){
+ if(document.documentElement.dataset.view!=="pool")return;const pool=document.documentElement.dataset.pool||"",st=gameSetupStatusV86(pool);if(st.ready)return;
+ const active=[...document.querySelectorAll(".poolhub-tabs button,.pool-tabs button")].find(b=>b.classList.contains("active"))?.textContent.trim().toLowerCase();if(active!=="picks")return;
+ const live=document.querySelector(".pool-tab-live");if(!live||live.dataset.v86Protected)return;live.dataset.v86Protected="1";live.dataset.adapter="";
+ live.innerHTML='<div class="hub-panel-head"><span>POOL SETUP</span><h3>'+linksEscape(st.title)+'</h3><p>'+linksEscape(st.detail)+'</p></div><div class="links-empty picks"><i>⚙</i><h3>NO PLAYER PICKS YET</h3><p>Once the commissioner publishes the slate, this screen becomes the live pick card.</p></div>';
+}
+LinksLifecycleCallbacksV82.push(protectUnconfiguredPoolsV86);
+document.addEventListener("click",e=>{if(e.target.closest(".poolhub-tabs button,.pool-tabs button"))queueMicrotask(protectUnconfiguredPoolsV86)},true);
+function stampV86(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v86 · GAME SETUP INTEGRITY</span>";if(x.innerHTML!==html)x.innerHTML=html})}
+queueMicrotask(()=>{protectUnconfiguredPoolsV86();stampV86();LinksLifecycleV82.queue()});
