@@ -717,7 +717,7 @@ if("serviceWorker" in navigator){
 }
 
 // Invite Center v2 — commissioner growth flow with link, email/SMS handoff and join preview.
-const InviteState={key:"links-invites-v2",read(){try{return JSON.parse(localStorage.getItem(this.key)||"[]")}catch{return[]}},add(v){const a=this.read();a.unshift({value:v,at:new Date().toISOString(),status:"sent"});localStorage.setItem(this.key,JSON.stringify(a.slice(0,30)));return a}};
+const InviteState={key:"links-invites-v2",read(){try{return JSON.parse(localStorage.getItem(this.key)||"[]")}catch{return[]}},add(v){const a=this.read();a.unshift({value:v,at:new Date().toISOString(),status:"local"});localStorage.setItem(this.key,JSON.stringify(a.slice(0,30)));return a}};
 function inviteCenter(pool="My Pool"){
  const base=location.origin+location.pathname+"?view=pool&pool="+encodeURIComponent(pool)+"&invite=1";
  const sent=InviteState.read();
@@ -733,7 +733,7 @@ function wireInvite(h,pool){
  h.querySelector("[data-copy-invite]")?.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(url);AppStatus.show("ok","Invite link copied","Ready to paste into a message.")}catch{AppStatus.show("warn","Copy unavailable","Select the invite link and copy it manually.")}});
  h.querySelector('[data-share-invite="text"]')?.addEventListener("click",async()=>{const data={title:"Join "+pool+" on LINKS",text:"Join my "+pool+" pool on LINKS.",url};if(navigator.share){try{await navigator.share(data)}catch{}}else{AppStatus.show("warn","Share menu unavailable","Use Copy Link instead.")}});
  h.querySelector('[data-share-invite="email"]')?.addEventListener("click",()=>{location.href="mailto:?subject="+encodeURIComponent("Join "+pool+" on LINKS")+"&body="+encodeURIComponent("Join my pool on LINKS:\n\n"+url)});
- h.querySelector(".invite-direct")?.addEventListener("submit",e=>{e.preventDefault();const input=e.currentTarget.querySelector("input"),v=input.value.trim();if(!v)return;InviteState.add(v);AuditLog.add("INVITE SENT","Invite queued for "+v);AppStatus.show("ok","Invite queued",v);h.innerHTML=inviteCenter(pool);wireInvite(h,pool)});
+ h.querySelector(".invite-direct")?.addEventListener("submit",e=>{e.preventDefault();const input=e.currentTarget.querySelector("input"),v=input.value.trim();if(!v)return;InviteState.add(v);AuditLog.add("INVITE PREPARED","Local invite saved · delivery not connected");AppStatus.show("warn","Invite saved locally","Use COPY LINK or SHARE INVITE to deliver it.");h.innerHTML=inviteCenter(pool);wireInvite(h,pool)});
 }
 document.addEventListener("click",e=>{
  const b=e.target.closest("[data-invite-players],[data-cmd='invite'],.invite-players");
@@ -3248,11 +3248,11 @@ queueMicrotask(()=>{repairGameIdentityV97();stampV97();LinksLifecycleV82.queue()
 
 
 // Invite Migration v98 — scope invitation history to pools and migrate legacy invites into real player readiness.
-const InviteRegistryV98={key:"links-invites-by-pool-v98",all(){try{return JSON.parse(localStorage.getItem(this.key)||"{}")||{}}catch{return{}}},read(pool){return this.all()[pool]||[]},add(pool,value){const a=this.all(),rows=a[pool]||[],key=String(value||"").trim().toLowerCase();if(!key)return rows;if(!rows.some(x=>String(x.value||"").toLowerCase()===key))rows.unshift({value:String(value).trim(),at:new Date().toISOString(),status:"sent"});a[pool]=rows.slice(0,100);localStorage.setItem(this.key,JSON.stringify(a));PlayerRegistryV88.add(pool,value);return a[pool]}};
+const InviteRegistryV98={key:"links-invites-by-pool-v98",all(){try{return JSON.parse(localStorage.getItem(this.key)||"{}")||{}}catch{return{}}},read(pool){return this.all()[pool]||[]},add(pool,value){const a=this.all(),rows=a[pool]||[],key=String(value||"").trim().toLowerCase();if(!key)return rows;if(!rows.some(x=>String(x.value||"").toLowerCase()===key))rows.unshift({value:String(value).trim(),at:new Date().toISOString(),status:"local"});a[pool]=rows.slice(0,100);localStorage.setItem(this.key,JSON.stringify(a));PlayerRegistryV88.add(pool,value);return a[pool]}};
 function migrateInvitesV98(){const pools=CreatedPools.all();if(pools.length!==1)return;const pool=pools[0].name,legacy=InviteState.read();if(!legacy.length||InviteRegistryV98.read(pool).length)return;legacy.forEach(x=>InviteRegistryV98.add(pool,x.value))}
 function inviteCenterV98(pool){const base=location.origin+location.pathname+"?view=pool&pool="+encodeURIComponent(pool)+"&invite=1",sent=InviteRegistryV98.read(pool);return '<section class="invite-v2"><div class="invite-hero"><div><span>INVITE CENTER</span><h2>Bring the whole group in.</h2><p>One link opens the right pool. Existing members sign in; new players get a short setup.</p></div><div class="invite-mark">+</div></div><div class="invite-link"><div><span>POOL INVITE LINK</span><b data-invite-url>'+linksEscape(base)+'</b></div><button data-copy-invite>COPY LINK</button></div><div class="invite-actions"><button data-share-invite="text"><i>↗</i><div><b>SHARE INVITE</b><span>Text, email or any installed app</span></div></button><button data-share-invite="email"><i>@</i><div><b>EMAIL</b><span>Open a prefilled invitation</span></div></button></div><form class="invite-direct"><div><span>DIRECT INVITE</span><h3>Email or mobile number</h3></div><input type="text" placeholder="player@email.com or mobile number" autocomplete="off"><button>SEND INVITE</button></form><div class="join-preview"><span>WHAT PLAYERS SEE</span><div><i>L</i><div><b>'+linksEscape(pool)+'</b><small>You’ve been invited to join</small></div><em>JOIN POOL ›</em></div><p>No pool searching. The invitation takes them directly to the correct pool.</p></div>'+(sent.length?'<div class="invite-history"><span>RECENT INVITES</span>'+sent.slice(0,5).map(x=>'<div><b>'+linksEscape(x.value)+'</b><em>SENT</em></div>').join('')+'</div>':'')+'</section>'}
 inviteCenter=inviteCenterV98;
-const wireInviteV97=wireInvite;wireInvite=function(h,pool){wireInviteV97(h,pool);const form=h.querySelector('.invite-direct');if(!form)return;const replacement=form.cloneNode(true);form.replaceWith(replacement);replacement.addEventListener('submit',e=>{e.preventDefault();const input=e.currentTarget.querySelector('input'),v=input.value.trim();if(!v)return;InviteRegistryV98.add(pool,v);AuditLog.add('INVITE SENT',pool+' · '+v);AppStatus.show('ok','Invite queued',v);h.innerHTML=inviteCenter(pool);wireInvite(h,pool)})};
+const wireInviteV97=wireInvite;wireInvite=function(h,pool){wireInviteV97(h,pool);const form=h.querySelector('.invite-direct');if(!form)return;const replacement=form.cloneNode(true);form.replaceWith(replacement);replacement.addEventListener('submit',e=>{e.preventDefault();const input=e.currentTarget.querySelector('input'),v=input.value.trim();if(!v)return;InviteRegistryV98.add(pool,v);AuditLog.add('INVITE PREPARED',pool+' · local only');AppStatus.show('warn','Invite saved locally','Use COPY LINK or SHARE INVITE to deliver it.');h.innerHTML=inviteCenter(pool);wireInvite(h,pool)})};
 function syncPlayerRegistryV98(){migrateInvitesV98();CreatedPools.all().forEach(p=>InviteRegistryV98.read(p.name).forEach(x=>PlayerRegistryV88.add(p.name,x.value)))}
 LinksLifecycleCallbacksV82.push(syncPlayerRegistryV98);
 function stampV98(){document.querySelectorAll('.app-build-v18').forEach(x=>{const html='<b>LINKS</b><span>NEW BUILD · v98 · PLAYER INVITE INTEGRITY</span>';if(x.innerHTML!==html)x.innerHTML=html})}
@@ -3670,3 +3670,15 @@ function revealQaV151(){
  document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v151 · REVEAL QA</span>';if(x.innerHTML!==h)x.innerHTML=h});
 }
 const revealQaObserverV151=new MutationObserver(()=>revealQaV151());revealQaObserverV151.observe(document.querySelector('#app'),{childList:true,subtree:true});queueMicrotask(revealQaV151);
+
+// Reveal QA v153 — direct-invite truth and legacy demo containment.
+function revealQaV153(){
+ document.querySelectorAll('.attention,.notification-rail,.gm-card').forEach(el=>{
+   const t=el.textContent||'';
+   if(/invites pending|weekly reminder queued|moved to #2|cap space|invite accepted/i.test(t))el.remove();
+ });
+ document.querySelectorAll('.invite-direct button').forEach(b=>{if(/SEND INVITE/i.test(b.textContent||'')){b.textContent='SAVE INVITE';b.title='Saves the invite locally. Use Copy Link or Share Invite to actually send it.'}});
+ document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v153 · INVITE TRUTH</span>';if(x.innerHTML!==h)x.innerHTML=h});
+ document.documentElement.dataset.linksBuild='v153';
+}
+const revealQaObserverV153=new MutationObserver(()=>revealQaV153());revealQaObserverV153.observe(document.querySelector('#app'),{childList:true,subtree:true});queueMicrotask(revealQaV153);
