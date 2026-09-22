@@ -4136,3 +4136,16 @@ function homeRevealPolishV180(){
 }
 LinksLifecycleCallbacksV82.push(homeRevealPolishV180);
 queueMicrotask(()=>{homeRevealPolishV180();PublicLanding.mount();LinksLifecycleV82.queue()});
+
+
+// Whole-Site Demo Quarantine v181 — final global safety net across every game and route.
+function wholeSiteTruthV181(){
+ const real=CreatedPools.all().length>0;
+ const banned=/Player 2|Player 3|Jake vs Mike|59 of 64|85% READY|Week 7 standings|scoring healthy|Feed healthy/i;
+ document.querySelectorAll('.score-engine,.results-arena,.autopilot-v1,.pool-gameday,.game-center-v21,.rivalry-card').forEach(x=>x.remove());
+ if(!real)document.querySelectorAll('.route-workspace .card,.route-workspace .panel,.route-workspace article').forEach(x=>{if(banned.test(x.textContent||''))x.remove()});
+ document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v181 · WHOLE-SITE TRUTH SWEEP</span>';if(x.innerHTML!==h)x.innerHTML=h});
+ document.documentElement.dataset.linksBuild='v181';
+}
+LinksLifecycleCallbacksV82.push(wholeSiteTruthV181);
+queueMicrotask(()=>{wholeSiteTruthV181();LinksLifecycleV82.queue()});
