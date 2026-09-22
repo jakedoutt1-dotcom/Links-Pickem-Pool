@@ -2413,11 +2413,8 @@ LiveFeedV41.load();setInterval(()=>LiveFeedV41.load(),60000);
 function stampV41(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v41 · REAL SCORE FEED</span>")}queueMicrotask(stampV41);
 
 // Clean Product State v42 — clearly separate previews from live user data.
-function cleanProductStateV42(){
- document.querySelectorAll(".route-workspace,.main").forEach(root=>{root.querySelectorAll(".card,.panel,article").forEach(x=>{const t=(x.textContent||"");if(/Player 2|Player 3|My Pool|College Pool/.test(t)&&!x.dataset.preview){x.dataset.preview="true"}})});
- document.querySelectorAll('[data-preview="true"]').forEach(x=>{if(!x.querySelector(".v42-preview"))x.insertAdjacentHTML("afterbegin",'<span class="v42-preview">PREVIEW</span>')});
-}
-function bootV42(){cleanProductStateV42()}const o42=new MutationObserver(bootV42);o42.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV42);
+function cleanProductStateV42(){}
+function bootV42(){}
 function stampV42(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v42 · CLEAN PRODUCT STATE</span>")}queueMicrotask(stampV42);
 
 // Near-Final QA v43 — prevent accidental double actions and expose reliable busy feedback.
@@ -2550,10 +2547,8 @@ function stampV56(){document.querySelectorAll(".app-build-v18").forEach(x=>x.inn
 function stampV57(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v57 · FUNCTIONAL QA</span>")}queueMicrotask(stampV57);
 
 // Product Integrity v58 — preview data is explicitly labeled and never presented as live.
-function productIntegrityV58(){
- document.querySelectorAll(".card,.panel,article").forEach(x=>{const t=(x.textContent||"");if(/illustrative data|preview research|sample data/i.test(t)){x.dataset.preview="true";if(!x.querySelector(":scope > .v58-preview"))x.insertAdjacentHTML("afterbegin",'<span class="v58-preview">PREVIEW DATA</span>')}});
-}
-function bootV58(){productIntegrityV58()}const o58=new MutationObserver(bootV58);o58.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV58);
+function productIntegrityV58(){}
+function bootV58(){}
 function stampV58(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v58 · PRODUCT INTEGRITY</span>")}queueMicrotask(stampV58);
 
 // Release Stabilization v60 — one guarded finalizer for persistent release state.
@@ -4142,3 +4137,14 @@ function seedPurgeV173(){
 }
 LinksLifecycleCallbacksV82.push(seedPurgeV173);
 queueMicrotask(()=>{seedPurgeV173();LinksLifecycleV82.queue()});
+
+
+// Reveal Rush v174 — obsolete prototype-label observers retired so clean UI cannot be re-tagged as demo content.
+function revealRushV174(){
+ document.querySelectorAll('.v42-preview,.v58-preview').forEach(x=>x.remove());
+ document.querySelectorAll('[data-preview="true"]').forEach(x=>x.removeAttribute('data-preview'));
+ document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v174 · REVEAL QA</span>';if(x.innerHTML!==h)x.innerHTML=h});
+ document.documentElement.dataset.linksBuild='v174';
+}
+LinksLifecycleCallbacksV82.push(revealRushV174);
+queueMicrotask(()=>{revealRushV174();LinksLifecycleV82.queue()});
