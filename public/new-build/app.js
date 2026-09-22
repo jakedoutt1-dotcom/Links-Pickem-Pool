@@ -2469,3 +2469,12 @@ function revealReadyV47(){
 }
 function bootV47(){revealReadyV47()}const o47=new MutationObserver(bootV47);o47.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV47);
 function stampV47(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v47 · REVEAL READINESS</span>")}const s47=new MutationObserver(stampV47);s47.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV47);
+
+// Production Feel v48 — consistent status announcements and no accidental empty actions.
+function productionFeelV48(){
+ let live=document.querySelector("#links-status-v48");if(!live){live=document.createElement("div");live.id="links-status-v48";live.className="sr-only-v48";live.setAttribute("aria-live","polite");document.body.appendChild(live)}
+ document.querySelectorAll("button").forEach(b=>{if(b.dataset.v48)return;b.dataset.v48="1";if(!(b.textContent||"").trim()&&!b.getAttribute("aria-label")){b.setAttribute("aria-label","LINKS action")}});
+}
+document.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const live=document.querySelector("#links-status-v48");if(live&&/save|submit|invite|send/i.test(b.textContent||"")){live.textContent=(b.textContent||"Action")+" selected"}},true);
+function bootV48(){productionFeelV48()}const o48=new MutationObserver(bootV48);o48.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV48);
+function stampV48(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v48 · PRODUCTION FEEL</span>")}const s48=new MutationObserver(stampV48);s48.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV48);
