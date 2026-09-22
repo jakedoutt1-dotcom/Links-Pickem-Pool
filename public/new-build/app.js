@@ -858,3 +858,50 @@ function mountReadiness(){
  cmd.querySelector("[data-ready-remind]")?.addEventListener("click",()=>{const r=entrantReadiness();r.missing.forEach(n=>ReminderQueue.add?.(n));AuditLog.add("REMINDERS SENT",r.missing.length+" incomplete players");AppStatus.show("ok","Reminders queued",r.missing.length+" incomplete player"+(r.missing.length===1?"":"s")+" targeted.")});
 }
 const readinessObserver=new MutationObserver(()=>mountReadiness());readinessObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountReadiness);
+
+// Information Architecture v1 — put player tools with players, commissioner tools with commissioners.
+const IA={
+ player:[
+  {k:"picks",label:"MY PICKS",sub:"Finish what needs you",route:"my-picks"},
+  {k:"pools",label:"MY POOLS",sub:"Every pool in one place",route:"my-pools"},
+  {k:"results",label:"RESULTS",sub:"Scores and standings",route:"results"},
+  {k:"inbox",label:"INBOX",sub:"Deadlines and updates",route:"notifications"}
+ ],
+ admin:[
+  {k:"players",label:"PLAYERS",sub:"Readiness, invites, access"},
+  {k:"week",label:"WEEK CONTROL",sub:"Open, close, lock games"},
+  {k:"rules",label:"POOL RULES",sub:"Scoring and deadlines"},
+  {k:"auto",label:"AUTOPILOT",sub:"Reminders and recap"}
+ ]
+};
+function playerLaunchpad(){
+ return '<section class="player-launchpad"><div class="launch-cap"><span>YOUR LINKS</span><b>PLAY · TRACK · TALK</b></div><div class="launch-grid">'+IA.player.map(x=>'<button data-ia-route="'+x.route+'"><i class="ia-'+x.k+'"></i><div><b>'+x.label+'</b><span>'+x.sub+'</span></div><em>›</em></button>').join("")+'</div></section>';
+}
+function mountPlayerLaunchpad(){
+ const home=document.querySelector(".main");if(!home||document.documentElement.dataset.view!=="home"||home.querySelector(".player-launchpad"))return;
+ const target=home.querySelector(".game-network-v2,.game-network-showcase");if(target)target.insertAdjacentHTML("beforebegin",playerLaunchpad());else home.insertAdjacentHTML("afterbegin",playerLaunchpad());
+ home.querySelectorAll("[data-ia-route]").forEach(b=>b.addEventListener("click",()=>LinksRouter.navigate(b.dataset.iaRoute)));
+}
+function adminNav(){
+ return '<section class="admin-nav-v1"><div><span>COMMISSIONER TOOLS</span><b>Everything for running the pool</b></div><nav>'+IA.admin.map(x=>'<button data-admin-jump="'+x.k+'"><i></i><div><b>'+x.label+'</b><span>'+x.sub+'</span></div></button>').join("")+'</nav></section>';
+}
+function mountAdminNav(){
+ const ws=document.querySelector(".route-workspace");if(!ws||document.documentElement.dataset.view!=="commissioner"||ws.querySelector(".admin-nav-v1"))return;
+ ws.insertAdjacentHTML("afterbegin",adminNav());
+ ws.querySelectorAll("[data-admin-jump]").forEach(b=>b.addEventListener("click",()=>{
+   const k=b.dataset.adminJump;
+   if(k==="rules"){openSetupStudio();return}
+   if(k==="players"){ws.querySelector(".readiness-strip,.entrant-manager")?.scrollIntoView({behavior:"smooth",block:"center"});return}
+   if(k==="auto"){ws.querySelector(".autopilot-v1")?.scrollIntoView({behavior:"smooth",block:"start"});return}
+   ws.querySelector(".commander-v3")?.scrollIntoView({behavior:"smooth",block:"start"});
+ }));
+}
+function contextualBack(){
+ let b=document.querySelector(".context-back");
+ const v=document.documentElement.dataset.view||"home";
+ if(v==="home"){b?.remove();return}
+ if(!b){b=document.createElement("button");b.className="context-back";document.body.appendChild(b)}
+ b.textContent=v==="pool"?"‹ MY POOLS":"‹ HOME";
+ b.onclick=()=>LinksRouter.navigate(v==="pool"?"my-pools":"home");
+}
+const iaObserver=new MutationObserver(()=>{mountPlayerLaunchpad();mountAdminNav();contextualBack()});iaObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(()=>{mountPlayerLaunchpad();mountAdminNav();contextualBack()});
