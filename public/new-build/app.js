@@ -260,3 +260,45 @@ function renderRouteWorkspace(){
 document.querySelector(".nav")?.addEventListener("click",()=>setTimeout(renderRouteWorkspace,0),true);
 addEventListener("popstate",()=>setTimeout(renderRouteWorkspace,0));
 queueMicrotask(renderRouteWorkspace);
+
+// Pool Hub v1 — persistent pool context, premium game-day command surface.
+const PoolHubData={
+ "Barnes Family":{icon:"🏈",game:"NFL PICK’EM",week:"WEEK 3",members:64,ready:59,lock:"THU · 7:15 PM",record:"2–0",rank:"T-1",accent:"NFL"},
+ "Saturday Crew":{icon:"🎓",game:"COLLEGE PICK’EM",week:"WEEK 4",members:28,ready:28,lock:"SAT · 11:00 AM",record:"8–2",rank:"4",accent:"NCAA"},
+ "Last One Standing":{icon:"🛡️",game:"SURVIVOR",week:"WEEK 3",members:42,ready:7,lock:"SUN · 12:00 PM",record:"ALIVE",rank:"—",accent:"SURVIVOR"}
+};
+function openPoolHub(name){
+ const p=PoolHubData[name]||PoolHubData["Barnes Family"];
+ const u=new URL(location.href);u.searchParams.set("view","pool");u.searchParams.set("pool",name);history.pushState({route:"pool",pool:name},"",u);
+ LinksState.write({route:"pool",pool:name});document.documentElement.dataset.view="pool";document.documentElement.dataset.pool=name;
+ let w=document.querySelector(".route-workspace");if(!w){w=document.createElement("div");w.className="route-workspace";document.querySelector(".main")?.prepend(w)}
+ w.innerHTML=`<section class="poolhub-hero">
+   <div class="poolhub-glow"></div><div class="poolhub-mark">${p.icon}</div>
+   <div class="poolhub-title"><span>${p.accent} · ${p.week}</span><h1>${name}</h1><p>${p.game} · ${p.members} PLAYERS</p></div>
+   <div class="poolhub-lock"><small>NEXT LOCK</small><strong>${p.lock}</strong><em>● PICKS OPEN</em></div>
+ </section>
+ <nav class="poolhub-tabs"><button class="active" data-hubtab="overview">OVERVIEW</button><button data-hubtab="picks">PICKS</button><button data-hubtab="standings">STANDINGS</button><button data-hubtab="compare">COMPARE</button><button data-hubtab="room">POOL ROOM</button><button data-hubtab="rules">RULES</button></nav>
+ <section class="poolhub-body">
+  <div class="hub-overview" data-hubpanel="overview">
+   <article class="hub-main"><span>YOUR WEEK</span><div class="hub-scoreline"><strong>${p.record}</strong><div><b>CURRENT RECORD</b><small>Rank ${p.rank} · live</small></div></div><div class="hub-progress"><i style="width:${Math.round(p.ready/p.members*100)}%"></i></div><p>${p.ready} of ${p.members} players ready for ${p.week.toLowerCase()}.</p><button class="primary" data-hub-go="picks">OPEN MY PICKS ›</button></article>
+   <article class="hub-tile"><span>FIELD</span><strong>${p.members}</strong><b>PLAYERS</b><small>${p.ready} submitted</small></article>
+   <article class="hub-tile"><span>POSITION</span><strong>${p.rank}</strong><b>YOUR RANK</b><small>Updates live</small></article>
+   <article class="hub-live"><span>LIVE IMPACT</span><h3>Every result moves the room.</h3><div><b>+3</b><small>spots if your unique pick wins</small></div><div><b>11</b><small>players on the other side</small></div></article>
+   <article class="hub-activity"><span>POOL PULSE</span><h3>Latest activity</h3><p><b>Amanda</b> finished her card <small>2m</small></p><p><b>Standings</b> recalculated <small>31m</small></p><p><b>Commissioner</b> posted a note <small>1h</small></p></article>
+  </div>
+  <div class="hub-placeholder" data-hubpanel="picks" hidden><span>MY PICKS</span><h2>Your card is ready.</h2><p>Selections save instantly and become read-only at each game’s kickoff.</p><button class="primary" data-return-picks>GO TO PICK CARD ›</button></div>
+  <div class="hub-placeholder" data-hubpanel="standings" hidden><span>STANDINGS</span><h2>Live table.</h2><p>Final games score automatically. Live games remain projected until final.</p><button class="primary" data-return-results>OPEN LIVE STANDINGS ›</button></div>
+  <div class="hub-placeholder" data-hubpanel="compare" hidden><span>COMPARE</span><h2>Head to head.</h2><p>Compare picks after lock and see exactly which remaining games can move the standings.</p></div>
+  <div class="hub-placeholder" data-hubpanel="room" hidden><span>POOL ROOM</span><h2>The conversation around the game.</h2><p>Commissioner notes, reactions and big moments stay with this pool.</p></div>
+  <div class="hub-placeholder" data-hubpanel="rules" hidden><span>POOL RULES</span><h2>${p.game}</h2><p>Scoring, locks, tiebreakers and commissioner settings live here so everybody sees the same rules.</p></div>
+ </section>`;
+ w.querySelectorAll("[data-hubtab]").forEach(b=>b.addEventListener("click",()=>{w.querySelectorAll("[data-hubtab]").forEach(x=>x.classList.toggle("active",x===b));w.querySelectorAll("[data-hubpanel]").forEach(x=>x.hidden=x.dataset.hubpanel!==b.dataset.hubtab)}));
+ w.querySelector("[data-hub-go]")?.addEventListener("click",()=>w.querySelector('[data-hubtab="picks"]')?.click());
+ const homeJump=(sel,target)=>w.querySelector(sel)?.addEventListener("click",()=>{setRoute("home");setTimeout(()=>{renderRouteWorkspace();document.querySelector(target)?.scrollIntoView({behavior:"smooth",block:"start"})},20)});
+ homeJump("[data-return-picks]",".slate-engine");homeJump("[data-return-results]",".score-engine");
+}
+function wirePoolHubs(){
+ document.addEventListener("click",e=>{const x=e.target.closest("[data-open-pool]");if(x){e.preventDefault();e.stopImmediatePropagation();openPoolHub(x.dataset.openPool)}},true);
+ const u=new URL(location.href);if((u.searchParams.get("view")==="pool")&&u.searchParams.get("pool"))openPoolHub(u.searchParams.get("pool"));
+}
+queueMicrotask(wirePoolHubs);
