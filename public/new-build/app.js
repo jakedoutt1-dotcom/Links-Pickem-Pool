@@ -473,15 +473,8 @@ function paintStateGraphics(){
 const stateObserver=new MutationObserver(()=>paintStateGraphics());stateObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(paintStateGraphics);
 
 // Results Experience v2 — live scoreboard, movement, winners and weekly recap.
-function resultsArena(){
- const rows=ScoreDemo.players.map((p,i)=>{const s=scored(p);const move=i===0?"+1":i===1?"−1":"—";return '<div class="result-rank '+(p.name===currentPlayerNameV172()?"me":"")+'"><strong>'+(i+1)+'</strong><div><b>'+p.name+'</b><span>'+(p.name===currentPlayerNameV172()?"YOU · ":"")+s.wins+' correct</span></div><em class="'+(move.includes("+")?"up":move.includes("−")?"down":"")+'">'+move+'</em><i>'+s.wins+'<small>PTS</small></i></div>'}).join("");
- return '<section class="results-arena"><div class="results-hero"><div><span>LINKS LIVE</span><h2>Every game changes the board.</h2><p>Finals score automatically. Live games show impact without counting early.</p></div><div class="results-live"><i></i><b>1 LIVE</b><small>2 FINAL</small></div></div><div class="score-ribbon">'+ScoreDemo.games.map(g=>'<div class="'+(g.final?"final":"live")+'"><span>'+(g.final?"FINAL":"LIVE")+'</span><b>'+g.away+' '+g.awayScore+'</b><b>'+g.home+' '+g.homeScore+'</b><em>'+(g.final?"SCORING COMPLETE":"4TH · 8:42")+'</em></div>').join("")+'</div><div class="results-body"><div class="leaderboard-v2"><div class="section-cap"><span>LIVE STANDINGS</span><b>WEEK 3</b></div>'+rows+'</div><aside class="weekly-winner"><span>WEEKLY LEADER</span><div class="winner-mark">★</div><h3>'+ScoreDemo.players[0].name+'</h3><b>'+scored(ScoreDemo.players[0]).wins+' CORRECT</b><p>Currently on top with one game still live.</p><button data-result-share>SHARE RESULT</button></aside></div><div class="result-impact"><div><span>LIVE IMPACT</span><h3>TEN at IND</h3><p>A Tennessee result moves 18 players up. Indianapolis keeps 31 players ahead of the field.</p></div><div class="impact-meter"><i style="width:37%"></i><span>37% TEN</span><b>63% IND</b></div></div></section>';
-}
-function mountResultsArena(){
- const ws=document.querySelector(".route-workspace");if(!ws||document.documentElement.dataset.view!=="results"||ws.querySelector(".results-arena"))return;
- ws.insertAdjacentHTML("beforeend",resultsArena());
- ws.querySelector("[data-result-share]")?.addEventListener("click",()=>modal("SHARE WEEK 3",'<div class="connected-modal"><span class="badge live">LINKS RESULT</span><h3>'+ScoreDemo.players[0].name+' leads Week 3.</h3><p>'+scored(ScoreDemo.players[0]).wins+' correct with one game still live. A finished share card can be sent from here without exposing anyone’s protected picks.</p></div>'));
-}
+function resultsArena(){return ''}
+function mountResultsArena(){return ''}
 const resultsObserver={disconnect(){}}; // v158 legacy demo observer retired.// v158: seeded results arena disabled for launch.
 
 // Smart Inbox v2 — one place for commissioner notices, lock alerts and results.
@@ -3028,12 +3021,12 @@ queueMicrotask(()=>{replaceEntrantManagerV88();stampV88();LinksLifecycleV82.queu
 
 
 // Launch Data Guard v89 — demo seed pools stay out of returning-player surfaces once a real account creates pools.
-const DemoPoolNamesV89=new Set(["My Pool","College Pool","Last One Standing"]);
+const DemoPoolNamesV89=new Set();
 function realPoolEntriesV89(){return CreatedPools.all().map(p=>[poolGlyphV83(p.game),p.name,p.game||"CUSTOM POOL",GameSlateStoreV86.has(p.name)?"Ready to play":"Setup in progress",p.deadline==="WEEKLY DEADLINE"?"Weekly deadline":"Per-game kickoff"])}
 function launchPoolEntriesV89(){const real=realPoolEntriesV89();return real.length?real:pools.filter(p=>!DemoPoolNamesV89.has(p[1]))}
 function scrubSeedPoolsV89(){
  const real=realPoolEntriesV89();if(!real.length)return;
- document.querySelectorAll('[data-open-pool=""],[data-open-pool="College Pool"],[data-open-pool="Last One Standing"],[data-pickpool=""],[data-pickpool="College Pool"],[data-pickpool="Last One Standing"]').forEach(x=>x.remove());
+ document.querySelectorAll('[data-open-pool=""],[data-pickpool=""],[data-pickpool=""]').forEach(x=>x.remove());
  document.querySelectorAll(".route-pool,.portfolio-card,.pick-command-card").forEach(card=>{const name=card.dataset.openPool||card.dataset.pickpool||"";if(DemoPoolNamesV89.has(name))card.remove()});
  document.querySelectorAll(".mypools-v3 .pool-summary>div b").forEach((b,i)=>{if(i===0)b.textContent=real.length});
 }
@@ -4137,3 +4130,9 @@ queueMicrotask(()=>{revealPolishV177();LinksLifecycleV82.queue()});
 function realPoolAttentionV178(){try{patchMyPoolsTruth()}catch{}document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v178 · REAL POOL ATTENTION</span>';if(x.innerHTML!==h)x.innerHTML=h});document.documentElement.dataset.linksBuild='v178'}
 LinksLifecycleCallbacksV82.push(realPoolAttentionV178);
 queueMicrotask(()=>{realPoolAttentionV178();LinksLifecycleV82.queue()});
+
+
+// Dormant Seed Retirement v179 — old result simulator and named demo-pool guard retired at source.
+function dormantSeedRetirementV179(){document.querySelectorAll('.results-arena').forEach(x=>x.remove());document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v179 · SOURCE CLEAN</span>';if(x.innerHTML!==h)x.innerHTML=h});document.documentElement.dataset.linksBuild='v179'}
+LinksLifecycleCallbacksV82.push(dormantSeedRetirementV179);
+queueMicrotask(()=>{dormantSeedRetirementV179();LinksLifecycleV82.queue()});
