@@ -3065,3 +3065,39 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-open-slate
 LinksLifecycleCallbacksV82.push(commissionerSlateActionV87);
 function stampV87(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v87 · COMMISSIONER SLATE BUILDER</span>";if(x.innerHTML!==html)x.innerHTML=html})}
 queueMicrotask(()=>{commissionerSlateActionV87();stampV87();LinksLifecycleV82.queue()});
+
+
+// Real Player Registry v88 — remove launch-visible fake entrant names and derive commissioner readiness from actual invites/picks.
+const PlayerRegistryV88={
+ key:"links-player-registry-v88",
+ readAll(){try{return JSON.parse(localStorage.getItem(this.key)||"{}")||{}}catch{return{}}},
+ read(pool){return this.readAll()[pool]||[]},
+ write(pool,rows){const all=this.readAll();all[pool]=rows;localStorage.setItem(this.key,JSON.stringify(all));return rows},
+ add(pool,contact){const rows=this.read(pool),key=String(contact||"").trim().toLowerCase();if(!key)return rows;if(!rows.some(x=>String(x.contact||"").toLowerCase()===key))rows.push({id:"p-"+Date.now().toString(36),contact:String(contact).trim(),name:"Invited player",status:"invited",joined:false});return this.write(pool,rows)}
+};
+const inviteAddV88=InviteState.add.bind(InviteState);
+InviteState.add=function(v,pool){const out=inviteAddV88(v);PlayerRegistryV88.add(pool||document.documentElement.dataset.pool||new URL(location.href).searchParams.get("pool")||"",v);return out};
+function playerPickProgressV88(pool,player){
+ const slate=normalizedSlateV86(pool),total=Math.max(1,slate.length),isSelf=player?.self===true;let done=0;
+ if(isSelf)slate.forEach(g=>{if(PickEngine.get(pool+"-"+g.id)||PickEngine.get("slate-"+g.id))done++});
+ return {done,total};
+}
+function realEntrantsV88(pool){
+ const rows=PlayerRegistryV88.read(pool).map(x=>{const p=playerPickProgressV88(pool,x);return {...x,...p}});
+ return rows;
+}
+function readinessTruthV88(pool=document.documentElement.dataset.pool||new URL(location.href).searchParams.get("pool")||""){
+ const rows=realEntrantsV88(pool),missing=rows.filter(x=>x.done<x.total);return {total:rows.length,ready:rows.length-missing.length,missing};
+}
+readinessTruth=readinessTruthV88;
+function replaceEntrantManagerV88(){
+ const box=document.querySelector(".entrant-manager");if(!box)return;const pool=document.documentElement.dataset.pool||new URL(location.href).searchParams.get("pool")||"",rows=realEntrantsV88(pool);
+ if(!rows.length){box.innerHTML='<div class="entrant-head"><div><span>PLAYER READINESS</span><b>No invited players yet.</b><small>Invite players to start tracking joins and pick completion here.</small></div><button class="ghost" data-invite-players>INVITE PLAYERS ›</button></div><div class="links-empty messages"><i>＋</i><h3>BUILD YOUR POOL</h3><p>LINKS will show real player readiness after invitations are sent.</p></div>';return}
+ const ready=rows.filter(x=>x.done===x.total).length;
+ box.innerHTML='<div class="entrant-head"><div><span>PLAYER READINESS</span><b>Who still needs to pick?</b><small>Only real invited players appear here.</small></div><button class="ghost" data-remind-all-v88>REMIND MISSING ›</button></div><div class="entrant-summary"><strong>'+ready+'/'+rows.length+'</strong><span>ENTRIES COMPLETE</span><i></i></div><div class="entrant-list">'+rows.map(x=>'<div class="'+(x.done===x.total?'complete':'missing')+'"><div class="entrant-avatar">'+linksEscape((x.name||'P')[0])+'</div><div><b>'+linksEscape(x.name||'Invited player')+'</b><small>'+linksEscape(x.contact||'')+'</small></div><strong>'+x.done+'/'+x.total+'</strong>'+(x.done===x.total?'<em>✓ COMPLETE</em>':'<button class="ghost" data-remind-v88="'+linksEscape(x.contact||x.name||'Player')+'">REMIND</button>')+'</div>').join('')+'</div><div class="entrant-foot"><span>Reminders never expose another player’s selections.</span><b class="reminder-feedback"></b></div>';
+ box.querySelectorAll("[data-remind-v88]").forEach(b=>b.addEventListener("click",()=>{ReminderQueue.send(b.dataset.remindV88);AppStatus.show("ok","Reminder queued",b.dataset.remindV88)}));
+ box.querySelector("[data-remind-all-v88]")?.addEventListener("click",()=>{const missing=rows.filter(x=>x.done<x.total);missing.forEach(x=>ReminderQueue.send(x.contact||x.name));AppStatus.show("ok","Reminders queued",missing.length+" player"+(missing.length===1?'':'s'))});
+}
+LinksLifecycleCallbacksV82.push(replaceEntrantManagerV88);
+function stampV88(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v88 · REAL PLAYER READINESS</span>";if(x.innerHTML!==html)x.innerHTML=html})}
+queueMicrotask(()=>{replaceEntrantManagerV88();stampV88();LinksLifecycleV82.queue()});
