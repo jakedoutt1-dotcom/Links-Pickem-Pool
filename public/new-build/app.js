@@ -1113,3 +1113,43 @@ function cleanHomeV4(){
  document.querySelectorAll(".player-launchpad,.your-links-spotlight,.nightboard-hero,.live-impact-hero").forEach(x=>x.remove());
 }
 const homeCleanObserver=new MutationObserver(()=>cleanHomeV4());homeCleanObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(cleanHomeV4);
+
+// Home Live Strip v1 — sports-broadcast energy without cluttering the landing page.
+const HomeLive={
+ games:[
+  {a:"TEN",b:"IND",as:24,bs:20,state:"4TH · 6:42",live:true},
+  {a:"DAL",b:"NYG",as:17,bs:17,state:"HALF",live:true},
+  {a:"BUF",b:"MIA",as:null,bs:null,state:"SUN · 3:25",live:false}
+ ],
+ html(){
+  return '<section class="home-live-strip"><div class="hls-brand"><i></i><div><span>LINKS LIVE</span><b>GAME DAY</b></div></div><div class="hls-games">'+this.games.map(g=>'<button data-live-results><div class="hls-team"><b>'+g.a+'</b><em>'+(g.as??"—")+'</em></div><span class="'+(g.live?"live":"upcoming")+'">'+g.state+'</span><div class="hls-team away"><em>'+(g.bs??"—")+'</em><b>'+g.b+'</b></div></button>').join("")+'</div><button class="hls-all" data-live-results>ALL SCORES ›</button></section>';
+ }
+};
+function mountHomeLive(){
+ if(document.documentElement.dataset.view!=="home")return;
+ const cmd=document.querySelector(".home-command-v4");if(!cmd||cmd.querySelector(".home-live-strip"))return;
+ const hero=cmd.querySelector(".home-stage");hero?.insertAdjacentHTML("afterend",HomeLive.html());
+ cmd.querySelectorAll("[data-live-results]").forEach(b=>b.addEventListener("click",()=>LinksRouter.navigate("results")));
+}
+const homeLiveObserver=new MutationObserver(()=>mountHomeLive());homeLiveObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountHomeLive);
+
+// Home personal brief: compress messages/deadlines/commissioner activity into one useful surface.
+function homeBrief(){
+ const unread=InboxStore.all().filter(x=>!x.read).length;
+ return '<section class="home-brief"><div class="hb-head"><div><span>YOUR LINKS BRIEF</span><h2>What matters right now.</h2></div><button data-brief-inbox>'+unread+' UNREAD ›</button></div><div class="hb-grid"><button data-home-go2="my-picks"><i class="pick">✓</i><div><span>PICKS</span><b>Finish Barnes Family</b><small>1 selection left before the next lock</small></div><em>DO IT ›</em></button><button data-home-go2="notifications"><i class="msg">✦</i><div><span>INBOX</span><b>Commissioner update</b><small>Week 3 access and deadline information</small></div><em>READ ›</em></button><button data-home-go2="results"><i class="move">↑</i><div><span>MOVEMENT</span><b>You moved into the top group</b><small>Live standings changed after the last final</small></div><em>VIEW ›</em></button></div></section>';
+}
+function mountHomeBrief(){
+ if(document.documentElement.dataset.view!=="home")return;
+ const cmd=document.querySelector(".home-command-v4");if(!cmd||cmd.querySelector(".home-brief"))return;
+ const now=cmd.querySelector(".home-now-grid");now?.insertAdjacentHTML("afterend",homeBrief());
+ cmd.querySelectorAll("[data-home-go2]").forEach(b=>b.addEventListener("click",()=>LinksRouter.navigate(b.dataset.homeGo2)));
+ cmd.querySelector("[data-brief-inbox]")?.addEventListener("click",()=>LinksRouter.navigate("notifications"));
+}
+const briefObserver=new MutationObserver(()=>mountHomeBrief());briefObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountHomeBrief);
+
+// Keep Home intentionally short: older secondary dashboards stay out of the landing page.
+function trimHome(){
+ if(document.documentElement.dataset.view!=="home"||!document.querySelector(".home-command-v4"))return;
+ [".your-week",".links-brief",".pool-pulse",".broadcast-rail",".needs-attention",".my-links-stream",".pick-safe",".rivalry-watch",".legacy-panel",".ai-game-plan",".ai-card-lab",".weekly-recap",".exposure-panel"].forEach(sel=>document.querySelectorAll(".main "+sel).forEach(x=>x.remove()));
+}
+const trimHomeObserver=new MutationObserver(()=>trimHome());trimHomeObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(trimHome);
