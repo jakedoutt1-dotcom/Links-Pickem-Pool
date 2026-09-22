@@ -2568,3 +2568,15 @@ function releaseFinalizeV60(){
  document.querySelectorAll("button:not([type])").forEach(b=>b.type="button");
 }
 queueMicrotask(releaseFinalizeV60);
+
+// Email Safety v61 — escape dynamic content and reject unsafe CTA protocols.
+if(window.LinksEmailV49){
+ const emailEsc=v=>String(v??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+ const emailUrl=v=>{try{const u=new URL(String(v||"#"),location.href);return /^(https?:)$/.test(u.protocol)?emailEsc(u.href):"#"}catch{return "#"}};
+ const stadiumShell=LinksEmailV49.shell;
+ LinksEmailV49.shell=function({eyebrow="LINKS",title="",body="",cta="OPEN LINKS",url="#",detail=""}={}){
+   return stadiumShell.call(this,{eyebrow:emailEsc(eyebrow),title:emailEsc(title),body:emailEsc(body),cta:emailEsc(cta),url:emailUrl(url),detail:emailEsc(detail)});
+ };
+}
+function stampV61(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v61 · EMAIL SAFETY</span>";if(x.innerHTML!==html)x.innerHTML=html})}
+queueMicrotask(stampV61);
