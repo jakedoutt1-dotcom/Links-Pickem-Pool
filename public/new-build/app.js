@@ -3543,3 +3543,11 @@ function sponsorSlotV129(){const view=document.documentElement.dataset.view;if(!
 function finalStampV129(){document.documentElement.dataset.linksBuild='v129';document.querySelectorAll('.app-build-v18').forEach(x=>x.innerHTML='<b>LINKS</b><span>NEW BUILD · v129 · FRONT DOOR FINISH</span>')}
 function finishV129(){frontDoorFinishV129();sponsorSlotV129();finalStampV129()}
 LinksLifecycleCallbacksV82.push(finishV129);const frontDoorObserverV129=new MutationObserver(()=>finishV129());frontDoorObserverV129.observe(document.querySelector('#app'),{childList:true,subtree:true});queueMicrotask(()=>{finishV129();LinksLifecycleV82.queue()});
+
+// Launch Gate v130 — final interaction health, card pulse sync, and clean route focus.
+function cardPulseSyncV130(){let n=0;try{n=AIMixV70.read().length}catch{}document.querySelectorAll('[data-card-builder-v119],[data-v122-card]').forEach(b=>{let badge=b.querySelector('.card-count-v124');if(!n){badge?.remove();return}if(!badge){badge=document.createElement('strong');badge.className='card-count-v124';b.appendChild(badge)}badge.textContent=n})}
+function routeFocusV130(){const app=document.querySelector('#app');if(!app)return;app.querySelectorAll('[autofocus]').forEach(x=>x.removeAttribute('autofocus'));if(!app.hasAttribute('tabindex'))app.setAttribute('tabindex','-1')}
+let qaTickV130=0;function launchGateV130(){cardPulseSyncV130();routeFocusV130();document.documentElement.dataset.linksBuild='v130';document.querySelectorAll('.app-build-v18').forEach(x=>x.innerHTML='<b>LINKS</b><span>NEW BUILD · v130 · LAUNCH GATE</span>')}
+const gateObserverV130=new MutationObserver(()=>{clearTimeout(qaTickV130);qaTickV130=setTimeout(launchGateV130,40)});gateObserverV130.observe(document.querySelector('#app'),{childList:true,subtree:true});
+document.addEventListener('click',e=>{if(e.target.closest('[data-ai-leg],[data-mix-remove],[data-mix-clear],[data-card-builder-v119],[data-v122-card]'))setTimeout(cardPulseSyncV130,0)},true);
+LinksLifecycleCallbacksV82.push(launchGateV130);queueMicrotask(()=>{launchGateV130();LinksLifecycleV82.queue()});
