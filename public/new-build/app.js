@@ -674,3 +674,47 @@ function mountGameNetworkV2(){
  home.querySelector("[data-network-all]")?.addEventListener("click",()=>{document.querySelector("[data-category='all'],[data-game-category='all']")?.click()});
 }
 const networkObserver=new MutationObserver(()=>mountGameNetworkV2());networkObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountGameNetworkV2);
+
+// Resilient app states v1 — loading, offline, saved, empty and update-ready feedback.
+const AppStatus={
+ show(type,title,detail,ttl=2600){
+  let h=document.querySelector(".links-status-stack");if(!h){h=document.createElement("div");h.className="links-status-stack";document.body.appendChild(h)}
+  const n=document.createElement("div");n.className="links-status "+type;
+  const mark=document.createElement("i");mark.textContent=type==="ok"?"✓":type==="warn"?"!":type==="offline"?"↯":"●";
+  const copy=document.createElement("div"),b=document.createElement("b"),s=document.createElement("span");b.textContent=title;s.textContent=detail||"";copy.append(b,s);n.append(mark,copy);h.appendChild(n);
+  requestAnimationFrame(()=>n.classList.add("show"));if(ttl)setTimeout(()=>{n.classList.remove("show");setTimeout(()=>n.remove(),220)},ttl);
+ },
+ online(){this.show("ok","Back online","LINKS can sync new activity again.")},
+ offline(){this.show("offline","You’re offline","Saved picks on this device are still available.",0)}
+};
+window.addEventListener("offline",()=>AppStatus.offline());
+window.addEventListener("online",()=>{document.querySelectorAll(".links-status.offline").forEach(x=>x.remove());AppStatus.online()});
+
+// Consistent button feedback so navigation/actions never feel dead.
+document.addEventListener("click",e=>{
+ const b=e.target.closest("button,a");if(!b||b.classList.contains("is-busy")||b.closest(".segmented"))return;
+ if(b.hasAttribute("disabled"))return;
+ b.classList.add("tap-feedback");setTimeout(()=>b.classList.remove("tap-feedback"),360);
+},true);
+
+// Pick saves get a durable confirmation rather than relying only on color.
+document.addEventListener("click",e=>{
+ const b=e.target.closest("[data-pick-team],[data-hub-team]");
+ if(!b)return;setTimeout(()=>AppStatus.show("ok","Pick saved","Your selection is stored on this device."),90);
+},true);
+
+// Empty-state component for future live-data gaps.
+function linksEmpty(kind="picks",title="Nothing here yet",detail="When activity arrives, LINKS will put it here."){
+ const glyph={picks:"✓",results:"★",messages:"✦",pools:"L"}[kind]||"L";
+ return '<div class="links-empty '+kind+'"><i>'+glyph+'</i><h3>'+title+'</h3><p>'+detail+'</p></div>';
+}
+
+// PWA/service-worker update detector: never silently strand users on an old build.
+if("serviceWorker" in navigator){
+ navigator.serviceWorker.ready.then(reg=>{
+  reg.addEventListener("updatefound",()=>{
+   const w=reg.installing;if(!w)return;
+   w.addEventListener("statechange",()=>{if(w.state==="installed"&&navigator.serviceWorker.controller)AppStatus.show("warn","LINKS update ready","Close and reopen, or refresh, to load the newest build.",0)});
+  });
+ }).catch(()=>{});
+}
