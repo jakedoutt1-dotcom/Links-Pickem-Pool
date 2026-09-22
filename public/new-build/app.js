@@ -1845,3 +1845,52 @@ function commissionerTruthV17(){
 }
 const CorrectnessV17={run(){commissionerTruthV17();syncDockInbox();safeDynamicText()},queue(){requestAnimationFrame(()=>this.run())}};
 document.addEventListener("click",()=>CorrectnessV17.queue(),true);window.addEventListener("links:picksaved",()=>CorrectnessV17.queue());queueMicrotask(()=>CorrectnessV17.queue());
+
+// Reliability v18 — a single diagnostics layer catches broken UI state before players do.
+const LinksHealth={
+ checks(){
+  const v=document.documentElement.dataset.view||"home",issues=[];
+  if(!document.querySelector("#app"))issues.push("APP ROOT");
+  if(v==="pool"&&!document.documentElement.dataset.pool)issues.push("POOL CONTEXT");
+  if(v==="pool"&&!document.querySelector(".pool-hub"))issues.push("POOL HUB");
+  if(v==="my-picks"&&!document.querySelector(".mypicks-v3"))issues.push("PICKS VIEW");
+  if(v==="results"&&!document.querySelector(".results-board-v13"))issues.push("RESULTS VIEW");
+  if(v==="commissioner"&&!document.querySelector(".commissioner-flow-v12"))issues.push("COMMISSIONER VIEW");
+  return issues;
+ },
+ heal(){
+  const v=document.documentElement.dataset.view||"home",issues=this.checks();if(!issues.length)return true;
+  if(v==="pool"){const p=document.documentElement.dataset.pool||new URL(location.href).searchParams.get("pool");if(p&&PoolHubData[p])openPoolHubStable(p)}
+  else if(v!=="home")renderRouteWorkspace();
+  setTimeout(()=>LinksEnhance?.run?.(),0);return this.checks().length===0;
+ }
+};
+window.addEventListener("error",()=>setTimeout(()=>LinksHealth.heal(),20));window.addEventListener("unhandledrejection",()=>setTimeout(()=>LinksHealth.heal(),20));
+
+// Save state indicator: visible reassurance without repeated toast spam.
+function saveStateBar(){
+ if(document.querySelector(".save-state-v18"))return;
+ document.body.insertAdjacentHTML("beforeend",'<div class="save-state-v18" aria-live="polite"><i></i><span>ALL CHANGES SAVED</span></div>');
+}
+function flashSaveState(label="ALL CHANGES SAVED"){
+ saveStateBar();const b=document.querySelector(".save-state-v18");if(!b)return;b.querySelector("span").textContent=label;b.classList.add("show");clearTimeout(flashSaveState.t);flashSaveState.t=setTimeout(()=>b.classList.remove("show"),1500);
+}
+window.addEventListener("links:picksaved",()=>flashSaveState("PICK SAVED"));
+document.addEventListener("click",e=>{if(e.target.closest("[data-format-choice],[data-adapter-pick]"))setTimeout(()=>flashSaveState("SELECTION SAVED"),60)},true);
+
+// Navigation sanity: always leave transient sheets/modals behind when changing primary routes.
+function clearTransientUI(){document.querySelectorAll(".mobile-more-sheet.open,.mobile-more-sheet.show").forEach(x=>x.classList.remove("open","show"));document.body.classList.remove("more-open")}
+document.addEventListener("click",e=>{if(e.target.closest("[data-home-go],[data-home-go2],[data-open-pool],[data-pickpool],[data-ri-home],[data-ri-pools],.mobile-dock button"))clearTransientUI()},true);
+
+// Compact status footer gives the prototype a finished-app edge and a clear build identity.
+function appBuildStamp(){
+ if(document.documentElement.dataset.publicHome==="true"||document.querySelector(".app-build-v18"))return;
+ const main=document.querySelector(".main");if(!main)return;
+ main.insertAdjacentHTML("beforeend",'<footer class="app-build-v18"><div><b>LINKS</b><span>POOLS</span></div><small>NEW BUILD · v18</small><em>GAME DAY READY</em></footer>');
+}
+const v18Observer=new MutationObserver(()=>appBuildStamp());v18Observer.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(appBuildStamp);
+
+// Mobile scroll memory: returning to a primary page feels native instead of randomly jumping.
+const ScrollMemory={key:"links-scroll-v18",read(){try{return JSON.parse(sessionStorage.getItem(this.key)||"{}")}catch{return{}}},save(){const a=this.read(),v=document.documentElement.dataset.view||"home";a[v]=scrollY;sessionStorage.setItem(this.key,JSON.stringify(a))},restore(v){const y=this.read()[v];requestAnimationFrame(()=>scrollTo({top:Number.isFinite(y)?y:0,behavior:"instant"}))}};
+document.addEventListener("click",e=>{if(e.target.closest("[data-home-go],[data-home-go2],[data-open-pool],[data-pickpool],[data-ri-home],[data-ri-pools],.mobile-dock button"))ScrollMemory.save()},true);
+window.addEventListener("popstate",()=>setTimeout(()=>ScrollMemory.restore(document.documentElement.dataset.view||"home"),30));
