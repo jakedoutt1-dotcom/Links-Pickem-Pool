@@ -2541,3 +2541,11 @@ function finalReviewV55(){
 }
 function bootV55(){finalReviewV55()}const o55=new MutationObserver(bootV55);o55.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV55);
 function stampV55(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v55 · FINAL REVIEW</span>")}const s55=new MutationObserver(stampV55);s55.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV55);
+
+// Presentation Lock v56 — final visual state tagging for review.
+function presentationLockV56(){
+ document.body.classList.add("links-review-v56");
+ document.querySelectorAll(".route-workspace").forEach(w=>w.setAttribute("data-review-ready","true"));
+}
+function bootV56(){presentationLockV56()}const o56=new MutationObserver(bootV56);o56.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV56);
+function stampV56(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v56 · PRESENTATION LOCK</span>")}const s56=new MutationObserver(stampV56);s56.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV56);
