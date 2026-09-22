@@ -2248,7 +2248,7 @@ function routeIdentityV28(){
 }
 function bootV28(){gameCenterV28();routeIdentityV28()}
 const v28o=new MutationObserver(bootV28);v28o.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV28);
-function stampV28(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v28 · GAME CENTER FINISH</span>")}const s28=new MutationObserver(stampV28);s28.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV28);
+function stampV28(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v28 · GAME CENTER FINISH</span>")}queueMicrotask(stampV28);
 
 // Finish Product v29 — reduce visual noise and make every major surface read like one product.
 function finishHierarchyV29(){
@@ -2269,7 +2269,7 @@ function homeFinishRailV29(){
 }
 function bootV29(){finishHierarchyV29();homeFinishRailV29()}
 const v29o=new MutationObserver(bootV29);v29o.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV29);
-function stampV29(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v29 · PRODUCT FINISH</span>")}const s29=new MutationObserver(stampV29);s29.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV29);
+function stampV29(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v29 · PRODUCT FINISH</span>")}queueMicrotask(stampV29);
 
 // Navigation Architecture v30 — keep primary destinations obvious and context actions where they belong.
 function navigationArchitectureV30(){
@@ -2286,7 +2286,7 @@ function commissionerToolsV30(){
  w.querySelectorAll("[data-v30]").forEach(b=>b.addEventListener("click",()=>{const k=b.dataset.v30,sel=k==="players"?".entrant-manager,.readiness-strip":k==="game"?".week-control-v2,.week-control":k==="week"?".commander-v3,.week-control-v2":".activity,.audit,.commissioner-activity";w.querySelector(sel)?.scrollIntoView({behavior:"smooth",block:"center"})}));
 }
 function bootV30(){navigationArchitectureV30();commissionerToolsV30()}const v30o=new MutationObserver(bootV30);v30o.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV30);
-function stampV30(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v30 · NAVIGATION ARCHITECTURE</span>")}const s30=new MutationObserver(stampV30);s30.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV30);
+function stampV30(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v30 · NAVIGATION ARCHITECTURE</span>")}queueMicrotask(stampV30);
 
 // Audio-ready product shell v31 — visual hooks for the future original LINKS theme without autoplay.
 function audioReadyV31(){
@@ -2298,7 +2298,7 @@ function scoreStatusV31(){
  document.querySelectorAll(".live-score-rail-v24").forEach(r=>{if(!r.querySelector(".live-pulse-v31"))r.insertAdjacentHTML("afterbegin",'<span class="live-pulse-v31" aria-hidden="true"></span>')});
 }
 function bootV31(){audioReadyV31();scoreStatusV31()}const o31=new MutationObserver(bootV31);o31.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV31);
-function stampV31(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v31 · BROADCAST FINISH</span>")}const s31=new MutationObserver(stampV31);s31.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV31);
+function stampV31(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v31 · BROADCAST FINISH</span>")}queueMicrotask(stampV31);
 
 // Interaction Finish v32 — consistent loading feedback and safe double-click protection.
 function interactionFinishV32(){
@@ -2321,7 +2321,7 @@ function pageContextV32(){
  const main=document.querySelector(".main");if(main)main.classList.toggle("v32-workspace",v!=="home");
 }
 function bootV32(){interactionFinishV32();pageContextV32()}const o32=new MutationObserver(bootV32);o32.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV32);
-function stampV32(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v32 · INTERACTION FINISH</span>")}const s32=new MutationObserver(stampV32);s32.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV32);
+function stampV32(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v32 · INTERACTION FINISH</span>")}queueMicrotask(stampV32);
 
 // Mobile Finish v33 — thumb-first navigation and compact premium headers.
 function mobileFinishV33(){
@@ -2330,7 +2330,7 @@ function mobileFinishV33(){
  document.querySelectorAll(".route-workspace").forEach(w=>w.dataset.v33View=v);
 }
 function bootV33(){mobileFinishV33()}const o33=new MutationObserver(bootV33);o33.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV33);
-function stampV33(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v33 · MOBILE FINISH</span>")}const s33=new MutationObserver(stampV33);s33.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV33);
+function stampV33(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v33 · MOBILE FINISH</span>")}queueMicrotask(stampV33);
 
 // Release Readiness v34 — consistent empty/loading language and final product semantics.
 function releaseReadinessV34(){
@@ -2339,7 +2339,7 @@ function releaseReadinessV34(){
  document.querySelectorAll("img").forEach(i=>{if(!i.hasAttribute("loading"))i.loading="lazy";if(!i.hasAttribute("decoding"))i.decoding="async"});
 }
 function bootV34(){releaseReadinessV34()}const o34=new MutationObserver(bootV34);o34.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV34);
-function stampV34(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v34 · RELEASE READINESS</span>")}const s34=new MutationObserver(stampV34);s34.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV34);
+function stampV34(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v34 · RELEASE READINESS</span>")}queueMicrotask(stampV34);
 
 // Splash Theme v35 — wired for the official Stadium Rumble MP3.
 const LinksSplashAudioV35={src:"./assets/stadium-rumble.mp3",audio:null,armed:false,
@@ -2355,7 +2355,7 @@ function splashThemeV35(){
 }
 document.addEventListener("pointerdown",()=>LinksSplashAudioV35.retry(),{once:true,passive:true});
 const o35=new MutationObserver(splashThemeV35);o35.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(splashThemeV35);
-function stampV35(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v35 · SPLASH THEME READY</span>")}const s35=new MutationObserver(stampV35);s35.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV35);
+function stampV35(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v35 · SPLASH THEME READY</span>")}queueMicrotask(stampV35);
 
 // Final Cohesion v36 — consistent section rhythm, titles and navigation affordances.
 function cohesionV36(){
@@ -2363,7 +2363,7 @@ function cohesionV36(){
  document.querySelectorAll(".main section:not([data-v36-section])").forEach(s=>s.dataset.v36Section="1");
 }
 function bootV36(){cohesionV36()}const o36=new MutationObserver(bootV36);o36.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV36);
-function stampV36(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v36 · FINAL COHESION</span>")}const s36=new MutationObserver(stampV36);s36.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV36);
+function stampV36(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v36 · FINAL COHESION</span>")}queueMicrotask(stampV36);
 
 // Premium Detail v37 — scoreboard-grade accents without clutter.
 function premiumDetailV37(){
@@ -2371,7 +2371,7 @@ function premiumDetailV37(){
  document.querySelectorAll(".live-score-rail-v24").forEach(x=>x.setAttribute("aria-label","LINKS live scores"));
 }
 function bootV37(){premiumDetailV37()}const o37=new MutationObserver(bootV37);o37.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV37);
-function stampV37(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v37 · PREMIUM DETAIL</span>")}const s37=new MutationObserver(stampV37);s37.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV37);
+function stampV37(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v37 · PREMIUM DETAIL</span>")}queueMicrotask(stampV37);
 
 // Resilience Finish v38 — graceful UI recovery for missing media and network states.
 function resilienceV38(){
@@ -2380,7 +2380,7 @@ function resilienceV38(){
 }
 window.addEventListener("offline",()=>document.body.classList.add("links-offline-v38"));window.addEventListener("online",()=>document.body.classList.remove("links-offline-v38"));if(!navigator.onLine)document.body.classList.add("links-offline-v38");
 function bootV38(){resilienceV38()}const o38=new MutationObserver(bootV38);o38.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV38);
-function stampV38(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v38 · RESILIENCE FINISH</span>")}const s38=new MutationObserver(stampV38);s38.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV38);
+function stampV38(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v38 · RESILIENCE FINISH</span>")}queueMicrotask(stampV38);
 
 // Game Day Finish v39 — reinforce actionable state and clean selected navigation.
 function gameDayFinishV39(){
@@ -2389,7 +2389,7 @@ function gameDayFinishV39(){
  document.querySelectorAll(".card,.panel,.game-card").forEach(x=>{if(!x.dataset.v39)x.dataset.v39="1"});
 }
 function bootV39(){gameDayFinishV39()}const o39=new MutationObserver(bootV39);o39.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV39);
-function stampV39(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v39 · GAME DAY FINISH</span>")}const s39=new MutationObserver(stampV39);s39.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV39);
+function stampV39(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v39 · GAME DAY FINISH</span>")}queueMicrotask(stampV39);
 
 // Launch Polish v40 — keyboard flow, reduced-motion respect and touch-first usability.
 function launchPolishV40(){
@@ -2399,7 +2399,7 @@ function launchPolishV40(){
 }
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){document.querySelectorAll(".modal.open,.modal.show,[aria-modal=true]").forEach(m=>{const x=m.querySelector('[aria-label*="close" i],.close,[data-close]');if(x)x.click()})}});
 function bootV40(){launchPolishV40()}const o40=new MutationObserver(bootV40);o40.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV40);
-function stampV40(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v40 · LAUNCH POLISH</span>")}const s40=new MutationObserver(stampV40);s40.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV40);
+function stampV40(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v40 · LAUNCH POLISH</span>")}queueMicrotask(stampV40);
 
 // Real Score Feed v41 — replace fabricated ticker scores with ESPN public scoreboard data.
 const LiveFeedV41={games:[],status:"loading",updated:0,async load(){
@@ -2418,7 +2418,7 @@ function mountHomeLive(){
  hero.insertAdjacentHTML("afterend",'<section class="home-live-strip"><div class="hls-brand"><i></i><div><span>LINKS LIVE</span><b>GAME DAY</b></div></div><div class="hls-games">'+body+'</div><button class="hls-all" data-live-results>ALL SCORES ›</button></section>');cmd.querySelectorAll("[data-live-results]").forEach(b=>b.addEventListener("click",()=>LinksRouter.navigate("results")));
 }
 LiveFeedV41.load();setInterval(()=>LiveFeedV41.load(),60000);
-function stampV41(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v41 · REAL SCORE FEED</span>")}const s41=new MutationObserver(stampV41);s41.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV41);
+function stampV41(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v41 · REAL SCORE FEED</span>")}queueMicrotask(stampV41);
 
 // Clean Product State v42 — clearly separate previews from live user data.
 function cleanProductStateV42(){
@@ -2426,7 +2426,7 @@ function cleanProductStateV42(){
  document.querySelectorAll('[data-preview="true"]').forEach(x=>{if(!x.querySelector(".v42-preview"))x.insertAdjacentHTML("afterbegin",'<span class="v42-preview">PREVIEW</span>')});
 }
 function bootV42(){cleanProductStateV42()}const o42=new MutationObserver(bootV42);o42.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV42);
-function stampV42(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v42 · CLEAN PRODUCT STATE</span>")}const s42=new MutationObserver(stampV42);s42.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV42);
+function stampV42(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v42 · CLEAN PRODUCT STATE</span>")}queueMicrotask(stampV42);
 
 // Near-Final QA v43 — prevent accidental double actions and expose reliable busy feedback.
 function nearFinalV43(){
@@ -2434,7 +2434,7 @@ function nearFinalV43(){
  document.querySelectorAll("form").forEach(f=>{if(f.dataset.v43)return;f.dataset.v43="1";f.addEventListener("submit",()=>{const b=f.querySelector('button[type="submit"],button:not([type])');if(b){b.classList.add("v43-busy");b.setAttribute("aria-busy","true");setTimeout(()=>{b.classList.remove("v43-busy");b.removeAttribute("aria-busy")},1800)}})});
 }
 function bootV43(){nearFinalV43()}const o43=new MutationObserver(bootV43);o43.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV43);
-function stampV43(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v43 · NEAR-FINAL QA</span>")}const s43=new MutationObserver(stampV43);s43.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV43);
+function stampV43(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v43 · NEAR-FINAL QA</span>")}queueMicrotask(stampV43);
 
 // Release Candidate v44 — consistent top-of-page routing and compact mobile game-day behavior.
 function releaseCandidateV44(){
@@ -2445,7 +2445,7 @@ function releaseCandidateV44(){
 }
 let lastV44="";function bootV44(){const v=document.documentElement.dataset.view||"home";releaseCandidateV44();if(v!==lastV44){lastV44=v;requestAnimationFrame(()=>window.scrollTo({top:0,behavior:"auto"}))}}
 const o44=new MutationObserver(bootV44);o44.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV44);
-function stampV44(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v44 · RELEASE CANDIDATE</span>")}const s44=new MutationObserver(stampV44);s44.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV44);
+function stampV44(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v44 · RELEASE CANDIDATE</span>")}queueMicrotask(stampV44);
 
 // Broadcast Finish v45 — restrained stadium depth and readable status hierarchy.
 function broadcastFinishV45(){
@@ -2453,7 +2453,7 @@ function broadcastFinishV45(){
  document.querySelectorAll(".badge").forEach(x=>{const t=(x.textContent||"").toLowerCase();x.classList.toggle("v45-live",/live|open|ready|free/.test(t));x.classList.toggle("v45-warn",/missing|lock|pending/.test(t))});
 }
 function bootV45(){broadcastFinishV45()}const o45=new MutationObserver(bootV45);o45.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV45);
-function stampV45(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v45 · BROADCAST FINISH</span>")}const s45=new MutationObserver(stampV45);s45.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV45);
+function stampV45(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v45 · BROADCAST FINISH</span>")}queueMicrotask(stampV45);
 
 // Final Flow Guard v46 — keep primary actions reachable and prevent stale overlays between routes.
 function finalFlowGuardV46(){
@@ -2463,7 +2463,7 @@ function finalFlowGuardV46(){
  document.body.classList.toggle("v46-game-context",/picks|results|pool|commissioner|admin/.test(view));
 }
 function bootV46(){finalFlowGuardV46()}const o46=new MutationObserver(bootV46);o46.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV46);
-function stampV46(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v46 · FINAL FLOW GUARD</span>")}const s46=new MutationObserver(stampV46);s46.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV46);
+function stampV46(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v46 · FINAL FLOW GUARD</span>")}queueMicrotask(stampV46);
 
 // Reveal Readiness v47 — stable visual viewport, safe-area finish and last-route continuity.
 function revealReadyV47(){
@@ -2472,7 +2472,7 @@ function revealReadyV47(){
  document.querySelectorAll("button").forEach(b=>{if(!b.hasAttribute("type"))b.type="button"});
 }
 function bootV47(){revealReadyV47()}const o47=new MutationObserver(bootV47);o47.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV47);
-function stampV47(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v47 · REVEAL READINESS</span>")}const s47=new MutationObserver(stampV47);s47.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV47);
+function stampV47(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v47 · REVEAL READINESS</span>")}queueMicrotask(stampV47);
 
 // Production Feel v48 — consistent status announcements and no accidental empty actions.
 function productionFeelV48(){
@@ -2481,7 +2481,7 @@ function productionFeelV48(){
 }
 document.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const live=document.querySelector("#links-status-v48");if(live&&/save|submit|invite|send/i.test(b.textContent||"")){live.textContent=(b.textContent||"Action")+" selected"}},true);
 function bootV48(){productionFeelV48()}const o48=new MutationObserver(bootV48);o48.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV48);
-function stampV48(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v48 · PRODUCTION FEEL</span>")}const s48=new MutationObserver(stampV48);s48.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV48);
+function stampV48(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v48 · PRODUCTION FEEL</span>")}queueMicrotask(stampV48);
 
 // LINKS Email System v49 — one premium voice for every player/commissioner touchpoint.
 const LinksEmailV49={
@@ -2496,14 +2496,14 @@ const LinksEmailV49={
  results({pool="Your Pool",week="This week",url="#"}={}){return this.shell({eyebrow:"FINAL RESULTS",title:`${week} is final.`,body:`Results and standings for ${pool} are ready. Open LINKS to see where everything landed.`,cta:"VIEW RESULTS",url})}
 };
 window.LinksEmailV49=LinksEmailV49;
-function stampV49(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v49 · EMAIL SYSTEM</span>")}const s49=new MutationObserver(stampV49);s49.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV49);
+function stampV49(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v49 · EMAIL SYSTEM</span>")}queueMicrotask(stampV49);
 
 // Stadium Mail v50 — email-safe stadium header treatment without sacrificing deliverability.
 if(window.LinksEmailV49){
  LinksEmailV49.shell=function({eyebrow="LINKS",title,body,cta="OPEN LINKS",url="#",detail=""}){
  return `<!doctype html><html><body style="margin:0;background:#050908;font-family:Arial,sans-serif;color:#f5f7f6"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#050908;padding:28px 12px"><tr><td align="center"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#0b100e;border:1px solid #26302b;border-radius:18px;overflow:hidden"><tr><td style="height:5px;background:#f17521"></td></tr><tr><td style="padding:0;background:#09100c"><table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td align="center" style="padding:25px 12px 10px;color:#66736d;font-size:12px;letter-spacing:8px">✦ &nbsp; ✦ &nbsp; ✦ &nbsp; ✦ &nbsp; ✦</td></tr><tr><td align="center" style="padding:0 24px 25px"><div style="font-size:30px;font-weight:900;letter-spacing:5px;color:#fff">LINKS</div><div style="margin-top:8px;color:#f17521;font-size:11px;font-weight:800;letter-spacing:2px">${eyebrow}</div><div style="margin:18px auto 0;width:74%;height:1px;background:#26372e"></div><div style="margin:0 auto;width:54%;height:14px;border-left:1px solid #26372e;border-right:1px solid #26372e;border-bottom:1px solid #26372e"></div></td></tr></table></td></tr><tr><td style="padding:28px 30px 30px"><h1 style="font-size:27px;line-height:1.08;margin:0 0 12px;color:#fff">${title}</h1><div style="color:#b7c0bc;font-size:16px;line-height:1.55">${body}</div>${detail?`<div style="margin:22px 0;padding:16px;background:#101713;border:1px solid #26302b;border-radius:12px;color:#e7ebe9;font-size:14px;line-height:1.5">${detail}</div>`:""}<div style="margin:26px 0"><a href="${url}" style="display:inline-block;background:#f17521;color:#090b0a;text-decoration:none;font-weight:900;padding:14px 20px;border-radius:10px">${cta} ›</a></div><div style="border-top:1px solid #222b27;padding-top:18px;color:#737e79;font-size:12px;line-height:1.5">LINKS · You pick. We track. You win.<br>Pool play is free.</div></td></tr></table></td></tr></table></body></html>`}
 }
-function stampV50(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v50 · REVIEW READY</span>")}const s50=new MutationObserver(stampV50);s50.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV50);
+function stampV50(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v50 · REVIEW READY</span>")}queueMicrotask(stampV50);
 
 // Review Candidate v51 — final presentation guardrails.
 function reviewCandidateV51(){
@@ -2512,7 +2512,7 @@ function reviewCandidateV51(){
  document.querySelectorAll(".route-workspace,.platform-hero-v22,.game-center-v28").forEach(x=>x.classList.add("v51-reviewed"));
 }
 function bootV51(){reviewCandidateV51()}const o51=new MutationObserver(bootV51);o51.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV51);
-function stampV51(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v51 · REVIEW CANDIDATE</span>")}const s51=new MutationObserver(stampV51);s51.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV51);
+function stampV51(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v51 · REVIEW CANDIDATE</span>")}queueMicrotask(stampV51);
 
 // Review Lock v52 — keep the reveal clean and predictable.
 function reviewLockV52(){
@@ -2520,7 +2520,7 @@ function reviewLockV52(){
  document.querySelectorAll("button").forEach(b=>{if(!b.dataset.v52){b.dataset.v52="1";b.addEventListener("pointerup",()=>{b.classList.add("v52-hit");setTimeout(()=>b.classList.remove("v52-hit"),180)})}});
 }
 function bootV52(){reviewLockV52()}const o52=new MutationObserver(bootV52);o52.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV52);
-function stampV52(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v52 · REVIEW LOCK</span>")}const s52=new MutationObserver(stampV52);s52.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV52);
+function stampV52(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v52 · REVIEW LOCK</span>")}queueMicrotask(stampV52);
 
 // Review Finish v53 — normalize actionable controls and final mobile behavior.
 function reviewFinishV53(){
@@ -2529,14 +2529,14 @@ function reviewFinishV53(){
  document.querySelectorAll("img:not([alt])").forEach(i=>i.alt="");
 }
 function bootV53(){reviewFinishV53()}const o53=new MutationObserver(bootV53);o53.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV53);
-function stampV53(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v53 · REVIEW FINISH</span>")}const s53=new MutationObserver(stampV53);s53.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV53);
+function stampV53(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v53 · REVIEW FINISH</span>")}queueMicrotask(stampV53);
 
 // Signature Finish v54 — restrained stadium signature across primary experiences.
 function signatureFinishV54(){
  document.querySelectorAll(".route-hero,.platform-hero-v22,.game-center-v28,.comm-tools-v30").forEach(x=>{if(!x.querySelector(":scope > .v54-signature"))x.insertAdjacentHTML("beforeend",'<span class="v54-signature" aria-hidden="true"></span>')});
 }
 function bootV54(){signatureFinishV54()}const o54=new MutationObserver(bootV54);o54.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV54);
-function stampV54(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v54 · SIGNATURE FINISH</span>")}const s54=new MutationObserver(stampV54);s54.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV54);
+function stampV54(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v54 · SIGNATURE FINISH</span>")}queueMicrotask(stampV54);
 
 // Final Review v55 — preserve scroll quality and clarify loading/action state.
 function finalReviewV55(){
@@ -2544,7 +2544,7 @@ function finalReviewV55(){
  document.querySelectorAll("[aria-busy='true']").forEach(x=>x.classList.add("v55-busy"));
 }
 function bootV55(){finalReviewV55()}const o55=new MutationObserver(bootV55);o55.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV55);
-function stampV55(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v55 · FINAL REVIEW</span>")}const s55=new MutationObserver(stampV55);s55.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV55);
+function stampV55(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v55 · FINAL REVIEW</span>")}queueMicrotask(stampV55);
 
 // Presentation Lock v56 — final visual state tagging for review.
 function presentationLockV56(){
@@ -2552,17 +2552,17 @@ function presentationLockV56(){
  document.querySelectorAll(".route-workspace").forEach(w=>w.setAttribute("data-review-ready","true"));
 }
 function bootV56(){presentationLockV56()}const o56=new MutationObserver(bootV56);o56.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV56);
-function stampV56(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v56 · PRESENTATION LOCK</span>")}const s56=new MutationObserver(stampV56);s56.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV56);
+function stampV56(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v56 · PRESENTATION LOCK</span>")}queueMicrotask(stampV56);
 
 // Functional QA v57 — duplicate declaration removed after full-file syntax audit.
-function stampV57(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v57 · FUNCTIONAL QA</span>")}const s57=new MutationObserver(stampV57);s57.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV57);
+function stampV57(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v57 · FUNCTIONAL QA</span>")}queueMicrotask(stampV57);
 
 // Product Integrity v58 — preview data is explicitly labeled and never presented as live.
 function productIntegrityV58(){
  document.querySelectorAll(".card,.panel,article").forEach(x=>{const t=(x.textContent||"");if(/illustrative data|preview research|sample data/i.test(t)){x.dataset.preview="true";if(!x.querySelector(":scope > .v58-preview"))x.insertAdjacentHTML("afterbegin",'<span class="v58-preview">PREVIEW DATA</span>')}});
 }
 function bootV58(){productIntegrityV58()}const o58=new MutationObserver(bootV58);o58.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV58);
-function stampV58(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v58 · PRODUCT INTEGRITY</span>")}const s58=new MutationObserver(stampV58);s58.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV58);
+function stampV58(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v58 · PRODUCT INTEGRITY</span>")}queueMicrotask(stampV58);
 
 // Release Stabilization v60 — one guarded finalizer for persistent release state.
 function releaseFinalizeV60(){
@@ -2733,3 +2733,6 @@ function mixReviewV71(){
 document.addEventListener("click",e=>{if(e.target.closest("[data-ai-leg],[data-mix-remove],[data-mix-clear],[data-ai-sport]"))setTimeout(mixDockV71,0);if(e.target.closest("[data-mix-review-v71]")){e.preventDefault();mixReviewV71()}},true);
 document.addEventListener("click",e=>{if(e.target.closest("[data-ai],[data-ai-studio],[data-ai-card],[data-parlay]"))setTimeout(mixDockV71,0)},true);
 function stampV71(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v71 · MULTI-SPORT CARD DOCK</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV71);
+
+// Release Stability v72 — final stamp stays one-shot; older stamp observers were consolidated.
+function stampV72(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v72 · RELEASE STABILITY</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV72);
