@@ -2450,3 +2450,13 @@ function broadcastFinishV45(){
 }
 function bootV45(){broadcastFinishV45()}const o45=new MutationObserver(bootV45);o45.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV45);
 function stampV45(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v45 · BROADCAST FINISH</span>")}const s45=new MutationObserver(stampV45);s45.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV45);
+
+// Final Flow Guard v46 — keep primary actions reachable and prevent stale overlays between routes.
+function finalFlowGuardV46(){
+ const view=document.documentElement.dataset.view||"home";
+ document.querySelectorAll('[aria-modal="true"]').forEach(m=>{if(m.offsetParent===null)m.remove()});
+ document.querySelectorAll(".finish-dock-v26 button,.game-center-v28 button").forEach(b=>{if(!b.getAttribute("aria-label")){const t=(b.textContent||"").replace(/\s+/g," ").trim();if(t)b.setAttribute("aria-label",t)}});
+ document.body.classList.toggle("v46-game-context",/picks|results|pool|commissioner|admin/.test(view));
+}
+function bootV46(){finalFlowGuardV46()}const o46=new MutationObserver(bootV46);o46.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(bootV46);
+function stampV46(){document.querySelectorAll(".app-build-v18").forEach(x=>x.innerHTML="<b>LINKS</b><span>NEW BUILD · v46 · FINAL FLOW GUARD</span>")}const s46=new MutationObserver(stampV46);s46.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV46);
