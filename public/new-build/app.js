@@ -2169,3 +2169,23 @@ function mountPreflightV24(){
  const q=w.querySelector(".comm-quick-v23");q?.insertAdjacentHTML("afterend",commissionerPreflightV24());w.querySelector("[data-pf-action]")?.addEventListener("click",()=>w.querySelector(".commander-v3,.readiness-strip,.week-control-v2")?.scrollIntoView({behavior:"smooth",block:"center"}));
 }
 const pf24Observer=new MutationObserver(()=>mountPreflightV24());pf24Observer.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountPreflightV24);
+
+// Reveal Finish v25 — cinematic stadium atmosphere, sport worlds and premium motion without sacrificing clarity.
+function stadiumAtmosphereV25(){
+ if(document.querySelector(".stadium-atmos-v25")||document.documentElement.dataset.publicHome==="true")return;
+ document.body.insertAdjacentHTML("afterbegin",'<div class="stadium-atmos-v25" aria-hidden="true"><div class="sav-lights left"><i></i><i></i><i></i><i></i></div><div class="sav-lights right"><i></i><i></i><i></i><i></i></div><div class="sav-haze"></div><div class="sav-field"><i></i><i></i><i></i><b></b></div></div>');
+}
+function sportWorldV25(){
+ const main=document.querySelector(".main");if(!main||main.querySelector(".sport-world-v25")||document.documentElement.dataset.view!=="home"||document.documentElement.dataset.publicHome==="true")return;
+ main.insertAdjacentHTML("beforeend",'<section class="sport-world-v25"><div class="swv-head"><span>ONE LINKS. EVERY GAME.</span><h2>Your game-day world.</h2><p>Every sport keeps its own identity while still feeling like LINKS.</p></div><div class="swv-grid"><button data-ai-studio class="football"><i class="swv-art"><b></b></i><div><span>FOOTBALL</span><strong>NFL · COLLEGE</strong><small>Pick’em · Survivor · Props · AI</small></div></button><button data-ai-studio class="baseball"><i class="swv-art"><b></b></i><div><span>BASEBALL</span><strong>MLB</strong><small>Pick’em · Run pools · AI cards</small></div></button><button data-ai-studio class="hockey"><i class="swv-art"><b></b></i><div><span>HOCKEY</span><strong>NHL</strong><small>Pick’em · Survivor · AI cards</small></div></button><button data-ai-studio class="basketball"><i class="swv-art"><b></b></i><div><span>BASKETBALL</span><strong>NBA · MARCH</strong><small>Brackets · Pick’em · AI cards</small></div></button><button data-ai-studio class="soccer"><i class="swv-art"><b></b></i><div><span>SOCCER</span><strong>WORLD FOOTBALL</strong><small>Pick’em · Brackets · AI cards</small></div></button><button data-ph-pools class="racing"><i class="swv-art"><b></b></i><div><span>RACING + GOLF</span><strong>RACE DAY · MAJORS</strong><small>Pick X · One & Done · Pools</small></div></button></div></section>');
+ main.querySelector(".sport-world-v25 [data-ph-pools]")?.addEventListener("click",()=>LinksRouter.navigate("my-pools"));
+}
+function revealFinishV25(){stadiumAtmosphereV25();sportWorldV25()}
+const rf25Observer=new MutationObserver(()=>revealFinishV25());rf25Observer.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(revealFinishV25);
+
+// Premium route transition curtain: fast enough to feel responsive, deliberate enough to feel native.
+document.addEventListener("click",e=>{if(!e.target.closest("[data-route],[data-mobile-route],[data-drv],[data-ph-pools]"))return;document.documentElement.classList.add("links-route-moving");setTimeout(()=>document.documentElement.classList.remove("links-route-moving"),240)},true);
+
+// Give the build stamp an accurate finish-line label.
+function stampV25(){document.querySelectorAll(".app-build-v18").forEach(x=>{x.innerHTML="<b>LINKS</b><span>NEW BUILD · v25 · FINISHING PASS</span>"})}
+const stamp25Observer=new MutationObserver(()=>stampV25());stamp25Observer.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(stampV25);
