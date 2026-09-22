@@ -1300,3 +1300,64 @@ function mobileReadiness(){
  document.querySelector("[data-mobile-finish]")?.addEventListener("click",()=>LinksRouter.navigate("my-picks"));
 }
 const mrObserver=new MutationObserver(()=>mobileReadiness());mrObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mobileReadiness);
+
+// LINKS Cohesion v7 — one visual rhythm across Home, Pool Hub and route workspaces.
+function linksSectionTitle(kicker,title,sub=""){
+ return '<div class="links-section-title"><div><span>'+kicker+'</span><h2>'+title+'</h2>'+(sub?'<p>'+sub+'</p>':'')+'</div><i></i></div>';
+}
+function polishSectionHeadings(){
+ const map=[
+  [".game-network-v2","GAME NETWORK","Choose your game.","Every pool starts here."],
+  [".my-pools-v3","MY LINKS","Your pools.","Jump back into the action."],
+  [".commissioner-v3","COMMISSIONER","Run the week.","Players, locks, rules and communication."],
+  [".results-v2","LINKS LIVE","Follow the action.","Scores, standings and movement."]
+ ];
+ map.forEach(([sel,k,t,s])=>{
+  document.querySelectorAll(sel).forEach(x=>{
+   if(x.querySelector(":scope > .links-section-title"))return;
+   x.insertAdjacentHTML("afterbegin",linksSectionTitle(k,t,s));
+  });
+ });
+}
+const sectionObserver=new MutationObserver(()=>polishSectionHeadings());sectionObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(polishSectionHeadings);
+
+// Pool Hub action dock — one clear game-day decision area, adapted to the pool.
+function poolActionDock(name){
+ const p=PoolHubData[name];if(!p)return "";
+ const g=gameIdentity(p.game),terms=gameHubTerms(name);
+ const ready=p.ready>=p.members;
+ return '<section class="pool-action-dock pad-'+g.type+'"><div class="pad-signal"><i></i><span>'+(ready?"POOL READY":"ACTION NEEDED")+'</span></div><div class="pad-main"><small>'+p.game+' · '+p.week+'</small><b>'+(ready?"YOU’RE READY FOR GAME DAY":terms.action)+'</b><span>'+(ready?"Your selections are set. Follow standings when play begins.":"Check your selections before "+p.lock+".")+'</span></div><button data-pad-action="'+(ready?"standings":"picks")+'">'+(ready?"VIEW STANDINGS":"OPEN PICKS")+' ›</button></section>';
+}
+function mountPoolActionDock(){
+ if(document.documentElement.dataset.view!=="pool")return;
+ const hub=document.querySelector(".pool-hub");if(!hub||hub.querySelector(".pool-action-dock"))return;
+ const name=document.documentElement.dataset.pool||new URL(location.href).searchParams.get("pool");if(!name)return;
+ const quick=hub.querySelector(".hub-quick");if(!quick)return;
+ quick.insertAdjacentHTML("afterend",poolActionDock(name));
+ const b=hub.querySelector("[data-pad-action]");if(b)b.onclick=()=>{
+  const want=b.dataset.padAction.toUpperCase();
+  const target=[...hub.querySelectorAll("button")].find(x=>x.textContent.trim().toUpperCase()===want);
+  target?.click();
+ };
+}
+const padObserver=new MutationObserver(()=>mountPoolActionDock());padObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountPoolActionDock);
+
+// Shared micro-branding: consistent live/locked/ready language instead of mismatched chips.
+function normalizeStatusChips(){
+ document.querySelectorAll(".badge,.status,.chip").forEach(x=>{
+  const t=x.textContent.trim().toUpperCase();
+  if(/LIVE|IN PROGRESS/.test(t))x.dataset.linksStatus="live";
+  else if(/LOCK|CLOSED|FINAL/.test(t))x.dataset.linksStatus="locked";
+  else if(/READY|SAVED|OPEN/.test(t))x.dataset.linksStatus="ready";
+ });
+}
+const statusObserver=new MutationObserver(()=>normalizeStatusChips());statusObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(normalizeStatusChips);
+
+// Home visual bridge — keeps the page feeling like a designed story between personal and discovery areas.
+function homeBridge(){
+ if(document.documentElement.dataset.view!=="home")return;
+ const cmd=document.querySelector(".home-command-v4");if(!cmd||cmd.querySelector(".home-bridge-v7"))return;
+ const explore=cmd.querySelector(".home-explore");if(!explore)return;
+ explore.insertAdjacentHTML("beforebegin",'<section class="home-bridge-v7"><div class="hbv-lines"><i></i><i></i><i></i></div><div><span>BUILT FOR GAME DAY</span><b>ONE PLACE FROM FIRST PICK TO FINAL SCORE.</b></div><div class="hbv-stats"><span><b>LIVE</b><small>SCORES</small></span><span><b>FAST</b><small>LOCKS</small></span><span><b>ONE</b><small>ACCOUNT</small></span></div></section>');
+}
+const bridgeObserver=new MutationObserver(()=>homeBridge());bridgeObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(homeBridge);
