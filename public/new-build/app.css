@@ -429,3 +429,6 @@ html,body{min-height:100%;min-height:calc(var(--links-vh,1vh)*100)}body{overscro
 
 /* v132 truth sweep */
 .hub-live.truth-v132 div b{font-variant-numeric:tabular-nums}.hub-activity.truth-v132 p{display:flex;justify-content:space-between;gap:12px;align-items:center}.hub-activity.truth-v132 small{text-align:right;color:#8e9aa6}.hub-live.truth-v132,.hub-activity.truth-v132{border-color:rgba(255,255,255,.08)!important}@media(max-width:560px){.hub-activity.truth-v132 p{align-items:flex-start;flex-direction:column;gap:3px}.hub-activity.truth-v132 small{text-align:left}}
+
+/* v133 real engine reconciliation */
+.golf-pick-v109,.nascar-pick-v110{animation:engineIn133 .22s ease both}@keyframes engineIn133{from{opacity:.65;transform:translateY(4px)}to{opacity:1;transform:none}}@media(prefers-reduced-motion:reduce){.golf-pick-v109,.nascar-pick-v110{animation:none}}
