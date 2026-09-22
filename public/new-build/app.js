@@ -1378,8 +1378,9 @@ function patchMyPoolsTruth(){
  if(summary[3])summary[3].textContent=(pools.find(([,p])=>p.lock&&p.lock!=="NOT SET")?.[1].lock||"—").split("·")[0].trim();
  host.querySelectorAll(".portfolio-card").forEach(card=>{
    const name=card.dataset.openPool,p=PoolHubData[name],em=card.querySelector(".portfolio-rank em");if(!p||!em)return;
-   if(name==="My Pool")em.textContent=s.due?(s.due+" PICK"+(s.due===1?"":"S")+" DUE ›"):"OPEN POOL ›";else em.textContent="OPEN POOL ›";
-   card.classList.toggle("attention",name==="My Pool"&&s.due>0);
+   const ps=pickStatusV101(name,p.game);
+   em.textContent=ps.due?(ps.due+" PICK"+(ps.due===1?"":"S")+" DUE ›"):"OPEN POOL ›";
+   card.classList.toggle("attention",ps.due>0);
  });
 }
 const poolTruthObserver=new MutationObserver(()=>patchMyPoolsTruth());poolTruthObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(patchMyPoolsTruth);
@@ -4130,3 +4131,9 @@ function revealPolishV177(){
 }
 LinksLifecycleCallbacksV82.push(revealPolishV177);
 queueMicrotask(()=>{revealPolishV177();LinksLifecycleV82.queue()});
+
+
+// Real Pool Attention v178 — portfolio attention is per actual pool, never a hard-coded demo pool name.
+function realPoolAttentionV178(){try{patchMyPoolsTruth()}catch{}document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v178 · REAL POOL ATTENTION</span>';if(x.innerHTML!==h)x.innerHTML=h});document.documentElement.dataset.linksBuild='v178'}
+LinksLifecycleCallbacksV82.push(realPoolAttentionV178);
+queueMicrotask(()=>{realPoolAttentionV178();LinksLifecycleV82.queue()});
