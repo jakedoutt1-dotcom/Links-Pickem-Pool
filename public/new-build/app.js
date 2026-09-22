@@ -2782,3 +2782,15 @@ function marchArenaPolishV77(){
 document.addEventListener("click",e=>{if(e.target.closest("[data-bracket-pick],.poolhub-tabs button,.pool-tabs button"))setTimeout(marchArenaPolishV77,0)},true);
 queueMicrotask(marchArenaPolishV77);
 function stampV77(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v77 · MARCH MADNESS ARENA</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV77);
+
+// Launch Funnel v78 — contextual LINKS AI entry inside every sports pool.
+function poolAIFunnelV78(){
+ if(document.documentElement.dataset.view!=="pool")return;const pool=document.documentElement.dataset.pool||"",p=PoolHubData[pool];if(!p)return;
+ const hub=document.querySelector(".pool-hub");if(!hub||hub.querySelector(".pool-ai-funnel-v78"))return;
+ const id=gameIdentity(p.game),target=hub.querySelector(".poolhub-hero")||hub.firstElementChild;if(!target)return;
+ target.insertAdjacentHTML("afterend",'<aside class="pool-ai-funnel-v78"><div class="pool-ai-mark-v78"><span>LINKS AI</span><b>BUILD A CARD</b></div><div><strong>Like your picks?</strong><p>Research them, add other sports and build one multi-sport card.</p><small>Optional research tool · Pools stay FREE</small></div><button data-pool-ai-v78="'+linksEscape(id.type)+'">OPEN CREATE A CARD ›</button></aside>');
+}
+function aiSportFromPoolV78(type){return ({football:"NFL",college:"NCAAF",confidence:"NFL",survivor:"NFL",game33:"NFL",squares:"NFL",bracket:"NCAAB",golf:"GOLF",racing:"NASCAR",fantasy:"NFL",dynasty:"NFL"})[type]||"NFL"}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-pool-ai-v78]");if(!b)return;e.preventDefault();const sport=aiSportFromPoolV78(b.dataset.poolAiV78);AIStudio.open();setTimeout(()=>{applyAISportV66(sport);aiStadiumVisualV68();aiFlowFinishV69();mountMixedCardV70();mixDockV71()},0)},true);
+document.addEventListener("click",e=>{if(e.target.closest(".poolhub-tabs button,.pool-tabs button,[data-route]"))setTimeout(poolAIFunnelV78,0)},true);queueMicrotask(poolAIFunnelV78);
+function stampV78(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v78 · LAUNCH FUNNEL</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV78);
