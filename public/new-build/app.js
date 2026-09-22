@@ -1361,3 +1361,55 @@ function homeBridge(){
  explore.insertAdjacentHTML("beforebegin",'<section class="home-bridge-v7"><div class="hbv-lines"><i></i><i></i><i></i></div><div><span>BUILT FOR GAME DAY</span><b>ONE PLACE FROM FIRST PICK TO FINAL SCORE.</b></div><div class="hbv-stats"><span><b>LIVE</b><small>SCORES</small></span><span><b>FAST</b><small>LOCKS</small></span><span><b>ONE</b><small>ACCOUNT</small></span></div></section>');
 }
 const bridgeObserver=new MutationObserver(()=>homeBridge());bridgeObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(homeBridge);
+
+// Tighten v8 — reduce duplication, derive visible counts, and keep one clear action per surface.
+function currentPickSummary(){
+ const total=DemoSlate.length||0;
+ const made=DemoSlate.reduce((n,g)=>n+(PickEngine.get(g.id)?.team?1:0),0);
+ return {total,made,due:Math.max(0,total-made),pct:total?Math.round(made/total*100):100};
+}
+function tightenHomeTruth(){
+ if(document.documentElement.dataset.view!=="home")return;
+ const s=currentPickSummary();
+ document.querySelectorAll(".home-primary button:first-child b").forEach(x=>x.textContent=s.due?(s.due+" DUE"):"READY");
+ document.querySelectorAll(".home-scorebug b").forEach(x=>x.textContent=s.pct+"%");
+ document.querySelectorAll(".mobile-readiness-v6 b").forEach(x=>x.textContent=s.pct+"% READY");
+ document.querySelectorAll(".mobile-readiness-v6 em").forEach(x=>x.style.width=s.pct+"%");
+ const urgent=document.querySelector(".home-now.urgent");
+ if(urgent){
+   urgent.classList.toggle("all-ready",s.due===0);
+   const label=urgent.querySelector("div:nth-child(2) b"),sub=urgent.querySelector("div:nth-child(2) small"),cta=urgent.querySelector("em");
+   if(label)label.textContent=s.due?(s.due+" PICK"+(s.due===1?"":"S")+" LEFT"):"PICKS ARE SET";
+   if(sub)sub.textContent=s.due?"Finish before the next lock":"You’re ready for the next lock";
+   if(cta)cta.textContent=s.due?"FINISH ›":"REVIEW ›";
+ }
+}
+document.addEventListener("click",e=>{if(e.target.closest("[data-pick-team],[data-hub-team]"))setTimeout(tightenHomeTruth,30)},true);
+const truthObserver=new MutationObserver(()=>tightenHomeTruth());truthObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(tightenHomeTruth);
+
+function removeRedundantIntros(){
+ const v=document.documentElement.dataset.view;if(!PageIdentity[v])return;
+ const w=document.querySelector(".route-workspace");if(!w)return;
+ const identity=w.querySelector(".route-identity");if(!identity)return;
+ [...w.children].forEach(el=>{if(el===identity)return;const h=el.querySelector?.(":scope > h1,:scope > .page-title,:scope > .route-title");if(h&&h.textContent.trim().toLowerCase()===PageIdentity[v].title.toLowerCase())h.remove()});
+}
+const introObserver=new MutationObserver(()=>removeRedundantIntros());introObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(removeRedundantIntros);
+
+function fixNetworkCTAs(){
+ document.querySelectorAll("[data-network-game]").forEach(card=>{
+   const cta=[...card.querySelectorAll("em,b,span")].find(x=>/OPEN GAME|START ›|OPEN ›/i.test(x.textContent.trim()));
+   if(cta)cta.textContent="START POOL ›";
+   card.setAttribute("aria-label","Start "+(card.dataset.networkGame||"")+" pool");
+ });
+ document.querySelectorAll(".public-game-grid [data-public-game] em").forEach(x=>x.textContent="START POOL ›");
+}
+const ctaObserver=new MutationObserver(()=>fixNetworkCTAs());ctaObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(fixNetworkCTAs);
+
+function dedupeModernHome(){
+ if(document.documentElement.dataset.view!=="home")return;
+ [".home-command-v4",".home-live-strip",".home-brief",".home-bridge-v7",".home-finish",".game-network-v2"].forEach(sel=>document.querySelectorAll(sel).forEach((x,i)=>{if(i>0)x.remove()}));
+}
+const densityObserver=new MutationObserver(()=>dedupeModernHome());densityObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(dedupeModernHome);
+
+document.addEventListener("pointerdown",e=>{const b=e.target.closest("button");if(b)b.classList.add("links-pressed")},true);
+["pointerup","pointercancel","pointerleave"].forEach(type=>document.addEventListener(type,e=>e.target.closest?.("button")?.classList.remove("links-pressed"),true));
