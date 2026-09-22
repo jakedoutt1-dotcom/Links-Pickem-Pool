@@ -265,3 +265,6 @@ html{background:#050908}body{min-height:100dvh}.links-v27{min-height:100dvh}.lin
 
 /* Review Lock v52 */
 .links-v27 .v52-focus{border-color:rgba(241,117,33,.2)!important;box-shadow:0 16px 42px rgba(0,0,0,.18),inset 0 0 0 1px rgba(241,117,33,.035)}.links-v27 button.v52-hit{transform:translateY(1px) scale(.995)}.links-v27 input,.links-v27 textarea,.links-v27 select{caret-color:#f17521}.links-v27 .route-workspace>:last-child{margin-bottom:0}@media(max-width:700px){.links-v27 input,.links-v27 textarea,.links-v27 select{font-size:16px}.links-v27 .card,.links-v27 .panel{scroll-margin-top:70px}}
+
+/* Review Finish v53 */
+.links-v27 button:disabled,.links-v27 [aria-disabled="true"]{cursor:not-allowed;filter:saturate(.65);opacity:.58}.links-v27 a,.links-v27 button{outline-offset:3px}.links-v27 img{max-width:100%}@media(max-width:700px){.links-v27 button,.links-v27 a{min-height:44px}.links-v27 .finish-dock-v26 button{min-height:48px}.links-v27 .route-workspace{width:100%;box-sizing:border-box}}
