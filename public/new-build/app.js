@@ -1551,6 +1551,9 @@ function gameSpecificPickPanel(pool){
   const g=slate[0],saved=PickEngine.get(pool+"-"+g.id)?.team||"";
   return '<div class="hub-panel-head"><span>SURVIVOR · '+linksEscape(p.week)+'</span><h3>One team. Stay alive.</h3><p>Choose one eligible team. Your selection stays private until lock.</p></div><div class="survivor-choice">'+g.choices.map(t=>'<button data-adapter-pick="'+linksEscape(t)+'" data-adapter-game="'+g.id+'" class="'+(saved===t?"selected":"")+'"><i>'+linksEscape(t)+'</i><b>'+linksEscape(t)+'</b><span>'+(saved===t?"YOUR PICK":"SELECT")+'</span></button>').join("")+'</div><div class="adapter-proof"><b>'+(saved?"✓ "+linksEscape(saved)+" SAVED":"SELECTION NEEDED")+'</b><span>'+linksEscape(p.lock)+'</span></div>';
  }
+ if(type==="squares"){
+  const s=SquaresStoreV75.read(pool),claimed=s.claimed||{};return '<div class="hub-panel-head"><span>FOOTBALL SQUARES · '+linksEscape(p.week)+'</span><h3>Claim your squares.</h3><p>Open squares can be claimed until the grid locks. Numbers stay hidden until the commissioner reveals them.</p></div><div class="squares-live-v75"><div class="squares-axis-v75"><span>AWAY</span><b>'+(s.revealed?"NUMBERS REVEALED":"NUMBERS HIDDEN")+'</b><span>HOME</span></div><div class="squares-grid-v75">'+Array.from({length:100},(_,i)=>{const n=i+1,owner=claimed[n]||"";return '<button data-square-v75="'+n+'" class="'+(owner?"claimed":"")+'" '+(owner?"disabled":"")+'><small>'+n+'</small><b>'+(owner?linksEscape(owner):"OPEN")+'</b></button>'}).join("")+'</div><div class="adapter-proof"><b>'+Object.keys(claimed).length+' / 100 CLAIMED</b><span>'+linksEscape(p.lock)+'</span></div></div>';
+ }
  if(type==="game33"){
   const teams=[...new Set(DemoSlate.flatMap(g=>[g.away,g.home]))],saved=Game33StoreV74.read(pool);return '<div class="hub-panel-head"><span>GAME 33 · '+linksEscape(p.week)+'</span><h3>Chase 33.</h3><p>Choose one NFL team for the week. Your selection stays saved with the pool until changed before lock.</p></div><div class="g33-live-v74"><div class="g33-target-v74"><span>TARGET</span><b>33</b><small>POINTS</small></div><div class="g33-team-grid-v74">'+teams.map(t=>'<button data-g33-team="'+linksEscape(t)+'" class="'+(saved.team===t?"selected":"")+'"><b>'+linksEscape(t)+'</b><span>'+(saved.team===t?"YOUR PICK":"SELECT")+'</span></button>').join("")+'</div><div class="adapter-proof"><b>'+(saved.team?"✓ "+linksEscape(saved.team)+" SAVED":"SELECTION NEEDED")+'</b><span>'+linksEscape(p.lock)+'</span></div></div>';
  }
@@ -1563,7 +1566,7 @@ function gameSpecificPickPanel(pool){
  return "";
 }
 function mountGameAdapter(){
- if(document.documentElement.dataset.view!=="pool")return;const pool=document.documentElement.dataset.pool||"";const type=gameIdentity(PoolHubData[pool]?.game||"").type;if(!["college","survivor","confidence","game33"].includes(type))return;
+ if(document.documentElement.dataset.view!=="pool")return;const pool=document.documentElement.dataset.pool||"";const type=gameIdentity(PoolHubData[pool]?.game||"").type;if(!["college","survivor","confidence","game33","squares"].includes(type))return;
  const live=document.querySelector(".pool-tab-live");if(!live||live.dataset.adapter==="1")return;
  const active=[...document.querySelectorAll(".poolhub-tabs button,.pool-tabs button")].find(b=>b.classList.contains("active"))?.textContent.trim().toLowerCase();
  if(active!=="picks")return;live.dataset.adapter="1";live.innerHTML=gameSpecificPickPanel(pool);
@@ -2628,7 +2631,7 @@ new MutationObserver(gameNetworkCompletionV64).observe(document.querySelector("#
 function stampV64(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v64 · GAME NETWORK COMPLETION</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV64);
 
 // Game Completeness v65 — unsupported formats never fall through to an NFL pick card.
-const LinksFormatSupportV65=new Set(["football","college","survivor","confidence","game33"]);
+const LinksFormatSupportV65=new Set(["football","college","survivor","confidence","game33","squares"]);
 function formatSupportV65(){
  if(document.documentElement.dataset.view!=="pool")return;
  const pool=document.documentElement.dataset.pool||"",p=PoolHubData[pool];if(!p)return;
@@ -2753,3 +2756,8 @@ function stampV73(){document.querySelectorAll(".app-build-v18").forEach(x=>{cons
 const Game33StoreV74={key:"links-game33-v74",read(pool){try{return JSON.parse(localStorage.getItem(this.key+"-"+pool)||"{}")}catch{return{}}},save(pool,team){const x={team,week:PoolHubData[pool]?.week||"",savedAt:Date.now()};localStorage.setItem(this.key+"-"+pool,JSON.stringify(x));return x}};
 document.addEventListener("click",e=>{const b=e.target.closest("[data-g33-team]");if(!b)return;e.preventDefault();e.stopImmediatePropagation();const pool=document.documentElement.dataset.pool||"";if(!WeekGate.isOpen()){AppStatus.show("warn","Week is closed","Game 33 selections are locked.");return}Game33StoreV74.save(pool,b.dataset.g33Team);AppStatus.show("ok","Game 33 pick saved",b.dataset.g33Team);const live=b.closest(".pool-tab-live");if(live){live.innerHTML=gameSpecificPickPanel(pool);live.dataset.adapter="1"}},true);
 function stampV74(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v74 · GAME 33 ENGINE</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV74);
+
+// Squares Engine v75 — persistent 10x10 ownership grid with lock-safe claiming.
+const SquaresStoreV75={key:"links-squares-v75",read(pool){try{return JSON.parse(localStorage.getItem(this.key+"-"+pool)||'{"claimed":{},"revealed":false}')}catch{return{claimed:{},revealed:false}}},write(pool,x){localStorage.setItem(this.key+"-"+pool,JSON.stringify(x))},claim(pool,n){const x=this.read(pool);x.claimed=x.claimed||{};if(x.claimed[n])return false;const who=(window.LinksSession?.playerName||window.LinksSession?.name||"YOU");x.claimed[n]=who;this.write(pool,x);return true}};
+document.addEventListener("click",e=>{const b=e.target.closest("[data-square-v75]");if(!b)return;e.preventDefault();e.stopImmediatePropagation();const pool=document.documentElement.dataset.pool||"";if(!WeekGate.isOpen()){AppStatus.show("warn","Grid is locked","Squares can no longer be claimed.");return}if(!SquaresStoreV75.claim(pool,b.dataset.squareV75)){AppStatus.show("warn","Square unavailable","That square has already been claimed.");return}AppStatus.show("ok","Square claimed","#"+b.dataset.squareV75);const live=b.closest(".pool-tab-live");if(live){live.innerHTML=gameSpecificPickPanel(pool);live.dataset.adapter="1"}},true);
+function stampV75(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v75 · SQUARES ENGINE</span>";if(x.innerHTML!==html)x.innerHTML=html})}queueMicrotask(stampV75);
