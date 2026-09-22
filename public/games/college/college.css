@@ -4,3 +4,6 @@ body.links-college-standalone-v629 #app>.tabs,body.links-college-standalone-v629
 
 /* v631 weekly slate chooser */
 .college-random-actions-v631{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}.college-random-actions-v631 button{min-height:52px;font-weight:950}.college-random-actions-v631 #collegeRandomV631{border-color:#ff8a32;background:#3a210e}.college-random-actions-v631 #collegeClearRandomV631{border-color:#566777;background:#17212a}@media(max-width:520px){.college-random-actions-v631{grid-template-columns:1fr}}
+
+/* v631 College banner */
+.college-hero-v631{margin:0 0 10px;overflow:hidden;border-radius:16px;border:1px solid #3b4d5d;background:#0d151c}.college-hero-v631 img{display:block;width:100%;height:auto;max-height:260px;object-fit:cover}
