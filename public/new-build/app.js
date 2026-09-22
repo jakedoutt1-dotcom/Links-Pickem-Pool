@@ -1552,7 +1552,7 @@ function gameSpecificPickPanel(pool){
   return '<div class="hub-panel-head"><span>SURVIVOR · '+linksEscape(p.week)+'</span><h3>One team. Stay alive.</h3><p>Choose one eligible team. Your selection stays private until lock.</p></div><div class="survivor-choice">'+g.choices.map(t=>'<button data-adapter-pick="'+linksEscape(t)+'" data-adapter-game="'+g.id+'" class="'+(saved===t?"selected":"")+'"><i>'+linksEscape(t)+'</i><b>'+linksEscape(t)+'</b><span>'+(saved===t?"YOUR PICK":"SELECT")+'</span></button>').join("")+'</div><div class="adapter-proof"><b>'+(saved?"✓ "+linksEscape(saved)+" SAVED":"SELECTION NEEDED")+'</b><span>'+linksEscape(p.lock)+'</span></div>';
  }
  if(type==="bracket"){
-  const b=BracketStoreV76.read(pool),rounds=BracketStoreV76.rounds;return '<div class="hub-panel-head"><span>MARCH MADNESS · '+linksEscape(p.week)+'</span><h3>Build your bracket.</h3><p>Choose a winner from every matchup. Each round advances from the selections before it.</p></div><div class="bracket-live-v76">'+rounds.map((r,ri)=>'<section><header><span>ROUND '+(ri+1)+'</span><b>'+r.name+'</b></header>'+r.games.map((g,gi)=>{const id="r"+ri+"g"+gi,teams=BracketStoreV76.teamsFor(b,ri,gi);return '<div class="bracket-game-v76"><small>GAME '+(gi+1)+'</small>'+teams.map(t=>'<button data-bracket-pick="'+linksEscape(t)+'" data-bracket-id="'+id+'" class="'+(b[id]===t?"selected":"")+'">'+linksEscape(t)+'</button>').join("")+'</div>'}).join("")+'</section>').join("")+'</div>';
+  BracketFieldV85.apply(pool);const b=BracketStoreV76.read(pool),rounds=BracketStoreV76.rounds;return '<div class="hub-panel-head"><span>MARCH MADNESS · '+linksEscape(p.week)+'</span><h3>Build your bracket.</h3><p>Choose a winner from every matchup. Each round advances from the selections before it.</p></div><div class="bracket-live-v76">'+rounds.map((r,ri)=>'<section><header><span>ROUND '+(ri+1)+'</span><b>'+r.name+'</b></header>'+r.games.map((g,gi)=>{const id="r"+ri+"g"+gi,teams=BracketStoreV76.teamsFor(b,ri,gi);return '<div class="bracket-game-v76"><small>GAME '+(gi+1)+'</small>'+teams.map(t=>'<button data-bracket-pick="'+linksEscape(t)+'" data-bracket-id="'+id+'" class="'+(b[id]===t?"selected":"")+'">'+linksEscape(t)+'</button>').join("")+'</div>'}).join("")+'</section>').join("")+'</div>';
  }
  if(type==="squares"){
   const s=SquaresStoreV75.read(pool),claimed=s.claimed||{};return '<div class="hub-panel-head"><span>FOOTBALL SQUARES · '+linksEscape(p.week)+'</span><h3>Claim your squares.</h3><p>Open squares can be claimed until the grid locks. Numbers stay hidden until the commissioner reveals them.</p></div><div class="squares-live-v75"><div class="squares-axis-v75"><span>AWAY</span><b>'+(s.revealed?"NUMBERS REVEALED":"NUMBERS HIDDEN")+'</b><span>HOME</span></div><div class="squares-grid-v75">'+Array.from({length:100},(_,i)=>{const n=i+1,owner=claimed[n]||"";return '<button data-square-v75="'+n+'" class="'+(owner?"claimed":"")+'" '+(owner?"disabled":"")+'><small>'+n+'</small><b>'+(owner?linksEscape(owner):"OPEN")+'</b></button>'}).join("")+'</div><div class="adapter-proof"><b>'+Object.keys(claimed).length+' / 100 CLAIMED</b><span>'+linksEscape(p.lock)+'</span></div></div>';
@@ -2981,3 +2981,26 @@ queueMicrotask(()=>{syncCreatedPoolsV83();stampV83();LinksLifecycleV82.queue()})
 LinksLifecycleCallbacksV82.push(assetReadinessV62,gameNetworkCompletionV64,formatSupportV65);
 function stampV84(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v84 · OBSERVER FINISH</span>";if(x.innerHTML!==html)x.innerHTML=html})}
 queueMicrotask(()=>{stampV84();LinksLifecycleV82.queue()});
+
+
+// Full Tournament Field v85 — 64-team main bracket, four regions, six advancing rounds.
+const BracketFieldV85={
+ key:"links-bracket-field-v85",regions:["EAST","WEST","SOUTH","MIDWEST"],order:[[1,16],[8,9],[5,12],[4,13],[6,11],[3,14],[7,10],[2,15]],
+ defaultField(){return this.regions.flatMap(region=>this.order.flatMap(pair=>pair.map(seed=>region+" · "+seed+" SEED")))},
+ read(pool){try{const x=JSON.parse(localStorage.getItem(this.key+"-"+pool)||"null");return Array.isArray(x)&&x.length===64?x:this.defaultField()}catch{return this.defaultField()}},
+ write(pool,field){if(!Array.isArray(field)||field.length!==64)return false;localStorage.setItem(this.key+"-"+pool,JSON.stringify(field.map(x=>String(x||"").trim()||"TBD")));return true},
+ apply(pool){BracketStoreV76.seed=this.read(pool);BracketStoreV76.rounds=[{name:"FIRST ROUND",games:Array.from({length:32},(_,i)=>i)},{name:"SECOND ROUND",games:Array.from({length:16},(_,i)=>i)},{name:"SWEET 16",games:Array.from({length:8},(_,i)=>i)},{name:"ELITE EIGHT",games:Array.from({length:4},(_,i)=>i)},{name:"FINAL FOUR",games:[0,1]},{name:"CHAMPIONSHIP",games:[0]}]},
+ regionForOpeningGame(gameIndex){return this.regions[Math.floor(gameIndex/8)]||"TOURNAMENT"}
+};
+// Upgrade any bracket pool before its first render; school names remain commissioner-controlled until the field is published.
+Object.keys(PoolHubData).filter(name=>gameIdentity(PoolHubData[name]?.game||"").type==="bracket").forEach(name=>BracketFieldV85.apply(name));
+function marchRegionLabelsV85(){
+ if(document.documentElement.dataset.view!=="pool")return;const pool=document.documentElement.dataset.pool||"";if(gameIdentity(PoolHubData[pool]?.game||"").type!=="bracket")return;
+ const first=document.querySelector(".bracket-live-v76 section:first-child");if(!first)return;
+ first.querySelectorAll(".bracket-game-v76").forEach((g,i)=>{if(g.querySelector(".bracket-region-v85"))return;g.insertAdjacentHTML("afterbegin",'<span class="bracket-region-v85">'+BracketFieldV85.regionForOpeningGame(i)+'</span>')});
+ const board=document.querySelector(".march-scoreboard-v77 small");if(board)board.textContent="64-TEAM MAIN BRACKET · 4 REGIONS · 1 CHAMPION";
+}
+LinksLifecycleCallbacksV82.push(marchRegionLabelsV85);
+document.addEventListener("click",e=>{if(e.target.closest("[data-bracket-pick]"))queueMicrotask(marchRegionLabelsV85)},true);
+function stampV85(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v85 · FULL TOURNAMENT FIELD</span>";if(x.innerHTML!==html)x.innerHTML=html})}
+queueMicrotask(()=>{marchRegionLabelsV85();stampV85();LinksLifecycleV82.queue()});
