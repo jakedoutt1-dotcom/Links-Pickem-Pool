@@ -1048,12 +1048,7 @@ const HomeLive={
   return '<section class="home-live-strip"><div class="hls-brand"><i></i><div><span>LINKS LIVE</span><b>GAME DAY</b></div></div><div class="hls-games">'+this.games.map(g=>'<button data-live-results><div class="hls-team"><b>'+g.a+'</b><em>'+(g.as??"—")+'</em></div><span class="'+(g.live?"live":"upcoming")+'">'+g.state+'</span><div class="hls-team away"><em>'+(g.bs??"—")+'</em><b>'+g.b+'</b></div></button>').join("")+'</div><button class="hls-all" data-live-results>ALL SCORES ›</button></section>';
  }
 };
-function mountHomeLive(){
- if(document.documentElement.dataset.view!=="home")return;
- const cmd=document.querySelector(".home-command-v4");if(!cmd||cmd.querySelector(".home-live-strip"))return;
- const hero=cmd.querySelector(".home-stage");hero?.insertAdjacentHTML("afterend",HomeLive.html());
- cmd.querySelectorAll("[data-live-results]").forEach(b=>b.addEventListener("click",()=>LinksRouter.navigate("results")));
-}
+function mountHomeLive(){}
 const homeLiveObserver=new MutationObserver(()=>mountHomeLive());homeLiveObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountHomeLive);
 
 // Home personal brief: compress messages/deadlines/commissioner activity into one useful surface.
@@ -1061,13 +1056,7 @@ function homeBrief(){
  const unread=InboxStore.all().filter(x=>!x.read).length;
  return '<section class="home-brief"><div class="hb-head"><div><span>YOUR LINKS BRIEF</span><h2>What matters right now.</h2></div><button data-brief-inbox>'+unread+' UNREAD ›</button></div><div class="hb-grid"><button data-home-go2="my-picks"><i class="pick">✓</i><div><span>PICKS</span><b>Finish My Pool</b><small>1 selection left before the next lock</small></div><em>DO IT ›</em></button><button data-home-go2="notifications"><i class="msg">✦</i><div><span>INBOX</span><b>Commissioner update</b><small>Week 3 access and deadline information</small></div><em>READ ›</em></button><button data-home-go2="results"><i class="move">↑</i><div><span>MOVEMENT</span><b>You moved into the top group</b><small>Live standings changed after the last final</small></div><em>VIEW ›</em></button></div></section>';
 }
-function mountHomeBrief(){
- if(document.documentElement.dataset.view!=="home")return;
- const cmd=document.querySelector(".home-command-v4");if(!cmd||cmd.querySelector(".home-brief"))return;
- const now=cmd.querySelector(".home-now-grid");now?.insertAdjacentHTML("afterend",homeBrief());
- cmd.querySelectorAll("[data-home-go2]").forEach(b=>b.addEventListener("click",()=>LinksRouter.navigate(b.dataset.homeGo2)));
- cmd.querySelector("[data-brief-inbox]")?.addEventListener("click",()=>LinksRouter.navigate("notifications"));
-}
+function mountHomeBrief(){}
 const briefObserver=new MutationObserver(()=>mountHomeBrief());briefObserver.observe(document.querySelector("#app"),{childList:true,subtree:true});queueMicrotask(mountHomeBrief);
 
 // Keep Home intentionally short: older secondary dashboards stay out of the landing page.
@@ -1081,7 +1070,8 @@ const trimHomeObserver=new MutationObserver(()=>trimHome());trimHomeObserver.obs
 const PublicLanding={
  isGuest(){
   const u=new URL(location.href);
-  return u.searchParams.get("welcome")==="1"||u.searchParams.get("guest")==="1";
+  if(u.searchParams.has("invite")||u.searchParams.get("view")==="pool")return false;
+  return u.searchParams.get("welcome")==="1"||u.searchParams.get("guest")==="1"||CreatedPools.all().length===0;
  },
  html(){
   return '<section class="public-home"><div class="public-hero"><div class="public-sky"><i></i><i></i><i></i><i></i><div class="public-field"></div></div><nav class="public-nav"><b>LINKS<span>POOLS</span></b><div><button data-public-games>GAMES</button><button data-public-signin>SIGN IN</button></div></nav><div class="public-copy"><span>THE SPORTS POOL APP</span><h1>YOU PICK.<br><em>WE TRACK.</em><br>YOU WIN.</h1><p>Run your pools, make your picks and follow the action from one place. No spreadsheets. No chasing screenshots. No wondering who is winning.</p><div><button data-public-start>START A POOL</button><button class="ghost" data-public-join>JOIN A POOL</button></div><small>PLAYERS JOIN FREE · UP TO 3 ACTIVE POOLS FREE FOR LIFE</small></div><div class="public-phone"><div class="phone-top"><b>LINKS</b><span>LIVE</span></div><div class="phone-card"><span>YOUR POOLS</span><b>PICKS IN ONE PLACE</b><small>Open a pool to make selections</small><i>OPEN ›</i></div><div class="phone-card live"><span>LINKS LIVE</span><b>RESULTS & STANDINGS</b><small>Real game data when available</small><i>WATCH ›</i></div><div class="phone-pools"><i></i><i></i><i></i></div></div></div><div class="public-proof"><div><b>ONE ACCOUNT</b><span>Every pool and every game</span></div><div><b>AUTO TRACKING</b><span>Picks, locks, scores and standings</span></div><div><b>COMMISSIONER TOOLS</b><span>Invites, rules and reminders</span></div><div><b>BUILT FOR MOBILE</b><span>Fast on game day</span></div></div><div class="public-games" id="publicGames"><div class="public-section-title"><span>LINKS GAME NETWORK</span><h2>Whatever your group plays.</h2><p>Start with the game. LINKS handles the rest.</p></div><div class="public-game-grid">'+NetworkGames.slice(0,8).map(x=>'<button data-public-game="'+x[0]+'"><div>'+networkGlyph(x[1])+'</div><span>'+x[1].toUpperCase()+'</span><b>'+x[0]+'</b><em>START ›</em></button>').join("")+'</div></div><div class="public-how"><div class="public-section-title"><span>HOW LINKS WORKS</span><h2>Three steps. Game on.</h2></div><div><article><b>01</b><h3>CREATE OR JOIN</h3><p>Commissioners choose a game and share one direct invite link.</p></article><article><b>02</b><h3>MAKE YOUR PICKS</h3><p>Players see exactly what is due and when each selection locks.</p></article><article><b>03</b><h3>FOLLOW IT LIVE</h3><p>LINKS handles scores, standings, comparison and pool activity.</p></article></div></div><div class="public-cta"><span>READY WHEN YOUR GROUP IS.</span><h2>Bring the pool. Lose the paperwork.</h2><div><button data-public-start>CREATE YOUR FIRST POOL</button><button class="ghost" data-public-signin>ALREADY HAVE LINKS? SIGN IN</button></div></div></section>';
@@ -4136,3 +4126,13 @@ queueMicrotask(()=>{realPoolAttentionV178();LinksLifecycleV82.queue()});
 function dormantSeedRetirementV179(){document.querySelectorAll('.results-arena').forEach(x=>x.remove());document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v179 · SOURCE CLEAN</span>';if(x.innerHTML!==h)x.innerHTML=h});document.documentElement.dataset.linksBuild='v179'}
 LinksLifecycleCallbacksV82.push(dormantSeedRetirementV179);
 queueMicrotask(()=>{dormantSeedRetirementV179();LinksLifecycleV82.queue()});
+
+
+// Home Reveal Polish v180 — no fake live/brief modules; clean public front door for an empty fresh account.
+function homeRevealPolishV180(){
+ if(document.documentElement.dataset.view==='home'){document.querySelectorAll('.home-live-strip,.home-brief').forEach(x=>x.remove());}
+ document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v180 · HOME REVEAL POLISH</span>';if(x.innerHTML!==h)x.innerHTML=h});
+ document.documentElement.dataset.linksBuild='v180';
+}
+LinksLifecycleCallbacksV82.push(homeRevealPolishV180);
+queueMicrotask(()=>{homeRevealPolishV180();PublicLanding.mount();LinksLifecycleV82.queue()});
