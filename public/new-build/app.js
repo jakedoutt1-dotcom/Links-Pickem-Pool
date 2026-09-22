@@ -3101,3 +3101,18 @@ function replaceEntrantManagerV88(){
 LinksLifecycleCallbacksV82.push(replaceEntrantManagerV88);
 function stampV88(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v88 · REAL PLAYER READINESS</span>";if(x.innerHTML!==html)x.innerHTML=html})}
 queueMicrotask(()=>{replaceEntrantManagerV88();stampV88();LinksLifecycleV82.queue()});
+
+
+// Launch Data Guard v89 — demo seed pools stay out of returning-player surfaces once a real account creates pools.
+const DemoPoolNamesV89=new Set(["My Pool","College Pool","Last One Standing"]);
+function realPoolEntriesV89(){return CreatedPools.all().map(p=>[poolGlyphV83(p.game),p.name,p.game||"CUSTOM POOL",GameSlateStoreV86.has(p.name)?"Ready to play":"Setup in progress",p.deadline==="WEEKLY DEADLINE"?"Weekly deadline":"Per-game kickoff"])}
+function launchPoolEntriesV89(){const real=realPoolEntriesV89();return real.length?real:pools.filter(p=>!DemoPoolNamesV89.has(p[1]))}
+function scrubSeedPoolsV89(){
+ const real=realPoolEntriesV89();if(!real.length)return;
+ document.querySelectorAll('[data-open-pool="My Pool"],[data-open-pool="College Pool"],[data-open-pool="Last One Standing"],[data-pickpool="My Pool"],[data-pickpool="College Pool"],[data-pickpool="Last One Standing"]').forEach(x=>x.remove());
+ document.querySelectorAll(".route-pool,.portfolio-card,.pick-command-card").forEach(card=>{const name=card.dataset.openPool||card.dataset.pickpool||"";if(DemoPoolNamesV89.has(name))card.remove()});
+ document.querySelectorAll(".mypools-v3 .pool-summary>div b").forEach((b,i)=>{if(i===0)b.textContent=real.length});
+}
+LinksLifecycleCallbacksV82.push(scrubSeedPoolsV89);
+function stampV89(){document.querySelectorAll(".app-build-v18").forEach(x=>{const html="<b>LINKS</b><span>NEW BUILD · v89 · LAUNCH DATA GUARD</span>";if(x.innerHTML!==html)x.innerHTML=html})}
+queueMicrotask(()=>{scrubSeedPoolsV89();stampV89();LinksLifecycleV82.queue()});
