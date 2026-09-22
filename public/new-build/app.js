@@ -4004,3 +4004,20 @@ function calendarTruthV163(){
 }
 LinksLifecycleCallbacksV82.push(calendarTruthV163);
 queueMicrotask(()=>{calendarTruthV163();LinksLifecycleV82.queue()});
+
+
+// Broadcast Finish v164 — premium stadium hierarchy + truthful freshness.
+function premiumFinishV164(){
+ document.querySelectorAll('.live-score-rail-v24').forEach(x=>x.classList.add('broadcast-live-v164'));
+ document.querySelectorAll('.poolhub-hero,.route-hero,.platform-hero-v22,.game-center-v28').forEach(x=>x.classList.add('stadium-stage-v164'));
+ document.querySelectorAll('.card,.route-pool,.portfolio-card,.command-game').forEach(x=>x.classList.add('broadcast-card-v164'));
+ const rail=document.querySelector('.live-score-rail-v24');
+ if(rail&&!rail.querySelector('.freshness-v164')){
+   const age=Math.max(LiveFeedV41.updated||0,NflLiveV159.updated||0,CollegeLiveV160.updated||0);
+   const s=document.createElement('span');s.className='freshness-v164';s.textContent=age?'UPDATED '+new Date(age).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):'CONNECTING';rail.appendChild(s);
+ }
+ document.querySelectorAll('.app-build-v18').forEach(x=>{const h='<b>LINKS</b><span>NEW BUILD · v164 · BROADCAST FINISH</span>';if(x.innerHTML!==h)x.innerHTML=h});
+ document.documentElement.dataset.linksBuild='v164';
+}
+LinksLifecycleCallbacksV82.push(premiumFinishV164);
+queueMicrotask(()=>{premiumFinishV164();LinksLifecycleV82.queue()});
