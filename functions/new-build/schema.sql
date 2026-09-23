@@ -46,3 +46,14 @@ CREATE TABLE IF NOT EXISTS picks (
   UNIQUE(pool_id, player_id, game_type, period_key, event_id)
 );
 CREATE INDEX IF NOT EXISTS idx_picks_pool_period ON picks(pool_id, game_type, period_key);
+
+CREATE TABLE IF NOT EXISTS pool_options (
+  pool_id TEXT NOT NULL,
+  game_type TEXT NOT NULL,
+  period_key TEXT NOT NULL,
+  option_value TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY(pool_id,game_type,period_key,option_value),
+  FOREIGN KEY(pool_id) REFERENCES pools(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_pool_options ON pool_options(pool_id,game_type,period_key);
