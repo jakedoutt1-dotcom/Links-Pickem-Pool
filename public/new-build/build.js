@@ -1,4 +1,4 @@
-window.LINKS_BUILD=window.LINKS_BUILD||'395';
+window.LINKS_BUILD=window.LINKS_BUILD||'396';
 (async function(){
  const key='links-build-version';
  async function getBuild(){try{const r=await fetch('./api/build?ts='+Date.now(),{cache:'no-store'});if(r.ok){const j=await r.json();if(j.build)return String(j.build)}}catch{}return String(window.LINKS_BUILD)}
