@@ -1,4 +1,4 @@
-window.LINKS_BUILD='478';
+window.LINKS_BUILD='479';
 (function(){
  const V=String(window.LINKS_BUILD);
  try{localStorage.setItem('links-build-version',V)}catch{}
