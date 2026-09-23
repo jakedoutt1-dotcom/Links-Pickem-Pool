@@ -1,6 +1,16 @@
 const json=(d,s=200)=>Response.json(d,{status:s,headers:{"Cache-Control":"no-store"}});
+async function ensureSchema(db){await db.batch([
+ db.prepare("CREATE TABLE IF NOT EXISTS pools(id TEXT PRIMARY KEY,code TEXT UNIQUE NOT NULL,name TEXT NOT NULL,commissioner_email TEXT NOT NULL,phone TEXT,active INTEGER DEFAULT 1,created_at TEXT NOT NULL)"),
+ db.prepare("CREATE TABLE IF NOT EXISTS pool_games(pool_id TEXT NOT NULL,game TEXT NOT NULL,PRIMARY KEY(pool_id,game))"),
+ db.prepare("CREATE TABLE IF NOT EXISTS players(id TEXT PRIMARY KEY,email TEXT UNIQUE NOT NULL,display_name TEXT,created_at TEXT NOT NULL)"),
+ db.prepare("CREATE TABLE IF NOT EXISTS memberships(pool_id TEXT NOT NULL,player_id TEXT NOT NULL,role TEXT DEFAULT 'player',status TEXT DEFAULT 'active',joined_at TEXT NOT NULL,PRIMARY KEY(pool_id,player_id))"),
+ db.prepare("CREATE TABLE IF NOT EXISTS pool_game_settings(pool_id TEXT NOT NULL,game_type TEXT NOT NULL,period_key TEXT NOT NULL,lock_at TEXT,PRIMARY KEY(pool_id,game_type,period_key))"),
+ db.prepare("CREATE TABLE IF NOT EXISTS picks(id TEXT PRIMARY KEY,pool_id TEXT NOT NULL,player_id TEXT NOT NULL,game_type TEXT NOT NULL,period_key TEXT NOT NULL,event_id TEXT NOT NULL,selection TEXT NOT NULL,points INTEGER,locked_at TEXT,saved_at TEXT NOT NULL,UNIQUE(pool_id,player_id,game_type,period_key,event_id))"),
+ db.prepare("CREATE TABLE IF NOT EXISTS invites(id TEXT PRIMARY KEY,pool_id TEXT NOT NULL,email TEXT NOT NULL,token TEXT UNIQUE NOT NULL,status TEXT DEFAULT 'pending',created_at TEXT NOT NULL,accepted_at TEXT)")
+]);}
+
 export async function onRequestGet({request,env}){
- const db=env.LINKS_DB||env.DB;if(!db)return json({success:false,code:"DB_NOT_AVAILABLE",error:"LINKS database is not available"},503);
+ const db=env.LINKS_DB||env.DB;if(!db)return json({success:false,code:"DB_NOT_AVAILABLE",error:"LINKS database is not available"},503);try{await ensureSchema(db)}catch(e){return json({success:false,error:"LINKS database setup unavailable",detail:String(e?.message||e)},500)}
  const q=new URL(request.url).searchParams,pool=q.get("pool"),game=q.get("game"),period=q.get("period"),player=q.get("player");
  if(!pool||!game||!period||!player)return json({success:false,error:"pool, game, period and player are required"},400);
  try{const {results=[]}=await db.prepare("SELECT event_id AS eventId,selection,points,locked_at AS lockedAt,saved_at AS savedAt FROM picks WHERE pool_id=? AND player_id=? AND game_type=? AND period_key=?").bind(pool,player,game,period).all();return json({success:true,picks:results})}catch{return json({success:false,error:"Pick lookup unavailable"},500)}
@@ -8,7 +18,7 @@ export async function onRequestGet({request,env}){
 const feeds={"NFL Pick’em":"https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard","College Pick’em":"https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard","Confidence":"https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard","Game 33":"https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard","Survivor":"https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard","March Madness":"https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard"};
 async function trustedStart(game,eventId,clientStart){const url=feeds[game];if(!url)return null;const urls=[url,url+"?limit=100"];for(const u of urls){try{const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),7000),r=await fetch(u,{headers:{"Accept":"application/json"},signal:ctl.signal});clearTimeout(timer);if(!r.ok)continue;const j=await r.json(),e=(j.events||[]).find(x=>String(x.id)===String(eventId));if(e?.date)return Date.parse(e.date)}catch{}}const t=Date.parse(clientStart||"");return Number.isFinite(t)&&t>Date.now()?t:NaN}
 export async function onRequestPost({request,env}){
- const db=env.LINKS_DB||env.DB;if(!db)return json({success:false,code:"DB_NOT_AVAILABLE",error:"LINKS database is not available"},503);
+ const db=env.LINKS_DB||env.DB;if(!db)return json({success:false,code:"DB_NOT_AVAILABLE",error:"LINKS database is not available"},503);try{await ensureSchema(db)}catch(e){return json({success:false,error:"LINKS database setup unavailable",detail:String(e?.message||e)},500)}
  let b;try{b=await request.json()}catch{return json({success:false,error:"Invalid request"},400)}
  const pool=String(b.pool||""),player=String(b.player||""),game=String(b.game||""),period=String(b.period||""),eventId=String(b.eventId||""),selection=String(b.selection||"");
  if(!pool||!player||!game||!period||!eventId||!selection)return json({success:false,error:"Incomplete pick"},400);
