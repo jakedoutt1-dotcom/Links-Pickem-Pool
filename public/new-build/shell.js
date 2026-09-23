@@ -1,15 +1,16 @@
-const LINKS_BUILD=window.LINKS_BUILD||'483';
+const LINKS_BUILD=window.LINKS_BUILD||'484';
 (function forceFreshBuild(){try{const key='links-build-version',seen=localStorage.getItem(key);if(seen!==LINKS_BUILD){localStorage.setItem(key,LINKS_BUILD);if('caches'in window)caches.keys().then(ks=>Promise.all(ks.map(k=>caches.delete(k)));if('serviceWorker'in navigator)navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.update()));}}catch{}})();
 const $=s=>document.querySelector(s);
-function linksFootballWeek(){
- const p=location.pathname.toLowerCase();
- if(p.endsWith('/nfl.html')||p.includes('/nfl'))return {label:'NFL WEEK 3',urls:[['NFL W3','https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?seasontype=2&week=3&limit=100']]};
- if(p.endsWith('/college.html')||p.includes('/college'))return {label:'COLLEGE WEEK 4',urls:[['CFB W4','https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?seasontype=2&week=4&limit=200']]};
- return null;
+async function linksFootballWeek(){
+ const p=location.pathname.toLowerCase(),isNFL=p.endsWith('/nfl.html')||p.includes('/nfl'),isCFB=p.endsWith('/college.html')||p.includes('/college');
+ if(!isNFL&&!isCFB)return null;
+ const base=isNFL?'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?limit=100':'https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?limit=200&groups=80';
+ try{const r=await fetch(base,{cache:'no-store'}),j=await r.json(),wk=Number(j.week?.number||j.leagues?.[0]?.calendar?.find(x=>x.value===j.season?.type)?.entries?.find(x=>Date.now()>=Date.parse(x.startDate)&&Date.now()<=Date.parse(x.endDate))?.value||0);if(wk)return {label:(isNFL?'NFL':'COLLEGE')+' WEEK '+wk,urls:[[(isNFL?'NFL':'CFB')+' W'+wk,base+'&seasontype=2&week='+wk]],week:wk}}catch{}
+ return {label:isNFL?'NFL CURRENT WEEK':'COLLEGE CURRENT WEEK',urls:[[isNFL?'NFL':'CFB',base]]};
 }
 async function loadLive(){
  const track=$('#liveTrack');if(!track)return;
- const focus=linksFootballWeek(),cacheKey='links-live-cache-v2-'+(focus?.label||'all').replace(/\s+/g,'-').toLowerCase();
+ const focus=await linksFootballWeek(),cacheKey='links-live-cache-v2-'+(focus?.label||'all').replace(/\s+/g,'-').toLowerCase();
  let cached='';try{cached=localStorage.getItem(cacheKey)||''}catch{}
  if(cached&&!track.dataset.loaded){track.innerHTML=cached;track.dataset.loaded='1'}else if(!cached&&!track.dataset.loaded){track.innerHTML='<span>Loading '+(focus?.label||'LINKS LIVE')+' scores…</span>'}
  const urls=focus?.urls||[['NFL','https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard'],['CFB','https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard'],['MLB','https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard'],['NBA','https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard'],['WNBA','https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard'],['NHL','https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard'],['NCAAM','https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard']];
