@@ -19,3 +19,10 @@
   Cache-Control: no-store, no-cache, must-revalidate
 /*.js
   Cache-Control: no-cache
+
+/new-build/
+  Cache-Control: no-store, no-cache, must-revalidate
+/new-build/*.html
+  Cache-Control: no-store, no-cache, must-revalidate
+/new-build/build.js
+  Cache-Control: no-store, no-cache, must-revalidate
