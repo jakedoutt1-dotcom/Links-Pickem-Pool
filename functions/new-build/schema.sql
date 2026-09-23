@@ -57,3 +57,15 @@ CREATE TABLE IF NOT EXISTS pool_options (
   FOREIGN KEY(pool_id) REFERENCES pools(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_pool_options ON pool_options(pool_id,game_type,period_key);
+
+CREATE TABLE IF NOT EXISTS invites (
+  id TEXT PRIMARY KEY,
+  pool_id TEXT NOT NULL,
+  email TEXT NOT NULL,
+  token TEXT NOT NULL UNIQUE,
+  status TEXT NOT NULL DEFAULT 'pending',
+  created_at TEXT NOT NULL,
+  accepted_at TEXT,
+  FOREIGN KEY (pool_id) REFERENCES pools(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_invites_pool ON invites(pool_id,status);
