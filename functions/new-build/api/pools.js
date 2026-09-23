@@ -1,6 +1,6 @@
 const json=(data,status=200)=>Response.json(data,{status,headers:{"Cache-Control":"no-store"}});
 export async function onRequestGet({request,env}){
- if(!env.LINKS_DB)return json({success:false,error:"LINKS_DB is not configured"},503);
+ if(!env.LINKS_DB)return json({success:false,code:"DB_NOT_CONFIGURED",error:"Shared pool database is not connected yet"},503);
  const q=new URL(request.url).searchParams,code=(q.get("code")||"").trim().toUpperCase(),id=(q.get("id")||"").trim();
  if(!code&&!id)return json({success:false,error:"Pool code or id required"},400);
  try{const pool=await env.LINKS_DB.prepare("SELECT id,code,name,active,created_at AS createdAt FROM pools WHERE "+(id?"id=?":"upper(code)=?")+" LIMIT 1").bind(id||code).first();
