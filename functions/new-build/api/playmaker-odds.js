@@ -3,12 +3,12 @@ const headers=(extra={})=>({"Content-Type":"application/json; charset=utf-8",...
 export async function onRequestGet(context){
  const key=String(context.env.SPORTS_GAME_ODDS_API_KEY||context.env.SPORTSGAMEODDS_API_KEY||context.env.SGO_API_KEY||"").trim();
  if(!key)return Response.json({success:false,code:"SECRET_MISSING",error:"Playmaker odds secret is not available to this deployment",diagnostic:{function:"playmaker-odds",secretDetected:false}},{status:503,headers:{"Cache-Control":"no-store"}});
- const q=new URL(context.request.url).searchParams,leagueID=q.get("leagueID")||"NFL,NCAAF,NBA,WNBA,MLB,NHL,NCAAB",limit=Math.min(Math.max(Number(q.get("limit")||20),1),50),cacheKey=leagueID+"|"+limit,now=Date.now(),mem=memoryCache[cacheKey];
+ const q=new URL(context.request.url).searchParams,leagueID=q.get("leagueID")||"NFL,NCAAF,NBA,WNBA,MLB,NHL,NCAAB",limit=Math.min(Math.max(Number(q.get("limit")||20),1),100),cacheKey=leagueID+"|"+limit,now=Date.now(),mem=memoryCache[cacheKey];
  if(mem&&now-mem.at<300000)return new Response(mem.body,{status:200,headers:headers({"Cache-Control":"public, max-age=120","X-LINKS-Odds-Cache":"memory"})});
  const edge=typeof caches!=="undefined"?caches.default:null,edgeReq=new Request(new URL("/__links_odds_cache/"+encodeURIComponent(cacheKey),context.request.url).toString());
  if(edge){const hit=await edge.match(edgeReq);if(hit){const body=await hit.text();memoryCache[cacheKey]={at:now,body};return new Response(body,{status:200,headers:headers({"Cache-Control":"public, max-age=120","X-LINKS-Odds-Cache":"edge"})})}}
- const upstream=new URL("https://api.sportsgameodds.com/v2/events");upstream.searchParams.set("leagueID",leagueID);upstream.searchParams.set("oddsAvailable","true");upstream.searchParams.set("limit",String(limit));
- try{const r=await fetch(upstream.toString(),{headers:{"Accept":"application/json","X-API-Key":key,"x-api-key":key,"Authorization":"Bearer "+key}}),body=await r.text();
+ const upstream=new URL("https://api.sportsgameodds.com/v2/events");upstream.searchParams.set("leagueID",leagueID);upstream.searchParams.set("oddsAvailable","true");upstream.searchParams.set("limit",String(limit));upstream.searchParams.set("apiKey",key);
+ try{const r=await fetch(upstream.toString(),{headers:{"Accept":"application/json","x-api-key":key}}),body=await r.text();
   if(r.ok){memoryCache[cacheKey]={at:now,body};if(edge)context.waitUntil(edge.put(edgeReq,new Response(body,{status:200,headers:headers({"Cache-Control":"public, max-age=300"})})));return new Response(body,{status:200,headers:headers({"Cache-Control":"public, max-age=120","X-LINKS-Odds-Cache":"provider"})})}
   if(r.status===429&&mem)return new Response(mem.body,{status:200,headers:headers({"Cache-Control":"public, max-age=60","X-LINKS-Odds-Cache":"stale-memory","X-LINKS-Odds-Warning":"provider-rate-limited"})});
   if(r.status===429)return Response.json({success:false,code:"RATE_LIMITED",error:"Live odds provider rate limit reached. Pool picks and scores remain available; Playmaker odds will retry after the provider window resets."},{status:429,headers:{"Cache-Control":"no-store"}});
