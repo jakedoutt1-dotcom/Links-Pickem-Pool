@@ -13,7 +13,9 @@ export async function onRequestPost({request,env}){
  let b;try{b=await request.json()}catch{return json({success:false,error:"Invalid request"},400)}
  const name=String(b.name||"").trim(),email=String(b.email||"").trim().toLowerCase(),phone=String(b.phone||"").trim(),games=[...new Set((Array.isArray(b.games)?b.games:[]).map(x=>String(x).trim()).filter(Boolean))];
  if(!name||!email||!games.length)return json({success:false,error:"Name, commissioner email and game required"},400);
+ if(games.length>10)return json({success:false,error:"Too many game types selected"},400);
  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return json({success:false,error:"Valid email required"},400);
+ try{const row=await env.LINKS_DB.prepare("SELECT COUNT(*) AS n FROM pools WHERE lower(commissioner_email)=? AND active=1").bind(email).first();if(Number(row?.n||0)>=3)return json({success:false,code:"FREE_POOL_LIMIT",error:"Your three free active commissioner pools are already in use. Archive one before creating another active pool."},409)}catch(e){return json({success:false,error:"Could not verify free-pool eligibility"},500)}
  const id=crypto.randomUUID(),code="LNK-"+crypto.randomUUID().replace(/-/g,"").slice(0,7).toUpperCase(),now=new Date().toISOString();
  try{await env.LINKS_DB.prepare("INSERT INTO pools(id,code,name,commissioner_email,phone,active,created_at) VALUES(?,?,?,?,?,1,?)").bind(id,code,name,email,phone,now).run();
  for(const game of games)await env.LINKS_DB.prepare("INSERT INTO pool_games(pool_id,game) VALUES(?,?)").bind(id,game).run();
