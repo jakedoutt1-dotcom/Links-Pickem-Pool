@@ -1,4 +1,4 @@
-const LINKS_BUILD=window.LINKS_BUILD||'536';
+const LINKS_BUILD=window.LINKS_BUILD||'541';
 (function forceFreshBuild(){try{const key='links-build-version',seen=localStorage.getItem(key);if(seen!==LINKS_BUILD){localStorage.setItem(key,LINKS_BUILD);if('caches'in window)caches.keys().then(ks=>Promise.all(ks.map(k=>caches.delete(k)));if('serviceWorker'in navigator)navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.update()));}}catch{}})();
 const $=s=>document.querySelector(s);
 async function loadLive(){
@@ -6,7 +6,7 @@ async function loadLive(){
  /* v536: render the exact Home ticker cache first. Do not block on page-specific week discovery. */
  let cached='';try{cached=localStorage.getItem('links-live-cache-v1')||''}catch{}
  if(cached){track.innerHTML=cached;track.dataset.loaded='1';return}
- const feeds=[['NFL','https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard'],['CFB','https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard'],['MLB','https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard'],['NBA','https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard'],['WNBA','https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard'],['NHL','https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard'],['NCAAM','https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard']];
+ const feeds=[['NFL','https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard'],['CFB','https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard']];
  const settled=await Promise.allSettled(feeds.map(async([sport,url])=>{const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),7000);try{const r=await fetch(url,{cache:'no-store',signal:ctl.signal});if(!r.ok)throw Error('feed');const j=await r.json();return (j.events||[]).slice(0,8).map(e=>{const q=e.competitions?.[0],x=q?.competitors||[],aw=x.find(z=>z.homeAway==='away'),h=x.find(z=>z.homeAway==='home'),st=e.status?.type?.state,d=e.status?.type?.shortDetail||'';return aw&&h?'<span>'+sport+' · '+aw.team.abbreviation+' '+(st==='pre'?'':aw.score)+' <b>'+h.team.abbreviation+' '+(st==='pre'?'':h.score)+'</b><em>'+(st==='in'?'● LIVE · ':'')+d+'</em></span>':null}).filter(Boolean)}finally{clearTimeout(timer)}}));
  const items=settled.flatMap(x=>x.status==='fulfilled'?x.value:[]);
  if(!items.length){track.innerHTML='<span>LINKS LIVE · Live score feed is reconnecting…</span>';return}
