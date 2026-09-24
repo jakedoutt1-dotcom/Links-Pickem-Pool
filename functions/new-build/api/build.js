@@ -1,1 +1,1 @@
-export function onRequestGet(){return Response.json({build:"511"},{headers:{"Cache-Control":"no-store, no-cache, must-revalidate","Pragma":"no-cache","Expires":"0"}})}
+export function onRequestGet(){return Response.json({build:"512"},{headers:{"Cache-Control":"no-store, no-cache, must-revalidate","Pragma":"no-cache","Expires":"0"}})}
