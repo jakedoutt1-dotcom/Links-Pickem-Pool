@@ -11,8 +11,9 @@ async function ensureSchema(db){await db.batch([
 
 export async function onRequestGet({request,env}){
  const db=env.LINKS_DB;if(!db)return json({success:false,code:"DB_NOT_AVAILABLE",error:"LINKS database is not available"},503);try{await ensureSchema(db)}catch(e){return json({success:false,error:"LINKS database setup unavailable",detail:String(e?.message||e)},500)}
- const q=new URL(request.url).searchParams,code=(q.get("code")||"").trim().toUpperCase(),id=(q.get("id")||"").trim();
- if(!code&&!id)return json({success:false,error:"Pool code or id required"},400);
+ const q=new URL(request.url).searchParams,code=(q.get("code")||"").trim().toUpperCase(),id=(q.get("id")||"").trim(),search=(q.get("search")||"").trim();
+ if(search){try{const like="%"+search.toLowerCase()+"%";const {results=[]}=await db.prepare("SELECT id,code,name,active,created_at AS createdAt FROM pools WHERE active=1 AND (lower(name) LIKE ? OR lower(code) LIKE ?) ORDER BY name LIMIT 12").bind(like,like).all();const pools=[];for(const pool of results){const g=await db.prepare("SELECT game FROM pool_games WHERE pool_id=? ORDER BY game").bind(pool.id).all();pools.push({...pool,games:(g.results||[]).map(x=>x.game),game:g.results?.[0]?.game||"",role:"player"})}return json({success:true,pools})}catch(e){return json({success:false,error:"Pool search unavailable",detail:String(e?.message||e)},500)}}
+ if(!code&&!id)return json({success:false,error:"Pool code, id or search required"},400);
  try{const pool=await db.prepare("SELECT id,code,name,active,created_at AS createdAt FROM pools WHERE "+(id?"id=?":"upper(code)=?")+" LIMIT 1").bind(id||code).first();
  if(!pool)return json({success:false,error:"Pool not found"},404);
  const {results=[]}=await db.prepare("SELECT game FROM pool_games WHERE pool_id=? ORDER BY game").bind(pool.id).all();
