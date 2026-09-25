@@ -1,4 +1,4 @@
-window.LINKS_BUILD='641';
+window.LINKS_BUILD='642';
 (function(){
  const V=String(window.LINKS_BUILD);
  try{
@@ -13,4 +13,4 @@ window.LINKS_BUILD='641';
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',paint);else paint();
  window.addEventListener('pageshow',paint);
 })();
-/* v641: global marker advanced; stale browser caches are cleared when the build changes. */
+/* v642: NFL pool page shows the signed-in player and suppresses the Control Center return button. */
