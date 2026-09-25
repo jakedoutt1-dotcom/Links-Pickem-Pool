@@ -1,1 +1,1 @@
-export async function onRequestGet(){return Response.json({ok:true,build:'625',scope:'new-build',d1BindingCompatibility:['LINKS_DB','DB1'],protectedBinding:'DB'});}
+export async function onRequestGet(){return new Response(JSON.stringify({ok:true,build:'632',scope:'new-build',d1BindingCompatibility:['LINKS_DB','DB1'],protectedBinding:'DB'}),{headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store, no-cache, must-revalidate, max-age=0','pragma':'no-cache','expires':'0'}});}
