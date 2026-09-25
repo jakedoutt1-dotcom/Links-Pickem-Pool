@@ -37,6 +37,7 @@ export async function onRequestPost({request,env}){
   if(action==="linksAdminChangePassword"){if(!await adminAuth(db,request))return json({success:false,error:"Admin login required"},401);const pw=String(b.password||"");if(pw.length<8)return json({success:false,error:"Use at least 8 characters"},400);const salt=crypto.randomUUID(),hash=await adminHash(pw,salt);await db.batch([db.prepare("UPDATE links_admin SET password_hash=?,salt=?,updated_at=? WHERE id='owner'").bind(hash,salt,new Date().toISOString()),db.prepare("DELETE FROM links_admin_sessions")]);return json({success:true})}
  }
  if(b.action==="migrateBarnes"){
+  await ensureLinksAdmin(db);if(!await adminAuth(db,request))return json({success:false,error:"LINKS Admin login required for migration"},401);
   const old=env.DB;if(!old)return json({success:false,error:"Old LINKS database binding is unavailable. Nothing changed."},503);
   await db.batch([
    db.prepare("CREATE TABLE IF NOT EXISTS legacy_credentials(pool_id TEXT NOT NULL,player_id TEXT NOT NULL,player_name TEXT NOT NULL,password_hash TEXT NOT NULL,salt TEXT NOT NULL,PRIMARY KEY(pool_id,player_id))"),
