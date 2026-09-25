@@ -1,4 +1,4 @@
-window.LINKS_BUILD='642';
+window.LINKS_BUILD='643';
 (function(){
  const V=String(window.LINKS_BUILD);
  try{
@@ -13,4 +13,4 @@ window.LINKS_BUILD='642';
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',paint);else paint();
  window.addEventListener('pageshow',paint);
 })();
-/* v642: NFL pool page shows the signed-in player and suppresses the Control Center return button. */
+/* v643: hard-remove inline Playmaker controls and restore standings week-history navigation. */
