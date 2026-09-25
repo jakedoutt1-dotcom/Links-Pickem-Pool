@@ -1,4 +1,4 @@
-window.LINKS_BUILD='643';
+window.LINKS_BUILD='644';
 (function(){
  const V=String(window.LINKS_BUILD);
  try{
@@ -13,4 +13,4 @@ window.LINKS_BUILD='643';
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',paint);else paint();
  window.addEventListener('pageshow',paint);
 })();
-/* v643: hard-remove inline Playmaker controls and restore standings week-history navigation. */
+/* v644: hard-remove inline Playmaker controls and restore standings week-history navigation. */
