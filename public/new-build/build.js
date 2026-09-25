@@ -1,4 +1,4 @@
-window.LINKS_BUILD='623';
+window.LINKS_BUILD='624';
 (function(){
  const V=String(window.LINKS_BUILD);
  try{localStorage.setItem('links-build-version',V)}catch{}
@@ -36,3 +36,5 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 /* v622: retry path added for read-only v661 Barnes historical-pick import into the existing New Build pool. */
 
 /* v623: Commissioner resolves canonical New Build pool identity before roster/admin actions. */
+
+/* v624: Barnes roster + recovered Weeks 1-3 picks/tiebreakers seed through Commissioner. */
