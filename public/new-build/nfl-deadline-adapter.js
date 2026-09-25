@@ -38,7 +38,7 @@
    clearInterval(timer);
    const paint=()=>{
      const snap=window.LINKSNFLDeadline.snapshot();
-     const el=document.getElementById('countdown')||document.getElementById('deadlineCountdown')||document.querySelector('[data-nfl-countdown]');
+     const el=document.getElementById('countdownClock')||document.getElementById('countdown')||document.getElementById('deadlineCountdown')||document.querySelector('[data-nfl-countdown]');
      if(el){el.textContent=snap.closed?'CLOSED':format(snap.remaining);el.dataset.linksDeadline='weekly-first-kickoff';}
      document.documentElement.dataset.nflDeadlineClosed=snap.closed?'1':'0';
      window.dispatchEvent(new CustomEvent('links:nfl-deadline',{detail:snap}));
