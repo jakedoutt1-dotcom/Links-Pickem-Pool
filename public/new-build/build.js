@@ -1,4 +1,4 @@
-window.LINKS_BUILD='632';
+window.LINKS_BUILD='634';
 (function(){
  const V=String(window.LINKS_BUILD);
  try{localStorage.setItem('links-build-version',V)}catch{}
@@ -6,3 +6,5 @@ window.LINKS_BUILD='632';
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',paint);else paint();window.addEventListener('pageshow',paint);
 })();
 /* v632: authoritative visible build marker. Home page loads this file with a versioned URL and checks /api/build with cache disabled. */
+
+/* v634: New Build login, players, NFL picks and history use the existing production DB schema directly. */
