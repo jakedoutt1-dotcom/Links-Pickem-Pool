@@ -1,7 +1,7 @@
 /* LINKS NFL deadline adapter
    Safe bridge around the existing NFL page. No nfl.html rewrite required.
    Loads nfl-deadline.js, watches selected week/slate, uses first kickoff for that week,
-   then reads a commissioner override when the game-settings endpoint supplies one.
+   then reads a commissioner override from the same week-specific game-settings period.
 */
 (function(){
  'use strict';
@@ -17,10 +17,10 @@
  async function overrideFor(w){
    const p=pool(); if(!p||!w)return null;
    try{
-     const r=await fetch('./api/game-settings?pool='+encodeURIComponent(p)+'&game='+encodeURIComponent('NFL Pick’em')+'&week='+encodeURIComponent(w)+'&_='+Date.now(),{cache:'no-store'});
+     const r=await fetch('./api/game-settings?pool='+encodeURIComponent(p)+'&game='+encodeURIComponent('NFL Pick’em')+'&period='+encodeURIComponent(String(w))+'&_='+Date.now(),{cache:'no-store'});
      if(!r.ok)return null; const j=await r.json();
      const s=j.settings||j.setting||j;
-     return s.lockAt||s.lock_at||s.deadline||s.deadlineAt||s.deadline_at||null;
+     return s?.lockAt||s?.lock_at||s?.deadline||s?.deadlineAt||s?.deadline_at||null;
    }catch{return null}
  }
  function format(ms){
