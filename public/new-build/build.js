@@ -14,3 +14,4 @@ window.LINKS_BUILD='644';
  window.addEventListener('pageshow',paint);
 })();
 /* v644: hard-remove inline Playmaker controls and restore standings week-history navigation. */
+/* redeploy trigger: Cloudflare queue retry 2026-09-25 */
