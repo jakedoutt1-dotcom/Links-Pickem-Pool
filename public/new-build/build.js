@@ -1,4 +1,4 @@
-window.LINKS_BUILD='620';
+window.LINKS_BUILD='621';
 (function(){
  const V=String(window.LINKS_BUILD);
  try{localStorage.setItem('links-build-version',V)}catch{}
@@ -32,3 +32,5 @@ window.LINKS_BUILD='620';
 /* v620 NFL deadline language: card due by first kickoff; unstarted games remain editable afterward. */
 (()=>{function applyNFLDeadlineCopy(){if(!/\/new-build\/nfl\.html$/i.test(location.pathname))return;const tutorial=document.querySelector('#tutorial p');if(tutorial)tutorial.textContent='Join or log in to your pool. Each week, submit your complete pick card before the first NFL game of the week kicks off. After that weekly entry deadline, picks already on your card may still be changed for games that have not started. Each individual matchup locks permanently at its own kickoff. After games lock, use Compare Picks, follow LINKS LIVE scores, and check weekly and season standings.';const cd=document.querySelector('#pickCountdown span');if(cd)cd.textContent='WEEKLY ENTRY DEADLINE · FIRST KICKOFF';const saveMsg=document.getElementById('saveMsg');if(saveMsg&&!/saved|changed/i.test(saveMsg.textContent||''))saveMsg.textContent='Submit the complete card before the first kickoff. After that, you may still change any game that has not kicked off yet.';const status=document.getElementById('gameStatusLine');if(status&&/PICKS LOCK INDIVIDUALLY AT KICKOFF/i.test(status.textContent||''))status.textContent=status.textContent.replace('PICKS LOCK INDIVIDUALLY AT KICKOFF','CARD DUE FIRST KICKOFF · EACH GAME LOCKS AT ITS OWN KICKOFF')}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',applyNFLDeadlineCopy,{once:true});else applyNFLDeadlineCopy();const obs=new MutationObserver(applyNFLDeadlineCopy);document.addEventListener('DOMContentLoaded',()=>{const s=document.getElementById('gameStatusLine');if(s)obs.observe(s,{childList:true,subtree:true,characterData:true})},{once:true})})();
+
+/* v621 repush marker: commissioner roster pool-id resolution fix is included in this build. */
