@@ -1,48 +1,28 @@
 import * as core from './members-core.js';
 
-// v628: identify the New Build D1 by its COLUMN schema, not just table names.
-// The protected v661 DB also has tables named players/memberships, but their columns differ.
-async function columns(db,table){
-  const r=await db.prepare("PRAGMA table_info("+table+")").all();
-  return new Set((r.results||[]).map(x=>String(x.name||"").toLowerCase()));
+// v629: use the configured New Build D1 binding first. Previous schema probing was
+// too strict and could reject the correct database before members-core could use it.
+function d1(v){return v&&typeof v.prepare==='function'?v:null}
+function findNewBuildDb(env={}){
+  // Cloudflare bindings we have used during the New Build. Never select arbitrary
+  // bindings by table-name guessing; that was the source of the v628 failure.
+  return d1(env.LINKS_DB)||d1(env.DB1)||d1(env.NEW_LINKS_DB)||d1(env.NEW_BUILD_DB)||d1(env.DB)||null;
 }
-function hasAll(set,names){return names.every(n=>set.has(n))}
-async function isNewBuildDb(db){
-  try{
-    const p=await columns(db,"players");
-    const m=await columns(db,"memberships");
-    const pools=await columns(db,"pools");
-    return hasAll(p,["id","email","display_name","created_at"]) &&
-           hasAll(m,["pool_id","player_id","role","status","joined_at"]) &&
-           hasAll(pools,["id","code","name","commissioner_email","created_at"]);
-  }catch{return false}
-}
-async function findNewBuildDb(env={}){
-  const preferred=[env.LINKS_DB,env.DB1,env.NEW_LINKS_DB,env.NEW_BUILD_DB].filter(Boolean);
-  const candidates=[...preferred,...Object.values(env).filter(v=>v&&typeof v.prepare==="function")];
-  const seen=new Set();
-  for(const db of candidates){
-    if(seen.has(db))continue;
-    seen.add(db);
-    if(await isNewBuildDb(db))return db;
-  }
-  return null;
-}
-async function normalizeContext(context){
+function normalizeContext(context){
   const source=context?.env||{};
-  const db=await findNewBuildDb(source);
+  const db=findNewBuildDb(source);
   return {...context,env:{...source,LINKS_DB:db}};
 }
 async function run(kind,context){
   try{
-    const ctx=await normalizeContext(context);
+    const ctx=normalizeContext(context);
     if(!ctx.env.LINKS_DB){
-      return Response.json({success:false,error:"New Build player database binding was not found",build:"628"},{status:503,headers:{"Cache-Control":"no-store"}});
+      return Response.json({success:false,error:'New Build D1 binding is missing',detail:'Expected LINKS_DB, DB1, NEW_LINKS_DB, NEW_BUILD_DB, or DB',build:'629'},{status:503,headers:{'Cache-Control':'no-store'}});
     }
-    return kind==="GET"?await core.onRequestGet(ctx):await core.onRequestPost(ctx);
+    return kind==='GET'?await core.onRequestGet(ctx):await core.onRequestPost(ctx);
   }catch(e){
-    return Response.json({success:false,error:"Player database operation failed",detail:String(e?.message||e),build:"628"},{status:500,headers:{"Cache-Control":"no-store"}});
+    return Response.json({success:false,error:'Player database operation failed',detail:String(e?.message||e),build:'629'},{status:500,headers:{'Cache-Control':'no-store'}});
   }
 }
-export function onRequestGet(context){return run("GET",context)}
-export function onRequestPost(context){return run("POST",context)}
+export function onRequestGet(context){return run('GET',context)}
+export function onRequestPost(context){return run('POST',context)}
