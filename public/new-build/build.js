@@ -1,4 +1,4 @@
-window.LINKS_BUILD='627';
+window.LINKS_BUILD='628';
 (function(){
  const V=String(window.LINKS_BUILD);
  try{localStorage.setItem('links-build-version',V)}catch{}
@@ -38,3 +38,5 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 /* v624: Barnes roster + recovered Weeks 1-3 picks/tiebreakers seed through Commissioner. */
 /* v626: manual Commissioner player management uses a cloned New Build D1 context; production DB remains untouched. */
 /* v627: player admin discovers the New Build D1 binding by its players/memberships schema instead of assuming a binding variable name. */
+
+/* v628: New Build D1 detection now verifies players/memberships/pools column schema so v661 cannot be mistaken for the New Build database. */
