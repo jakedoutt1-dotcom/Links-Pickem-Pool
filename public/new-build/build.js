@@ -1,4 +1,4 @@
-window.LINKS_BUILD='629';
+window.LINKS_BUILD='630';
 (function(){
  const V=String(window.LINKS_BUILD);
  try{localStorage.setItem('links-build-version',V)}catch{}
@@ -40,3 +40,5 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 /* v627: player admin discovers the New Build D1 binding by its players/memberships schema instead of assuming a binding variable name. */
 /* v628: New Build D1 detection now verifies players/memberships/pools column schema so v661 cannot be mistaken for the New Build database. */
 /* v629: player admin uses the configured New Build D1 binding directly; visible build marker advanced with backend fix. */
+
+/* v630: v661-style popup pool login + complete player session before NFL redirect. */
