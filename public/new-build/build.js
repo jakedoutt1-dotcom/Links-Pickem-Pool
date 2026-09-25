@@ -1,4 +1,4 @@
-window.LINKS_BUILD='624';
+window.LINKS_BUILD='626';
 (function(){
  const V=String(window.LINKS_BUILD);
  try{localStorage.setItem('links-build-version',V)}catch{}
@@ -34,7 +34,6 @@ window.LINKS_BUILD='624';
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',applyNFLDeadlineCopy,{once:true});else applyNFLDeadlineCopy();const obs=new MutationObserver(applyNFLDeadlineCopy);document.addEventListener('DOMContentLoaded',()=>{const s=document.getElementById('gameStatusLine');if(s)obs.observe(s,{childList:true,subtree:true,characterData:true})},{once:true})})();
 
 /* v622: retry path added for read-only v661 Barnes historical-pick import into the existing New Build pool. */
-
 /* v623: Commissioner resolves canonical New Build pool identity before roster/admin actions. */
-
 /* v624: Barnes roster + recovered Weeks 1-3 picks/tiebreakers seed through Commissioner. */
+/* v626: manual Commissioner player management uses a cloned New Build D1 context; production DB remains untouched. */
