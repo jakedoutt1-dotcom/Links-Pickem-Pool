@@ -1,0 +1,2 @@
+LINKS NEW BUILD v625
+D1 binding compatibility: LINKS_DB or DB1 for New Build only. Protected v661 DB is never used as fallback.

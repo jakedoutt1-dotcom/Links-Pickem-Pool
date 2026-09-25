@@ -1,1 +1,1 @@
-export function onRequestGet(){return Response.json({build:"528"},{headers:{"Cache-Control":"no-store, no-cache, must-revalidate","Pragma":"no-cache","Expires":"0"}})}
+export async function onRequestGet(){return Response.json({ok:true,build:'625',scope:'new-build',d1BindingCompatibility:['LINKS_DB','DB1'],protectedBinding:'DB'});}
