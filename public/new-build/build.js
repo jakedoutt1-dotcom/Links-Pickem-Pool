@@ -1,44 +1,8 @@
-window.LINKS_BUILD='630';
+window.LINKS_BUILD='632';
 (function(){
  const V=String(window.LINKS_BUILD);
  try{localStorage.setItem('links-build-version',V)}catch{}
- const style=document.createElement('style');
- style.id='links-home-visual-patch';
- style.textContent=`
- @media(min-width:701px){
-  .top .brand{position:static!important;left:auto!important;transform:none!important;min-width:280px!important;justify-content:flex-start!important}.top .brand-logo{width:205px!important;object-position:left center!important}.top .nav{padding:0!important}
-  .hero{grid-template-columns:1fr 1fr 1fr!important}.hero .center{justify-content:center!important;text-align:center!important}.hero .hero-logo{width:min(108%,670px)!important;margin:auto!important;object-position:center center!important}
-  .hero .script{font-weight:900!important;color:#ffd700!important;text-shadow:0 2px 8px #000,0 0 14px #ffd70044!important}.hero .connection{font-weight:1000!important;color:#fff!important}.hero .right{font-weight:1000!important;color:#fff!important}.hero .right b{color:#ffd700!important;font-weight:1000!important}
-  .playmaker{display:block!important;position:relative!important;height:auto!important;min-height:0!important;max-height:none!important;aspect-ratio:auto!important;width:60%!important;max-width:1229px!important;margin:0 auto!important;padding:0!important;background:transparent!important;overflow:visible!important;border-radius:0!important;line-height:0!important}
-  .playmaker-banner-img{content:url('./assets/playmaker-3-cropped.png?v=613')!important;display:block!important;position:static!important;inset:auto!important;width:100%!important;height:auto!important;max-height:none!important;margin:0!important;padding:0!important;object-fit:contain!important;object-position:center!important;opacity:1!important;visibility:visible!important;transform:none!important;z-index:0!important}
-  .playmaker>*:not(.playmaker-banner-img){position:relative!important;z-index:2!important}
-  .playmaker-control-row .playmaker-open-row{font-size:15px!important;padding:13px 24px!important;border:2px solid #55e36a!important;background:linear-gradient(180deg,#27c84a,#087724)!important;color:#fff!important;box-shadow:0 0 18px #24d94f66,0 5px 14px #000a!important}
-  .playmaker-control-row button:nth-child(2){border:2px solid #ffd700!important;background:linear-gradient(180deg,#ffd700,#b98200)!important;color:#171006!important;box-shadow:0 0 16px #ffd70066,0 4px 12px #0009!important}
- }
- .promo,.promo-community{position:relative!important;min-height:340px!important;background:#07101a!important;overflow:hidden!important}
- .promo::before,.promo-community::before{content:''!important;position:absolute!important;inset:0!important;display:block!important;background-image:linear-gradient(90deg,rgba(3,8,13,.38),rgba(3,8,13,.04)),url('./assets/bigger together.png?v=613')!important;background-size:cover!important;background-position:center center!important;background-repeat:no-repeat!important;z-index:0!important;pointer-events:none!important}
- .promo>* ,.promo-community>*{position:relative!important;z-index:2!important}.promo .community-photo,.promo-community .community-photo{display:none!important}
- .promo h2 span,.promo-community h2 span{color:#ffd700!important;font-weight:1000!important;text-shadow:0 2px 8px #000,0 0 14px #ffd70044!important}
- @media(max-width:700px){.playmaker{display:block!important;position:relative!important;width:auto!important;height:auto!important;min-height:0!important;max-height:none!important;aspect-ratio:auto!important;margin:0 14px!important;padding:0!important;background:transparent!important;background-image:none!important;border:1px solid #c9953d!important;border-radius:10px!important;overflow:hidden!important;line-height:0!important}.playmaker-banner-img{content:url('./assets/playmaker-3-cropped.png?v=613')!important;display:block!important;position:static!important;inset:auto!important;width:100%!important;height:auto!important;max-height:none!important;margin:0!important;padding:0!important;object-fit:contain!important;object-position:center center!important;transform:none!important;opacity:1!important;visibility:visible!important}.hero .script{font-weight:900!important;color:#ffd700!important}.hero .connection,.hero .right{font-weight:1000!important;color:#fff!important}.hero .right b{color:#ffd700!important}.promo,.promo-community{min-height:390px!important}.promo::before,.promo-community::before{background-image:linear-gradient(180deg,rgba(3,8,13,.22),rgba(3,8,13,.03) 55%,rgba(3,8,13,.32)),url('./assets/bigger together.png?v=613')!important;background-size:cover!important;background-position:center center!important}}
- `;
- document.head.appendChild(style);
  function paint(){document.documentElement.dataset.linksBuild=V;document.querySelectorAll('.foot,.version').forEach(el=>{el.textContent=el.textContent.replace(/LINKS NEW BUILD\s*·\s*v\d+/ig,'LINKS NEW BUILD · v'+V).replace(/NEW BUILD\s*·\s*v\d+/ig,'NEW BUILD · v'+V).replace(/\bv\d+\b/i,'v'+V)});}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',paint);else paint();window.addEventListener('pageshow',paint);
 })();
-
-/* v595 home cleanup: remove redundant Find My Pool CTA; match mobile desktop CTA colors */
-(()=>{const apply=()=>{document.querySelectorAll('.free-banner [data-go="login"]').forEach(el=>{if(/FIND MY POOL/i.test(el.textContent||''))el.remove()});if(matchMedia('(max-width:700px)').matches){const open=document.querySelector('.playmaker-control-row .playmaker-open-row'),login=document.querySelector('.playmaker-control-row button:nth-child(2)');if(open){open.style.cssText+=';border:2px solid #55e36a!important;background:linear-gradient(180deg,#27c84a,#087724)!important;color:#fff!important;box-shadow:0 0 14px #24d94f66,0 4px 10px #000a!important'}if(login){login.style.cssText+=';border:2px solid #ffd700!important;background:linear-gradient(180deg,#ffd700,#b98200)!important;color:#171006!important;box-shadow:0 0 14px #ffd70066,0 4px 10px #0009!important'}}};document.readyState==='loading'?document.addEventListener('DOMContentLoaded',apply,{once:true}):apply()})();
-
-/* v620 NFL deadline language: card due by first kickoff; unstarted games remain editable afterward. */
-(()=>{function applyNFLDeadlineCopy(){if(!/\/new-build\/nfl\.html$/i.test(location.pathname))return;const tutorial=document.querySelector('#tutorial p');if(tutorial)tutorial.textContent='Join or log in to your pool. Each week, submit your complete pick card before the first NFL game of the week kicks off. After that weekly entry deadline, picks already on your card may still be changed for games that have not started. Each individual matchup locks permanently at its own kickoff. After games lock, use Compare Picks, follow LINKS LIVE scores, and check weekly and season standings.';const cd=document.querySelector('#pickCountdown span');if(cd)cd.textContent='WEEKLY ENTRY DEADLINE · FIRST KICKOFF';const saveMsg=document.getElementById('saveMsg');if(saveMsg&&!/saved|changed/i.test(saveMsg.textContent||''))saveMsg.textContent='Submit the complete card before the first kickoff. After that, you may still change any game that has not kicked off yet.';const status=document.getElementById('gameStatusLine');if(status&&/PICKS LOCK INDIVIDUALLY AT KICKOFF/i.test(status.textContent||''))status.textContent=status.textContent.replace('PICKS LOCK INDIVIDUALLY AT KICKOFF','CARD DUE FIRST KICKOFF · EACH GAME LOCKS AT ITS OWN KICKOFF')}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',applyNFLDeadlineCopy,{once:true});else applyNFLDeadlineCopy();const obs=new MutationObserver(applyNFLDeadlineCopy);document.addEventListener('DOMContentLoaded',()=>{const s=document.getElementById('gameStatusLine');if(s)obs.observe(s,{childList:true,subtree:true,characterData:true})},{once:true})})();
-
-/* v622: retry path added for read-only v661 Barnes historical-pick import into the existing New Build pool. */
-/* v623: Commissioner resolves canonical New Build pool identity before roster/admin actions. */
-/* v624: Barnes roster + recovered Weeks 1-3 picks/tiebreakers seed through Commissioner. */
-/* v626: manual Commissioner player management uses a cloned New Build D1 context; production DB remains untouched. */
-/* v627: player admin discovers the New Build D1 binding by its players/memberships schema instead of assuming a binding variable name. */
-/* v628: New Build D1 detection now verifies players/memberships/pools column schema so v661 cannot be mistaken for the New Build database. */
-/* v629: player admin uses the configured New Build D1 binding directly; visible build marker advanced with backend fix. */
-
-/* v630: v661-style popup pool login + complete player session before NFL redirect. */
+/* v632: authoritative visible build marker. Home page loads this file with a versioned URL and checks /api/build with cache disabled. */
