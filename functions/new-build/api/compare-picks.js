@@ -1,2 +1,24 @@
-const json=(d,s=200)=>Response.json(d,{status:s,headers:{'Cache-Control':'no-store'}});
-export async function onRequestGet({request,env}){const db=env.LINKS_DB;if(!db)return json({success:false,code:'DB_NOT_AVAILABLE',error:'LINKS database is not available'},503);const q=new URL(request.url).searchParams,pool=q.get('pool'),game=q.get('game')||'NFL Pick’em',period=q.get('period')||'current';if(!pool)return json({success:false,error:'pool is required'},400);try{let locked=false;if(game==='NFL Pick’em'||game==='College Pick’em'){const league=game==='NFL Pick’em'?'nfl':'college-football',r=await fetch('https://site.api.espn.com/apis/site/v2/sports/football/'+league+'/scoreboard?limit=100',{cache:'no-store'}),j=await r.json(),starts=(j.events||[]).map(e=>Date.parse(e.date)).filter(Number.isFinite);locked=starts.length&&Date.now()>=Math.min(...starts)}else{const cfg=await db.prepare('SELECT lock_at AS lockAt FROM pool_game_settings WHERE pool_id=? AND game_type=? AND period_key=? LIMIT 1').bind(pool,game,period).first();locked=!!cfg?.lockAt&&Date.now()>=Date.parse(cfg.lockAt)}if(!locked)return json({success:true,locked:false,picks:[]});const {results=[]}=await db.prepare("SELECT p.player_id AS playerId,COALESCE(pl.display_name,pl.email,p.player_id) AS playerName,p.event_id AS eventId,p.selection,p.points FROM picks p LEFT JOIN players pl ON pl.id=p.player_id WHERE p.pool_id=? AND p.game_type=? AND p.period_key=? AND p.event_id<>'__TIEBREAKER__' ORDER BY playerName,eventId").bind(pool,game,period).all();return json({success:true,locked:true,picks:results})}catch(e){return json({success:false,error:'Compare Picks unavailable',detail:String(e?.message||e)},500)}}
+const json=(d,s=200)=>Response.json(d,{status:s,headers:{"Cache-Control":"no-store"}});
+const TEAM_ALIAS={WAS:"WSH",WSH:"WSH",JAX:"JAX",LV:"LV",LAC:"LAC",LAR:"LAR"};
+async function resolvePool(db,value){const raw=String(value||"").trim();if(!raw)return null;if(/^\d+$/.test(raw)){const p=await db.prepare("SELECT id,code,name FROM pools WHERE id=? LIMIT 1").bind(Number(raw)).first();if(p)return p}return await db.prepare("SELECT id,code,name FROM pools WHERE upper(code)=upper(?) OR lower(trim(name))=lower(trim(?)) LIMIT 1").bind(raw,raw).first()}
+async function currentNFLWeek(){try{const r=await fetch("https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?limit=100",{cache:"no-store"}),j=await r.json();return Number(j?.week?.number||1)||1}catch{return 1}}
+async function weekGames(week){try{const season=new Date().getUTCFullYear(),post=week>18,apiWeek=post?({19:1,20:2,21:3,22:5}[week]||1):week,seasonType=post?3:2,r=await fetch("https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates="+season+"&seasontype="+seasonType+"&week="+apiWeek+"&limit=100",{cache:"no-store"}),j=await r.json();return (j.events||[]).map((e,i)=>{const c=e.competitions?.[0]||{},cs=c.competitors||[],a=cs.find(x=>x.homeAway==="away"),h=cs.find(x=>x.homeAway==="home");return {gameIndex:i,eventId:String(e.id||""),away:String(a?.team?.abbreviation||"").toUpperCase(),home:String(h?.team?.abbreviation||"").toUpperCase(),awayName:a?.team?.shortDisplayName||a?.team?.displayName||"",homeName:h?.team?.shortDisplayName||h?.team?.displayName||"",kickoff:e.date||null,completed:!!e.status?.type?.completed}})}catch{return[]}}
+export async function onRequestGet({request,env}){
+ const db=env.DB;if(!db)return json({success:false,error:"Legacy LINKS database unavailable",build:"644"},503);
+ const q=new URL(request.url).searchParams,p=await resolvePool(db,q.get("pool")),week=Math.max(1,Math.min(22,Number(q.get("week")||0)||await currentNFLWeek()));
+ if(!p)return json({success:false,error:"Pool not found"},404);
+ const games=await weekGames(week),first=games.map(g=>Date.parse(g.kickoff)).filter(Number.isFinite).sort((a,b)=>a-b)[0],current=await currentNFLWeek();
+ let locked=week<current||(first?Date.now()>=first:false);
+ const role=String(q.get("role")||"").toLowerCase();if(role==="admin"||role==="commissioner")locked=true;
+ if(!locked)return json({success:true,locked:false,week,players:[],games,results:{},build:"644"});
+ const [pr,pk,tr,rr]=await Promise.all([
+  db.prepare("SELECT name FROM pool_players WHERE pool_id=? ORDER BY rowid").bind(p.id).all(),
+  db.prepare("SELECT player_name,game_index,team FROM pool_picks WHERE pool_id=? AND sport='nfl' AND week=? ORDER BY player_name,game_index").bind(p.id,week).all(),
+  db.prepare("SELECT player_name,guess FROM pool_ties WHERE pool_id=? AND sport='nfl' AND week=?").bind(p.id,week).all(),
+  db.prepare("SELECT game_index,winner FROM pool_results WHERE pool_id=? AND sport='nfl' AND week=? ORDER BY game_index").bind(p.id,week).all()
+ ]);
+ const pickMap={},tieMap={};for(const r of pk.results||[])(pickMap[r.player_name]??={})[Number(r.game_index)]=String(r.team||"").toUpperCase();for(const r of tr.results||[])tieMap[r.player_name]=r.guess;
+ const players=(pr.results||[]).map(x=>({player:x.name,picks:pickMap[x.name]||{},tie:tieMap[x.name]??null})).filter(x=>Object.keys(x.picks).length||x.tie!=null);
+ const results=Object.fromEntries((rr.results||[]).map(r=>[Number(r.game_index),String(r.winner||"").toUpperCase()]));
+ return json({success:true,locked:true,week,pool:{id:String(p.id),name:p.name,code:p.code},players,games,results,finalGames:Object.keys(results).length,build:"644"});
+}
