@@ -1,12 +1,24 @@
 import * as core from './members-core.js';
 
-// v626: normalize the New Build D1 binding without mutating Cloudflare's env object.
-// Cloudflare may expose env as an immutable/frozen object. Build a fresh context/env
-// and keep protected production DB completely out of this API.
-function normalizeContext(context){
+// v627: resolve the New Build D1 database by capability/schema, not by a guessed
+// Cloudflare binding name. This keeps protected v661 DB read-only/out of member writes.
+async function findNewBuildDb(env={}){
+  const preferred=[env.LINKS_DB,env.DB1,env.NEW_LINKS_DB,env.NEW_BUILD_DB].filter(Boolean);
+  const all=[...preferred,...Object.values(env).filter(v=>v&&typeof v.prepare==='function')];
+  const seen=new Set();
+  for(const db of all){
+    if(seen.has(db))continue;seen.add(db);
+    try{
+      const row=await db.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE type='table' AND name IN ('players','memberships')").first();
+      if(Number(row?.n)===2)return db;
+    }catch{}
+  }
+  return preferred[0]||null;
+}
+async function normalizeContext(context){
   const source=context?.env||{};
-  const newBuildDb=source.LINKS_DB||source.DB1||null;
+  const newBuildDb=await findNewBuildDb(source);
   return {...context,env:{...source,LINKS_DB:newBuildDb}};
 }
-export function onRequestGet(context){return core.onRequestGet(normalizeContext(context));}
-export function onRequestPost(context){return core.onRequestPost(normalizeContext(context));}
+export async function onRequestGet(context){return core.onRequestGet(await normalizeContext(context));}
+export async function onRequestPost(context){return core.onRequestPost(await normalizeContext(context));}
