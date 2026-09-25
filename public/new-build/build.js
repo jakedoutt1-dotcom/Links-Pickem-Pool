@@ -1,4 +1,4 @@
-window.LINKS_BUILD='622';
+window.LINKS_BUILD='623';
 (function(){
  const V=String(window.LINKS_BUILD);
  try{localStorage.setItem('links-build-version',V)}catch{}
@@ -34,3 +34,5 @@ window.LINKS_BUILD='622';
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',applyNFLDeadlineCopy,{once:true});else applyNFLDeadlineCopy();const obs=new MutationObserver(applyNFLDeadlineCopy);document.addEventListener('DOMContentLoaded',()=>{const s=document.getElementById('gameStatusLine');if(s)obs.observe(s,{childList:true,subtree:true,characterData:true})},{once:true})})();
 
 /* v622: retry path added for read-only v661 Barnes historical-pick import into the existing New Build pool. */
+
+/* v623: Commissioner resolves canonical New Build pool identity before roster/admin actions. */
