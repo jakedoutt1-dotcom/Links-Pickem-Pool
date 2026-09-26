@@ -1,0 +1,33 @@
+name: Restore LINKS homepage v758
+on:
+  push:
+    paths:
+      - '.github/workflows/restore-home-v758.yml'
+permissions:
+  contents: write
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore homepage and apply NFL-only route fix
+        shell: bash
+        run: |
+          git show 843853df367f246930409d0987e13262b72ff12b:public/new-build/index.html > public/new-build/index.html
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('public/new-build/index.html')
+          s=p.read_text()
+          # NFL already points at nfl-demo.html; that target now exists and forwards to the working practice NFL page.
+          p.write_text(s)
+          b=Path('public/new-build/build.js')
+          x=b.read_text().replace("window.LINKS_BUILD='757';","window.LINKS_BUILD='758';")
+          b.write_text(x)
+          PY
+          git config user.name 'LINKS Build Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add public/new-build/index.html public/new-build/build.js
+          git commit -m 'v758 restore homepage and fix NFL Play Now demo' || exit 0
+          git push
