@@ -6,13 +6,16 @@ async function weekGames(week){try{const season=new Date().getUTCFullYear(),post
 function nameKey(v){const s=String(v||"").toLowerCase().replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim(),a=s.split(" ").filter(Boolean);if(!a.length)return"";return (a[0][0]||"")+"|"+(a[a.length-1]||"")}
 function exactKey(v){return String(v||"").toLowerCase().replace(/[^a-z0-9]/g,"")}
 export async function onRequestGet({request,env}){
- const db=env.DB;if(!db)return json({success:false,error:"Legacy LINKS database unavailable",build:"674"},503);
+ const db=env.DB;if(!db)return json({success:false,error:"Legacy LINKS database unavailable",build:"732"},503);
  const q=new URL(request.url).searchParams,p=await resolvePool(db,q.get("pool")),week=Math.max(1,Math.min(22,Number(q.get("week")||0)||await currentNFLWeek()));
  if(!p)return json({success:false,error:"Pool not found"},404);
  const games=await weekGames(week),first=games.map(g=>Date.parse(g.kickoff)).filter(Number.isFinite).sort((a,b)=>a-b)[0],current=await currentNFLWeek();
- let locked=week<current||(first?Date.now()>=first:false);
+ // Weekly privacy is a POOL/WEEK state, never a per-player state. Once the first kickoff has passed,
+ // the week is historical, or a result exists, every player in that pool sees the same shared pages.
+ const resultCheck=await db.prepare("SELECT 1 AS yes FROM pool_results WHERE pool_id=? AND sport='nfl' AND week=? LIMIT 1").bind(p.id,week).first();
+ let locked=week<current||!!resultCheck||(first?Date.now()>=first:false);
  const role=String(q.get("role")||"").toLowerCase();if(role==="admin"||role==="commissioner")locked=true;
- if(!locked)return json({success:true,locked:false,week,players:[],games,results:{},build:"674"});
+ if(!locked)return json({success:true,locked:false,week,players:[],games,results:{},build:"732"});
  const [pr,pk,tr,rr]=await Promise.all([
   db.prepare("SELECT name FROM pool_players WHERE pool_id=? ORDER BY rowid").bind(p.id).all(),
   db.prepare("SELECT player_name,game_index,team FROM pool_picks WHERE pool_id=? AND sport='nfl' AND week=? ORDER BY player_name,game_index").bind(p.id,week).all(),
@@ -23,5 +26,5 @@ export async function onRequestGet({request,env}){
  const pickMap={},tieMap={};for(const r of pk.results||[]){const who=canonical(r.player_name);(pickMap[who]??={})[Number(r.game_index)]=String(r.team||"").toUpperCase()}for(const r of tr.results||[]){const who=canonical(r.player_name);tieMap[who]=r.guess}
  const players=roster.map(name=>({player:name,picks:pickMap[name]||{},tie:tieMap[name]??null})).filter(x=>Object.keys(x.picks).length||x.tie!=null);
  const results=Object.fromEntries((rr.results||[]).map(r=>[Number(r.game_index),String(r.winner||"").toUpperCase()]));
- return json({success:true,locked:true,week,pool:{id:String(p.id),name:p.name,code:p.code},players,games,results,finalGames:Object.keys(results).length,build:"674"});
+ return json({success:true,locked:true,week,pool:{id:String(p.id),name:p.name,code:p.code},players,games,results,finalGames:Object.keys(results).length,build:"732"});
 }
