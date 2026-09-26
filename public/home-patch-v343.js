@@ -1,0 +1,1 @@
+(()=>{"use strict";if(document.getElementById("links-home-facelift-v700"))return;const l=document.createElement("link");l.id="links-home-facelift-v700";l.rel="stylesheet";l.href="/home-facelift-v700.css?v=700";document.head.appendChild(l);})();
