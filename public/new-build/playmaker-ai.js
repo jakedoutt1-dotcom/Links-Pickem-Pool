@@ -1,0 +1,14 @@
+// LINKS Playmaker AI bridge v743
+(function(){
+ const $=id=>document.getElementById(id);
+ const text=v=>String(v??'').trim();
+ function visibleText(){const q=$('pmCommandText')||$('aiPrompt')||$('aiQuestion')||document.querySelector('textarea.aiinput')||document.querySelector('.pm-command textarea');return q?text(q.value):''}
+ function bookmaker(){const active=document.querySelector('.book.active');return text(active?.dataset?.book||active?.textContent||localStorage.getItem('links-playmaker-book')||'')}
+ function sport(){const active=document.querySelector('.sportbar .active');return text(active?.dataset?.sport||active?.textContent||'')}
+ function card(){const out=[];document.querySelectorAll('.slipitem').forEach(x=>out.push({event:text(x.dataset.event||x.querySelector('small')?.textContent),market:text(x.dataset.market),selection:text(x.dataset.selection||x.querySelector('b')?.textContent),odds:text(x.dataset.odds||x.querySelector('.odds')?.textContent),bookmaker:bookmaker()}));return out.slice(0,20)}
+ function odds(){const out=[];document.querySelectorAll('.pickline').forEach(x=>{if(!x.offsetParent)return;out.push({event:text(x.closest('.market')?.querySelector('.market-head')?.textContent),market:text(x.closest('.market')?.dataset.market),selection:text(x.dataset.selection||x.textContent),odds:text(x.dataset.odds||x.textContent),bookmaker:bookmaker()})});return out.slice(0,30)}
+ function outputBox(){return $('pmCommandStatus')||$('aiResponse')||document.querySelector('.ai-response')}
+ async function run(question){const box=outputBox();if(box)box.textContent='PLAYMAKER AI · ANALYZING…';try{const r=await fetch('./api/playmaker-ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:text(question||visibleText()),bookmaker:bookmaker(),sport:sport(),mode:text(document.querySelector('.mode-ribbon .active')?.textContent),card:card(),odds:odds()})});const j=await r.json();if(!r.ok)throw new Error(j.error||'Playmaker AI unavailable');if(box){box.style.whiteSpace='pre-wrap';box.textContent=j.analysis}return j}catch(e){if(box)box.textContent='PLAYMAKER AI · '+e.message;throw e}}
+ function wire(){const candidates=[...document.querySelectorAll('button')].filter(b=>/ai|analy|research|coach/i.test(text(b.textContent))&&!/clear/i.test(text(b.textContent)));candidates.forEach(b=>{if(b.dataset.pmAi743)return;b.dataset.pmAi743='1';b.addEventListener('click',e=>{const label=text(b.textContent);if(/research|analy|ai|coach/i.test(label)){e.preventDefault();e.stopImmediatePropagation();run().catch(()=>{})}},true)});const box=outputBox();fetch('./api/playmaker-ai',{cache:'no-store'}).then(r=>r.json()).then(j=>{if(box&&j.aiConfigured===false)box.textContent='PLAYMAKER AI · SETUP REQUIRED: add OPENAI_API_KEY to the production environment.'}).catch(()=>{})}
+ window.LINKS_PLAYMAKER_AI={run};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wire);else wire();
+})();
