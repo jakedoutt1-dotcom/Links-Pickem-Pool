@@ -1,11 +1,18 @@
-const LINKS_BUILD=window.LINKS_BUILD||'711';
+const LINKS_BUILD=window.LINKS_BUILD||'763';
 (function(){
   const DEV_TEST_MODE=true;
   function addDevBanner(){
-    if(!DEV_TEST_MODE||document.getElementById('linksDevTestBanner'))return;
-    const b=document.createElement('div');b.id='linksDevTestBanner';b.textContent='⚠ LINKS TEST SITE · DEVELOPMENT ONLY · NOT LIVE';b.style.cssText='position:relative;z-index:2147483647;width:100%;box-sizing:border-box;padding:10px 12px;text-align:center;background:#b91c1c;color:#fff;border-bottom:2px solid #ffcc4d;font:900 13px/1.2 Arial,sans-serif;letter-spacing:.8px';document.body.prepend(b);
+    if(!DEV_TEST_MODE)return;
+    let b=document.getElementById('linksDevTestBanner');
+    if(!b){b=document.createElement('div');b.id='linksDevTestBanner';document.body.appendChild(b)}
+    b.textContent='⚠ TEST SITE — DEVELOPMENT ONLY — NOT LIVE ⚠';
+    b.style.cssText='display:block!important;visibility:visible!important;opacity:1!important;position:fixed!important;top:0!important;left:0!important;right:0!important;width:100%!important;height:auto!important;min-height:42px!important;box-sizing:border-box!important;padding:12px 8px!important;text-align:center!important;background:#e00000!important;color:#fff!important;border:0!important;border-bottom:4px solid #ffd400!important;font:900 13px/1.15 Arial,sans-serif!important;letter-spacing:.8px!important;z-index:2147483647!important;transform:none!important;pointer-events:none!important';
+    document.documentElement.style.setProperty('scroll-padding-top','48px','important');
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',addDevBanner);else addDevBanner();
+  function keepDevBanner(){addDevBanner();setTimeout(addDevBanner,50);setTimeout(addDevBanner,250);setTimeout(addDevBanner,1000);setTimeout(addDevBanner,2500)}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',keepDevBanner);else keepDevBanner();
+  window.addEventListener('pageshow',keepDevBanner);
+  setInterval(addDevBanner,2000);
   const protectedPage=/\/(commissioner|nfl|nfl-scores|nfl-standings|compare-picks|pick-tools|college|survivor|confidence|game33|squares|march-madness|golf|nascar|fantasy|dynasty|custom)\.html$/i.test(location.pathname);
   let pool=null;try{pool=JSON.parse(localStorage.getItem('links-current-pool')||'null')}catch{}
   const player=localStorage.getItem('links-player-id')||'';
