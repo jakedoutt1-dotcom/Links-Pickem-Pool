@@ -1,5 +1,11 @@
 const LINKS_BUILD=window.LINKS_BUILD||'711';
 (function(){
+  const DEV_TEST_MODE=true;
+  function addDevBanner(){
+    if(!DEV_TEST_MODE||document.getElementById('linksDevTestBanner'))return;
+    const b=document.createElement('div');b.id='linksDevTestBanner';b.textContent='⚠ LINKS TEST SITE · DEVELOPMENT ONLY · NOT LIVE';b.style.cssText='position:relative;z-index:2147483647;width:100%;box-sizing:border-box;padding:10px 12px;text-align:center;background:#b91c1c;color:#fff;border-bottom:2px solid #ffcc4d;font:900 13px/1.2 Arial,sans-serif;letter-spacing:.8px';document.body.prepend(b);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',addDevBanner);else addDevBanner();
   const protectedPage=/\/(commissioner|nfl|nfl-scores|nfl-standings|compare-picks|pick-tools|college|survivor|confidence|game33|squares|march-madness|golf|nascar|fantasy|dynasty|custom)\.html$/i.test(location.pathname);
   let pool=null;try{pool=JSON.parse(localStorage.getItem('links-current-pool')||'null')}catch{}
   const player=localStorage.getItem('links-player-id')||'';
