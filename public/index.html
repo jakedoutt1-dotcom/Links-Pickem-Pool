@@ -3,33 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#06101a">
+<meta name="theme-color" content="#b00000">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
-<title>LINKS — Picks. Pools. People.</title>
-<link rel="canonical" href="/new-build/index.html">
+<title>LINKS TEST — Development</title>
 <style>
 html,body{margin:0;min-height:100%;background:#03080d;color:#f5f7fa;font-family:Arial,Helvetica,sans-serif}
-main{min-height:100vh;display:grid;place-items:center;text-align:center;padding:24px}
-.logo{width:min(260px,70vw);margin-bottom:18px}
-a{display:inline-block;margin-top:14px;padding:12px 18px;border:1px solid #e8bb5b;border-radius:8px;color:#f0c766;text-decoration:none;font-weight:900}
-small{display:block;margin-top:12px;color:#7f93a0}
+#testBanner{position:fixed;top:0;left:0;right:0;z-index:2147483647;background:#d40000;color:#fff;border-bottom:4px solid #ffdf00;padding:13px 8px;text-align:center;font-size:16px;font-weight:1000;letter-spacing:1px;box-shadow:0 4px 18px #000}
+main{min-height:100vh;display:grid;place-items:center;text-align:center;padding:70px 24px 24px}.logo{width:min(260px,70vw);margin-bottom:18px}a{display:inline-block;margin-top:14px;padding:12px 18px;border:1px solid #e8bb5b;border-radius:8px;color:#f0c766;text-decoration:none;font-weight:900}small{display:block;margin-top:12px;color:#7f93a0}
 </style>
 <script>
 (function(){
-  var target='/new-build/index.html?v=759';
-  location.replace(target);
+  var target='/new-build/index.html?devtest=762';
+  setTimeout(function(){location.replace(target)},650);
 })();
 </script>
 </head>
 <body>
-<main>
-<div>
-<img class="logo" src="/new-build/assets/ChatGPT%20Image%20Sep%2022,%202026,%2007_35_27%20PM.png" alt="LINKS — Picks. Pools. People.">
-<h1>Loading LINKS…</h1>
-<p>The new LINKS experience is going live.</p>
-<a href="/new-build/index.html?v=759">ENTER LINKS</a>
-<small>Build v759</small>
-</div>
-</main>
+<div id="testBanner">⚠ TEST SITE — DEVELOPMENT ONLY — NOT LIVE ⚠</div>
+<main><div><img class="logo" src="/new-build/assets/ChatGPT%20Image%20Sep%2022,%202026,%2007_35_27%20PM.png" alt="LINKS"><h1>Loading LINKS TEST…</h1><p>This is the development site.</p><a href="/new-build/index.html?devtest=762">ENTER TEST SITE</a><small>Dev Build v762</small></div></main>
 </body>
 </html>
