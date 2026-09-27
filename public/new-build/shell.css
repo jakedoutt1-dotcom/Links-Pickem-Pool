@@ -5,3 +5,5 @@
 /* v752 Playmaker hero: fill the hero frame with the existing artwork */
 .pmhero{background-size:cover!important;background-position:center center!important;background-repeat:no-repeat!important}
 @media(max-width:850px){.pmhero{background-size:cover!important;background-position:center center!important}}
+/* v766 Playmaker: MMA is not offered by the configured odds plan. */
+.sports .sport[data-sport="MMA"]{display:none!important}
