@@ -1,0 +1,14 @@
+LINKS CLEAN BUILD
+Foundation: v759 working restore
+Rules: no database reset; no fake/demo data; preserve legacy working pick engine; New Build presentation only.
+
+Clean Build v2 scope:
+- New explanatory homepage
+- NFL weekly picks and historical weeks
+- Compare Picks and Picks That Matter
+- Weekly standings + Year-Long Standings
+- Commissioner Admin with Player Access
+- Invite/Send Email/Resend Welcome/Password Reset email controls
+- Commissioner remains a player; no duplicate identity
+- Create Pool and Pool Login retained
+- Main/live remains protected until QA
