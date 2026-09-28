@@ -11,28 +11,20 @@ const LINKS_BUILD=window.LINKS_BUILD||'711';
   window.LINKS_SESSION={clearSession,signOut,cleanup};
 })();
 
-/* NFL current-week compatibility: use the same saved player name used by historical weeks. */
+/* NFL legacy-week bridge. Keep old database game_index tied to its original ESPN event. */
 (function(){
   if(!/\/nfl\.html$/i.test(location.pathname))return;
   const nativeFetch=window.fetch.bind(window);
   window.fetch=async function(input,init){
+    let raw=typeof input==='string'?input:(input&&input.url)||'';
     try{
-      const raw=typeof input==='string'?input:(input&&input.url)||'';
       if(/(?:^|\/)api\/picks(?:\?|$)/.test(raw)){
         const playerName=localStorage.getItem('links-player-name')||'';
-        if(playerName){
-          if(!init||String(init.method||'GET').toUpperCase()==='GET'){
-            const u=new URL(raw,location.href);
-            if(u.searchParams.has('player'))u.searchParams.set('player',playerName);
-            input=u.pathname+u.search;
-          }else if(init.body&&typeof init.body==='string'){
-            const body=JSON.parse(init.body);
-            if(body&&body.player)body.player=playerName;
-            init={...init,body:JSON.stringify(body)};
-          }
-        }
+        if(playerName){if(!init||String(init.method||'GET').toUpperCase()==='GET'){const u=new URL(raw,location.href);if(u.searchParams.has('player'))u.searchParams.set('player',playerName);input=u.pathname+u.search;raw=String(input)}else if(init.body&&typeof init.body==='string'){const body=JSON.parse(init.body);if(body&&body.player)body.player=playerName;init={...init,body:JSON.stringify(body)}}}
       }
-    }catch{}
+      const u=new URL(raw,location.href),isWeekFeed=u.hostname==='site.api.espn.com'&&/\/nfl\/scoreboard/.test(u.pathname)&&u.searchParams.has('week');
+      if(isWeekFeed){const response=await nativeFetch(input,init);if(!response.ok)return response;const data=await response.clone().json(),week=Number(u.searchParams.get('week')||0),pool=new URLSearchParams(location.search).get('pool');if(!pool||!week)return response;const sr=await nativeFetch('./api/nfl-stored-slate?pool='+encodeURIComponent(pool)+'&week='+week,{cache:'no-store'});if(!sr.ok)return response;const saved=await sr.json(),rows=saved.games||[];if(!rows.length)return response;const byId=new Map((data.events||[]).map(e=>[String(e.id||''),e])),ordered=[];for(const row of rows){const e=byId.get(String(row.eventId||''));if(e){e.__linksGameIndex=Number(row.gameIndex);ordered.push(e)}}if(!ordered.length)return response;data.events=ordered;return new Response(JSON.stringify(data),{status:response.status,statusText:response.statusText,headers:{'Content-Type':'application/json','Cache-Control':'no-store'}})}
+    }catch(e){console.warn('LINKS legacy-week bridge fallback',e)}
     return nativeFetch(input,init);
   };
 })();
