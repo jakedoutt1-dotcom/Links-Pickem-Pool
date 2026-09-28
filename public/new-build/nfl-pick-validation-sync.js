@@ -1,29 +1,38 @@
-/* LINKS v803 — make LOCK MY PICKS validate the complete visible weekly card. */
+/* LINKS v804 — make LOCK MY PICKS validate the complete visible weekly card using the native pick format. */
 (()=>{
 'use strict';
 if(!/\/nfl(?:\.html)?$/i.test(location.pathname))return;
+function norm(v){return String(v==null?'':v).trim().toUpperCase()}
+function teamFor(game,raw){
+  const want=norm(raw);
+  const teams=(game?.competitions?.[0]?.competitors||[]);
+  return teams.find(x=>{
+    const t=x?.team||{};
+    return [t.id,t.abbreviation,t.displayName,t.shortDisplayName,t.name].some(v=>norm(v)===want);
+  })||null;
+}
 function syncCompleteCard(){
   try{
     if(typeof picks==='undefined'||!picks||typeof games==='undefined'||!Array.isArray(games))return;
-    const rows=[...document.querySelectorAll('#slate .game-matchup')];
-    for(const row of rows){
-      const selected=row.querySelector('[data-g][data-t].primary');
-      if(selected)picks[String(selected.dataset.g)]=String(selected.dataset.t);
-    }
-    /* During an active commissioner correction window the whole weekly card is open.
-       The native lock handler filters by each game's kickoff, so temporarily make its
-       validation window match the commissioner deadline. The weekly lock controller
-       owns the actual deadline and restores/redraws state. */
+    document.querySelectorAll('#slate .game-matchup').forEach(row=>{
+      const selected=row.querySelector('button.game-team.primary[data-g][data-t]');
+      if(!selected)return;
+      const game=games.find(g=>String(g.id)===String(selected.dataset.g));
+      if(!game)return;
+      const team=teamFor(game,selected.dataset.t);
+      if(team)picks[String(game.id)]=String(team.team.id);
+    });
+
     const dl=window.LINKS_NFL_WEEK_DEADLINE;
-    const until=dl&&Number(dl.deadlineMs||dl.deadline||0);
-    const correction=!!(dl&&dl.open&&Number.isFinite(until)&&until>Date.now());
+    const until=Number(dl?.deadlineMs||dl?.deadline||0);
+    const correction=!!(dl?.open&&Number.isFinite(until)&&until>Date.now());
     if(correction){
-      for(const g of games){
-        if(!g.__linksOriginalDate)g.__linksOriginalDate=g.date;
-        g.date=new Date(until).toISOString();
+      for(const game of games){
+        if(!game.__linksOriginalDate)game.__linksOriginalDate=game.date;
+        game.date=new Date(until).toISOString();
       }
     }
-  }catch(e){console.warn('LINKS v803 card sync',e)}
+  }catch(e){console.warn('LINKS v804 card sync',e)}
 }
 function boot(){
   const btn=document.getElementById('savePicksBtn');
