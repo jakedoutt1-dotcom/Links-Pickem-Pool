@@ -1,22 +1,11 @@
-/* LINKS NFL live modular bridge v776
-   Keeps the existing live NFL page/design/engine intact.
-   Adds shared navigation wiring and routes Print My Picks through the logged-in user's existing print flow. */
+/* LINKS NFL live modular bridge v778
+   Live page keeps its visual shell, but real NFL data comes only from nfl-rewrite/core.js.
+   Shared controls come only from navigation.js. */
 (()=>{
-  function boot(){
-    if(!window.LINKS_NFL_NAV)return;
-    const oldTabs=document.querySelector('main .tabs');
-    const before=document.querySelector('.week-nav')||document.querySelector('main .card')?.firstElementChild;
-    const nav=LINKS_NFL_NAV.mount('picks',before);
-    if(oldTabs)oldTabs.style.display='none';
-    const print=nav?.querySelector('[data-nfl-nav="print"]');
-    if(print){
-      print.addEventListener('click',e=>{
-        e.preventDefault();
-        const existing=document.getElementById('printBtn');
-        if(existing) existing.click();
-        else window.dispatchEvent(new CustomEvent('links:nfl:print'));
-      },true);
-    }
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+ const V=String(window.LINKS_VERSION||window.LINKS_BUILD||'778');
+ function load(id,src){return new Promise((resolve,reject)=>{if(document.getElementById(id)){const wait=()=>{if((id==='linksNflCore'&&window.LINKS_NFL_REWRITE)||(id==='linksNflSharedNav'&&window.LINKS_NFL_NAV))resolve();else setTimeout(wait,20)};wait();return}const s=document.createElement('script');s.id=id;s.src=src;s.onload=resolve;s.onerror=reject;document.head.appendChild(s)})}
+ function hideLegacyControls(){document.querySelectorAll('main .tabs,.tabs.nfl-tabs,#nflnav,.nflnav').forEach(x=>{if(!x.classList.contains('links-nfl-shared-nav'))x.style.display='none'})}
+ async function renderRealPicks(){const host=document.querySelector('#games')||document.querySelector('.games')||document.querySelector('[data-nfl-games]');if(!host||!window.LINKS_NFL_REWRITE)return;try{const m=await LINKS_NFL_REWRITE.model();if(!m.me)return;const bySlot=new Map((m.graded||[]).map(x=>[String(x.slot),x]));host.querySelectorAll('[data-game],[data-slot],.game').forEach((card,i)=>{const slot=String(card.dataset.slot||card.dataset.game||i+1),g=bySlot.get(slot);if(!g)return;card.dataset.linksRealPick=g.pick;card.dataset.linksPickStatus=g.status;const chosen=card.querySelector('[data-pick="'+g.pick+'"],[data-team="'+g.pick+'"]');if(chosen){card.querySelectorAll('.selected,.picked').forEach(x=>x.classList.remove('selected','picked'));chosen.classList.add('selected','picked')}});document.documentElement.dataset.nflDataSource='real-core'}catch(e){console.error('LINKS NFL real core:',e)}}
+ async function boot(){try{await load('linksNflCore','./nfl-rewrite/core.js?v='+V);await load('linksNflSharedNav','./nfl-rewrite/navigation.js?v='+V);hideLegacyControls();const before=document.querySelector('.week-nav')||document.querySelector('main .card')?.firstElementChild||document.querySelector('main');const nav=LINKS_NFL_NAV.mount('picks',before);nav?.querySelector('[data-nfl-nav="print"]')?.addEventListener('click',e=>{e.preventDefault();const existing=document.getElementById('printBtn');if(existing)existing.click();else window.dispatchEvent(new CustomEvent('links:nfl:print'))},true);await renderRealPicks()}catch(e){console.error('LINKS NFL bridge:',e)}}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
