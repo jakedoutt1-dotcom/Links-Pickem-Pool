@@ -1,4 +1,4 @@
-window.LINKS_BUILD='778';
+window.LINKS_BUILD='779';
 (function(){
  const V=String(window.LINKS_BUILD),LOGO='./assets/ChatGPT Image Sep 22, 2026, 07_35_27 PM.png';
  function versionModule(){if(document.getElementById('linksVersionModule'))return;const s=document.createElement('script');s.id='linksVersionModule';s.src='./version.js?v='+V;s.defer=true;document.head.appendChild(s)}
@@ -17,4 +17,4 @@ window.LINKS_BUILD='778';
  function ready(){paint();brand();modules();nav();window.LINKS_SESSION?.cleanup?.()}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ready);else ready();window.addEventListener('pageshow',ready);
 })();
-/* v778: live NFL loads the proven real-data core plus shared controls; demo code is not a live data source. */
+/* v779: live NFL loads the proven real-data core plus shared controls; demo code is not a live data source. */
