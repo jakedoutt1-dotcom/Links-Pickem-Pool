@@ -1,0 +1,1 @@
+const KEYS=['pool','poolId','week','player'];export function carry(root=document){const q=new URLSearchParams(location.search);root.querySelectorAll('a[href]').forEach(a=>{if(a.href.startsWith('javascript:'))return;const u=new URL(a.href,location.href);for(const k of KEYS)if(q.get(k)&&!u.searchParams.get(k))u.searchParams.set(k,q.get(k));a.href=u})}carry();
