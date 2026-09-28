@@ -1,0 +1,13 @@
+/* LINKS v799 — commissioner weekly deadline can extend player editing without replacing the working picks loader. */
+(()=>{
+'use strict';
+if(!/\/nfl(?:\.html)?$/i.test(location.pathname))return;
+const qp=new URLSearchParams(location.search);
+const pool=()=>{try{const p=JSON.parse(localStorage.getItem('links-current-pool')||'null')||{};return qp.get('pool')||p.id||p.poolId||p.pool_id||''}catch{return qp.get('pool')||''}};
+const week=()=>Number(document.getElementById('weekSelect')?.value||qp.get('week')||0);
+let deadline=null,seq=0,painting=false;
+async function readDeadline(){const my=++seq,w=week(),p=pool();deadline=null;if(!p||!w)return paint();try{const r=await fetch('./api/game-settings?pool='+encodeURIComponent(p)+'&game='+encodeURIComponent('NFL Pick’em')+'&period='+encodeURIComponent(String(w))+'&week='+encodeURIComponent(w)+'&_='+Date.now(),{cache:'no-store'});if(r.ok){const j=await r.json(),s=j.settings||j.setting||j,v=s?.lockAt||s?.lock_at||null;if(v&&Number.isFinite(Date.parse(v)))deadline=Date.parse(v)}}catch{}if(my===seq)paint()}
+function paint(){if(painting)return;painting=true;try{const save=document.getElementById('savePicksBtn'),editing=save&&/LOCK MY PICKS/i.test(save.textContent||'')&&!/UNLOCK/i.test(save.textContent||''),open=deadline&&Date.now()<deadline;if(open&&editing){document.querySelectorAll('#slate .game-team').forEach(b=>{b.disabled=false;b.removeAttribute('disabled')});const tie=document.getElementById('tieTotal');if(tie){tie.disabled=false;tie.removeAttribute('disabled')}const label=document.querySelector('#pickCountdown span'),clock=document.getElementById('countdownClock');if(label)label.textContent='COMMISSIONER DEADLINE';if(clock){let d=Math.max(0,deadline-Date.now()),days=Math.floor(d/86400000);d%=86400000;const h=Math.floor(d/3600000);d%=3600000;const m=Math.floor(d/60000),s=Math.floor((d%60000)/1000);clock.textContent=(days?days+'D ':'')+String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}}}finally{painting=false}}
+function boot(){document.getElementById('weekSelect')?.addEventListener('change',()=>setTimeout(readDeadline,120));document.getElementById('prevWeek')?.addEventListener('click',()=>setTimeout(readDeadline,220));document.getElementById('nextWeek')?.addEventListener('click',()=>setTimeout(readDeadline,220));const slate=document.getElementById('slate');if(slate)new MutationObserver(()=>setTimeout(paint,0)).observe(slate,{childList:true,subtree:true,attributes:true,attributeFilter:['disabled']});document.getElementById('savePicksBtn')?.addEventListener('click',()=>setTimeout(paint,0));readDeadline();setInterval(paint,1000)}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+})();
