@@ -1,0 +1,1 @@
+import{params}from'../js/core.js';const q=params(),keep=new URLSearchParams;for(const k of['pool','poolId','week','player'])if(q.get(k))keep.set(k,q.get(k));const s=keep.toString();document.querySelectorAll('[data-route]').forEach(a=>{const u=new URL(a.getAttribute('data-route'),location.href);if(s)u.search=s;a.href=u});
