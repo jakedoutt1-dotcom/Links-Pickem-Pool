@@ -1,4 +1,4 @@
-/* LINKS NFL Pick'em clean rewrite v768
+/* LINKS NFL Pick'em clean rewrite v769
    One authoritative selected-week model. LINKS LIVE is intentionally excluded. */
 window.LINKS_NFL_REWRITE=(function(){
  const SEASON=2026;
@@ -24,17 +24,12 @@ window.LINKS_NFL_REWRITE=(function(){
  }
  async function picks(w=week()){
    const role=localStorage.getItem('links-player-role')||'';
-   const r=await fetch('./api/compare-picks?pool='+encodeURIComponent(poolId())+'&week='+w+'&role='+encodeURIComponent(role)+'&_='+Date.now(),{cache:'no-store'});
+   const api=new URL('../api/compare-picks',location.href);
+   api.searchParams.set('pool',poolId());api.searchParams.set('week',String(w));api.searchParams.set('role',role);api.searchParams.set('_',String(Date.now()));
+   const r=await fetch(api.toString(),{cache:'no-store'});
    const j=await r.json();if(!r.ok)throw Error(j.error||'Saved picks unavailable');return j;
  }
- function grade(schedule,pickMap){
-   const byTeam=new Map();schedule.forEach(g=>{byTeam.set(g.home,g);byTeam.set(g.away,g)});
-   return Object.entries(pickMap||{}).map(([slot,pick])=>{const team=abbr(pick),g=byTeam.get(team);return {slot:Number(slot),pick:team,game:g||null,status:!g?'unknown':!g.final?'pending':g.winner===team?'win':'loss'};}).sort((a,b)=>a.slot-b.slot);
- }
- async function model(w=week()){
-   const [schedule,data]=await Promise.all([scoreboard(w),picks(w)]);
-   const me=(data.players||[]).find(x=>String(x.player||'').toLowerCase()===String(player()).toLowerCase())||null;
-   return {season:SEASON,week:w,poolId:poolId(),player:player(),schedule,picks:data.players||[],me,graded:me?grade(schedule,me.picks||{}):[]};
- }
+ function grade(schedule,pickMap){const byTeam=new Map();schedule.forEach(g=>{byTeam.set(g.home,g);byTeam.set(g.away,g)});return Object.entries(pickMap||{}).map(([slot,pick])=>{const team=abbr(pick),g=byTeam.get(team);return {slot:Number(slot),pick:team,game:g||null,status:!g?'unknown':!g.final?'pending':g.winner===team?'win':'loss'};}).sort((a,b)=>a.slot-b.slot)}
+ async function model(w=week()){if(!poolId())throw Error('Pool session missing. Open this test after signing into your pool.');const [schedule,data]=await Promise.all([scoreboard(w),picks(w)]);const me=(data.players||[]).find(x=>String(x.player||'').toLowerCase()===String(player()).toLowerCase())||null;return {season:SEASON,week:w,poolId:poolId(),player:player(),schedule,picks:data.players||[],me,graded:me?grade(schedule,me.picks||{}):[]}}
  return {SEASON,poolId,player,week,scoreboard,picks,grade,model,matchupKey};
 })();
