@@ -1,5 +1,5 @@
 /* LINKS single-source build version. Bump only this file for each release. */
-window.LINKS_VERSION='778';
+window.LINKS_VERSION='779';
 window.LINKS_BUILD=window.LINKS_VERSION;
 (()=>{
  const V=String(window.LINKS_VERSION);
