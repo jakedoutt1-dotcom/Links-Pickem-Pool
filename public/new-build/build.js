@@ -1,4 +1,4 @@
-window.LINKS_BUILD='802';
+window.LINKS_BUILD='803';
 (function(){
  const V=String(window.LINKS_BUILD),LOGO='./assets/ChatGPT Image Sep 22, 2026, 07_35_27 PM.png';
  function add(id,src){if(document.getElementById(id))return;const s=document.createElement('script');s.id=id;s.src=src;s.defer=true;document.head.appendChild(s)}
@@ -19,4 +19,4 @@ window.LINKS_BUILD='802';
  async function ready(){if(await ensureCurrentWeek())return;paint();brand();cleanPicksHeader();removeLegacyNav();fixCommissionerBack();modules();window.LINKS_SESSION?.cleanup?.()}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ready);else ready();window.addEventListener('pageshow',ready);
 })();
-/* v802: preserves v801 weekly lock/unlock flow and synchronizes the visibly selected team on every matchup back into the pick map before LOCK MY PICKS validates the card. */
+/* v803: weekly commissioner deadline is shared with the native Lock My Picks validator; the complete visible weekly card is synchronized before validation. */
