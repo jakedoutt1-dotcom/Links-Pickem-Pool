@@ -1,6 +1,8 @@
-window.LINKS_BUILD='776';
+window.LINKS_BUILD='777';
 (function(){
  const V=String(window.LINKS_BUILD),LOGO='./assets/ChatGPT Image Sep 22, 2026, 07_35_27 PM.png';
+ function versionModule(){if(document.getElementById('linksVersionModule'))return;const s=document.createElement('script');s.id='linksVersionModule';s.src='./version.js?v='+V;s.defer=true;document.head.appendChild(s)}
+ versionModule();
  const poolObj=()=>{try{return JSON.parse(localStorage.getItem('links-current-pool')||'null')||{}}catch{return{}}};
  const poolId=()=>{const p=poolObj();return p.id||p.poolId||p.pool_id||new URLSearchParams(location.search).get('pool')||''};
  const playerName=()=>localStorage.getItem('links-player-name')||localStorage.getItem('links-current-player')||poolObj().playerName||poolObj().player||'';
@@ -21,4 +23,4 @@ window.LINKS_BUILD='776';
  function ready(){paint();brand();modules();nav();window.LINKS_SESSION?.cleanup?.()}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ready);else ready();window.addEventListener('pageshow',ready);
 })();
-/* v776: live NFL page uses isolated shared navigation bridge; existing page engine/design remain intact. */
+/* v777: shared version.js is loaded once by build.js; one version source controls displayed build labels. */
