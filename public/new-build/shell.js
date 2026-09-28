@@ -11,6 +11,32 @@ const LINKS_BUILD=window.LINKS_BUILD||'711';
   window.LINKS_SESSION={clearSession,signOut,cleanup};
 })();
 
+/* NFL current-week compatibility: use the same saved player name used by historical weeks. */
+(function(){
+  if(!/\/nfl\.html$/i.test(location.pathname))return;
+  const nativeFetch=window.fetch.bind(window);
+  window.fetch=async function(input,init){
+    try{
+      const raw=typeof input==='string'?input:(input&&input.url)||'';
+      if(/(?:^|\/)api\/picks(?:\?|$)/.test(raw)){
+        const playerName=localStorage.getItem('links-player-name')||'';
+        if(playerName){
+          if(!init||String(init.method||'GET').toUpperCase()==='GET'){
+            const u=new URL(raw,location.href);
+            if(u.searchParams.has('player'))u.searchParams.set('player',playerName);
+            input=u.pathname+u.search;
+          }else if(init.body&&typeof init.body==='string'){
+            const body=JSON.parse(init.body);
+            if(body&&body.player)body.player=playerName;
+            init={...init,body:JSON.stringify(body)};
+          }
+        }
+      }
+    }catch{}
+    return nativeFetch(input,init);
+  };
+})();
+
 /* v753 Playmaker Pick of the Day: persistent card + honest sportsbook handoff */
 (function(){
   if(!/\/playmaker\.html$/i.test(location.pathname))return;
