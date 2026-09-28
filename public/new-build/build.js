@@ -1,4 +1,4 @@
-window.LINKS_BUILD='791';
+window.LINKS_BUILD='792';
 (function(){
  const V=String(window.LINKS_BUILD),LOGO='./assets/ChatGPT Image Sep 22, 2026, 07_35_27 PM.png';
  function add(id,src){if(document.getElementById(id))return;const s=document.createElement('script');s.id=id;s.src=src;s.defer=true;document.head.appendChild(s)}
@@ -14,8 +14,8 @@ window.LINKS_BUILD='791';
  function brand(){document.querySelectorAll('header.top .logo').forEach(el=>{if(el.querySelector('img.links-nav-logo'))return;el.innerHTML='<img class="links-nav-logo" src="'+LOGO+'?v='+V+'" alt="LINKS" style="display:block;width:150px;max-width:42vw;height:54px;object-fit:contain;object-position:left center">'})}
  function cleanPicksHeader(){if(!liveNFL())return;const card=document.querySelector('main .card');if(!card)return;const h=card.querySelector(':scope > h2');if(h&&/NFL PICK.?EM/i.test(h.textContent||'')){const p=h.nextElementSibling;h.remove();if(p&&p.tagName==='P'&&/Compare Picks|live scores|kickoff locks/i.test(p.textContent||''))p.remove()}}
  function removeLegacyNav(){if(!nflView()||liveNFL())return;document.querySelectorAll('.nflnav,#nflnav,.links-unified-nav').forEach(x=>x.remove())}
- function modules(){if(liveNFL())[['linksNflCore','./nfl-rewrite/core.js?v='+V],['linksNflSharedNav','./nfl-rewrite/navigation.js?v='+V],['linksNflLiveBridge','./nfl-rewrite/live-bridge.js?v='+V],['linksNflDeadlineModule','./nfl-deadline.js?v='+V],['linksNflDeadlineAdapter','./nfl-deadline-adapter.js?v='+V],['linksNflResults','./nfl-results.js?v='+V],['linksNflPrint','./nfl-print.js?v='+V]].forEach(([id,src])=>add(id,src));if(commissioner())add('linksAdminPickCorrection','./admin-pick-correction.js?v='+V)}
+ function modules(){if(liveNFL())[['linksNflCore','./nfl-rewrite/core.js?v='+V],['linksNflSharedNav','./nfl-rewrite/navigation.js?v='+V],['linksNflLiveBridge','./nfl-rewrite/live-bridge.js?v='+V],['linksNflDeadlineModule','./nfl-deadline.js?v='+V],['linksNflDeadlineAdapter','./nfl-deadline-adapter.js?v='+V],['linksNflResults','./nfl-results.js?v='+V],['linksNflPrint','./nfl-print.js?v='+V]].forEach(([id,src])=>add(id,src));if(nflView())add('linksNflWeekToolsFix','./nfl-week-tools-fix.js?v='+V);if(commissioner())add('linksAdminPickCorrection','./admin-pick-correction.js?v='+V)}
  async function ready(){if(await ensureCurrentWeek())return;paint();brand();cleanPicksHeader();removeLegacyNav();modules();window.LINKS_SESSION?.cleanup?.()}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ready);else ready();window.addEventListener('pageshow',ready);
 })();
-/* v791: NFL week pages open on ESPN schedule current week; duplicate legacy nav removed so shared controls render once. */
+/* v792: projected standings grade saved picks by actual team matchup; NFL Picks displays moneyline odds. */
