@@ -1,4 +1,4 @@
-/* Default navigation to the next unstarted NFL week. Explicit history links stay explicit.
+/* Default navigation to the active NFL week; advance only when every game is final.
    This module does not control pick deadlines or saving. */
 window.LINKS_NFL_WEEK_READY=(async()=>{
  const url=new URL(location.href),explicit=Number(url.searchParams.get('week'));
@@ -14,12 +14,12 @@ window.LINKS_NFL_WEEK_READY=(async()=>{
    const apiWeek=w<=18?w:({19:1,20:2,21:3,22:5}[w]);
    const r=await fetch(base+'&dates='+season+'&seasontype='+(w<=18?2:3)+'&week='+apiWeek,{cache:'no-store'});
    if(!r.ok)throw Error('Schedule unavailable');
-   const j=await r.json(),times=(j.events||[]).map(e=>Date.parse(e.date)).filter(Number.isFinite);
-   if(times.length&&Math.min(...times)>Date.now()){
+   const j=await r.json(),events=j.events||[];
+   if(!events.length||!events.every(e=>e.status?.type?.completed===true||e.competitions?.[0]?.status?.type?.completed===true)){
     url.searchParams.set('week',w);history.replaceState(null,'',url);return w;
    }
   }
-  // No unstarted week remains in this season; retain its final week for review.
+  // The whole season is final; retain its final week for review.
   url.searchParams.set('week','22');history.replaceState(null,'',url);return 22;
  }catch(e){console.warn('NFL upcoming week unavailable',e);return null}
 })();

@@ -26,6 +26,15 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
    const pending=await (await onRequestGet({request:new Request('https://test.invalid/?pool=1&week='+week),env:{DB:db}})).json();
    assert.equal(pending.allFinal,false);assert.deepEqual(pending.finalizedWinners,[],'No early winner');
   }
-  console.log('PASS all 22 weeks: full/byes/postseason counts, shuffled and one-based indexes, missing winner flags, blanks, tiebreaks, unfinished games');
+  let requests=0;
+  global.fetch=async(url,options)=>{
+   assert.equal(options.cache,undefined,'Use established Workers-compatible request options');
+   requests++;
+   if(String(url).includes('site.api'))return new Response('upstream error',{status:502});
+   return Response.json({content:{sbData:{events}}});
+  };
+  const fallback=await onRequestGet({request:new Request('https://test.invalid/?pool=1&week=22'),env:{DB:db}});
+  assert.equal(fallback.status,200);assert.equal(requests,2,'Uses CDN after primary error');
+  console.log('PASS all 22 weeks and primary-feed failure/CDN fallback');
  }finally{global.fetch=oldFetch}
 })().catch(e=>{console.error(e);process.exitCode=1});

@@ -4,9 +4,17 @@ const ALIAS={WSH:'WAS',JAC:'JAX',LA:'LAR'};const norm=x=>ALIAS[String(x||'').toU
 const exactKey=v=>String(v||'').toLowerCase().replace(/[^a-z0-9]/g,'');const nameKey=v=>{const a=String(v||'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim().split(' ').filter(Boolean);return a.length?(a[0][0]||'')+'|'+(a[a.length-1]||''):''};
 async function nflWeek(week){
  const apiWeek=week<=18?week:({19:1,20:2,21:3,22:5}[week]);
- const r=await fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=2026&seasontype='+(week<=18?2:3)+'&week='+apiWeek+'&limit=100',{cache:'no-store'});
- if(!r.ok)throw Error('NFL schedule unavailable');
- const j=await r.json();
+ const query='dates=2026&seasontype='+(week<=18?2:3)+'&week='+apiWeek+'&limit=100&_='+Date.now();
+ // Match the established legacy ESPN transport, including its CDN fallback.
+ const urls=['https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?'+query,'https://cdn.espn.com/core/nfl/scoreboard?xhr=1&'+query];
+ let j;
+ for(const url of urls){try{
+  const r=await fetch(url,{headers:{accept:'application/json,text/plain,*/*','cache-control':'no-cache,no-store,max-age=0',pragma:'no-cache','user-agent':'Mozilla/5.0'},cf:{cacheTtl:0,cacheEverything:false},signal:AbortSignal.timeout(8000)});
+  if(!r.ok)continue;const data=await r.json();
+  const events=data.events||data.content?.sbData?.events||data.sbData?.events;
+  if(Array.isArray(events)){j={events};if(events.length)break;}
+ }catch{}}
+ if(!j)throw Error('NFL schedule unavailable');
  return [...new Map((j.events||[]).map(e=>[e.id,e])).values()].map((e,i)=>{
   const c=e.competitions?.[0]||{},teams=c.competitors||[];
   const completed=!!(e.status?.type?.completed||c.status?.type?.completed);
