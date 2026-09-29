@@ -1,4 +1,4 @@
-window.LINKS_BUILD='784';
+window.LINKS_BUILD='785';
 (function(){
  const V=String(window.LINKS_BUILD),LOGO='./assets/ChatGPT Image Sep 22, 2026, 07_35_27 PM.png';
  function add(id,src){if(document.getElementById(id))return;const s=document.createElement('script');s.id=id;s.src=src;s.defer=true;document.head.appendChild(s)}
@@ -17,4 +17,4 @@ window.LINKS_BUILD='784';
  function ready(){paint();brand();modules();nav();window.LINKS_SESSION?.cleanup?.()}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ready);else ready();window.addEventListener('pageshow',ready);
 })();
-/* v784: open NFL weeks use isolated edit controller; existing slate loading and saved-pick popup remain intact. */
+/* v785: future-week buttons are unlocked at DOM level and clicks flow to the original NFL pick handler; no lexical-global interception. */
