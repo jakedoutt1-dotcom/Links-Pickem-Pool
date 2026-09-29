@@ -6,11 +6,12 @@ async function run(allFinal,explicit=''){
   const w=new URL(url).searchParams.get('week');
   return{ok:true,json:async()=>w?{events:[{date:'2026-09-20T00:00:00Z',status:{type:{completed:w==='3'&&allFinal}}},{status:{type:{completed:w==='3'}}}]}:{season:{type:2,year:2026},week:{number:3}}};
  }};
- vm.runInNewContext(source,context);return{week:await context.window.LINKS_NFL_WEEK_READY,target};
+ vm.runInNewContext(source,context);return{week:await context.window.LINKS_NFL_WEEK_READY,target,active:context.window.LINKS_NFL_CURRENT_WEEK};
 }
 (async()=>{
  assert.equal((await run(false)).week,3,'Started but unfinished week remains current');
  assert.equal((await run(true)).week,4,'All games final advances to next week');
  assert.equal((await run(true,'&week=1')).week,1,'Explicit historical selection remains available');
+ assert.equal((await run(true,'&week=1')).active,4,'Historical selection must not change the current-week label');
  console.log('PASS active week: unfinished stays, all-final advances, history preserved');
 })().catch(e=>{console.error(e);process.exitCode=1});

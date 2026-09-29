@@ -19,9 +19,13 @@ const assert=require('node:assert/strict');
    assert.equal(reads,offset<0?0:4,'No roster/picks/ties/results reads before kickoff');
    if(offset<0)assert.deepEqual(data.players,[]);
   }
+  reads=0;let calls=0;
+  global.fetch=async(url)=>{calls++;return String(url).includes('cdn.espn.com')?Response.json({content:{sbData:{events:[{id:'g1',date:new Date(first-1000).toISOString(),status:{type:{completed:true}},competitions:[{competitors:[{homeAway:'home',team:{abbreviation:'BUF'},score:'20'},{homeAway:'away',team:{abbreviation:'MIA'},score:'10'}]}]}]}}}):new Response('unavailable',{status:502})};
+  const fallback=await (await onRequestGet({request:new Request('https://test.invalid/new-build/api/compare-picks?pool=1&week=3'),env:{DB:db}})).json();
+  assert.equal(fallback.locked,true);assert.equal(fallback.results[0],'BUF');assert.equal(calls,2);assert.equal(reads,4);
   global.fetch=async()=>Response.json({week:{number:4},events:[]});
   const data=await (await onRequestGet({request:new Request('https://test.invalid/new-build/api/compare-picks?pool=1&week=4&role=admin'),env:{DB:db}})).json();
-  assert.equal(data.locked,false,'Missing schedule does not expose picks');
+  assert.equal(data.success,false,'Missing schedule reports unavailable');assert.equal(data.players,undefined,'Missing schedule does not expose picks');
   console.log('PASS privacy: all roles before/at/after kickoff; missing schedule stays private');
  }finally{Date.now=originalNow;global.fetch=originalFetch}
 })().catch(e=>{console.error(e);process.exitCode=1});

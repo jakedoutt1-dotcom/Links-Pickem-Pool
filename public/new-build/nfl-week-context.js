@@ -2,7 +2,12 @@
    This module does not control pick deadlines or saving. */
 window.LINKS_NFL_WEEK_READY=(async()=>{
  const url=new URL(location.href),explicit=Number(url.searchParams.get('week'));
- if(Number.isInteger(explicit)&&explicit>=1&&explicit<=22)return explicit;
+ const hasExplicit=Number.isInteger(explicit)&&explicit>=1&&explicit<=22;
+ function finish(active){
+  window.LINKS_NFL_CURRENT_WEEK=active;
+  if(!hasExplicit){url.searchParams.set('week',active);history.replaceState(null,'',url)}
+  return hasExplicit?explicit:active;
+ }
  const base='https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?limit=100';
  try{
   const response=await fetch(base,{cache:'no-store'});if(!response.ok)throw Error('Schedule unavailable');
@@ -16,10 +21,10 @@ window.LINKS_NFL_WEEK_READY=(async()=>{
    if(!r.ok)throw Error('Schedule unavailable');
    const j=await r.json(),events=j.events||[];
    if(!events.length||!events.every(e=>e.status?.type?.completed===true||e.competitions?.[0]?.status?.type?.completed===true)){
-    url.searchParams.set('week',w);history.replaceState(null,'',url);return w;
+    return finish(w);
    }
   }
   // The whole season is final; retain its final week for review.
-  url.searchParams.set('week','22');history.replaceState(null,'',url);return 22;
- }catch(e){console.warn('NFL upcoming week unavailable',e);return null}
+  return finish(22);
+ }catch(e){console.warn('NFL active week unavailable',e);return hasExplicit?explicit:null}
 })();
