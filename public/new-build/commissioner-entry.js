@@ -23,8 +23,14 @@
  dialog.append(button('Close',()=>{dialog.close();dialog.remove()}));document.body.append(dialog);dialog.showModal();
  if(state.verified){form.hidden=true;status.textContent='';const link=button('Link this player to my verified account',async()=>{link.disabled=true;try{await finish()}catch(e){form.hidden=false;status.textContent=e.message}finally{link.disabled=false}});dialog.prepend(link)}
  }
+ function place(){
+ if(!bar)return;const main=document.querySelector('main');if(!main)return;
+ let row=document.getElementById('linksPoolActions');if(!row){row=document.createElement('div');row.id='linksPoolActions';row.style.cssText='grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:12px;width:100%;min-width:0;margin:12px 0';main.prepend(row)}
+ if(bar.parentElement!==row)row.prepend(bar);
+ const home=document.getElementById('addMyHomepage');if(home&&home.parentElement!==row){home.style.margin='0 0 0 auto';home.style.flex='0 0 auto';row.append(home)}
+ }
  function render(){
- if(!bar){bar=document.createElement('nav');bar.id='linksPoolTabs';bar.setAttribute('aria-label','My pools');bar.style.cssText='display:flex;gap:8px;overflow-x:auto;align-items:center;padding:12px 16px;background:#0d1b26;border-bottom:1px solid #365063;box-sizing:border-box;max-width:100%';const header=document.querySelector('header');if(header)header.after(bar);else document.body.prepend(bar)}
+ if(!bar){bar=document.createElement('nav');bar.id='linksPoolTabs';bar.setAttribute('aria-label','My pools');bar.style.cssText='display:flex;flex:1 1 300px;gap:8px;flex-wrap:wrap;align-items:center;box-sizing:border-box;min-width:0;max-width:100%';place()}
  bar.replaceChildren();
  for(const pool of state.pools){const b=button(pool.name,async()=>{b.disabled=true;try{enter(await api({action:'open',pool:pool.id}))}catch(e){message.textContent=e.message;b.disabled=false}});b.style.cssText='flex:0 0 auto;white-space:nowrap';if(pool.id===state.currentPool){b.setAttribute('aria-current','page');b.disabled=true;b.style.borderColor='#edc466'}bar.append(b)}
  const current=state.pools.find(p=>p.id===state.currentPool);
@@ -32,5 +38,6 @@
  if(state.commissioner){const a=document.createElement('a');a.href='./commissioner-hub.html';a.className='action';a.dataset.commissionerPools='1';a.textContent='＋ Add Pool / Game';a.style.whiteSpace='nowrap';bar.append(a)}
  bar.append(button(state.verified?'Link this player':'Connect my pools',connect));const message=document.createElement('span');message.setAttribute('role','status');message.setAttribute('aria-live','polite');bar.append(message);
  }
+ const observer=new MutationObserver(place);observer.observe(document.body,{childList:true,subtree:true});window.addEventListener('pagehide',()=>observer.disconnect(),{once:true});
  api().then(j=>{state=j;render()}).catch(()=>{});
 })();

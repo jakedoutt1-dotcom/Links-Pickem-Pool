@@ -6,7 +6,7 @@ export const code=value=>String(value||'').toUpperCase();
 export async function feed(kind,query=''){
  const cacheKey=kind+'?'+query,cached=feedCache.get(cacheKey);if(cached&&Date.now()-cached.at<60000)return cached.data;
  const urls=[BASE+kind+'?'+query,'https://cdn.espn.com/core/college-football/'+kind+'?xhr=1&'+query];
- for(const url of urls)try{const r=await fetch(url,{headers:{accept:'application/json','user-agent':'Mozilla/5.0'},signal:AbortSignal.timeout(8000)});if(r.ok){const j=await r.json();const d=j.content?.sbData||j.sbData||j.content||j;if(kind==='scoreboard'&&Array.isArray(d.events)||kind==='rankings'&&Array.isArray(d.rankings)){feedCache.set(cacheKey,{at:Date.now(),data:d});return d}}}catch{}
+ for(const url of urls)try{const r=await fetch(url,{headers:{accept:'application/json','user-agent':'Mozilla/5.0'},signal:AbortSignal.timeout(8000)});if(r.ok){const j=await r.json();const d=[j,j.content?.sbData,j.sbData,j.content?.config?.json,j.content?.data,j.content].find(v=>v&&(kind==='scoreboard'?Array.isArray(v.events):Array.isArray(v.rankings)))||{};if(kind==='scoreboard'&&Array.isArray(d.events)||kind==='rankings'&&Array.isArray(d.rankings)){feedCache.set(cacheKey,{at:Date.now(),data:d});return d}}}catch{}
  throw Error('College '+kind+' is unavailable. Please try again.');
 }
 export function parseGames(data){return [...new Map((data.events||[]).map(e=>[e.id,e])).values()].map(e=>{
@@ -18,7 +18,7 @@ export async function collegeContext(){const d=await feed('scoreboard','groups=8
 export async function schedule(week,context){return parseGames(await feed('scoreboard',new URLSearchParams({dates:context.season,seasontype:week===17?3:2,week:week===17?1:week,groups:80,limit:300})))}
 export async function apCandidates(games,week,context){
  const d=await feed('rankings',new URLSearchParams({season:context.season,seasontype:week===17?3:2,week:week===17?1:week}));
- const poll=d.rankings.find(p=>/AP Top 25|Associated Press/i.test(p.name||p.shortName||''));if(!poll)throw Error('AP Top 25 rankings are unavailable. No other poll was substituted.');
+ const poll=d.rankings.find(p=>/AP Top 25|Associated Press/i.test(p.name||p.shortName||''));if(poll&&((poll.season?.year&&Number(poll.season.year)!==Number(context.season))||(poll.occurrence?.number&&Number(poll.occurrence.number)!==Number(week===17?1:week))))throw Error('AP Top 25 rankings for this week are not published yet. Please try again later.');if(!poll)throw Error('AP Top 25 rankings are unavailable. No other poll was substituted.');
  const ranks=new Map();for(const row of poll.ranks||[]){const rank=Number(row.current??row.rank),team=row.team||{};if(rank>=1&&rank<=25){if(team.id)ranks.set(String(team.id),rank);if(team.abbreviation)ranks.set(code(team.abbreviation),rank)}}
  if(!ranks.size)throw Error('AP Top 25 rankings are unavailable.');
  return games.map(g=>({...g,awayRank:ranks.get(g.awayId)||ranks.get(g.away)||null,homeRank:ranks.get(g.homeId)||ranks.get(g.home)||null})).filter(g=>g.awayRank||g.homeRank);
