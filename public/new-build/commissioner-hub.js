@@ -4,11 +4,18 @@
  async function returnToPicks(){
  const link=$('backToPicks'),token=localStorage.getItem('links-legacy-token')||localStorage.getItem('links-token');if(!link||!token)return;
  let pool;try{pool=JSON.parse(localStorage.getItem('links-current-pool')||'null')}catch{return}if(!pool?.id)return;
- link.textContent='BACK TO MY PICKS';link.href='./control-center.html?pool='+encodeURIComponent(pool.id);
+ const aliases={"nfl pick’em":'nfl',"nfl pick'em":'nfl',"college pick’em":'college',"college pick'em":'college','game 33':'33','march madness':'march',golf:'masters'};
+ const normalize=value=>{const raw=String(value?.key||value||'').trim().toLowerCase();return aliases[raw]||raw};
+ const requested=normalize(new URLSearchParams(location.search).get('returnGame'));
+ const cached=(Array.isArray(pool.games)?pool.games:[]).map(normalize);
+ const returnGame=routes[requested]?requested:cached.length===1&&routes[cached[0]]?cached[0]:null;
+ const destination=game=>'./'+(routes[game]||'control-center.html')+'?pool='+encodeURIComponent(pool.id);
+ // Set the real return target before any network wait; a quick tap must not open the chooser.
+ link.textContent='BACK TO MY PICKS';link.href=destination(returnGame);
  try{const r=await fetch('/api/session',{headers:{Authorization:'Bearer '+token},cache:'no-store'});if(r.status===401||r.status===403){link.textContent='PLAYER LOGIN';link.href='./pool-login.html';return}if(!r.ok)return;const session=await r.json();if(session.poolCode!==pool.code){link.textContent='PLAYER LOGIN';link.href='./pool-login.html';return}
- const games=Array.isArray(session.games)?session.games:[],requested=new URLSearchParams(location.search).get('returnGame');
- const game=games.includes(requested)?requested:games.length===1?games[0]:null;
- link.href='./'+(routes[game]||'control-center.html')+'?pool='+encodeURIComponent(pool.id);
+ const games=(Array.isArray(session.games)?session.games:[]).map(normalize);
+ const game=returnGame|| (games.length===1?games[0]:null);
+ link.href=destination(game);
  }catch{/* Keep a return route during a temporary connection failure. */}
  }
  returnToPicks();
