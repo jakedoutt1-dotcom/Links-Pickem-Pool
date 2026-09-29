@@ -32,14 +32,18 @@ export async function onRequestGet({request,env}){
  let games;try{games=await nflWeek(week)}catch{return json({success:false,error:'NFL schedule unavailable. Standings have not been recalculated.'},502)}
  const first=Math.min(...games.map(g=>Date.parse(g.kickoff)).filter(Number.isFinite));
  if(!Number.isFinite(first)||Date.now()<first)return json({success:true,week,locked:false,rows:[],finalGames:0,expectedGames:games.length,allFinal:false,finalizedWinners:[]});
- const [players,picks,ties,manual]=await Promise.all([
+ const [players,picks,ties,manual,access]=await Promise.all([
   db.prepare('SELECT name FROM pool_players WHERE pool_id=? ORDER BY rowid').bind(p.id).all(),
   db.prepare("SELECT player_name,game_index,team FROM pool_picks WHERE pool_id=? AND sport='nfl' AND week=? ORDER BY player_name,game_index").bind(p.id,week).all(),
   db.prepare("SELECT player_name,guess FROM pool_ties WHERE pool_id=? AND sport='nfl' AND week=?").bind(p.id,week).all(),
-  db.prepare("SELECT game_index,winner FROM pool_results WHERE pool_id=? AND sport='nfl' AND week=?").bind(p.id,week).all()
+  db.prepare("SELECT game_index,winner FROM pool_results WHERE pool_id=? AND sport='nfl' AND week=?").bind(p.id,week).all(),
+  db.prepare("SELECT player_name FROM pool_payments WHERE pool_id=? AND sport='nfl' AND week=? AND paid=1").bind(p.id,week).all()
  ]);
  const roster=(players.results||[]).map(x=>String(x.name||''));
  const canonical=raw=>roster.find(x=>exactKey(x)===exactKey(raw))||roster.find(x=>nameKey(x)===nameKey(raw))||String(raw||'');
+ const eligible=new Set((access.results||[]).map(x=>exactKey(canonical(x.player_name))));
+ picks.results=(picks.results||[]).filter(x=>eligible.has(exactKey(canonical(x.player_name))));
+ ties.results=(ties.results||[]).filter(x=>eligible.has(exactKey(canonical(x.player_name))));
  const byTeam=new Map();for(const g of games)for(const team of g.teams)byTeam.set(team,g);
  // Saved indexes and ESPN ordering can differ. A team's matchup is stable within a week.
  // Resolve commissioner winners by their team too; blank result placeholders never erase finals.
@@ -53,7 +57,7 @@ export async function onRequestGet({request,env}){
  const tieMap={},by=new Map();
  for(const x of ties.results||[])tieMap[canonical(x.player_name)]=x.guess;
  for(const x of picks.results||[]){const name=canonical(x.player_name);if(!by.has(name))by.set(name,[]);by.get(name).push(x);}
- const rows=[...new Set([...roster,...by.keys()])].map(player=>{
+ const rows=[...new Set([...roster,...by.keys()])].filter(name=>eligible.has(exactKey(name))).map(player=>{
   let wins=0,losses=0;const seen=new Set();
   for(const pick of by.get(player)||[]){const team=norm(pick.team),g=byTeam.get(team);if(!g?.winner||seen.has(g.id))continue;seen.add(g.id);if(team===g.winner)wins++;else losses++;}
   const tiePick=tieMap[player]??null,tieDiff=actualTie!=null&&tiePick!=null?Math.abs(Number(tiePick)-actualTie):null;

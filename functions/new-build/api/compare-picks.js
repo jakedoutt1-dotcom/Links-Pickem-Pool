@@ -36,15 +36,17 @@ export async function onRequestGet({request,env}){
  // Shared picks open only at first kickoff, including for commissioners.
  const locked=Number.isFinite(first)&&Date.now()>=first;
  if(!locked)return json({success:true,locked:false,week,players:[],games,results:{},build:"732"});
- const [pr,pk,tr,rr]=await Promise.all([
+ const [pr,pk,tr,rr,access]=await Promise.all([
   db.prepare("SELECT name FROM pool_players WHERE pool_id=? ORDER BY rowid").bind(p.id).all(),
   db.prepare("SELECT player_name,game_index,team FROM pool_picks WHERE pool_id=? AND sport='nfl' AND week=? ORDER BY player_name,game_index").bind(p.id,week).all(),
   db.prepare("SELECT player_name,guess FROM pool_ties WHERE pool_id=? AND sport='nfl' AND week=?").bind(p.id,week).all(),
-  db.prepare("SELECT game_index,winner FROM pool_results WHERE pool_id=? AND sport='nfl' AND week=? ORDER BY game_index").bind(p.id,week).all()
+  db.prepare("SELECT game_index,winner FROM pool_results WHERE pool_id=? AND sport='nfl' AND week=? ORDER BY game_index").bind(p.id,week).all(),
+  db.prepare("SELECT player_name FROM pool_payments WHERE pool_id=? AND sport='nfl' AND week=? AND paid=1").bind(p.id,week).all()
  ]);
  const roster=(pr.results||[]).map(x=>String(x.name||"")),canonical=(raw)=>{const e=exactKey(raw),n=nameKey(raw);return roster.find(x=>exactKey(x)===e)||roster.find(x=>nameKey(x)===n)||String(raw||"")};
  const pickMap={},tieMap={};for(const r of pk.results||[]){const who=canonical(r.player_name);(pickMap[who]??={})[games.find(g=>g.home===norm(r.team)||g.away===norm(r.team))?.gameIndex??Number(r.game_index)]=norm(r.team)}for(const r of tr.results||[]){const who=canonical(r.player_name);tieMap[who]=r.guess}
- const players=roster.map(name=>({player:name,picks:pickMap[name]||{},tie:tieMap[name]??null})).filter(x=>Object.keys(x.picks).length||x.tie!=null);
+ const eligible=new Set((access.results||[]).map(x=>exactKey(canonical(x.player_name))));
+ const players=roster.filter(name=>eligible.has(exactKey(name))).map(name=>({player:name,picks:pickMap[name]||{},tie:tieMap[name]??null})).filter(x=>Object.keys(x.picks).length||x.tie!=null);
  const results=Object.fromEntries(games.filter(g=>g.winner).map(g=>[g.gameIndex,g.winner]));
  for(const r of rr.results||[]){const winner=norm(r.winner),g=games.find(g=>g.home===winner||g.away===winner);if(g){results[g.gameIndex]=winner;g.winner=winner;g.completed=true}}
  return json({success:true,locked:true,week,pool:{id:String(p.id),name:p.name,code:p.code},players,games,results,finalGames:Object.keys(results).length,build:"732"});

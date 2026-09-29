@@ -2,8 +2,9 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
 (async()=>{
  const source=fs.readFileSync(path.join(__dirname,'../functions/new-build/api/standings-v649.js'),'utf8');
  const {onRequestGet}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
- let count=16,events=[],manual=[],seenUrl;
+ let eligible=['Alice','Bob'],count=16,events=[],manual=[],seenUrl;
  const db={prepare(sql){assert.ok(sql.startsWith('SELECT'),'Read-only queries only');return{bind(){return this},async first(){return{id:1,name:'Test'}},async all(){
+  if(sql.includes('pool_payments'))return{results:eligible.map(player_name=>({player_name}))};
   if(sql.includes('pool_players'))return{results:[{name:'Alice'},{name:'Bob'}]};
   if(sql.includes('pool_picks'))return{results:['Alice','Bob'].flatMap(player_name=>Array.from({length:count},(_,i)=>({player_name,game_index:i+1,team:'A'+i})))};
   if(sql.includes('pool_ties'))return{results:[{player_name:'Alice',guess:37},{player_name:'Bob',guess:40}]};
@@ -26,6 +27,9 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
    const pending=await (await onRequestGet({request:new Request('https://test.invalid/?pool=1&week='+week),env:{DB:db}})).json();
    assert.equal(pending.allFinal,false);assert.deepEqual(pending.finalizedWinners,[],'No early winner');
   }
+  eligible=['Bob'];events[0].status.type.completed=true;
+  const filtered=await(await onRequestGet({request:new Request('https://test.invalid/?pool=1&week=22'),env:{DB:db}})).json();assert.deepEqual(filtered.rows.map(x=>x.player),['Bob']);assert.deepEqual(filtered.finalizedWinners,['Bob'],'Pending best tiebreaker cannot win');
+  eligible=[];const empty=await(await onRequestGet({request:new Request('https://test.invalid/?pool=1&week=22'),env:{DB:db}})).json();assert.deepEqual(empty.rows,[]);assert.deepEqual(empty.finalizedWinners,[]);
   let requests=0;
   global.fetch=async(url,options)=>{
    assert.equal(options.cache,undefined,'Use established Workers-compatible request options');
