@@ -1,13 +1,19 @@
-/* LINKS NFL weekly pick edit controller — keeps open-week picks editable without touching slate loading. */
+/* LINKS NFL weekly pick edit controller — finalized weeks 1-3 stay locked; future weeks stay editable. */
 (()=>{
 'use strict';
 if(!/\/nfl(?:\.html)?$/i.test(location.pathname))return;
-const isOpen=()=>document.documentElement.dataset.nflDeadlineClosed!=='1';
+const FINALIZED_WEEK=3;
+const week=()=>Number(window.selectedWeek||new URLSearchParams(location.search).get('week')||0);
+const isFinalized=()=>week()>0&&week()<=FINALIZED_WEEK;
+const isOpen=()=>!isFinalized();
 function enableOpenCard(){
  if(!isOpen())return;
+ document.documentElement.dataset.nflDeadlineClosed='0';
  document.querySelectorAll('#slate button.game-team').forEach(b=>{b.disabled=false;b.removeAttribute('disabled');b.setAttribute('aria-disabled','false')});
  const tie=document.getElementById('tieTotal');
- if(tie && document.getElementById('savePicksBtn')?.textContent?.includes('LOCK MY PICKS')){tie.disabled=false;tie.removeAttribute('disabled')}
+ if(tie){tie.disabled=false;tie.removeAttribute('disabled');tie.setAttribute('aria-disabled','false')}
+ const save=document.getElementById('savePicksBtn');
+ if(save)save.disabled=false;
 }
 function choose(e){
  const b=e.target.closest?.('#slate button.game-team[data-g][data-t]');
@@ -20,7 +26,7 @@ function choose(e){
    editing=true;picksCommitted=false;pmSelected.clear();
    try{localSave()}catch{}
    const bar=document.getElementById('saveBar');if(bar)bar.classList.remove('saved');
-   const btn=document.getElementById('savePicksBtn');if(btn)btn.textContent='LOCK MY PICKS';
+   const btn=document.getElementById('savePicksBtn');if(btn){btn.disabled=false;btn.textContent='LOCK MY PICKS'}
    const msg=document.getElementById('saveMsg');if(msg)msg.textContent='Picks changed — lock them again before the deadline.';
    try{persistCardLock()}catch{}
    try{syncTieLock()}catch{}
@@ -30,12 +36,11 @@ function choose(e){
    setTimeout(enableOpenCard,0);
  }catch(err){console.error('LINKS pick edit controller',err)}
 }
-function onDeadline(e){if(e?.detail?.closed===false)setTimeout(enableOpenCard,0)}
 function boot(){
  document.addEventListener('click',choose,true);
- window.addEventListener('links:nfl-deadline',onDeadline);
  const slate=document.getElementById('slate');if(slate)new MutationObserver(()=>setTimeout(enableOpenCard,0)).observe(slate,{childList:true,subtree:true});
- setInterval(enableOpenCard,750);enableOpenCard();
+ const weekSelect=document.getElementById('weekSelect');if(weekSelect)weekSelect.addEventListener('change',()=>setTimeout(enableOpenCard,150));
+ setInterval(enableOpenCard,500);enableOpenCard();
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
