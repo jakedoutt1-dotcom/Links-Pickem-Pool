@@ -39,7 +39,7 @@ async function verifyFinish(db,b){
  const email=emailKey(b.email),code=String(b.code||'');if(!/^\d{8}$/.test(code))throw fail('Enter the eight-digit code from your email.');
  const row=await db.prepare('UPDATE links_account_codes SET attempts=attempts+1 WHERE email=? AND attempts<5 AND expires_at>? RETURNING code_hash').bind(email,now()).first();
  if(!row||row.code_hash!==await digest(email+':'+code))throw fail('That code is incorrect, expired, or used. Request a new code.',401);
- const token=crypto.randomUUID()+crypto.randomUUID(),hash=await digest(token),expiry=new Date(Date.now()+30*864e5).toISOString();
+ const token=crypto.randomUUID()+crypto.randomUUID(),hash=await digest(token),expiry=new Date(Date.now()+(b.remember===false?12*36e5:30*864e5)).toISOString();
  // Consume the code and create its session atomically; concurrent/replayed verification cannot mint sessions.
  const results=await db.batch([
  db.prepare('INSERT INTO links_account_sessions(token_hash,email,expires_at) SELECT ?,email,? FROM links_account_codes WHERE email=? AND code_hash=? AND expires_at>?').bind(hash,expiry,email,row.code_hash,now()),
@@ -48,7 +48,7 @@ async function verifyFinish(db,b){
  ]);if(!results[0].meta?.changes)throw fail('That code was already used. Request a new code.',401);
  await importOwnedPools(db,email);return {token,email};
 }
-async function createPool(db,env,email,b,origin){
+async function createPool(db,env,email,b,origin,sessionExpiry){
  const name=String(b.name||'').trim(),displayName=String(b.displayName||'').trim(),password=String(b.password||''),games=Array.isArray(b.games)?[...new Set(b.games)]:[];
  if(name.length<3||name.length>60||!displayName||displayName.length>50||password.length<8||password.length>200||!games.length||games.some(g=>!CREATABLE_GAMES.has(g)))throw fail('Enter a pool name, your name, a password of at least eight characters, and supported games.');
  await importOwnedPools(db,email);const ids=await reserveSlots(db,email,games),code='LINK-'+crypto.randomUUID().slice(0,8).toUpperCase();
@@ -62,7 +62,7 @@ async function createPool(db,env,email,b,origin){
  db.prepare(`UPDATE links_pool_slots SET pool_id=${pid},expires_at=NULL WHERE id=?`).bind(code,ids[i])]),
  db.prepare(`INSERT INTO pool_players(pool_id,name,password_hash,salt) VALUES(${pid},?,?,?)`).bind(code,displayName,hash,salt),
  ...[['commissioner_email',email],['commissioner_phone',String(b.phone||'').slice(0,40)],['commissioner_player_name',displayName]].map(([k,v])=>db.prepare(`INSERT INTO pool_settings(pool_id,key,value) VALUES(${pid},?,?)`).bind(code,k,v)),
- db.prepare(`INSERT INTO pool_sessions(token,pool_id,player_name,role,expires_at) VALUES(?,${pid},?,'admin',?)`).bind(token,code,displayName,new Date(Date.now()+30*864e5).toISOString())
+ db.prepare(`INSERT INTO pool_sessions(token,pool_id,player_name,role,expires_at) VALUES(?,${pid},?,'admin',?)`).bind(token,code,displayName,sessionExpiry)
  ])}catch(e){await releaseSlots(db,ids);throw e}
  const pool=await db.prepare('SELECT id,code,name FROM pools WHERE code=?').bind(code).first();
  const emailDelivery=await sendPoolEmail(env,email,poolEmail({base:origin,poolName:name,poolCode:code,name:displayName,commissioner:true,games}),'welcome-pool-'+pool.id);
@@ -94,7 +94,7 @@ export async function onRequest({request,env}){
  if(request.method!=='POST')return json({error:'Method not allowed.'},405);
  const b=await request.json();
  if(b.action==='send-code')return json(await verifyStart(request,env,db,b));
- if(b.action==='verify')return json(await verifyFinish(db,b));
+ if(b.action==='verify'){const response=json(await verifyFinish(db,b));if(b.remember===false)for(const part of (request.headers.get('cookie')||'').split(';')){const name=part.trim().split('=')[0];if(/^links_home_[a-zA-Z0-9_]+$/.test(name))response.headers.append('Set-Cookie',name+'=; Max-Age=0; Path=/new-build/; HttpOnly; Secure; SameSite=Lax')}return response;}
  const account=await accountSession(request,db);if(!account)throw fail('Verify your commissioner email to continue.',401);
  const email=account.email;
  if(b.action==='choose-free'){
@@ -102,13 +102,13 @@ export async function onRequest({request,env}){
   await db.prepare('INSERT INTO links_account_preferences(email,free_slot_id) VALUES(?,?) ON CONFLICT(email) DO UPDATE SET free_slot_id=excluded.free_slot_id').bind(email,slot.id).run();return json({ok:true});
  }
  if(b.action==='logout'){await db.prepare('DELETE FROM links_account_sessions WHERE token_hash=?').bind(await digest(request.headers.get('x-links-account'))).run();return json({ok:true})}
- if(b.action==='create')return json(await createPool(db,env,email,b,new URL(request.url).origin));
+ if(b.action==='create')return json(await createPool(db,env,email,b,new URL(request.url).origin,account.expires_at));
  if(['archive','add-game'].includes(b.action))return json(await changeGame(db,email,b));
  if(b.action==='open'){
   const p=await ownedPool(db,email,b.pool);if(!p)throw fail('This pool is not in your verified commissioner account.',403);
   const r=await db.prepare("SELECT value FROM pool_settings WHERE pool_id=? AND key='commissioner_player_name'").bind(p.id).first();if(!r?.value)throw fail('This pool needs its commissioner player name restored before switching.',409);
   const games=(await db.prepare('SELECT game_type FROM pool_active_games WHERE pool_id=? AND active=1 ORDER BY is_primary DESC,game_type').bind(p.id).all()).results||[];
-  const token=crypto.randomUUID()+crypto.randomUUID();await db.prepare("INSERT INTO pool_sessions(token,pool_id,player_name,role,expires_at) VALUES(?,?,?,'admin',?)").bind(token,p.id,r.value,new Date(Date.now()+30*864e5).toISOString()).run();return json({token,playerId:r.value,pool:{...p,id:String(p.id),role:'commissioner',games:games.map(g=>GAMES[g.game_type]||g.game_type)}});
+  const token=crypto.randomUUID()+crypto.randomUUID();await db.prepare("INSERT INTO pool_sessions(token,pool_id,player_name,role,expires_at) VALUES(?,?,?,'admin',?)").bind(token,p.id,r.value,account.expires_at).run();return json({token,playerId:r.value,pool:{...p,id:String(p.id),role:'commissioner',games:games.map(g=>GAMES[g.game_type]||g.game_type)}});
  }
  if(b.action==='checkout'){
   const plan=PLANS[b.plan];if(!plan?.amount)throw fail('Choose a paid package.');

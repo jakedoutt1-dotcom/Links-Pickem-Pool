@@ -47,3 +47,12 @@ Game and admin pages loading shell.js show server-authorized pool tabs below the
 The additive links_player_memberships table binds pool/player to verified account email; an existing binding cannot be overwritten. Switching rechecks membership and global access, issues a target-scoped session, replaces local pool/player context, clears transient week/Playmaker state and navigates to the sole game's page or the multi-game control center. Weekly pending eligibility remains governed by the game's existing controls. Verification codes use neutral LINKS wording for both players and commissioners.
 
 Validation: node tests/pool-switcher.cjs; node tests/commissioner-account.cjs; Playwright tests/commissioner-controls.cjs. No live emails, production database changes, or deployment were performed during validation.
+
+## Remembered sessions and sensitive changes
+Player and commissioner sign-in now offer Remember me on this device (selected by default). Unchecked sign-in stores authentication keys in sessionStorage for the current tab and caps server sessions at 12 hours; remembered sessions retain the 30-day maximum. Pool creation/opening/switching cannot extend the originating account/session expiry. Temporary login clears existing homepage shortcut cookies and does not offer remembered shortcut creation. Browser session restoration can restore tab storage, so Sign Out remains the dependable way to end access on a shared device.
+
+session-security.js loads before page scripts and routes only known authentication keys through tab storage in temporary mode. Existing pick caches and unrelated preferences retain their prior storage behavior. The same module presents a masked password dialog only when the API returns REAUTH_REQUIRED; credentials are not saved.
+
+Both API middleware chains enforce fresh commissioner password verification for password resets, bulk password operations, commissioner transfers, and changed commissioner contact email. Unchanged email settings and weekly player activation do not require confirmation. Verification attempts are limited to five per pool/player per 15-minute window using links_reauth_limits. No production records were changed during development.
+
+Tests: session-security-api.cjs (real in-memory SQLite), session-security-ui.cjs (browser storage and confirmation/cancellation), commissioner-account.cjs, pool-switcher.cjs, commissioner-hub-ui.cjs, nfl-admin-api.cjs.

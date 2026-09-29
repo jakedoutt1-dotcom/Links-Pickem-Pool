@@ -40,8 +40,9 @@ export async function onRequestPost({request,env}){
     const access=await db.prepare("SELECT status FROM newbuild_player_access WHERE pool_id=? AND lower(player_name)=lower(?) LIMIT 1").bind(p.id,name).first();
     if(!row||String(access?.status||"active")==="pending"||await hashPassword(password,row.salt)!==row.password_hash)return json({success:false,error:"Incorrect name or password."},401);
     const comm=await commissionerName(db,p.id),role=comm&&comm.toLowerCase()===String(row.name).toLowerCase()?"commissioner":"player";
-    let token="";try{const exp=new Date(Date.now()+30*24*60*60*1000).toISOString();token=crypto.randomUUID()+crypto.randomUUID().replaceAll("-","");await db.prepare("INSERT INTO pool_sessions(token,pool_id,player_name,role,expires_at) VALUES(?,?,?,?,?)").bind(token,p.id,row.name,role==="commissioner"?"admin":"player",exp).run()}catch{token=""}
-    return json({success:true,token,resolvedPoolId:String(p.id),poolName:p.name,poolCode:p.code,player:{id:row.name,displayName:row.name,email:"",role},dataSource:"legacy-production-DB",build:"634"});
+    let token="";try{const exp=new Date(Date.now()+(b.remember===false?12*60*60*1000:30*24*60*60*1000)).toISOString();token=crypto.randomUUID()+crypto.randomUUID().replaceAll("-","");await db.prepare("INSERT INTO pool_sessions(token,pool_id,player_name,role,expires_at) VALUES(?,?,?,?,?)").bind(token,p.id,row.name,role==="commissioner"?"admin":"player",exp).run()}catch{token=""}
+    const response=json({success:true,token,resolvedPoolId:String(p.id),poolName:p.name,poolCode:p.code,player:{id:row.name,displayName:row.name,email:"",role},dataSource:"legacy-production-DB",build:"634"});
+    if(b.remember===false)for(const part of (request.headers.get("cookie")||"").split(";")){const name=part.trim().split("=")[0];if(/^links_home_[a-zA-Z0-9_]+$/.test(name))response.headers.append("Set-Cookie",name+"=; Max-Age=0; Path=/new-build/; HttpOnly; Secure; SameSite=Lax")}return response;
   }
   if(!(await commissionerSession(request,db,p.id)))return json({success:false,error:'Commissioner sign-in required.'},403);
   if(action==="addPlayer"){

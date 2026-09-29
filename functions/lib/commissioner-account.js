@@ -16,7 +16,7 @@ export async function ensureAccounts(db){await db.batch([
  db.prepare('CREATE TABLE IF NOT EXISTS links_account_plans(email TEXT PRIMARY KEY,plan TEXT NOT NULL,expires_at TEXT NOT NULL,purchase_id TEXT NOT NULL)'),
  db.prepare('CREATE TABLE IF NOT EXISTS links_account_preferences(email TEXT PRIMARY KEY,free_slot_id TEXT NOT NULL)')
 ])}
-export async function accountSession(request,db){const token=request.headers.get('x-links-account')||'';if(!token)return null;await ensureAccounts(db);return db.prepare('SELECT email FROM links_account_sessions WHERE token_hash=? AND expires_at>?').bind(await digest(token),new Date().toISOString()).first()}
+export async function accountSession(request,db){const token=request.headers.get('x-links-account')||'';if(!token)return null;await ensureAccounts(db);return db.prepare('SELECT email,expires_at FROM links_account_sessions WHERE token_hash=? AND expires_at>?').bind(await digest(token),new Date().toISOString()).first()}
 export async function importOwnedPools(db,email){
  // Only called after mailbox verification. Never reassign an already-owned pool.
  const rows=(await db.prepare("SELECT pool_id,value FROM pool_settings WHERE key='commissioner_email'").all()).results||[];

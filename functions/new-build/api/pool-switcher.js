@@ -37,7 +37,7 @@ export async function onRequest({request,env}){
  if(body.action==='open'){
  if(!account)return json({error:'Verify your email to switch pools.'},401);
  const p=pools.get(String(body.pool));if(!p)return json({error:'You do not have access to this pool.'},403);
- const next=crypto.randomUUID()+crypto.randomUUID();await db.prepare('INSERT INTO pool_sessions(token,pool_id,player_name,role,expires_at) VALUES(?,?,?,?,?)').bind(next,Number(p.id),p.playerName,p.role,new Date(Date.now()+30*864e5).toISOString()).run();
+ const next=crypto.randomUUID()+crypto.randomUUID();await db.prepare('INSERT INTO pool_sessions(token,pool_id,player_name,role,expires_at) VALUES(?,?,?,?,?)').bind(next,Number(p.id),p.playerName,p.role,new Date(Math.min(Date.parse(session.expires_at),Date.parse(account.expires_at))).toISOString()).run();
  return json({token:next,playerId:p.playerName,gameKeys:p.games,pool:{id:p.id,code:p.code,name:p.name,role:p.role==='admin'?'commissioner':'player',games:p.games.map(g=>GAMES[g]||g)}});
  }
  return json({currentPool:String(current.id),verified:!!account,commissioner:session.role==='admin',pools:[...pools.values()]});
