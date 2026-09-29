@@ -1,6 +1,14 @@
 // LINKS v665 — legacy production middleware. New Build is isolated and must not receive legacy HTML/CSS/JS injections.
 export async function onRequest(context){
  const url=new URL(context.request.url);
+ // The public entry point is the current homepage. Keep legacy emailed links working.
+ const home=url.pathname==='/'||url.pathname==='/index.html';
+ const legacyFlow=['invite','setup','linksCommissionerCheckout'].some(key=>url.searchParams.has(key));
+ if(home&&!legacyFlow&&['GET','HEAD'].includes(context.request.method)){
+  const target=new URL('/new-build/index.html',url);target.search=url.search;
+  return new Response(null,{status:302,headers:{Location:target.href,'Cache-Control':'no-store'}});
+ }
+
  if(url.pathname==='/new-build'||url.pathname.startsWith('/new-build/'))return context.next();
  if(context.request.method!=="GET")return context.next();const response=await context.next();const ct=response.headers.get("content-type")||"";if(!ct.includes("text/html"))return response;let html=await response.text();
  const isHome=url.pathname==="/"||url.pathname==="/index.html";
