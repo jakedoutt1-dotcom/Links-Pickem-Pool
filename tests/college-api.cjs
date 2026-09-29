@@ -1,0 +1,58 @@
+const assert=require('node:assert/strict'),{DatabaseSync}=require('node:sqlite');
+(async()=>{
+ const sql=new DatabaseSync(':memory:');sql.exec(`
+ CREATE TABLE pools(id INTEGER PRIMARY KEY,code TEXT,name TEXT);
+ CREATE TABLE pool_sessions(token TEXT,pool_id INTEGER,player_name TEXT,role TEXT,expires_at TEXT);
+ CREATE TABLE pool_settings(pool_id INTEGER,key TEXT,value TEXT,PRIMARY KEY(pool_id,key));
+ CREATE TABLE pool_players(pool_id INTEGER,name TEXT);
+ CREATE TABLE pool_games(pool_id INTEGER,sport TEXT,week INTEGER,game_index INTEGER,event_id TEXT,away TEXT,home TEXT,away_name TEXT,home_name TEXT,kickoff TEXT);
+ CREATE TABLE pool_picks(pool_id INTEGER,sport TEXT,player_name TEXT,week INTEGER,game_index INTEGER,team TEXT,PRIMARY KEY(pool_id,sport,player_name,week,game_index));
+ CREATE TABLE pool_ties(pool_id INTEGER,sport TEXT,player_name TEXT,week INTEGER,guess INTEGER,PRIMARY KEY(pool_id,sport,player_name,week));
+ CREATE TABLE pool_payments(pool_id INTEGER,sport TEXT,player_name TEXT,week INTEGER,paid INTEGER,PRIMARY KEY(pool_id,sport,player_name,week));
+ CREATE TABLE pool_results(pool_id INTEGER,sport TEXT,week INTEGER,game_index INTEGER,winner TEXT);
+ INSERT INTO pools VALUES(1,'OFFICE','Office'),(2,'OTHER','Other');
+ INSERT INTO pool_sessions VALUES('admin',1,'Owner','admin','2099-01-01'),('alice',1,'Alice','player','2099-01-01'),('other',2,'Other','admin','2099-01-01');
+ INSERT INTO pool_players VALUES(1,'Owner'),(1,'Alice'),(1,'Bob');
+ `);
+ const db={prepare(text){let args=[];return{bind(...v){args=v;return this},async first(){return sql.prepare(text).get(...args)||null},async all(){return{results:sql.prepare(text).all(...args)}},async run(){const r=sql.prepare(text).run(...args);return{meta:{changes:Number(r.changes)}}}}}};
+ let now=Date.parse('2026-09-29T12:00:00Z'),final=false,reverse=false,ap=true;const oldNow=Date.now,oldFetch=fetch;Date.now=()=>now;
+ const kickoff='2026-10-01T18:00:00Z';
+ const event=(id,away,home)=>({id,date:kickoff,status:{type:{completed:final}},competitions:[{competitors:[{homeAway:'away',team:{id:away,abbreviation:away,displayName:away},score:final?'17':null},{homeAway:'home',team:{id:home,abbreviation:home,displayName:home},score:final?'20':null}]}]});
+ global.fetch=async url=>{const u=new URL(url);if(u.pathname.endsWith('/rankings'))return Response.json({rankings:[{name:ap?'AP Top 25':'Coaches Poll',ranks:[{current:1,team:{id:'A'}},{current:2,team:{id:'C'}}]}]});let events=[event('g1','A','B'),event('g2','C','D'),event('g3','E','F')];if(reverse)events.reverse();return Response.json({week:{number:5},season:{year:2026,type:2},events})};
+ const {onRequest}=await import('../functions/new-build/api/college.js');
+ const call=async(token,body=null,query='week=5&view=picks',pool=1)=>{const r=await onRequest({request:new Request('https://test/new-build/api/college?pool='+pool+'&'+query,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token},...(body?{body:JSON.stringify({pool,week:5,...body})}:{})}),env:{DB:db}});return{status:r.status,data:await r.json()}};
+ try{
+  assert.equal((await call('')).status,401);assert.equal((await call('other')).status,401);
+  assert.equal((await call('alice',null,'week=5&view=admin')).status,403);
+  let d=await call('admin',null,'week=5&view=admin');assert.equal(d.data.candidates.length,2,'Only AP teams qualify');
+  assert.equal((await call('alice',{action:'slate',eventIds:['g1']})).status,403);
+  assert.equal((await call('admin',{action:'slate',eventIds:['g3']})).status,400);
+  assert.equal((await call('admin',{action:'slate',eventIds:['g2','g1']})).status,200);
+  assert.equal((await call('alice',{action:'pick',eventId:'g1',team:'A'})).status,403,'Pending cannot save');
+  assert.equal((await call('admin',{action:'pick',eventId:'g1',team:'A'})).status,403,'Commissioners also need activation');
+  assert.equal((await call('alice',{action:'access',player:'Alice',active:true})).status,403);
+  assert.equal((await call('admin',{action:'access',player:'Alice',active:true})).status,200);
+  // Existing pick index 9 is preserved even when the feed order changes.
+  sql.exec("INSERT INTO pool_picks VALUES(1,'college','Alice',5,9,'A')");reverse=true;now+=61000;
+  d=await call('alice');assert.equal(d.data.picks.g1,'A');assert.equal(d.data.active,true);
+  assert.equal((await call('admin',{action:'slate',eventIds:['g1']})).status,409);
+  assert.equal((await call('alice',{action:'pick',eventId:'g1',team:'B',player:'Bob'})).status,200);
+  assert.equal(sql.prepare("SELECT team FROM pool_picks WHERE player_name='Alice' AND game_index=9").get().team,'B');assert.equal(sql.prepare("SELECT COUNT(*) n FROM pool_picks WHERE player_name='Bob'").get().n,0,'Cannot impersonate another player');
+  assert.equal((await call('alice',{action:'pick',eventId:'g2',team:'D'})).status,200);
+  assert.equal((await call('alice',{action:'tie',guess:37})).status,200);
+  assert.equal((await call('alice',{action:'lock',locked:true})).status,200);assert.equal((await call('alice')).data.cardLocked,true);
+  assert.equal((await call('alice',{action:'pick',eventId:'g1',team:'A'})).status,403);
+  assert.equal((await call('alice',{action:'lock',locked:false})).status,200);
+  assert.deepEqual((await call('admin',null,'week=5&view=compare')).data.players,[],'Commissioner cannot reveal early');
+  assert.equal((await call('alice',null,'week=6&view=picks')).data.active,false,'Activation is week-specific');
+  now=Date.parse(kickoff);final=true;
+  assert.equal((await call('alice',{action:'pick',eventId:'g1',team:'A'})).status,403);
+  assert.equal((await call('alice',{action:'lock',locked:false})).status,403);
+  d=await call('alice',null,'week=5&view=standings');assert.equal(d.data.rows[0].wins,2);assert.deepEqual(d.data.finalizedWinners,['Alice']);
+  await call('admin',{action:'access',player:'Alice',active:false});assert.equal((await call('alice',null,'week=5&view=compare')).data.players.length,0);assert.equal((await call('alice',null,'week=5&view=standings')).data.rows.length,0);
+  assert.equal(sql.prepare('SELECT COUNT(*) n FROM pool_picks').get().n,2,'Pending preserves saved picks');
+  now+=61000;ap=false;d=await call('admin',null,'week=6&view=admin');assert.equal(d.data.candidates.length,0);assert.ok(d.data.rankingError.includes('AP Top 25'));
+  const oldPicks=await import('../functions/new-build/api/picks.js');const blocked=await oldPicks.onRequestPost({request:new Request('https://test/new-build/api/picks',{method:'POST',body:JSON.stringify({pool:1,player:'Alice',game:'College Pick’em',week:5,selection:'A',gameIndex:0})}),env:{DB:db}});assert.equal(blocked.status,409,'Retired endpoint cannot bypass college locks');
+  console.log('PASS college API: authorization, AP-only slate, saved-index preservation, activation, persistent locks, deadline/privacy, and standings');
+ }finally{Date.now=oldNow;global.fetch=oldFetch;sql.close()}
+})().catch(e=>{console.error(e);process.exitCode=1});

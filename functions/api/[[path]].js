@@ -2401,6 +2401,9 @@ export async function onRequest(context){
     }
     const s=await auth(request,DB);if(!s)return json({error:"Please sign in."},401);
     const pid=s.pool_id,sport=sportOf(url.searchParams.get("sport")||body.sport),w=Number(url.searchParams.get("week")||body.week||1);
+    // Retired college editors must not bypass the office pool's access/privacy rules.
+    if(sport==='college'&&['picks','compare','standings','pick-page','bootstrap','me','college-player-lock','admin/college-games','admin/lock','admin/results','admin/correction','admin/finalize','admin/unfinalize'].includes(path))return json({error:'Open the standalone College office pool to continue.',url:'/new-build/college.html?pool='+encodeURIComponent(pid)},409);
+
 
     if(path==="commissioner/dashboard"&&method==="GET"){
       if(s.role!=="admin")return json({error:"Commissioner only."},403);

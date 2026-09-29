@@ -1,6 +1,12 @@
 // LINKS v665 — legacy production middleware. New Build is isolated and must not receive legacy HTML/CSS/JS injections.
 export async function onRequest(context){
  const url=new URL(context.request.url);
+ // College bookmarks open the standalone office pool, never an NFL view.
+ if(['GET','HEAD'].includes(context.request.method)&&/college/i.test(url.searchParams.get('sport')||url.searchParams.get('game')||'')){
+  const page=url.pathname.match(/^\/new-build\/(results|compare-picks|pick-tools|year-standings|commissioner)(?:\.html)?\/?$/)?.[1];
+  if(page){const target=new URL('/new-build/college.html',url);for(const key of ['pool','week'])if(url.searchParams.has(key))target.searchParams.set(key,url.searchParams.get(key));target.searchParams.set('view',page==='results'?(url.searchParams.get('view')==='standings'?'standings':'scores'):page==='compare-picks'?'compare':page==='pick-tools'?(url.searchParams.get('tool')==='projected'?'projected':'matter'):page==='year-standings'?'season':'admin');return new Response(null,{status:302,headers:{Location:target.href,'Cache-Control':'no-store'}})}
+ }
+
  // The public entry point is the current homepage. Keep legacy emailed links working.
  const home=url.pathname==='/'||url.pathname==='/index.html';
  const legacyFlow=['invite','setup','linksCommissionerCheckout'].some(key=>url.searchParams.has(key));
