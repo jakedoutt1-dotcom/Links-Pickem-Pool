@@ -1,4 +1,4 @@
-/* LINKS NFL pick editor — weekly-card editing is controlled ONLY by the selected week's first kickoff. */
+/* LINKS NFL pick editor — preserve explicit Lock My Picks state without owning pick selection/save logic. */
 (()=>{
 'use strict';
 if(!/\/nfl(?:\.html)?$/i.test(location.pathname))return;
@@ -24,47 +24,53 @@ function weekOpen(){
  if(!d){loadDeadline(w);return false}
  return Date.now()<d;
 }
-function clearOldCardLock(w){
- try{
-  const p=new URLSearchParams(location.search).get('pool')||'default';
-  const player=localStorage.getItem('links-player-id')||'';
-  for(const period of ['current','week-'+w,String(w)])localStorage.removeItem('links-nfl-card-locked:'+p+':'+player+':'+period);
- }catch(e){}
+function lockKey(w=selectedWeek()){
+ const p=new URLSearchParams(location.search).get('pool')||'default';
+ const player=localStorage.getItem('links-player-id')||'';
+ return 'links-nfl-card-locked:'+p+':'+player+':week-'+w;
 }
-function unlockOpenWeek(){
- const w=selectedWeek();
- if(!weekOpen())return;
- clearOldCardLock(w);
- /* Keep the original NFL page as the owner of selection + save behavior.
-    This controller only removes stale disabled states; it never intercepts the click. */
+function cardLocked(){try{return localStorage.getItem(lockKey())==='1'}catch(e){return false}}
+function setCardLocked(v){try{if(v)localStorage.setItem(lockKey(),'1');else localStorage.removeItem(lockKey())}catch(e){}}
+function setControlsLocked(locked){
  document.querySelectorAll('#slate .game-team').forEach(b=>{
-  b.disabled=false;
-  b.removeAttribute('disabled');
-  b.setAttribute('aria-disabled','false');
-  b.style.pointerEvents='auto';
+  b.disabled=!!locked;
+  if(locked){b.setAttribute('disabled','');b.setAttribute('aria-disabled','true');b.style.pointerEvents='none'}
+  else{b.removeAttribute('disabled');b.setAttribute('aria-disabled','false');b.style.pointerEvents='auto'}
  });
  const tie=document.getElementById('tieTotal');
- if(tie){tie.disabled=false;tie.removeAttribute('disabled');tie.setAttribute('aria-disabled','false')}
+ if(tie){tie.disabled=!!locked;if(locked){tie.setAttribute('disabled','');tie.setAttribute('aria-disabled','true')}else{tie.removeAttribute('disabled');tie.setAttribute('aria-disabled','false')}}
  const save=document.getElementById('savePicksBtn');
- if(save){save.disabled=false;save.removeAttribute('disabled');save.setAttribute('aria-disabled','false')}
+ if(save&&weekOpen()){
+  save.disabled=false;save.removeAttribute('disabled');save.setAttribute('aria-disabled','false');
+  save.textContent=locked?'UNLOCK MY PICKS':'LOCK MY PICKS';
+ }
 }
 function apply(){
- if(weekOpen())unlockOpenWeek();
- /* Do not add another lock here. The page/deadline adapter owns the closed-week state. */
+ if(!weekOpen())return; /* closed/finalized week remains owned by the existing deadline adapter */
+ setControlsLocked(cardLocked());
 }
 function beforePick(e){
  const b=e.target.closest?.('#slate .game-team');
- if(!b||!weekOpen())return;
- b.disabled=false;
- b.removeAttribute('disabled');
- b.setAttribute('aria-disabled','false');
- b.style.pointerEvents='auto';
- /* Intentionally no preventDefault / stopPropagation / stopImmediatePropagation. */
+ if(!b||!weekOpen()||cardLocked())return;
+ b.disabled=false;b.removeAttribute('disabled');b.setAttribute('aria-disabled','false');b.style.pointerEvents='auto';
+ /* Never intercept the original working NFL pick handler. */
+}
+function afterSaveClick(e){
+ const save=e.target.closest?.('#savePicksBtn');
+ if(!save||!weekOpen())return;
+ const wasLocked=cardLocked();
+ setTimeout(()=>{
+  /* A click while locked is the explicit Unlock action. A click while open is Lock My Picks.
+     The original page still owns validation, saving picks, and the Playmaker popup. */
+  setCardLocked(!wasLocked);
+  apply();
+ },0);
 }
 function changedWeek(){const w=selectedWeek();loadDeadline(w);setTimeout(apply,100)}
 function boot(){
  document.addEventListener('pointerdown',beforePick,true);
  document.addEventListener('touchstart',beforePick,{capture:true,passive:true});
+ document.addEventListener('click',afterSaveClick,false);
  document.getElementById('weekSelect')?.addEventListener('change',changedWeek);
  document.getElementById('prevWeek')?.addEventListener('click',()=>setTimeout(changedWeek,50));
  document.getElementById('nextWeek')?.addEventListener('click',()=>setTimeout(changedWeek,50));
