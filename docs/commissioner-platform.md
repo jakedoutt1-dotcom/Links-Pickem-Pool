@@ -40,3 +40,10 @@ No production email, payment, database mutation, deployment, or push was perform
 This is not certification of every older game's scoring engine. The Fantasy page still contains local roster/placeholder draft, trade, and league views and is excluded from new paid-pool creation. Squares, Dynasty, Props, and Playoffs do not have complete current-build routes and are not offered as new games. Existing legacy records are retained.
 
 The older games' full scoring/results experiences need separate end-to-end validation: Survivor elimination progression, tournament bracket advancement, and Golf/NASCAR standings are not implemented by the commissioner package system. The working NFL and standalone College flows remain separate. Do not advertise unfinished game modes as fully operational.
+
+## Shared pool tabs
+Game and admin pages loading shell.js show server-authorized pool tabs below the header. Commissioners with a verified account see owned pools and Add Pool / Game. Players explicitly link each authenticated pool membership to their verified email using Connect my pools. Identical player names and unverified contact emails never grant cross-pool access. Linking another pool requires signing into that pool once. New pools do not copy players.
+
+The additive links_player_memberships table binds pool/player to verified account email; an existing binding cannot be overwritten. Switching rechecks membership and global access, issues a target-scoped session, replaces local pool/player context, clears transient week/Playmaker state and navigates to the sole game's page or the multi-game control center. Weekly pending eligibility remains governed by the game's existing controls. Verification codes use neutral LINKS wording for both players and commissioners.
+
+Validation: node tests/pool-switcher.cjs; node tests/commissioner-account.cjs; Playwright tests/commissioner-controls.cjs. No live emails, production database changes, or deployment were performed during validation.

@@ -3,7 +3,7 @@ import {allowance,retainedFreeSlot} from './commissioner-account.js';
 export async function slotWriteGuard(request,env){
  if(!env.DB||['GET','HEAD','OPTIONS'].includes(request.method))return null;
  const path=new URL(request.url).pathname;
- if(/\/(account|members|invites|join|pools|pool-games|home-session)$/.test(path)||/\/(login|logout|session|pool\/create|commissioner\/|commissioner-service\/|service\/)/.test(path))return null;
+ if(/\/(account|pool-switcher|members|invites|join|pools|pool-games|home-session)$/.test(path)||/\/(login|logout|session|pool\/create|commissioner\/|commissioner-service\/|service\/)/.test(path))return null;
  let b={};try{b=await request.clone().json()}catch{return null}
  const token=(request.headers.get('authorization')||'').replace(/^Bearer /,'');
  const s=token?await env.DB.prepare('SELECT pool_id FROM pool_sessions WHERE token=? AND expires_at>?').bind(token,new Date().toISOString()).first():null;
