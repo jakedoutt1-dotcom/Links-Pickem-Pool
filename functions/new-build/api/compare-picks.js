@@ -3,7 +3,7 @@ const TEAM_ALIAS={WAS:"WSH",WSH:"WSH",JAX:"JAX",LV:"LV",LAC:"LAC",LAR:"LAR"};
 async function resolvePool(db,value){const raw=String(value||"").trim();if(!raw)return null;if(/^\d+$/.test(raw)){const p=await db.prepare("SELECT id,code,name FROM pools WHERE id=? LIMIT 1").bind(Number(raw)).first();if(p)return p}return await db.prepare("SELECT id,code,name FROM pools WHERE upper(code)=upper(?) OR lower(trim(name))=lower(trim(?)) LIMIT 1").bind(raw,raw).first()}
 async function currentNFLWeek(){try{const r=await fetch("https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?limit=100",{cache:"no-store"}),j=await r.json();return Number(j?.week?.number||1)||1}catch{return 1}}
 const norm=v=>({WAS:'WSH',JAC:'JAX',LA:'LAR'}[String(v||'').toUpperCase()]||String(v||'').toUpperCase());
-async function weekGames(week){
+export async function weekGames(week){
  const apiWeek=week<=18?week:({19:1,20:2,21:3,22:5}[week]);
  const query='dates=2026&seasontype='+(week<=18?2:3)+'&week='+apiWeek+'&limit=100&_='+Date.now();
  // Match the established legacy ESPN transport, including its CDN fallback.

@@ -1,0 +1,15 @@
+const assert=require('node:assert/strict'),{pathToFileURL}=require('node:url'),path=require('node:path');
+(async()=>{const mod=async p=>import(pathToFileURL(path.resolve(__dirname,'../'+p)).href),{poolEmail,sendPoolEmail}=await mod('functions/lib/pool-email.js'),{commissionerSession}=await mod('functions/lib/commissioner-auth.js');
+ const email=poolEmail({poolName:'Family <Pool>',poolCode:'FAM 1',name:'Jake',commissioner:true,rules:'No <script> tags'});
+ assert.ok(email.html.includes('width="140"'));assert.ok(email.html.includes('Family &lt;Pool&gt;'));assert.ok(!email.html.includes('<script>'));assert.ok(email.html.includes('first kickoff'));assert.ok(email.text.includes('Your commissioner controls'));assert.ok(email.html.includes('code=FAM%201'));
+ let sends=[];global.fetch=async(url,options)=>{sends.push({url,options});return Response.json({id:'test-message'})};
+ assert.equal((await sendPoolEmail({},'test@example.com',email)).sent,false);assert.equal(sends.length,0);
+ assert.equal((await sendPoolEmail({RESEND_API_KEY:'test-key'},'test@example.com',email,'welcome-test')).sent,true);assert.equal(sends[0].options.headers['Idempotency-Key'],'welcome-test');assert.ok(JSON.parse(sends[0].options.body).text);
+ global.fetch=async()=>Response.json({message:'Domain not verified'},{status:403});assert.equal((await sendPoolEmail({RESEND_KEY:'test'},'test@example.com',email)).sent,false);
+ const request=new Request('https://test/new-build/api/nfl-admin-week',{headers:{Authorization:'Bearer token'}});let session={pool_id:1,role:'player',expires_at:'2099-01-01'};
+ const db={prepare(){return{bind(){return this},async first(){return session}}}};
+ assert.equal(await commissionerSession(request,db),null);session.role='admin';assert.ok(await commissionerSession(request,db,1));assert.equal(await commissionerSession(request,db,2),null);session.expires_at='bad';assert.equal(await commissionerSession(request,db),null);
+ const {onRequest}=await mod('functions/new-build/api/nfl-admin-week.js');session.expires_at='2099-01-01';session.role='player';assert.equal((await onRequest({request,env:{DB:db}})).status,403);
+ const {onRequestPost}=await mod('functions/new-build/api/nfl-finalize.js');assert.equal((await onRequestPost({request:new Request(request,{method:'POST',body:'{"week":3}'}),env:{DB:db}})).status,403);
+ console.log('PASS branded email content, escaping, send acceptance/failure, idempotency, commissioner authorization and pool isolation');
+})().catch(e=>{console.error(e);process.exitCode=1});
