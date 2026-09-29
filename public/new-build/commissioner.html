@@ -19,4 +19,4 @@ openAccess.onclick=()=>accessPane.classList.toggle('open');scoreTool.onclick=()=
 saveSettings.onclick=()=>settingsMsg.textContent='Layout matched to old admin. Rules persistence remains connected next.';finalizeWeek.onclick=()=>finalStatus.textContent='Week '+finalWeek.value+' selected for finalization.';if(isCollege){randomCollege.onclick=()=>alert('College random slate control is positioned like the old admin.');loadCollege.onclick=()=>alert('College manual Top 25 control is positioned like the old admin.')}load()}
 document.querySelectorAll('[data-jump]').forEach(b=>b.onclick=()=>document.getElementById(b.dataset.jump)?.scrollIntoView({behavior:'smooth',block:'start'}));renderAdmin();
 }else{const script=document.createElement("script");script.src="./nfl-admin.js";document.body.appendChild(script)}
-</script></body></html>
+</script><script src="./game-artwork.js"></script></body></html>
