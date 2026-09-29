@@ -1,19 +1,20 @@
-/* LINKS NFL live modular bridge v779
-   Real pool sessions: NFL Core is the ONLY slate/picks source.
-   Demo/practice markup and legacy slate are isolated from signed-in pools.
-   Visual renderer preserves the compact live Pick'em layout on mobile. */
+/* Shared NFL navigation only. nfl.html owns the slate, player hydration,
+   selection handlers and saves. Never replace or rename its #slate. */
 (()=>{
  const V=String(window.LINKS_VERSION||window.LINKS_BUILD||'779');
  const q=()=>new URLSearchParams(location.search);
  const session=()=>{try{return JSON.parse(localStorage.getItem('links-current-pool')||'null')}catch{return null}};
  const realPool=()=>!!(q().get('pool')&&session()&&String(session().id||session().poolId||session().pool_id)===String(q().get('pool'))&&localStorage.getItem('links-player-id'));
  function load(id,src,ready){return new Promise((resolve,reject)=>{if(ready())return resolve();let s=document.getElementById(id);if(s){const w=()=>ready()?resolve():setTimeout(w,20);return w()}s=document.createElement('script');s.id=id;s.src=src;s.onload=resolve;s.onerror=reject;document.head.appendChild(s)})}
- function isolate(){if(!realPool())return;document.getElementById('tutorial')?.remove();document.querySelectorAll('main .tabs,.tabs.nfl-tabs,#nflnav,.nflnav').forEach(x=>{if(!x.classList.contains('links-nfl-shared-nav'))x.remove()});const old=document.getElementById('slate');if(old){old.id='legacySlate';old.hidden=true;old.setAttribute('aria-hidden','true')}let host=document.getElementById('linksRealSlate');if(!host){host=document.createElement('div');host.id='linksRealSlate';host.className='links-real-slate';const anchor=document.getElementById('legacySlate')||document.querySelector('.week-nav');anchor?.parentNode?.insertBefore(host,anchor?.nextSibling||null)}document.documentElement.dataset.nflDataSource='real-core-only';return host}
- const logo=t=>'https://a.espncdn.com/i/teamlogos/nfl/500/'+String(t||'').toLowerCase()+'.png';
- function status(g,pick){if(!g.final)return'';return g.winner===pick?'WIN':'LOSS'}
- function teamButton(team,record,score,pick){return '<button type="button" class="action team game-team '+(pick===team?'primary selected picked':'')+'" data-team="'+team+'"><img class="teamlogo" src="'+logo(team)+'" alt=""><span><b>'+team+'</b>'+(record?'<small>'+record+'</small>':'')+(score!=null?'<small>'+score+'</small>':'')+'</span></button>'}
- async function render(){if(!realPool())return;const host=isolate();if(!host)return;host.innerHTML='<div class="empty">Loading real NFL slate…</div>';try{const m=await LINKS_NFL_REWRITE.model();const chosen=new Map((m.graded||[]).filter(x=>x.game).map(x=>[x.game.key,x]));host.innerHTML=(m.schedule||[]).map((g,i)=>{const p=chosen.get(g.key),pick=p?.pick||'',st=pick?status(g,pick):'';return '<div class="game-matchup links-core-game" data-game="'+(i+1)+'" data-key="'+g.key+'"><div class="game-time"><span>GAME '+(i+1)+'</span><span class="game-state">'+(g.final?'FINAL':'')+'</span></div><div class="game-teams">'+teamButton(g.away,g.awayRecord,g.final?g.awayScore:null,pick)+'<div class="game-vs">VS</div>'+teamButton(g.home,g.homeRecord,g.final?g.homeScore:null,pick)+'</div>'+(pick?'<div class="playmaker-pick">SAVED PICK: <b>'+pick+'</b>'+(st?' · <b>'+st+'</b>':'')+'</div>':'')+'</div>'}).join('')||'<div class="empty">No NFL games returned for this week.</div>';host.dataset.week=String(m.week);host.dataset.pool=m.poolId;host.dataset.player=m.player}catch(e){host.innerHTML='<div class="empty">Real NFL data could not load. Demo data is disabled for pool sessions.</div>';console.error('LINKS NFL core only:',e)}}
- async function boot(){try{await load('linksNflCore','./nfl-rewrite/core.js?v='+V,()=>!!window.LINKS_NFL_REWRITE);await load('linksNflSharedNav','./nfl-rewrite/navigation.js?v='+V,()=>!!window.LINKS_NFL_NAV);if(realPool()){const before=document.querySelector('.week-nav')||document.querySelector('main .card')?.firstElementChild||document.querySelector('main');LINKS_NFL_NAV.mount('picks',before);await render();const s=document.getElementById('weekSelect');if(s)s.addEventListener('change',()=>setTimeout(render,0))} }catch(e){console.error('LINKS NFL bridge:',e)}}
- window.addEventListener('popstate',()=>realPool()&&render());
+ async function boot(){
+  if(!realPool())return;
+  try{
+   await load('linksNflSharedNav','./nfl-rewrite/navigation.js?v='+V,()=>!!window.LINKS_NFL_NAV);
+   document.getElementById('tutorial')?.remove();
+   document.querySelectorAll('main .tabs,.tabs.nfl-tabs,#nflnav,.nflnav').forEach(x=>{if(!x.classList.contains('links-nfl-shared-nav'))x.remove()});
+   const before=document.querySelector('.week-nav')||document.querySelector('main .card')?.firstElementChild||document.querySelector('main');
+   LINKS_NFL_NAV.mount('picks',before);
+  }catch(e){console.error('LINKS NFL navigation:',e)}
+ }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
