@@ -9,12 +9,9 @@ export async function onRequestGet({request,env}){
  const db=env.DB;if(!db)return json({success:false,error:"Legacy LINKS database unavailable",build:"732"},503);
  const q=new URL(request.url).searchParams,p=await resolvePool(db,q.get("pool")),week=Math.max(1,Math.min(22,Number(q.get("week")||0)||await currentNFLWeek()));
  if(!p)return json({success:false,error:"Pool not found"},404);
- const games=await weekGames(week),first=games.map(g=>Date.parse(g.kickoff)).filter(Number.isFinite).sort((a,b)=>a-b)[0],current=await currentNFLWeek();
- // Weekly privacy is a POOL/WEEK state, never a per-player state. Once the first kickoff has passed,
- // the week is historical, or a result exists, every player in that pool sees the same shared pages.
- const resultCheck=await db.prepare("SELECT 1 AS yes FROM pool_results WHERE pool_id=? AND sport='nfl' AND week=? LIMIT 1").bind(p.id,week).first();
- let locked=week<current||!!resultCheck||(first?Date.now()>=first:false);
- const role=String(q.get("role")||"").toLowerCase();if(role==="admin"||role==="commissioner")locked=true;
+ const games=await weekGames(week),first=games.map(g=>Date.parse(g.kickoff)).filter(Number.isFinite).sort((a,b)=>a-b)[0];
+ // Shared picks open only at first kickoff, including for commissioners.
+ const locked=Number.isFinite(first)&&Date.now()>=first;
  if(!locked)return json({success:true,locked:false,week,players:[],games,results:{},build:"732"});
  const [pr,pk,tr,rr]=await Promise.all([
   db.prepare("SELECT name FROM pool_players WHERE pool_id=? ORDER BY rowid").bind(p.id).all(),

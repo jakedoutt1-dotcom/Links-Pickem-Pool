@@ -1,4 +1,4 @@
-/* LINKS NFL pick editor — weekly-card editing is controlled ONLY by the selected week's first kickoff. */
+/* LINKS NFL pick editor — respect the player card lock as well as the selected week's first kickoff. */
 (()=>{
 'use strict';
 if(!/\/nfl(?:\.html)?$/i.test(location.pathname))return;
@@ -24,17 +24,8 @@ function weekOpen(){
  if(!d){loadDeadline(w);return false}
  return Date.now()<d;
 }
-function clearOldCardLock(w){
- try{
-  const p=new URLSearchParams(location.search).get('pool')||'default';
-  const player=localStorage.getItem('links-player-id')||'';
-  for(const period of ['current','week-'+w,String(w)])localStorage.removeItem('links-nfl-card-locked:'+p+':'+player+':'+period);
- }catch(e){}
-}
 function unlockOpenWeek(){
- const w=selectedWeek();
- if(!weekOpen())return;
- clearOldCardLock(w);
+ if(!weekOpen()||window.LINKS_NFL_CARD_LOCKED?.())return;
  /* Keep the original NFL page as the owner of selection + save behavior.
     This controller only removes stale disabled states; it never intercepts the click. */
  document.querySelectorAll('#slate .game-team').forEach(b=>{
@@ -54,7 +45,7 @@ function apply(){
 }
 function beforePick(e){
  const b=e.target.closest?.('#slate .game-team');
- if(!b||!weekOpen())return;
+ if(!b||!weekOpen()||window.LINKS_NFL_CARD_LOCKED?.())return;
  b.disabled=false;
  b.removeAttribute('disabled');
  b.setAttribute('aria-disabled','false');

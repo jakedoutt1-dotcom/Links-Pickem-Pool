@@ -28,7 +28,7 @@ function scoreboard(week) {
           const player=url.searchParams.get('player'),week=url.searchParams.get('week');
           return json({success:true,picks:player==='Alice'&&week==='4'?[{gameIndex:0,selection:'BUF'}]:[]});
         }
-        if(url.pathname==='/new-build/api/compare-picks')return json({locked:true,players:[{player:'Bob',picks:{0:'BUF'}}]});
+        if(url.pathname==='/new-build/api/compare-picks')return json(url.searchParams.get('week')==='3'?{locked:true,players:[{player:'Bob',picks:{0:'BUF'}}]}:{locked:false,players:[]});
         if(url.hostname===new URL(origin).hostname&&!url.pathname.includes('/api/')) {
           const file=path.resolve(root,'.'+url.pathname);
           if(file.startsWith(root+path.sep)&&fs.existsSync(file))return route.fulfill({body:fs.readFileSync(file),contentType:file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html'});
@@ -62,6 +62,21 @@ function scoreboard(week) {
       await choose('1');
       await page.waitForFunction(()=>document.querySelector('#slate [data-t="1"]').classList.contains('primary'));
       assert.equal(posts.length,2);
+      await page.locator('#tieTotal').fill('42');
+      await page.locator('#savePicksBtn').click();
+      await page.locator('#skipPlaymaker').click();
+      await page.clock.runFor(1600);
+      assert.equal(await page.locator('#slate button:disabled').count(),2,'Voluntary lock survives both background controllers');
+      assert.equal(await page.locator('#tieTotal').isDisabled(),true);
+      assert.equal(await page.locator('#savePicksBtn').isEnabled(),true,'Unlock remains available before kickoff');
+      await page.reload();
+      await page.waitForFunction(()=>document.querySelectorAll('#slate [data-g]').length===2);
+      await page.clock.runFor(1600);
+      assert.equal(await page.locator('#slate button:disabled').count(),2,'Card stays locked on reload');
+      await page.locator('#savePicksBtn').click();
+      await page.waitForFunction(()=>document.querySelectorAll('#slate button:enabled').length===2);
+      assert.equal(await page.locator('#tieTotal').isEnabled(),true);
+      assert.equal(posts.length,3,'Unlock must not save a pick');
       await page.evaluate(()=>{localStorage.setItem('links-player-id','Bob');localStorage.setItem('links-player-name','Bob')});
       await page.reload();
       await page.waitForFunction(()=>document.querySelectorAll('#slate [data-g]').length===2&&document.querySelector('.links-nfl-shared-nav'));
@@ -83,8 +98,14 @@ function scoreboard(week) {
       await page.locator('#weekSelect').selectOption('3');
       await page.waitForFunction(()=>document.querySelector('#slate [data-g="event-3"]'));
       assert.equal(await page.locator('#slate button:disabled').count(),2,'Historical week remains locked');
-      assert.equal(posts.length,3,'Loading history must not save anything');
+      assert.equal(posts.length,4,'Loading history must not save anything');
       assert.ok(reads.some(url=>url.searchParams.get('player')==='Bob'&&url.searchParams.get('week')==='5'));
+      await page.evaluate(()=>localStorage.setItem('links-player-role','commissioner'));
+      for(const file of ['compare-picks.html','pick-tools.html']){
+        await page.goto(origin+'/new-build/'+file+'?pool=test-pool&week=4');
+        await page.waitForFunction(()=>document.getElementById('status').textContent.includes('Picks are private until the first kickoff of the week.'));
+        assert.equal(await page.locator('.compare-player,.gtm-game').count(),0);
+      }
       assert.deepEqual(errors,[]);
       await context.close();
       console.log('PASS '+viewport.width+'px: clicks/taps, saves, player isolation, week changes, deadline and historical locks');
