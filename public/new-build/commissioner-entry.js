@@ -27,6 +27,8 @@
  if(!bar){bar=document.createElement('nav');bar.id='linksPoolTabs';bar.setAttribute('aria-label','My pools');bar.style.cssText='display:flex;gap:8px;overflow-x:auto;align-items:center;padding:12px 16px;background:#0d1b26;border-bottom:1px solid #365063;box-sizing:border-box;max-width:100%';const header=document.querySelector('header');if(header)header.after(bar);else document.body.prepend(bar)}
  bar.replaceChildren();
  for(const pool of state.pools){const b=button(pool.name,async()=>{b.disabled=true;try{enter(await api({action:'open',pool:pool.id}))}catch(e){message.textContent=e.message;b.disabled=false}});b.style.cssText='flex:0 0 auto;white-space:nowrap';if(pool.id===state.currentPool){b.setAttribute('aria-current','page');b.disabled=true;b.style.borderColor='#edc466'}bar.append(b)}
+ const current=state.pools.find(p=>p.id===state.currentPool);
+ if(current?.games?.length>1){const change=document.createElement('a');change.className='action';change.href='./control-center.html?pool='+encodeURIComponent(state.currentPool);change.textContent='Change Game';change.style.whiteSpace='nowrap';bar.append(change)}
  if(state.commissioner){const a=document.createElement('a');a.href='./commissioner-hub.html';a.className='action';a.dataset.commissionerPools='1';a.textContent='＋ Add Pool / Game';a.style.whiteSpace='nowrap';bar.append(a)}
  bar.append(button(state.verified?'Link this player':'Connect my pools',connect));const message=document.createElement('span');message.setAttribute('role','status');message.setAttribute('aria-live','polite');bar.append(message);
  }
