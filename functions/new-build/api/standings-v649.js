@@ -1,8 +1,8 @@
 const json=(d,s=200)=>Response.json(d,{status:s,headers:{'Cache-Control':'no-store'}});
-async function resolvePool(db,value){const raw=String(value||'').trim();if(/^\d+$/.test(raw)){const p=await db.prepare('SELECT id,code,name FROM pools WHERE id=? LIMIT 1').bind(Number(raw)).first();if(p)return p}return raw?await db.prepare('SELECT id,code,name FROM pools WHERE upper(code)=upper(?) OR lower(trim(name))=lower(trim(?)) LIMIT 1').bind(raw,raw).first():null}
+export async function resolvePool(db,value){const raw=String(value||'').trim();if(/^\d+$/.test(raw)){const p=await db.prepare('SELECT id,code,name FROM pools WHERE id=? LIMIT 1').bind(Number(raw)).first();if(p)return p}return raw?await db.prepare('SELECT id,code,name FROM pools WHERE upper(code)=upper(?) OR lower(trim(name))=lower(trim(?)) LIMIT 1').bind(raw,raw).first():null}
 const ALIAS={WSH:'WAS',JAC:'JAX',LA:'LAR'};const norm=x=>ALIAS[String(x||'').toUpperCase()]||String(x||'').toUpperCase();
 const exactKey=v=>String(v||'').toLowerCase().replace(/[^a-z0-9]/g,'');const nameKey=v=>{const a=String(v||'').toLowerCase().replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim().split(' ').filter(Boolean);return a.length?(a[0][0]||'')+'|'+(a[a.length-1]||''):''};
-async function nflWeek(week){
+export async function nflWeek(week){
  const apiWeek=week<=18?week:({19:1,20:2,21:3,22:5}[week]);
  const query='dates=2026&seasontype='+(week<=18?2:3)+'&week='+apiWeek+'&limit=100&_='+Date.now();
  // Match the established legacy ESPN transport, including its CDN fallback.
@@ -39,6 +39,9 @@ export async function onRequestGet({request,env}){
   db.prepare("SELECT game_index,winner FROM pool_results WHERE pool_id=? AND sport='nfl' AND week=?").bind(p.id,week).all(),
   db.prepare("SELECT player_name FROM pool_payments WHERE pool_id=? AND sport='nfl' AND week=? AND paid=1").bind(p.id,week).all()
  ]);
+ return json(gradeWeek(p,week,games,{players,picks,ties,manual,access}));
+}
+export function gradeWeek(p,week,games,{players,picks,ties,manual,access}){
  const roster=(players.results||[]).map(x=>String(x.name||''));
  const canonical=raw=>roster.find(x=>exactKey(x)===exactKey(raw))||roster.find(x=>nameKey(x)===nameKey(raw))||String(raw||'');
  const eligible=new Set((access.results||[]).map(x=>exactKey(canonical(x.player_name))));
@@ -64,5 +67,5 @@ export async function onRequestGet({request,env}){
   return {player,wins,losses,correct:wins,tiePick,tieDiff};
  }).filter(x=>by.get(x.player)?.length||x.tiePick!=null).sort((a,b)=>b.wins-a.wins||(a.tieDiff??Infinity)-(b.tieDiff??Infinity)||a.player.localeCompare(b.player));
  const top=rows[0],finalizedWinners=allFinal&&top?rows.filter(x=>x.wins===top.wins&&(actualTie==null||(x.tieDiff??Infinity)===(top.tieDiff??Infinity))).map(x=>x.player):[];
- return json({success:true,week,locked:true,rows,actualTie,finalizedWinner:finalizedWinners[0]||null,finalizedWinners,allFinal,finalGames,expectedGames,pool:{id:String(p.id),name:p.name,code:p.code}});
+ return {success:true,week,locked:true,rows,actualTie,finalizedWinner:finalizedWinners[0]||null,finalizedWinners,allFinal,finalGames,expectedGames,pool:{id:String(p.id),name:p.name,code:p.code}};
 }
