@@ -31,18 +31,36 @@ function clearOldCardLock(w){
   for(const period of ['current','week-'+w,String(w)])localStorage.removeItem('links-nfl-card-locked:'+p+':'+player+':'+period);
  }catch(e){}
 }
-function apply(){
- const w=selectedWeek(),open=weekOpen();
- if(open)clearOldCardLock(w);
+function unlockOpenWeek(){
+ const w=selectedWeek();
+ if(!weekOpen())return;
+ clearOldCardLock(w);
+ /* Keep the original NFL page as the owner of selection + save behavior.
+    This controller only removes stale disabled states; it never intercepts the click. */
  document.querySelectorAll('#slate .game-team').forEach(b=>{
-  b.disabled=!open;
-  if(open){b.removeAttribute('disabled');b.setAttribute('aria-disabled','false');b.style.pointerEvents='auto'}
-  else b.setAttribute('aria-disabled','true');
+  b.disabled=false;
+  b.removeAttribute('disabled');
+  b.setAttribute('aria-disabled','false');
+  b.style.pointerEvents='auto';
  });
- const tie=document.getElementById('tieTotal');if(tie){tie.disabled=!open;if(open)tie.removeAttribute('disabled');tie.setAttribute('aria-disabled',open?'false':'true')}
- const save=document.getElementById('savePicksBtn');if(save)save.disabled=!open;
+ const tie=document.getElementById('tieTotal');
+ if(tie){tie.disabled=false;tie.removeAttribute('disabled');tie.setAttribute('aria-disabled','false')}
+ const save=document.getElementById('savePicksBtn');
+ if(save){save.disabled=false;save.removeAttribute('disabled');save.setAttribute('aria-disabled','false')}
 }
-function beforePick(e){const b=e.target.closest?.('#slate .game-team');if(!b||!weekOpen())return;b.disabled=false;b.removeAttribute('disabled');b.style.pointerEvents='auto'}
+function apply(){
+ if(weekOpen())unlockOpenWeek();
+ /* Do not add another lock here. The page/deadline adapter owns the closed-week state. */
+}
+function beforePick(e){
+ const b=e.target.closest?.('#slate .game-team');
+ if(!b||!weekOpen())return;
+ b.disabled=false;
+ b.removeAttribute('disabled');
+ b.setAttribute('aria-disabled','false');
+ b.style.pointerEvents='auto';
+ /* Intentionally no preventDefault / stopPropagation / stopImmediatePropagation. */
+}
 function changedWeek(){const w=selectedWeek();loadDeadline(w);setTimeout(apply,100)}
 function boot(){
  document.addEventListener('pointerdown',beforePick,true);
