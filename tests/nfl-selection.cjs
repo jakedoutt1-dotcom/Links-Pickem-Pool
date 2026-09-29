@@ -17,7 +17,7 @@ function scoreboard(week) {
   try {
     for (const viewport of [{width:1280,height:900},{width:390,height:844}]) {
       const context=await browser.newContext({viewport,hasTouch:viewport.width<600,isMobile:viewport.width<600});
-      const posts=[], errors=[], reads=[];
+      const posts=[], errors=[], reads=[];let accessActive=false;
       await context.route('**/*',async route=>{
         const request=route.request(),url=new URL(request.url());
         const json=body=>route.fulfill({json:body});
@@ -26,7 +26,7 @@ function scoreboard(week) {
           if(request.method()==='POST'){posts.push(request.postDataJSON());return json({success:true})}
           reads.push(url);
           const player=url.searchParams.get('player'),week=url.searchParams.get('week');
-          return json({success:true,picks:player==='Alice'&&week==='4'?[{gameIndex:0,selection:'BUF'}]:[]});
+          return json({success:true,active:accessActive,picks:player==='Alice'&&week==='4'?[{gameIndex:0,selection:'BUF'}]:[]});
         }
         if(url.pathname==='/new-build/api/compare-picks')return json(url.searchParams.get('week')==='3'?{locked:true,players:[{player:'Bob',picks:{0:'BUF'}}]}:{locked:false,players:[]});
         if(url.hostname===new URL(origin).hostname&&!url.pathname.includes('/api/')) {
@@ -50,6 +50,11 @@ function scoreboard(week) {
       await page.goto(origin+'/new-build/nfl.html?pool=test-pool&week=4');
       await page.waitForFunction(()=>document.querySelectorAll('#slate [data-g]').length===2&&document.querySelector('.links-nfl-shared-nav'));
       assert.equal(await page.locator('#legacySlate,#linksRealSlate').count(),0);
+      await page.clock.runFor(1600);assert.equal(await page.locator('#slate button:disabled').count(),2,'Pending blocks selection');assert.equal(await page.locator('#tieTotal').isDisabled(),true);assert.ok((await page.locator('#weeklyAccessNotice').textContent()).includes('Contact your commissioner'));assert.equal(await page.locator('#savePicksBtn').isDisabled(),true);
+      accessActive=true;await page.clock.runFor(16000);await page.waitForFunction(()=>document.querySelectorAll('#slate button:enabled').length===2);assert.equal(await page.locator('#weeklyAccessNotice').isVisible(),false,'Activation clears warning without login');
+      accessActive=false;await page.clock.runFor(16000);await page.waitForFunction(()=>document.querySelectorAll('#slate button:disabled').length===2);assert.equal(posts.length,0);
+      accessActive=true;await page.clock.runFor(16000);await page.waitForFunction(()=>document.querySelectorAll('#slate button:enabled').length===2);
+
       assert.equal(await page.locator('#slate .primary').getAttribute('data-t'),'1');
       await page.locator('[data-nfl-nav="print"]').click();
       await page.waitForSelector('.links-print-modal');

@@ -3256,7 +3256,7 @@ export async function onRequest(context){
     }
     if(path==="picks"&&method==="POST"){
       if(!sessionCanPlay(s))return json({error:"Player sign-in required."},403);
-      if(s.role!=="admin"){
+      if(sport==="nfl"||s.role!=="admin"){
         const paidRow=await DB.prepare("SELECT paid FROM pool_payments WHERE pool_id=? AND sport=? AND player_name=? AND week=?").bind(pid,sport,s.player_name,w).first();
         if(Number(paidRow?.paid||0)!==1)return json({error:"Player access is PENDING. Your commissioner must mark you ACTIVE before you can save picks."},402);
       }
