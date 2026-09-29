@@ -5,8 +5,13 @@ export async function onRequest(context){
  const home=url.pathname==='/'||url.pathname==='/index.html';
  const legacyFlow=['invite','setup','linksCommissionerCheckout'].some(key=>url.searchParams.has(key));
  if(home&&!legacyFlow&&['GET','HEAD'].includes(context.request.method)){
-  const target=new URL('/new-build/index.html',url);target.search=url.search;
-  return new Response(null,{status:302,headers:{Location:target.href,'Cache-Control':'no-store'}});
+  const target=new URL('/new-build/',url);target.search=url.search;
+  const response=await context.env.ASSETS.fetch(new Request(target,{method:context.request.method}));
+  if(!response.ok)return response;
+  const headers=new Headers(response.headers);headers.delete('content-length');headers.set('Cache-Control','no-store');
+  if(context.request.method==='HEAD')return new Response(null,{status:response.status,headers});
+  const html=(await response.text()).replace(/<head([^>]*)>/i,'<head$1><base href="/new-build/">');
+  return new Response(html,{status:response.status,headers});
  }
 
  if(url.pathname==='/new-build'||url.pathname.startsWith('/new-build/'))return context.next();
