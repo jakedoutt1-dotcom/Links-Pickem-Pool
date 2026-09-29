@@ -84,6 +84,10 @@ function scoreboard(week) {
       await page.waitForFunction(()=>document.querySelectorAll('#slate [data-g]').length===2);
       await page.clock.runFor(1600);
       assert.equal(await page.locator('#slate button:disabled').count(),2,'Card stays locked on reload');
+      await page.locator('#linksGlobalSignOut').click();await page.waitForURL('**/index.html');
+      await page.goto(origin+'/new-build/nfl.html?pool=test-pool&week=4');await page.waitForFunction(()=>document.querySelectorAll('#slate [data-g]').length===2);await page.clock.runFor(1600);
+      assert.equal(await page.locator('#slate button:disabled').count(),2,'Card stays locked after sign-out and returning as the same player');
+      assert.equal(await page.locator('#savePicksBtn').textContent(),'UNLOCK MY PICKS');
       await page.locator('#savePicksBtn').click();
       await page.waitForFunction(()=>document.querySelectorAll('#slate button:enabled').length===2);
       assert.equal(await page.locator('#tieTotal').isEnabled(),true);

@@ -3006,8 +3006,10 @@ export async function onRequest(context){
       const inviteGameNames=inviteGames.map(gt=>({nfl:"NFL Pick’em",college:"College Pick’em",march:"March Madness","33":"Game 33",squares:"Football Squares",survivor:"NFL Survivor",confidence:"Confidence Pool",props:"Super Bowl Props",playoff:"NFL Playoff Challenge",masters:"Masters Golf Pool",nascar:"NASCAR Pool",fantasy:"Fantasy Football",dynasty:"Dynasty Fantasy Football"}[gt]||gt));
       const origin=String(env.LINKS_BASE_URL||originOf(request)).replace(/\/+$/,""),configured=linksEmailConfig(env).configured,invites=[];let sent=0;
       for(const email of emails){
-        const inviteToken=crypto.randomUUID()+crypto.randomUUID().replaceAll("-","");
-        await DB.prepare("INSERT INTO pool_invites(token,pool_id,email,status,created_at) VALUES(?,?,?,'PENDING',?)").bind(inviteToken,pid,email,new Date().toISOString()).run();
+        const previous=body.resend?await DB.prepare("SELECT token FROM pool_invites WHERE pool_id=? AND lower(email)=lower(?) AND status='PENDING' ORDER BY created_at DESC LIMIT 1").bind(pid,email).first():null;
+        if(body.resend&&!previous)return json({error:'This invitation has already been accepted or is no longer pending.'},409);
+        const inviteToken=previous?.token||crypto.randomUUID()+crypto.randomUUID().replaceAll("-","");
+        if(!previous)await DB.prepare("INSERT INTO pool_invites(token,pool_id,email,status,created_at) VALUES(?,?,?,'PENDING',?)").bind(inviteToken,pid,email,new Date().toISOString()).run();
         const inviteUrl=inviteGames.length===1&&inviteGames[0]==='nfl'?`${origin}/new-build/join.html?invite=${encodeURIComponent(inviteToken)}`:`${origin}/join?invite=${encodeURIComponent(inviteToken)}`;let didSend=false;
         if(configured){
           const inviteHtml=poolEmail({base:origin,poolName:pool.name,poolCode:pool.code,inviteUrl,rules,games:inviteGames}).html;
