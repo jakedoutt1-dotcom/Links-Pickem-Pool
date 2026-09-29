@@ -1,6 +1,17 @@
 (()=>{
  const $=id=>document.getElementById(id),key='links-account-token',esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const routes={nfl:'nfl.html',college:'college.html',survivor:'survivor.html',confidence:'confidence.html','33':'game33.html',march:'march-madness.html',masters:'golf.html',nascar:'nascar.html',fantasy:'fantasy.html',custom:'custom.html'};
+ async function returnToPicks(){
+ const link=$('backToPicks'),token=localStorage.getItem('links-legacy-token')||localStorage.getItem('links-token');if(!link||!token)return;
+ let pool;try{pool=JSON.parse(localStorage.getItem('links-current-pool')||'null')}catch{return}if(!pool?.id)return;
+ link.textContent='BACK TO MY PICKS';link.href='./control-center.html?pool='+encodeURIComponent(pool.id);
+ try{const r=await fetch('/api/session',{headers:{Authorization:'Bearer '+token},cache:'no-store'});if(r.status===401||r.status===403){link.textContent='PLAYER LOGIN';link.href='./pool-login.html';return}if(!r.ok)return;const session=await r.json();if(session.poolCode!==pool.code){link.textContent='PLAYER LOGIN';link.href='./pool-login.html';return}
+ const games=Array.isArray(session.games)?session.games:[],requested=new URLSearchParams(location.search).get('returnGame');
+ const game=games.includes(requested)?requested:games.length===1?games[0]:null;
+ link.href='./'+(routes[game]||'control-center.html')+'?pool='+encodeURIComponent(pool.id);
+ }catch{/* Keep a return route during a temporary connection failure. */}
+ }
+ returnToPicks();
  let state=null,verifiedEmail='',busy=false;
  function message(t){$('hubMessage').textContent=t||''}
  async function api(body){const r=await fetch('./api/account',{method:body?'POST':'GET',headers:{'Content-Type':'application/json','x-links-account':localStorage.getItem(key)||''},...(body?{body:JSON.stringify(body)}:{}),cache:'no-store'}),j=await r.json();if(!r.ok){if(r.status===401&&body?.action!=='verify'){localStorage.removeItem(key);showSignedOut()}throw Error(j.error||'Request failed.')}return j}
