@@ -25,7 +25,7 @@
    async function load(){
      msg.textContent='Checking '+weekLabel(Number(period()))+'…';
      try{
-       const r=await fetch(api+'?pool='+encodeURIComponent(pool)+'&game='+encodeURIComponent('NFL Pick’em')+'&period='+encodeURIComponent(period())+'&_='+Date.now(),{cache:'no-store'});
+       const r=await window.LINKS_API_FETCH(api+'?pool='+encodeURIComponent(pool)+'&game='+encodeURIComponent('NFL Pick’em')+'&period='+encodeURIComponent(period())+'&_='+Date.now(),{cache:'no-store'});
        const j=await r.json().catch(()=>({})); const s=j.settings||{};
        lock.value=s.lockAt?String(s.lockAt).slice(0,16):'';
        msg.textContent=s.lockAt?weekLabel(Number(period()))+' override is saved.':'Automatic first kickoff is active for '+weekLabel(Number(period()))+'.';
@@ -36,7 +36,7 @@
      e.preventDefault(); e.stopImmediatePropagation();
      msg.textContent='Saving '+weekLabel(Number(period()))+'…';
      try{
-       const r=await fetch(api,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pool,game:'NFL Pick’em',period:period(),lockAt:lock.value||''})});
+       const r=await window.LINKS_API_FETCH(api,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pool,game:'NFL Pick’em',period:period(),lockAt:lock.value||''})});
        const j=await r.json().catch(()=>({}));
        msg.textContent=r.ok?(lock.value?weekLabel(Number(period()))+' override saved.':'Automatic first kickoff restored for '+weekLabel(Number(period()))+'.'):(j.error||'Deadline not saved.');
      }catch{msg.textContent='Deadline not saved.'}

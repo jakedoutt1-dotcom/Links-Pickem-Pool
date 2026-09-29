@@ -1,0 +1,42 @@
+# Commissioner platform
+
+## Agreed package model
+
+- One free active game-pool slot per verified commissioner email account.
+- Plus: $19.99/year, three total slots. Pro: $29.99/year, six. All Access: $49.99/year, ten.
+- Slots are totals, not additional allowances. Repeated NFL pools are supported by creating separately named pools. Multiple different games in one pool each consume a slot and share that pool's player roster.
+- Players join free. Package charges are for commissioner software access, not entry fees or prizes.
+- Annual purchases do not renew automatically. Same-plan renewals extend the expiry. Upgrades start a new year at the selected price; there is no automatic proration.
+- Archive releases capacity and preserves data. Restore consumes capacity. After a paid package expires, one selected pool remains writable; other games become read-only. Pre-existing pools are grandfathered during adoption and cannot be used to create additional capacity beyond the allowance.
+
+## Entry points and ownership
+
+`commissioner-hub.html` is the verified workspace. Create Pool and My Pools redirect here. Commissioner-only navigation and admin cards are mounted after `/api/session` confirms the role, independently of browser role flags. Players do not receive Add Pool controls.
+
+Accounts use expiring, rate-limited email codes and hashed session tokens. Gmail dots, plus aliases, and googlemail.com map to one identity. Verification imports existing pool ownership using commissioner email, then stores an immutable owner mapping. A pool session alone cannot claim another account's pools. Using another device or clearing local storage cannot reset the allowance. Multiple genuinely separate email addresses cannot be completely prevented by email verification alone.
+
+Capacity reservations use an atomic SQL check. Creation batches pool/player/game/ownership records together. Failed creations release reservations. Historical commissioner purchase records appear in the workspace; old test-mode `pool_service` flags are not treated as payment receipts.
+
+Old pool creation, game-add, game-instance creation, and unverified checkout/switch routes are retired. Legacy game-list reconciliation cannot reactivate account-managed archived games. API middleware rejects writes to archived, disabled, or expired slots.
+
+## Data and deployment
+
+The new account tables use the existing `DB` binding and are created additively by `ensureAccounts` on first use. No existing picks, standings, or player records are deleted by the account migration. Archive changes game availability only. Verification and welcome messages reuse the existing email service. Checkout uses the existing PayPal environment variables; no credentials are stored in the client.
+
+New game entries for Survivor, Confidence, Game 33, March Madness, Golf, NASCAR, and Custom use `links_game_entries`, never NFL tables. Options use `links_game_options`. Existing unscoped browser caches are not imported into another player or pool. Golf/NASCAR/Custom setup is available from the workspace after switching to the proper commissioner session.
+
+## Validation
+
+- `tests/commissioner-account.cjs`: real in-memory SQLite; verification/replay/guess limits, ownership, one-free and paid capacity, repeated NFL pools, mixed games, archive/restore, expiration, rollback, mocked PayPal amount/capture verification, and old route retirement.
+- `tests/commissioner-controls.cjs`: player versus commissioner UI, including forged browser role.
+- `tests/commissioner-hub-ui.cjs`: mobile/desktop verification, package wording, pool form, errors, no password persistence, and layout.
+- `tests/office-entries.cjs`: authenticated game isolation, kickoff validation, confidence values, commissioner options, and configured deadlines.
+- Existing NFL selection, privacy, standings, admin/email, homepage routing, and College API/UI tests were run with fixtures.
+
+No production email, payment, database mutation, deployment, or push was performed during implementation. Live email verification and PayPal sandbox checkout/return need deployment verification. The checkout return can be retried from purchase history; this implementation does not add a refund/chargeback webhook.
+
+## Remaining game-specific work
+
+This is not certification of every older game's scoring engine. The Fantasy page still contains local roster/placeholder draft, trade, and league views and is excluded from new paid-pool creation. Squares, Dynasty, Props, and Playoffs do not have complete current-build routes and are not offered as new games. Existing legacy records are retained.
+
+The older games' full scoring/results experiences need separate end-to-end validation: Survivor elimination progression, tournament bracket advancement, and Golf/NASCAR standings are not implemented by the commissioner package system. The working NFL and standalone College flows remain separate. Do not advertise unfinished game modes as fully operational.

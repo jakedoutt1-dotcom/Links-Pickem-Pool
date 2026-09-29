@@ -1,3 +1,4 @@
+import {allowance as accountAllowance} from '../lib/commissioner-account.js';
 import {poolEmail} from '../lib/pool-email.js';
 const SCHEDULE={"1": "NE@SEA,SF@LAR,CHI@CAR,TB@CIN,NO@DET,BUF@HOU,BAL@IND,CLE@JAX,ATL@PIT,NYJ@TEN,ARI@LAC,MIA@LV,GB@MIN,WAS@PHI,DAL@NYG,DEN@KC", "2": "DET@BUF,CAR@ATL,NO@BAL,MIN@CHI,CIN@HOU,PIT@NE,GB@NYJ,CLE@TB,PHI@TEN,JAX@DEN,LV@LAC,SEA@ARI,WAS@DAL,MIA@SF,IND@KC,NYG@LAR", "3": "ATL@GB,LAC@BUF,CAR@CLE,NYJ@DET,HOU@IND,NE@JAX,KC@MIA,TEN@NYG,CIN@PIT,SEA@WAS,ARI@SF,MIN@TB,BAL@DAL,LV@NO,LAR@DEN,PHI@CHI", "4": "PIT@CLE,IND@WAS,TEN@BAL,NE@BUF,NYJ@CHI,JAX@CIN,DAL@HOU,ARI@NYG,LAR@PHI,GB@TB,MIA@MIN,KC@LV,LAC@SEA,DEN@SF,DET@CAR,ATL@NO", "5": "TB@DAL,PHI@JAX,CIN@MIA,LV@NE,MIN@NO,CLE@NYJ,IND@PIT,HOU@TEN,NYG@WAS,DEN@LAC,DET@ARI,CHI@GB,SF@SEA,BAL@ATL,BUF@LAR", "6": "SEA@DEN,HOU@JAX,CHI@ATL,BAL@CLE,TEN@IND,NYJ@NE,NO@NYG,CAR@PHI,PIT@TB,ARI@LAR,LAC@KC,BUF@LV,DAL@GB,WAS@SF", "7": "NE@CHI,PIT@NO,SF@ATL,CIN@BAL,TB@CAR,NYG@HOU,IND@MIN,MIA@NYJ,CLE@TEN,DEN@ARI,GB@DET,LAR@LV,KC@SEA,DAL@PHI", "8": "CAR@GB,BAL@BUF,TEN@CIN,ARI@DAL,MIN@DET,IND@JAX,LV@NYJ,CLE@PIT,ATL@TB,LAC@LAR,KC@DEN,NE@MIA,PHI@WAS,CHI@SEA", "9": "JAX@BAL,CIN@ATL,DEN@CAR,DAL@IND,NYJ@KC,DET@MIA,CLE@NO,NYG@PHI,LAR@WAS,HOU@LAC,LV@SF,GB@NE,ARI@SEA,TB@CHI,BUF@MIN", "10": "WAS@NYG,NE@DET,KC@ATL,HOU@CLE,MIN@GB,MIA@IND,CAR@NO,BUF@NYJ,JAX@TEN,LAR@ARI,SEA@LV,SF@DAL,PIT@CIN,LAC@BAL", "11": "IND@HOU,MIA@BUF,BAL@CAR,NO@CHI,TEN@DAL,TB@DET,ARI@KC,JAX@NYG,NYJ@LAC,LV@DEN,PIT@PHI,MIN@SF,CIN@WAS", "12": "CHI@DET,PHI@DAL,KC@BUF,DEN@PIT,NO@CIN,LV@CLE,BAL@HOU,NYG@IND,NYJ@MIA,ATL@MIN,TEN@JAX,WAS@ARI,SEA@SF,NE@LAC,CAR@TB,GB@LAR", "13": "KC@LAR,DET@ATL,JAX@CHI,CIN@CLE,GB@NO,SF@NYG,LAC@TB,WAS@TEN,PHI@ARI,MIA@DEN,CAR@MIN,BUF@NE,HOU@PIT,DAL@SEA", "14": "MIN@NE,TB@BAL,NO@CAR,ATL@CLE,TEN@DET,CHI@MIA,DEN@NYJ,IND@PHI,HOU@WAS,LAC@LV,KC@CIN,NYG@SEA,LAR@SF,BUF@GB,PIT@JAX", "15": "SF@LAC,SEA@PHI,CHI@BUF,CIN@CAR,MIA@GB,JAX@HOU,CLE@NYG,BAL@PIT,NO@TB,IND@TEN,ATL@WAS,NYJ@ARI,DAL@LAR,DEN@LV,DET@MIN,NE@KC", "16": "HOU@PHI,GB@CHI,BUF@DEN,LAR@SEA,CLE@BAL,LAC@MIA,ARI@NO,NE@NYJ,TEN@LV,SF@KC,JAX@DAL,TB@ATL,CIN@IND,WAS@MIN,CAR@PIT,NYG@DET", "17": "BAL@CIN,NO@ATL,SEA@CAR,IND@CLE,NYG@DAL,BUF@MIA,MIN@NYJ,PIT@TEN,LV@ARI,DET@CHI,PHI@SF,WAS@JAX,KC@LAC,DEN@NE,LAR@TB,HOU@GB", "18": "SF@ARI,PIT@BAL,NYJ@BUF,ATL@CAR,CLE@CIN,LAC@DEN,DET@GB,TEN@HOU,JAX@IND,LV@KC,SEA@LAR,CHI@MIN,MIA@NE,TB@NO,PHI@NYG,DAL@WAS"};
 const TEAM_NAMES={"ARI": "Cardinals", "ATL": "Falcons", "BAL": "Ravens", "BUF": "Bills", "CAR": "Panthers", "CHI": "Bears", "CIN": "Bengals", "CLE": "Browns", "DAL": "Cowboys", "DEN": "Broncos", "DET": "Lions", "GB": "Packers", "HOU": "Texans", "IND": "Colts", "JAX": "Jaguars", "KC": "Chiefs", "LV": "Raiders", "LAC": "Chargers", "LAR": "Rams", "MIA": "Dolphins", "MIN": "Vikings", "NE": "Patriots", "NO": "Saints", "NYG": "Giants", "NYJ": "Jets", "PHI": "Eagles", "PIT": "Steelers", "SF": "49ers", "SEA": "Seahawks", "TB": "Buccaneers", "TEN": "Titans", "WAS": "Commanders"};
@@ -979,6 +980,9 @@ async function getCommissionerPlayerName(DB,pid){
 function sessionCanPlay(s){return !!s&&(s.role==="player"||(s.role==="admin"&&s.player_name&&s.player_name!=="Commissioner"));}
 
 async function getPoolGameTypes(DB,pid,code=""){
+  // Verified account slots supersede legacy settings that could reactivate archived games.
+  try{const managed=(await DB.prepare("SELECT game_type,active FROM links_pool_slots WHERE pool_id=?").bind(pid).all()).results||[];if(managed.length)return managed.filter(x=>x.active).map(x=>x.game_type)}catch(e){if(!/no such table/i.test(String(e)))throw e}
+
   // v111: active_games_exact is authoritative whenever it exists.  Older builds
   // could leave stale pool_active_games rows active; reconcile those flags to the
   // exact commissioner-selected list without deleting any game history or picks.
@@ -1619,35 +1623,9 @@ async function entitlementLaunchAt(DB){const r=await DB.prepare("SELECT value FR
 async function commissionerEntitlement(DB,email){email=commissionerEmail(email);if(!email)return null;if(LINKS_ALL_ACCESS_TEST_EMAILS.has(email)){const cfg=LINKS_PLANS.all_access;return {email,plan:"all_access",status:"ACTIVE",max_pools:cfg.maxPools,max_games_per_pool:cfg.maxGames,game_scope:cfg.scope,ad_free:cfg.adFree,paid_at:null,expires_at:null,updated_at:null,owner_grant:1};}const e=await DB.prepare("SELECT * FROM commissioner_entitlements WHERE email=?").bind(email).first();if(!e||String(e.status).toUpperCase()!=="ACTIVE")return null;if(e.expires_at&&Date.parse(e.expires_at)<=Date.now())return null;return e;}
 async function poolCommissionerEmail(DB,pid){return commissionerEmail(await getPoolSetting(DB,pid,"commissioner_email",""))}
 async function commissionerPools(DB,email){email=commissionerEmail(email);if(!email)return [];return (await DB.prepare("SELECT p.id,p.code,p.created_at FROM pools p JOIN pool_settings s ON s.pool_id=p.id AND s.key='commissioner_email' WHERE lower(trim(s.value))=? ORDER BY p.created_at,p.id").bind(email).all()).results||[];}
-async function poolAccessFor(DB,pid){const email=await poolCommissionerEmail(DB,pid),ent=await commissionerEntitlement(DB,email);let adFree=!!Number(ent?.ad_free||0);if(!adFree){const legacy=await DB.prepare("SELECT plan,status FROM pool_service WHERE pool_id=?").bind(pid).first();const st=String(legacy?.status||"").toUpperCase();if(legacy&&String(legacy.plan||"free")!=="free"&&(st==="PAID"||st==="ACTIVE"))adFree=true;}return {adFree,commissionerPlan:ent?.plan||"free"};}
+async function poolAccessFor(DB,pid){try{const owner=await DB.prepare("SELECT email FROM links_pool_owners WHERE pool_id=?").bind(pid).first();if(owner){const plan=await accountAllowance(DB,owner.email);return {adFree:plan.plan!=="free",commissionerPlan:plan.plan}}}catch(e){if(!/no such table/i.test(String(e)))throw e}const email=await poolCommissionerEmail(DB,pid),ent=await commissionerEntitlement(DB,email);let adFree=!!Number(ent?.ad_free||0);if(!adFree){const legacy=await DB.prepare("SELECT plan,status FROM pool_service WHERE pool_id=?").bind(pid).first();const st=String(legacy?.status||"").toUpperCase();if(legacy&&String(legacy.plan||"free")!=="free"&&(st==="PAID"||st==="ACTIVE"))adFree=true;}return {adFree,commissionerPlan:ent?.plan||"free"};}
 // v451 — every built game is available to choose. Packages control capacity/ad-free service only; they never lock a game type.
 function planAllowsGame(ent,gt){return VALID_POOL_GAMES.includes(String(gt||"").trim().toLowerCase())}
-// v572 TEST MODE — temporarily unlock pool creation and all built games for everyone.
-// Keep this isolated so normal package/capacity rules can be restored after testing.
-async function canCreatePool(DB,email,gameTypes,copies=1){
-  copies=Math.max(1,Math.min(10,Number(copies)||1));
-  const valid=gameTypes.every(g=>planAllowsGame(null,g));
-  if(!valid)return {ok:false,error:"Choose a supported LINKS game."};
-  return {ok:true,plan:"all_access",adFree:false,copies,testUnlock:true};
-}
-async function canChangePoolGames(DB,pid,selected,current){
-  const bad=selected.find(g=>!planAllowsGame(null,g));
-  if(bad)return {ok:false,error:"Choose a supported LINKS game."};
-  const additions=selected.filter(g=>!current.includes(g));
-  if(!additions.length)return {ok:true,additions};
-  const email=await poolCommissionerEmail(DB,pid);
-  const ent=await commissionerEntitlement(DB,email);
-  if(!ent)return {ok:false,error:"Your free pool includes one game. Choose a LINKS package to add more games.",upgradeRequired:true};
-  const maxGames=Math.max(1,Number(ent.max_games_per_pool||1));
-  if(selected.length>maxGames)return {ok:false,error:`Your ${LINKS_PLANS[ent.plan]?.label||"LINKS"} package allows up to ${maxGames} games in a pool.`,upgradeRequired:true};
-  const scope=String(ent.game_scope||"all").toLowerCase();
-  if(scope==="nfl"){
-    const outside=selected.find(g=>!NFL_PACKAGE_GAMES.has(g));
-    if(outside)return {ok:false,error:"That game is not included in the LINKS NFL Package. Choose All Access to add it.",upgradeRequired:true};
-  }
-  return {ok:true,additions,plan:ent.plan||"free"};
-}
-
 function paypalBase(env){
   return String(env.PAYPAL_ENV||"live").toLowerCase()==="sandbox"
     ?"https://api-m.sandbox.paypal.com"
@@ -2169,16 +2147,7 @@ export async function onRequest(context){
       return json({ok:true,deleted:code});
     }
 
-    if(path==="commissioner-service/paypal/create"&&method==="POST"){
-      const plan=String(body.plan||""),email=commissionerEmail(body.email),cfg=LINKS_PLANS[plan];
-      if(!cfg||!cfg.maxPools)return json({error:"Choose a current LINKS commissioner package."},400);
-      if(!/^\S+@\S+\.\S+$/.test(email))return json({error:"Enter the commissioner email that owns the pool(s)."},400);
-      const purchaseToken=crypto.randomUUID(),origin=originOf(request),amount=(cfg.amount/100).toFixed(2);
-      const order=await paypalRequest(env,"/v2/checkout/orders",{method:"POST",headers:{"PayPal-Request-Id":purchaseToken.replace(/-/g,"").slice(0,25)},body:JSON.stringify({intent:"CAPTURE",purchase_units:[{reference_id:purchaseToken,description:cfg.label,amount:{currency_code:"USD",value:amount}}],application_context:{brand_name:"LINKS Pick'em Pools",user_action:"PAY_NOW",return_url:`${origin}/api/commissioner-service/paypal/return?purchaseToken=${encodeURIComponent(purchaseToken)}`,cancel_url:`${origin}/?linksCheckoutCanceled=1`}})});
-      const approvalUrl=(order.links||[]).find(x=>x.rel==="approve")?.href;if(!order.id||!approvalUrl)return json({error:"PayPal did not return an approval URL."},502);
-      await DB.prepare("INSERT INTO commissioner_service_purchases(purchase_token,email,plan,amount_cents,paypal_order_id,status,created_at) VALUES(?,?,?,?,?,'CREATED',?)").bind(purchaseToken,email,plan,cfg.amount,order.id,new Date().toISOString()).run();
-      return json({purchaseToken,approvalUrl});
-    }
+    if(path==="commissioner-service/paypal/create"&&method==="POST")return json({error:"Use My Commissioner Pools to manage verified accounts, game slots, and packages.",url:"/new-build/commissioner-hub.html"},409);
     if(path==="commissioner-service/paypal/return"&&method==="GET"){
       const purchaseToken=String(url.searchParams.get("purchaseToken")||""),paypalToken=String(url.searchParams.get("token")||"");
       const purchase=await DB.prepare("SELECT * FROM commissioner_service_purchases WHERE purchase_token=?").bind(purchaseToken).first();
@@ -2189,38 +2158,7 @@ export async function onRequest(context){
       const purchaseToken=String(url.searchParams.get("purchaseToken")||"");const p=await DB.prepare("SELECT email,plan,status,amount_cents,paid_at FROM commissioner_service_purchases WHERE purchase_token=?").bind(purchaseToken).first();if(!p)return json({error:"LINKS package purchase not found."},404);return json({email:p.email,plan:p.plan,status:p.status,amountCents:p.amount_cents,paidAt:p.paid_at});
     }
 
-    if(path==="service/paypal/create"&&method==="POST"){
-      const plan=String(body.plan||"");
-      const cfg=LINKS_PLANS[plan];
-      if(!cfg)return json({error:"Invalid Links package."},400);
-      const purchaseToken=crypto.randomUUID();
-      const origin=originOf(request);
-      const amount=(cfg.amount/100).toFixed(2);
-      const order=await paypalRequest(env,"/v2/checkout/orders",{
-        method:"POST",
-        headers:{"PayPal-Request-Id":purchaseToken.replace(/-/g,"").slice(0,25)},
-        body:JSON.stringify({
-          intent:"CAPTURE",
-          purchase_units:[{
-            reference_id:purchaseToken,
-            description:cfg.label,
-            amount:{currency_code:"USD",value:amount}
-          }],
-          application_context:{
-            brand_name:"Links",
-            user_action:"PAY_NOW",
-            return_url:`${origin}/api/service/paypal/return?purchaseToken=${encodeURIComponent(purchaseToken)}`,
-            cancel_url:`${origin}/?linksCheckoutCanceled=1`
-          }
-        })
-      });
-      const approvalUrl=(order.links||[]).find(x=>x.rel==="approve")?.href;
-      if(!order.id||!approvalUrl)return json({error:"PayPal did not return an approval URL."},502);
-      await DB.prepare("INSERT INTO service_purchases(purchase_token,plan,amount_cents,paypal_order_id,status,created_at) VALUES(?,?,?,?, 'CREATED', ?)")
-        .bind(purchaseToken,plan,cfg.amount,order.id,new Date().toISOString()).run();
-      return json({purchaseToken,orderId:order.id,approvalUrl});
-    }
-
+    if(path==="service/paypal/create"&&method==="POST")return json({error:"Use My Commissioner Pools to manage verified accounts, game slots, and packages.",url:"/new-build/commissioner-hub.html"},409);
     if(path==="service/paypal/return"&&method==="GET"){
       const purchaseToken=String(url.searchParams.get("purchaseToken")||"");
       const paypalToken=String(url.searchParams.get("token")||"");
@@ -2312,62 +2250,7 @@ export async function onRequest(context){
       return json({token:await makeSession(DB,inv.pool_id,name,"player"),name,poolCode:inv.pool_code,poolName:inv.pool_name,gameType:await getPoolGameType(DB,inv.pool_id,inv.pool_code),games,welcomeEmailSent,dynastyTeamName:hasDynasty?dynastyTeamName:""});
     }
 
-    if(path==="pool/create"&&method==="POST"){
-      const name=String(body.name||"").trim(),pw=String(body.password||""),email=String(body.email||"").trim().toLowerCase(),playerName=String(body.playerName||"").trim();
-      const requestedGames=Array.isArray(body.gameTypes)?body.gameTypes:[body.gameType];
-      const gameTypes=[...new Set(requestedGames.map(x=>String(x||"").trim().toLowerCase()).filter(x=>VALID_POOL_GAMES.includes(x)))];
-      const gameType=gameTypes[0]||"",copies=Math.max(1,Math.min(10,Number(body.copies)||1));
-      if(!name||!playerName||pw.length<4)return json({error:"Enter a pool name, your player name, and a password of at least 4 characters."},400);
-      if(!/^\S+@\S+\.\S+$/.test(email))return json({error:"Enter a valid commissioner email address."},400);
-      if(!gameTypes.length)return json({error:"Choose at least one game for this pool."},400);
-      const createAccess=await canCreatePool(DB,email,gameTypes,copies);if(!createAccess.ok)return json({error:createAccess.error,upgradeRequired:!!createAccess.upgradeRequired},402);
-      const salt=newSalt(),hash=await hashPassword(pw,salt),createdPools=[];
-      let allWelcomeOk=true,firstWelcomeError="";
-      for(let copyIndex=1;copyIndex<=copies;copyIndex++){
-        const copyName=copies>1?`${name} #${copyIndex}`:name;
-        const code=await uniquePoolCode(DB,copyName),createdAt=new Date().toISOString();
-        await DB.prepare("INSERT INTO pools(code,name,admin_salt,admin_hash,created_at) VALUES(?,?,?,?,?)").bind(code,copyName,salt,hash,createdAt).run();
-        const p=await poolByCode(DB,code),now=new Date().toISOString();
-        await DB.prepare("INSERT INTO pool_players(pool_id,name,password_hash,salt) VALUES(?,?,?,?)").bind(p.id,playerName,hash,salt).run();
-        // v152 duplicate game pools are separate pool_ids. Existing pools/tables are never rewritten.
-        await DB.batch([
-          DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,'fee','11')").bind(p.id),
-          DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,'pot_contribution','11')").bind(p.id),
-          DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,'commissioner_email',?)").bind(p.id,email),
-          DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,'commissioner_player_name',?)").bind(p.id,playerName),
-          DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,'game_type',?)").bind(p.id,gameType),
-          DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,'active_games_exact',?)").bind(p.id,JSON.stringify(gameTypes))
-        ]);
-        // v574: pool_active_games exists on newer databases, but pool creation
-        // must still succeed on a production schema that has not received that table/index yet.
-        // active_games_exact above remains the source of truth for the selected games.
-        try{
-          await DB.prepare("UPDATE pool_active_games SET active=0,is_primary=0 WHERE pool_id=?").bind(p.id).run();
-          await DB.batch(gameTypes.map((gt,i)=>DB.prepare("INSERT INTO pool_active_games(pool_id,game_type,is_primary,active,added_at) VALUES(?,?,?,1,?) ON CONFLICT(pool_id,game_type) DO UPDATE SET active=1,is_primary=excluded.is_primary,added_at=excluded.added_at").bind(p.id,gt,i===0?1:0,now)));
-        }catch(e){}
-        // v534: seed automatic NFL lock deadlines when every new pool is created.
-        // This makes a fresh pool behave like established pools immediately, while
-        // later commissioner overrides can still replace the saved deadline.
-        if(gameTypes.includes("nfl")){
-          try{
-            const lockRows=Object.entries(OFFICIAL_FIRST_KICKOFF_FALLBACK).map(([wk,lockTime])=>
-              DB.prepare("INSERT INTO pool_week_meta(pool_id,sport,week,lock_time) VALUES(?,'nfl',?,?) ON CONFLICT(pool_id,sport,week) DO NOTHING").bind(p.id,Number(wk),lockTime)
-            );
-            if(lockRows.length)await DB.batch(lockRows);
-          }catch(e){}
-        }
-        await DB.prepare("INSERT OR REPLACE INTO pool_service(pool_id,plan,status,price_cents,paid_at,notes) VALUES(?,?,?,?,?,?)")
-          .bind(p.id,createAccess.plan||'free',createAccess.plan==='free'?'FREE':'ACTIVE',createAccess.plan==='free'?0:(LINKS_PLANS[createAccess.plan]?.amount||0),createAccess.plan==='free'?null:now,createAccess.plan==='free'?'LINKS first pool free for life — ad supported':'LINKS commissioner package — ad free').run();
-        const base=String(env.LINKS_BASE_URL||originOf(request)).replace(/\/$/,"");
-        const commissionerWelcomeHtml=commissionerWelcomeEmailHtml({base,poolName:copyName,poolCode:code,games:gameTypes});
-        const commissionerWelcomeResult=await sendLinksEmailDetailed(env,email,`Your Links pool is ready — ${copyName}`,commissionerWelcomeHtml);
-        const commissionerWelcomeDelivery=await saveCommissionerWelcomeStatus(DB,p.id,email,commissionerWelcomeResult);
-        if(!commissionerWelcomeResult.ok){allWelcomeOk=false;if(!firstWelcomeError)firstWelcomeError=commissionerWelcomeResult.error||"";}
-        createdPools.push({code,name:copyName,poolId:p.id,token:await makeSession(DB,p.id,playerName,"admin"),commissionerWelcomeEmailSent:commissionerWelcomeResult.ok,commissionerWelcomeDelivery});
-      }
-      const first=createdPools[0];
-      return json({ok:true,code:first.code,name:first.name,playerName,token:first.token,isCommissioner:true,gameType,games:gameTypes,createdPools,commissionerWelcomeEmailSent:allWelcomeOk,commissionerWelcomeEmailError:firstWelcomeError,service:{plan:createAccess.plan||"free",status:createAccess.plan==="free"?"FREE":"ACTIVE",adFree:!!createAccess.adFree}});
-    }
+    if(path==="pool/create"&&method==="POST")return json({error:"Use My Commissioner Pools to manage verified accounts, game slots, and packages.",url:"/new-build/commissioner-hub.html"},409);
     if(path==="login"&&method==="POST"){
       const pool=await poolByCode(DB,body.poolCode);if(!pool)return json({error:"Pool not found."},404);
       const p=await DB.prepare("SELECT * FROM pool_players WHERE pool_id=? AND name=?").bind(pool.id,body.name).first();
@@ -2415,83 +2298,20 @@ export async function onRequest(context){
       // v152: entitlement/capacity remains commissioner-email-wide to prevent free-tier abuse, but the in-pool commissioner dashboard exposes only the current pool.
       return json({email,plan:ent?.plan||"free",status:ent?"ACTIVE":"FREE FOR LIFE",limit,used,remaining:Math.max(0,limit-used),adFree:!!Number(ent?.ad_free||0),expiresAt:ent?.expires_at||null,currentPool});
     }
-    if(path==="commissioner/switch-pool"&&method==="POST"){
-      if(s.role!=="admin")return json({error:"Commissioner only."},403);
-      const currentEmail=await poolCommissionerEmail(DB,pid),target=await poolByCode(DB,body.code);if(!target)return json({error:"Pool not found."},404);
-      const targetEmail=await poolCommissionerEmail(DB,target.id);if(!currentEmail||!targetEmail||currentEmail!==targetEmail)return json({error:"That pool is not under this commissioner account."},403);
-      const commissionerName=await getCommissionerPlayerName(DB,target.id)||"Commissioner";return json({token:await makeSession(DB,target.id,commissionerName,"admin"),name:commissionerName,poolCode:target.code,poolName:target.name,gameType:await getPoolGameType(DB,target.id,target.code),games:await getPoolGameTypes(DB,target.id,target.code),access:await poolAccessFor(DB,target.id)});
-    }
-
-
+    if(path==="commissioner/switch-pool"&&method==="POST")return json({error:"Use My Commissioner Pools to manage verified accounts, game slots, and packages.",url:"/new-build/commissioner-hub.html"},409);
     if(path==="game-instances"&&method==="GET"){
       const gt=String(url.searchParams.get("gameType")||"").trim().toLowerCase();
       if(gt&&!VALID_POOL_GAMES.includes(gt))return json({error:"Unknown game type."},400);
       const instances=await listGameInstances(DB,pid,gt);
       return json({instances});
     }
-    if(path==="admin/game-instance"&&method==="POST"){
-      if(s.role!=="admin")return json({error:"Commissioner only."},403);
-      const action=String(body.action||"create").toLowerCase(),gt=String(body.gameType||"").trim().toLowerCase(),id=Number(body.id||0),now=new Date().toISOString();
-      if(action==="create"){
-        if(!VALID_POOL_GAMES.includes(gt))return json({error:"Choose a valid game type."},400);
-        const active=await getPoolGameTypes(DB,pid);if(!active.includes(gt))return json({error:"Add this game type to the pool first."},400);
-        const c=await DB.prepare("SELECT COUNT(*) n FROM game_instances WHERE pool_id=? AND game_type=? AND active=1").bind(pid,gt).first();
-        const n=Number(c?.n||0)+1,name=String(body.name||"").trim().slice(0,80)||gameInstanceDefaultName(gt,n);
-        const r=await DB.prepare("INSERT INTO game_instances(pool_id,game_type,name,sort_order,active,created_at,updated_at) VALUES(?,?,?,?,1,?,?)").bind(pid,gt,name,n,now,now).run();
-        return json({ok:true,id:r.meta?.last_row_id||0,instances:await listGameInstances(DB,pid,gt)});
-      }
-      const row=await DB.prepare("SELECT id,game_type FROM game_instances WHERE pool_id=? AND id=?").bind(pid,id).first();if(!row)return json({error:"Game tab not found."},404);
-      if(action==="rename"){
-        const name=String(body.name||"").trim().slice(0,80);if(!name)return json({error:"Enter a tab name."},400);
-        await DB.prepare("UPDATE game_instances SET name=?,updated_at=? WHERE pool_id=? AND id=?").bind(name,now,pid,id).run();
-      }else if(action==="archive"){
-        const c=await DB.prepare("SELECT COUNT(*) n FROM game_instances WHERE pool_id=? AND game_type=? AND active=1").bind(pid,row.game_type).first();if(Number(c?.n||0)<=1)return json({error:"Keep at least one tab for this game type."},400);
-        await DB.prepare("UPDATE game_instances SET active=0,updated_at=? WHERE pool_id=? AND id=?").bind(now,pid,id).run();
-      }else return json({error:"Unknown game-tab action."},400);
-      return json({ok:true,instances:await listGameInstances(DB,pid,row.game_type)});
-    }
-
+    if(path==="admin/game-instance"&&method==="POST")return json({error:"Use My Commissioner Pools to manage verified accounts, game slots, and packages.",url:"/new-build/commissioner-hub.html"},409);
     if(path==="pool/games"&&method==="GET"){
       const p=await DB.prepare("SELECT code FROM pools WHERE id=?").bind(pid).first();
       const games=await getPoolGameTypes(DB,pid,p?.code||"");
       return json({games,gameType:games[0]||"nfl"});
     }
-    if(path==="admin/pool-games"&&method==="POST"){
-      if(s.role!=="admin")return json({error:"Commissioner only."},403);
-      // Exact-list mode is used by the commissioner checkboxes. It only toggles the
-      // active flag; it never deletes picks, players, payments, standings, assignments,
-      // results, or game settings.
-      if(Array.isArray(body.gameTypes)){
-        let selected=[...new Set(body.gameTypes.map(x=>String(x||"").trim().toLowerCase()).filter(x=>VALID_POOL_GAMES.includes(x)))];
-        if(!selected.length)return json({error:"Keep at least one game active in this pool."},400);
-        const current=await getPoolGameTypes(DB,pid);const gameAccess=await canChangePoolGames(DB,pid,selected,current);if(!gameAccess.ok)return json({error:gameAccess.error,upgradeRequired:!!gameAccess.upgradeRequired},402);
-        const pool=await DB.prepare("SELECT code FROM pools WHERE id=?").bind(pid).first();
-        if(selected.includes("33")){
-          const r=await DB.prepare("SELECT COUNT(*) AS n FROM pool_players WHERE pool_id=?").bind(pid).first();
-          if(Number(r?.n||0)>32)return json({error:"Game 33 cannot be active in a pool with more than 32 players because there are only 32 NFL teams."},400);
-        }
-        const now=new Date().toISOString();
-        const stm=[DB.prepare("UPDATE pool_active_games SET active=0,is_primary=0 WHERE pool_id=?").bind(pid)];
-        selected.forEach((gt,i)=>stm.push(DB.prepare("INSERT INTO pool_active_games(pool_id,game_type,is_primary,active,added_at) VALUES(?,?,?,1,?) ON CONFLICT(pool_id,game_type) DO UPDATE SET active=1,is_primary=excluded.is_primary").bind(pid,gt,i===0?1:0,now)));
-        stm.push(DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,'game_type',?) ON CONFLICT(pool_id,key) DO UPDATE SET value=excluded.value").bind(pid,selected[0]));
-        stm.push(DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,'active_games_exact',?) ON CONFLICT(pool_id,key) DO UPDATE SET value=excluded.value").bind(pid,JSON.stringify(selected)));
-        await DB.batch(stm);
-        if(gameAccess.additions?.length&&gameAccess.email)await DB.batch(gameAccess.additions.map(gt=>DB.prepare("INSERT OR IGNORE INTO commissioner_game_additions(pool_id,game_type,email,added_at) VALUES(?,?,?,?)").bind(pid,gt,gameAccess.email,now)));
-        // Return the exact list that was just saved.  Do not re-expand through a
-        // legacy fallback in the same request.
-        return json({ok:true,games:selected,gameType:selected[0]});
-      }
-      const gt=String(body.gameType||"").trim().toLowerCase();
-      if(!VALID_POOL_GAMES.includes(gt))return json({error:"Choose a valid game to add."},400);
-      const before=await getPoolGameTypes(DB,pid);
-      if(before.includes(gt))return json({ok:true,alreadyAdded:true,games:before});
-      const gameAccess=await canChangePoolGames(DB,pid,[...before,gt],before);if(!gameAccess.ok)return json({error:gameAccess.error,upgradeRequired:!!gameAccess.upgradeRequired},402);
-      const games=await addPoolGame(DB,pid,gt);
-      if(gameAccess.email)await DB.prepare("INSERT OR IGNORE INTO commissioner_game_additions(pool_id,game_type,email,added_at) VALUES(?,?,?,?)").bind(pid,gt,gameAccess.email,new Date().toISOString()).run();
-      return json({ok:true,added:gt,games});
-    }
-
-
+    if(path==="admin/pool-games"&&method==="POST")return json({error:"Use My Commissioner Pools to manage verified accounts, game slots, and packages.",url:"/new-build/commissioner-hub.html"},409);
     if(path==="dynasty/state"&&method==="GET"){
       const raw=await getPoolSetting(DB,pid,"game_settings_dynasty","{}");let settings={};try{settings=JSON.parse(raw||"{}")||{}}catch(e){}
       const teams=(await DB.prepare("SELECT * FROM dynasty_teams WHERE pool_id=? ORDER BY CASE WHEN draft_slot>0 THEN draft_slot ELSE 999 END,id").bind(pid).all()).results||[];
