@@ -51,6 +51,17 @@ function scoreboard(week) {
       await page.waitForFunction(()=>document.querySelectorAll('#slate [data-g]').length===2&&document.querySelector('.links-nfl-shared-nav'));
       assert.equal(await page.locator('#legacySlate,#linksRealSlate').count(),0);
       assert.equal(await page.locator('#slate .primary').getAttribute('data-t'),'1');
+      await page.locator('[data-nfl-nav="print"]').click();
+      await page.waitForSelector('.links-print-modal');
+      assert.ok((await page.locator('.links-print-head').textContent()).includes('Alice'));
+      assert.ok((await page.locator('.links-print-head').textContent()).includes('WEEK 4'));
+      assert.equal(await page.locator('.links-print-pick b').textContent(),'BUF');
+      assert.equal(posts.length,0,'Print preview never saves or locks picks');
+      await page.evaluate(()=>{window.print=()=>{window.printCalled=true}});
+      await page.locator('#linksPrintNow').click();
+      assert.equal(await page.evaluate(()=>window.printCalled),true);
+      await page.locator('#linksPrintClose').click();
+      assert.equal(await page.locator('.links-print-modal').count(),0);
       const choose=async team=>{
         const button=page.locator('#slate [data-t="'+team+'"]');
         if(viewport.width<600)await button.tap();else await button.click();

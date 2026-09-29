@@ -13,6 +13,7 @@
    document.getElementById('tutorial')?.remove();
    document.querySelectorAll('main .tabs,.tabs.nfl-tabs,#nflnav,.nflnav').forEach(x=>{if(!x.classList.contains('links-nfl-shared-nav'))x.remove()});
    const before=document.querySelector('.week-nav')||document.querySelector('main .card')?.firstElementChild||document.querySelector('main');
+   await load('linksNflPrintCard','./nfl-rewrite/print-card.js?v='+V,()=>!!window.LINKS_NFL_PRINT);
    LINKS_NFL_NAV.mount('picks',before);
   }catch(e){console.error('LINKS NFL navigation:',e)}
  }
