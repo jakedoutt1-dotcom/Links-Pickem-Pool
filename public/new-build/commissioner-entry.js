@@ -2,6 +2,17 @@
 (()=>{
  if(document.getElementById('linksCommissionerEntryModule'))return;
  const marker=document.createElement('meta');marker.id='linksCommissionerEntryModule';document.head.append(marker);
+ // Compact shared actions on phones; additional pools stay reachable by swiping.
+ const compact=document.createElement('style');compact.textContent=`
+ @media(max-width:640px){
+ #linksPoolActions{flex-wrap:nowrap!important;gap:6px!important;overflow-x:auto;max-width:100%;padding:2px 0 6px;align-items:center!important}
+ #linksPoolTabs{flex:0 0 auto!important;flex-wrap:nowrap!important;gap:6px!important;max-width:none!important}
+ #linksPoolTabs .action,#linksPoolActions #addMyHomepage{font-size:11px!important;line-height:1.2!important;letter-spacing:0!important;padding:8px!important;min-height:40px!important;white-space:nowrap!important;width:auto!important;max-width:none!important;margin:0!important;border-radius:8px!important;text-transform:none!important}
+ #linksPoolTabs [role=status]:empty{display:none}
+ #linksPoolActions #addMyHomepage{flex:0 0 auto!important}
+ }
+ @media(max-width:420px){#linksPoolTabs .action,#linksPoolActions #addMyHomepage{font-size:10px!important;padding:8px 6px!important}}
+ `;document.head.append(compact);
  const token=localStorage.getItem('links-legacy-token')||localStorage.getItem('links-token');if(!token)return;
  const routes={nfl:'nfl.html',college:'college.html',survivor:'survivor.html',confidence:'confidence.html','33':'game33.html',squares:'squares.html',props:'props.html',playoff:'playoff.html',march:'march-madness.html',masters:'golf.html',nascar:'nascar.html',fantasy:'fantasy.html',dynasty:'dynasty.html',custom:'custom.html'};
  let state,bar;
