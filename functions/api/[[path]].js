@@ -2096,23 +2096,7 @@ export async function onRequest(context){
       await DB.prepare("DELETE FROM pool_sessions WHERE pool_id=? AND role='admin'").bind(pool.id).run();
       return json({ok:true});
     }
-    if(path==="links-admin/pool"&&method==="DELETE"){
-      if(!await linksMasterAuth(request,DB))return json({error:"Links admin session expired. Sign in again."},401);
-      const code=safeCode(body.code),confirmCode=safeCode(body.confirmCode);
-      if(!code||confirmCode!==code)return json({error:"Pool code confirmation did not match."},400);
-      const pool=await poolByCode(DB,code);if(!pool)return json({error:"Pool not found."},404);
-      if(pool.code==="LINKS")return json({error:"Barnes Family / LINKS is protected from deletion in Links Admin."},403);
-      const pid=pool.id;
-      const tables=[
-        "pool_sessions","pool_settings","pool_picks","pool_ties","pool_payments","pool_results",
-        "pool_week_meta","pool_games","pool_market_odds","payment_orders","pool_33_entries",
-        "pool_33_assignments","pool_33_state","pool_33_week_meta","pool_player_setup_invites","pool_login_activity","pool_players","pool_service"
-      ];
-      for(const t of tables){await DB.prepare(`DELETE FROM ${t} WHERE pool_id=?`).bind(pid).run()}
-      await DB.prepare("UPDATE service_purchases SET pool_id=NULL WHERE pool_id=?").bind(pid).run();
-      await DB.prepare("DELETE FROM pools WHERE id=?").bind(pid).run();
-      return json({ok:true,deleted:code});
-    }
+    if(path==="links-admin/pool"&&method==="DELETE")return json({error:"Use LINKS Admin and its password-confirmed deletion flow."},409);
 
     if(path==="commissioner-service/paypal/create"&&method==="POST")return json({error:"Use My Commissioner Pools to manage verified accounts, game slots, and packages.",url:"/new-build/commissioner-hub.html"},409);
     if(path==="commissioner-service/paypal/return"&&method==="GET"){
