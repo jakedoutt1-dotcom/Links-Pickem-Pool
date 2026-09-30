@@ -1,3 +1,4 @@
+import {poolGameKeys} from '../../lib/pool-games.js';
 import {recordAccountLogin} from '../../lib/login-activity.js';
 import {PLANS,GAMES,CREATABLE_GAMES,emailKey,digest,ensureAccounts,accountSession,importOwnedPools,allowance,reserveSlots,releaseSlots,ownedPool,retainedFreeSlot} from '../../lib/commissioner-account.js';
 import {sendPoolEmail,poolEmail} from '../../lib/pool-email.js';
@@ -108,7 +109,7 @@ export async function onRequest({request,env}){
  if(b.action==='open'){
   const p=await ownedPool(db,email,b.pool);if(!p)throw fail('This pool is not in your verified commissioner account.',403);
   const r=await db.prepare("SELECT value FROM pool_settings WHERE pool_id=? AND key='commissioner_player_name'").bind(p.id).first();if(!r?.value)throw fail('This pool needs its commissioner player name restored before switching.',409);
-  const games=(await db.prepare('SELECT game_type FROM pool_active_games WHERE pool_id=? AND active=1 ORDER BY is_primary DESC,game_type').bind(p.id).all()).results||[];
+  const games=(await poolGameKeys(db,p.id)).map(game_type=>({game_type}));
   const token=crypto.randomUUID()+crypto.randomUUID();await db.prepare("INSERT INTO pool_sessions(token,pool_id,player_name,role,expires_at) VALUES(?,?,?,'admin',?)").bind(token,p.id,r.value,account.expires_at).run();return json({token,playerId:r.value,pool:{...p,id:String(p.id),role:'commissioner',games:games.map(g=>GAMES[g.game_type]||g.game_type)}});
  }
  if(b.action==='checkout'){

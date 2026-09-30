@@ -1,3 +1,4 @@
+import {poolGameKeys} from '../lib/pool-games.js';
 import {recordPoolLogin} from '../lib/login-activity.js';
 import {ownerPasswordOk,ownerAttempt} from '../lib/owner-auth.js';
 import {allowance as accountAllowance} from '../lib/commissioner-account.js';
@@ -981,41 +982,7 @@ async function getCommissionerPlayerName(DB,pid){
 }
 function sessionCanPlay(s){return !!s&&(s.role==="player"||(s.role==="admin"&&s.player_name&&s.player_name!=="Commissioner"));}
 
-async function getPoolGameTypes(DB,pid,code=""){
-  // Verified account slots supersede legacy settings that could reactivate archived games.
-  try{const managed=(await DB.prepare("SELECT game_type,active FROM links_pool_slots WHERE pool_id=?").bind(pid).all()).results||[];if(managed.length)return managed.filter(x=>x.active).map(x=>x.game_type)}catch(e){if(!/no such table/i.test(String(e)))throw e}
-
-  // v111: active_games_exact is authoritative whenever it exists.  Older builds
-  // could leave stale pool_active_games rows active; reconcile those flags to the
-  // exact commissioner-selected list without deleting any game history or picks.
-  const exactRaw=(await getPoolSetting(DB,pid,"active_games_exact","")).trim();
-  if(exactRaw){
-    try{
-      let exact=JSON.parse(exactRaw);
-      exact=Array.isArray(exact)?[...new Set(exact.map(x=>String(x||"").trim().toLowerCase()).filter(x=>VALID_POOL_GAMES.includes(x)))]:[];
-      if(exact.length){
-        const now=new Date().toISOString();
-        const stm=[DB.prepare("UPDATE pool_active_games SET active=0,is_primary=0 WHERE pool_id=?").bind(pid)];
-        exact.forEach((gt,i)=>stm.push(DB.prepare("INSERT INTO pool_active_games(pool_id,game_type,is_primary,active,added_at) VALUES(?,?,?,1,?) ON CONFLICT(pool_id,game_type) DO UPDATE SET active=1,is_primary=excluded.is_primary").bind(pid,gt,i===0?1:0,now)));
-        await DB.batch(stm);
-        return exact;
-      }
-    }catch(e){}
-  }
-
-  // Pools created before exact-list support continue to use their currently active
-  // rows.  Nothing is deleted; this is only a compatibility path for old pools.
-  const rows=(await DB.prepare("SELECT game_type,is_primary,added_at FROM pool_active_games WHERE pool_id=? AND active=1 ORDER BY is_primary DESC,added_at ASC").bind(pid).all()).results||[];
-  const games=[...new Set(rows.map(r=>String(r.game_type||"").toLowerCase()).filter(x=>VALID_POOL_GAMES.includes(x)))];
-  if(games.length)return games;
-
-  let legacy=(await getPoolSetting(DB,pid,"game_type","")).trim().toLowerCase();
-  if(!VALID_POOL_GAMES.includes(legacy))legacy="nfl";
-  await DB.prepare("INSERT INTO pool_active_games(pool_id,game_type,is_primary,active,added_at) VALUES(?,?,1,1,?) ON CONFLICT(pool_id,game_type) DO UPDATE SET active=1,is_primary=1")
-    .bind(pid,legacy,new Date().toISOString()).run();
-  await DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,'active_games_exact',?) ON CONFLICT(pool_id,key) DO UPDATE SET value=excluded.value").bind(pid,JSON.stringify([legacy])).run();
-  return [legacy];
-}
+async function getPoolGameTypes(DB,pid,code=""){return poolGameKeys(DB,pid)}
 async function getPoolGameType(DB,pid,code=""){
   const games=await getPoolGameTypes(DB,pid,code);
   return games[0]||"nfl";

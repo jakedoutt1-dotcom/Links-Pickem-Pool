@@ -1,3 +1,4 @@
+import {poolGameKeys} from '../../lib/pool-games.js';
 import {accountSession,ensureAccounts,importOwnedPools,GAMES} from '../../lib/commissioner-account.js';
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
 export async function onRequest({request,env}){
@@ -32,7 +33,7 @@ export async function onRequest({request,env}){
  // Weekly pending status does not remove membership; global access revocation does.
  let access=null;try{access=await db.prepare('SELECT status FROM newbuild_player_access WHERE pool_id=? AND player_name=?').bind(p.id,p.playerName).first()}catch(e){if(!/no such table/i.test(String(e)))throw e}
  if(p.role!=='admin'&&access?.status==='pending'){pools.delete(id);continue}
- p.games=((await db.prepare('SELECT game_type FROM pool_active_games WHERE pool_id=? AND active=1 ORDER BY is_primary DESC,game_type').bind(p.id).all()).results||[]).map(g=>g.game_type);
+ p.games=await poolGameKeys(db,p.id);
  }
  if(body.action==='open'){
  if(!account)return json({error:'Verify your email to switch pools.'},401);
