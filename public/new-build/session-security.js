@@ -24,3 +24,5 @@
  pending=true;try{const value=await password();if(value===null)return response;const headers=new Headers(saved.headers);headers.set('x-links-confirm-password',value);return await original(new Request(saved,{headers}))}finally{pending=false}
  };
 })();
+
+(()=>{const script=document.createElement("script");script.src="/new-build/password-visibility.js?v=1";document.head.append(script)})();
