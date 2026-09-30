@@ -6,6 +6,7 @@ export const CREATABLE_GAMES=new Set(['nfl','college','survivor','confidence','3
 export function emailKey(value){let email=String(value||'').trim().toLowerCase();const [local,domain]=email.split('@');if(domain==='gmail.com'||domain==='googlemail.com')email=local.split('+')[0].replaceAll('.','')+'@gmail.com';return email}
 export async function digest(value){return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value))),x=>x.toString(16).padStart(2,'0')).join('')}
 export async function ensureAccounts(db){await db.batch([
+ db.prepare('CREATE TABLE IF NOT EXISTS links_package_grants(id TEXT PRIMARY KEY,email TEXT NOT NULL,plan TEXT NOT NULL,days INTEGER NOT NULL,created_at TEXT NOT NULL,expires_at TEXT NOT NULL)'),
  db.prepare('CREATE TABLE IF NOT EXISTS links_accounts(email TEXT PRIMARY KEY,verified_at TEXT NOT NULL)'),
  db.prepare('CREATE TABLE IF NOT EXISTS links_account_sessions(token_hash TEXT PRIMARY KEY,email TEXT NOT NULL,expires_at TEXT NOT NULL)'),
  db.prepare('CREATE TABLE IF NOT EXISTS links_account_codes(email TEXT PRIMARY KEY,code_hash TEXT NOT NULL,expires_at TEXT NOT NULL,attempts INTEGER NOT NULL DEFAULT 0,sent_at TEXT NOT NULL)'),
@@ -31,7 +32,12 @@ export async function allowance(db,email){
  let ent=await db.prepare('SELECT * FROM links_account_plans WHERE email=?').bind(email).first();
  // Preserve paid legacy purchases, including canonical Gmail aliases. Never infer payment from a pool's test-mode service flag.
  if(!ent){try{const rows=(await db.prepare("SELECT * FROM commissioner_entitlements WHERE status='ACTIVE'").all()).results||[];ent=rows.filter(x=>emailKey(x.email)===email&&PLANS[x.plan]).sort((a,b)=>Number(!b.expires_at||Date.parse(b.expires_at)>Date.now())-Number(!a.expires_at||Date.parse(a.expires_at)>Date.now())||PLANS[b.plan].slots-PLANS[a.plan].slots)[0]}catch(e){if(!/no such table/i.test(String(e)))throw e}}
- const valid=ent&&(!ent.expires_at||Date.parse(ent.expires_at)>Date.now())&&PLANS[ent.plan];const plan=valid?ent.plan:'free';return {plan,...PLANS[plan],expiresAt:ent?.expires_at||null};
+ const valid=ent&&(!ent.expires_at||Date.parse(ent.expires_at)>Date.now())&&PLANS[ent.plan];const plan=valid?ent.plan:'free';
+ let result={plan,...PLANS[plan],expiresAt:ent?.expires_at||null};
+ let grants=[];try{grants=(await db.prepare('SELECT plan,expires_at FROM links_package_grants WHERE email=? ORDER BY expires_at DESC').bind(email).all()).results||[]}catch(e){if(!/no such table/i.test(String(e)))throw e}
+ for(const grant of grants){const cfg=PLANS[grant.plan];if(!cfg||Date.parse(grant.expires_at)<=Date.now())continue;if(cfg.slots>result.slots||(cfg.slots===result.slots&&result.expiresAt&&Date.parse(grant.expires_at)>Date.parse(result.expiresAt)))result={plan:grant.plan,...cfg,expiresAt:grant.expires_at,complimentary:true}}
+ if(result.plan==='free'&&!result.expiresAt&&grants.length)result.expiresAt=grants[0].expires_at;
+ return result;
 }
 export async function reserveSlots(db,email,games){const plan=await allowance(db,email),ids=games.map(()=>crypto.randomUUID());
  // One atomic SQL statement checks capacity and reserves the complete request.

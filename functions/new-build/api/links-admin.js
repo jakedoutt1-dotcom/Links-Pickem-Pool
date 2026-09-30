@@ -1,3 +1,4 @@
+import {grantPackage} from '../../lib/owner-package-grant.js';
 import {ownerPoolDelete} from '../../lib/owner-pool-delete.js';
 import {ensureOwner,ownerHash,ownerPasswordOk,ownerAttempt,ownerSession} from '../../lib/owner-auth.js';
 import {ensureAccounts,emailKey,allowance} from '../../lib/commissioner-account.js';
@@ -6,6 +7,7 @@ const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control
 export async function onRequest({request,env}){const db=env.DB;if(!db)return json({error:'Database unavailable.'},503);await ensureOwner(db);
  if(request.method==='POST'){
  let b;try{b=await request.json()}catch{return json({error:'Invalid request.'},400)}
+ if(b.action==='grant-package')return grantPackage(request,db,b);
  if(['delete-preview','delete-pool'].includes(b.action))return ownerPoolDelete(request,db,b);
  if(b.action==='logout'){const s=await ownerSession(request,db);if(s)await db.prepare('DELETE FROM links_admin_sessions WHERE token=?').bind(s.token).run();return json({ok:true})}
  if(!['login','password'].includes(b.action))return json({error:'Unknown action.'},400);
@@ -26,7 +28,8 @@ export async function onRequest({request,env}){const db=env.DB;if(!db)return jso
  const rows=async query=>(await db.prepare(query).all()).results||[];
  const pools=await rows('SELECT p.id,p.code,p.name,p.created_at,(SELECT COUNT(*) FROM pool_players pp WHERE pp.pool_id=p.id) player_count FROM pools p ORDER BY lower(p.name)');
  const owners=await rows('SELECT pool_id,email FROM links_pool_owners'),settings=await rows("SELECT pool_id,value FROM pool_settings WHERE key='commissioner_email'"),slots=await rows('SELECT email,pool_id,game_type,active FROM links_pool_slots WHERE pool_id IS NOT NULL'),games=await rows('SELECT pool_id,game_type,active FROM pool_active_games');
- const emails=new Set((await rows('SELECT email FROM links_accounts')).map(r=>emailKey(r.email)));for(const p of pools){p.email=emailKey(owners.find(r=>r.pool_id===p.id)?.email||settings.find(r=>r.pool_id===p.id)?.value);if(p.email)emails.add(p.email);p.games=games.filter(g=>g.pool_id===p.id)}
+ const grants=await rows('SELECT id,email,plan,days,created_at,expires_at FROM links_package_grants ORDER BY created_at DESC');
+ const emails=new Set((await rows('SELECT email FROM links_accounts UNION SELECT email FROM links_package_grants')).map(r=>emailKey(r.email)));for(const p of pools){p.email=emailKey(owners.find(r=>r.pool_id===p.id)?.email||settings.find(r=>r.pool_id===p.id)?.value);if(p.email)emails.add(p.email);p.games=games.filter(g=>g.pool_id===p.id)}
  const accounts=[];for(const email of emails){const plan=await allowance(db,email);accounts.push({email,...plan,used:slots.filter(s=>emailKey(s.email)===email&&s.active===1).length})}
- return json({pools,accounts,activity:await rows('SELECT a.*,p.name pool_name,p.code pool_code FROM pool_login_activity a JOIN pools p ON p.id=a.pool_id ORDER BY a.last_login_at DESC LIMIT 500'),accountActivity:await rows('SELECT * FROM links_account_login_activity ORDER BY last_login_at DESC LIMIT 500')});
+ return json({pools,accounts,grants,activity:await rows('SELECT a.*,p.name pool_name,p.code pool_code FROM pool_login_activity a JOIN pools p ON p.id=a.pool_id ORDER BY a.last_login_at DESC LIMIT 500'),accountActivity:await rows('SELECT * FROM links_account_login_activity ORDER BY last_login_at DESC LIMIT 500')});
 }
