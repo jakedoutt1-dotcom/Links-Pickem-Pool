@@ -52,15 +52,10 @@
  for(const pool of state.pools){const b=button(pool.name,async()=>{b.disabled=true;try{enter(await api({action:'open',pool:pool.id}))}catch(e){message.textContent=e.message;b.disabled=false}});b.style.cssText='flex:0 0 auto;white-space:nowrap';if(pool.id===state.currentPool){b.setAttribute('aria-current','page');b.disabled=true;b.style.cssText+=';background:#edc466!important;color:#101820!important;border-color:#edc466!important;opacity:1!important;filter:none!important;cursor:default;text-shadow:none!important'}bar.append(b)}
  const current=state.pools.find(p=>p.id===state.currentPool);
  const pagePool=new URLSearchParams(location.search).get('pool');
- if(state.commissioner&&current?.role==='admin'&&(!pagePool||[String(current.id),String(current.code)].includes(pagePool))){
- const adminButton=button('ADMIN',()=>{const page=location.pathname.split('/').pop().replace(/\.html$/,'');const setup={golf:'Golf',nascar:'NASCAR',custom:'Custom'};
- if(page==='nfl'){location.assign('./commissioner.html?pool='+encodeURIComponent(current.id));return}
- if(setup[page]){location.assign('./game-setup.html?'+new URLSearchParams({pool:current.id,game:setup[page]}));return}
- const tab=[...document.querySelectorAll('[data-view="admin"],#leagueNav button,.format-nav button')].find(el=>el.dataset.view==='admin'||/Commissioner/i.test(el.textContent));
- if(tab){tab.click();tab.scrollIntoView({block:'center',behavior:'smooth'});return}
- const panel=document.getElementById('game33Admin');if(panel){panel.scrollIntoView({block:'start',behavior:'smooth'});return}
- adminButton.textContent='Controls loading — tap again';
- });adminButton.id='linksGameAdmin';bar.append(adminButton);
+ // Games with their own Admin tabs keep those tabs. Generic games get one inside the game navigation.
+ const page=location.pathname.split('/').pop().replace(/\.html$/,''),setup={golf:'Golf',nascar:'NASCAR',custom:'Custom'};
+ if(setup[page]&&state.commissioner&&current?.role==='admin'&&(!pagePool||[String(current.id),String(current.code)].includes(pagePool))){
+ const tabs=document.querySelector('main .tabs');if(tabs&&!tabs.querySelector('[data-game-admin]')){const adminButton=button('ADMIN',()=>location.assign('./game-setup.html?'+new URLSearchParams({pool:current.id,game:setup[page]})));adminButton.dataset.gameAdmin='1';adminButton.style.cssText='background:#0d293b;color:#fff;border:1px solid #3b6178';tabs.append(adminButton)}
  }
 
  if(current?.games?.length>1){const change=document.createElement('a');change.className='action';change.href='./control-center.html?pool='+encodeURIComponent(state.currentPool);change.textContent='Change Game';change.style.whiteSpace='nowrap';bar.append(change)}
