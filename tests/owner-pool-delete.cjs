@@ -17,7 +17,9 @@ const assert=require('node:assert/strict'),{DatabaseSync}=require('node:sqlite')
  sql.prepare('INSERT INTO links_owner_password VALUES(1,?,?)').run('salt',await ownerHash('owner-password','salt'));sql.prepare('INSERT INTO links_admin_sessions VALUES(?,?)').run('owner','2099-01-01');
  sql.exec("INSERT INTO pools(id,code,name) VALUES(1,'TEST','Test Pool'),(2,'LIVE','Live Pool'),(3,'LINKS','Barnes Family'); INSERT INTO pool_picks VALUES(1,'AAA'),(2,'BBB'); INSERT INTO pool_players VALUES(1,'Test','hash','salt'); INSERT INTO pool_sessions VALUES('player',1,'Test','player','2099-01-01'); INSERT INTO links_pool_slots VALUES('slot','a@example.com',1,'nfl',1,NULL); INSERT INTO links_account_preferences VALUES('a@example.com','slot'); CREATE TABLE payment_orders(pool_id INTEGER,amount INTEGER); INSERT INTO payment_orders VALUES(1,1999)");
  sql.exec("CREATE TABLE squares_boards(id INTEGER,pool_id INTEGER); CREATE TABLE squares_claims(board_id INTEGER); INSERT INTO squares_boards VALUES(1,1),(2,2); INSERT INTO squares_claims VALUES(1),(2)");
- const call=(b,token='owner')=>ownerPoolDelete(new Request('https://test',{headers:{authorization:'Bearer '+token}}),db,b);
+ const {slotWriteGuard}=await import('../functions/lib/slot-write-guard.js');
+ const call=async(b,token='owner')=>{const request=new Request('https://test/new-build/api/links-admin',{method:'POST',headers:{authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(b)});return await slotWriteGuard(request,{DB:db})||ownerPoolDelete(request,db,b)};
+ sql.exec("UPDATE links_pool_slots SET active=0 WHERE pool_id=1");
  assert.equal((await call({action:'delete-preview',pool:1},'player')).status,401);
  assert.equal((await call({action:'delete-preview',pool:3})).status,403);
  assert.equal((await (await call({action:'delete-preview',pool:1})).json()).counts.pool_players,1);
