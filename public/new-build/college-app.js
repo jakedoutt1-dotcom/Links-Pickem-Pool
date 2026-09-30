@@ -3,7 +3,7 @@
  const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const q=new URLSearchParams(location.search);let stored;try{stored=JSON.parse(localStorage.getItem('links-current-pool')||'null')}catch{}
  const pool=q.get('pool')||stored?.id||'',token=localStorage.getItem('links-legacy-token')||localStorage.getItem('links-token')||'';
- const views={picks:'Picks',scores:'Live Scores',compare:'Compare Picks',matter:'Picks That Matter',projected:'Projected',standings:'Weekly Standings',season:'Year Standings',admin:'Commissioner'};
+ const views={picks:'Picks',scores:'Live Scores',compare:'Compare Picks',matter:'Picks That Matter',projected:'Projected',standings:'Weekly Standings',season:'Year Standings',admin:'ADMIN'};
  let view=views[q.get('view')]?q.get('view'):'picks',week=Number(q.get('week'))||0,state=null,seq=0,busy=false,shownPending=new Set(),selected=new Set(),opponent='',lastFingerprint='',errorMessage='';
  const weekLabel=w=>w===17?'Bowls / Playoffs':'Week '+w;
  for(let w=1;w<=17;w++)$('week').add(new Option(weekLabel(w),w));

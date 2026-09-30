@@ -22,7 +22,7 @@ function wire(){
 }
 function draw(){
  document.getElementById('leagueStatus').textContent=s.season+' • '+s.phase.replaceAll('_',' ')+' • '+(s.currentWeek?'Week '+s.currentWeek:s.teams.length+' teams');
- const tabs=[['team','My team'],['players','Players'],['draft','Draft'],['matchups','Matchups'],['trades','Trades'],['league','League'],...(admin()?[['admin','Commissioner']]:[])];
+ const tabs=[['team','My team'],['players','Players'],['draft','Draft'],['matchups','Matchups'],['trades','Trades'],['league','League'],...(admin()?[['admin','ADMIN']]:[])];
  nav.innerHTML=tabs.map(([id,label])=>'<button type="button" data-view="'+id+'" class="'+(view===id?'active':'')+'">'+label+'</button>').join('');
  nav.querySelectorAll('button').forEach(b=>b.onclick=()=>{if(!busy){view=b.dataset.view;if(view!=='matchups')week=s.currentWeek||1;draw()}});
  ({team:myTeam,players:playersView,draft:draftView,matchups:matchupsView,trades:tradesView,league:leagueView,admin:adminView}[view]||myTeam)();wire();

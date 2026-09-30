@@ -48,7 +48,7 @@ async function load() {
 function navigation() {
   $('season').disabled=demo||busy;$('refresh').disabled=busy;
   const tabs=[['bracket','My bracket'],['scores','Tournament scores'],['standings','Pool standings'],['rules','How to play']];
-  if(data.role==='admin')tabs.push(['admin','Commissioner']);
+  if(data.role==='admin')tabs.push(['admin','ADMIN']);
   $('mainNav').innerHTML=tabs.map(([id,title])=>'<button data-view="'+id+'" class="'+(view===id?'active':'')+'" aria-current="'+(view===id?'page':'false')+'">'+title+'</button>').join('');
   $('mainNav').querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{view=b.dataset.view;viewing=null;render();});
   $('identity').textContent=data.pool.name+(demo?' · Sample field':(' · '+(data.player||'Commissioner')));

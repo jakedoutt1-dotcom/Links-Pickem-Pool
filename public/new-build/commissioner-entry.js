@@ -53,7 +53,7 @@
  const current=state.pools.find(p=>p.id===state.currentPool);
  const pagePool=new URLSearchParams(location.search).get('pool');
  if(state.commissioner&&current?.role==='admin'&&(!pagePool||[String(current.id),String(current.code)].includes(pagePool))){
- const adminButton=button('Commissioner Admin',()=>{const page=location.pathname.split('/').pop().replace(/\.html$/,'');const setup={golf:'Golf',nascar:'NASCAR',custom:'Custom'};
+ const adminButton=button('ADMIN',()=>{const page=location.pathname.split('/').pop().replace(/\.html$/,'');const setup={golf:'Golf',nascar:'NASCAR',custom:'Custom'};
  if(page==='nfl'){location.assign('./commissioner.html?pool='+encodeURIComponent(current.id));return}
  if(setup[page]){location.assign('./game-setup.html?'+new URLSearchParams({pool:current.id,game:setup[page]}));return}
  const tab=[...document.querySelectorAll('[data-view="admin"],#leagueNav button,.format-nav button')].find(el=>el.dataset.view==='admin'||/Commissioner/i.test(el.textContent));

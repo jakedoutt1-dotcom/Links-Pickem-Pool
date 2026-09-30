@@ -1,0 +1,40 @@
+// Deliberately standalone: no pool APIs, auth reads, cookies, or persistent storage.
+(()=>{
+const $=id=>document.getElementById(id),game=new URLSearchParams(location.search).get('game')||'nfl';
+const catalog={
+nfl:['NFL Pick’em','Choose each winner. In a real pool, enter the tiebreaker and finish before the weekly first-kickoff deadline. Correct final picks build your record.'],
+college:['College Pick’em','Choose winners from the commissioner’s AP Top 25 slate. This example has two sample matchups; real entries close at the first selected kickoff.'],
+confidence:['Confidence','Pick each winner and assign 1 or 2 points, using each number once. A correct pick earns its assigned points.'],
+survivor:['Survivor','Choose one team to win. A final loss costs a life, and the same team cannot be reused in later weeks. This example shows one week with one life.'],
+playoff:['Playoff Challenge','Pick winners for this sample playoff round. Real pools submit a new card each round, with commissioner-configured points per correct pick. This sample uses 2 points.'],
+march:['March Madness','Try a four-team sample bracket: pick two semifinal winners, then a champion. Changing a semifinal clears your championship pick. The real game uses a full tournament bracket.'],
+game33:['Game 33','Draw your sample season team. A FINAL score of exactly 33 wins; a live score of 33 does not. Real season draws assign one team per player and cannot be repeated.'],
+squares:['Football Squares','Choose a square on this miniature 3×3 example. Headers are sample score digits. The last digits of the final score determine the winning square. Real boards have ten digits per side.'],
+props:['Props','Answer sample questions before viewing the answers. Real questions, choices, deadlines, and grading are set by your commissioner.'],
+golf:['Golf','Select one sample golfer. Real pools use commissioner-provided choices, selection limits, deadlines, and scoring instructions.'],
+nascar:['NASCAR','Select one sample driver. Real pools use commissioner-provided choices, selection limits, deadlines, and scoring instructions.'],
+custom:['Custom Pool','Choose an option for a sample office prediction: which color team wins the field day? Your real commissioner defines the event, choices, and result rules.'],
+fantasy:['Fantasy Football','Try drafting two players onto a sample roster. This quick example shows sample fantasy points; real leagues also have lineup locks, waivers, trades, and commissioner-verified scoring.'],
+dynasty:['Dynasty Football','Draft two players for a sample franchise. Dynasty keeps your roster between seasons and adds rookie drafts and future-pick trades. This demo illustrates the roster, not a complete season.']};
+const config=catalog[game];if(!config){$('title').textContent='Choose a demo from the home page';$('board').hidden=true;$('results').hidden=true;return}$('title').textContent=config[0];$('instructions').textContent=config[1];let picks={},ranks={},finished=false;
+const teams=game==='college'?['College A (rank 3)','College B (rank 18)','College C (rank 9)','College D (rank 22)']:['Bills','Dolphins','Chiefs','Ravens'];
+function choose(label,id,value){const b=document.createElement('button');b.textContent=label;b.classList.toggle('chosen',picks[id]===value);b.disabled=finished;b.onclick=()=>{if(game==='march'&&id!=='champion')delete picks.champion;picks[id]=value;render()};return b}
+function matchup(label,id,options){const row=document.createElement('div');row.className='match';const title=document.createElement('b');title.textContent=label;row.append(title);const opts=document.createElement('div');opts.className='options';options.forEach((v)=>opts.append(choose(v,id,v)));row.append(opts);$('board').append(row);return row}
+function render(){const board=$('board');board.replaceChildren();$('feedback').textContent='';$('results').disabled=finished;
+ if(game==='game33'){const b=document.createElement('button');b.textContent=picks.team?'Your team: '+picks.team:'Draw my sample team';b.disabled=!!picks.team;b.onclick=()=>{picks.team='Bills';render()};board.append(b);return}
+ if(game==='squares'){board.className='squares';for(let i=0;i<16;i++){const row=Math.floor(i/4),col=i%4;if(!row||!col){const span=document.createElement('b');span.textContent=!row&&!col?'Away / Home':String((!row?col:row)-1);board.append(span)}else board.append(choose('Square '+row+'-'+col,'square',row+'-'+col))}return}
+ if(['fantasy','dynasty'].includes(game)){matchup('Quarterback','qb',['Sample QB A','Sample QB B']);matchup('Running back','rb',['Sample RB A','Sample RB B']);return}
+ if(game==='march'){matchup('Semifinal 1','semi1',['Team A','Team B']);matchup('Semifinal 2','semi2',['Team C','Team D']);if(picks.semi1&&picks.semi2)matchup('Championship','champion',[picks.semi1,picks.semi2]);return}
+ if(game==='props'){matchup('Will combined points exceed 45?','0',['Yes','No']);matchup('Will the game go to overtime?','1',['Yes','No']);return}
+ if(['golf','nascar','custom'].includes(game)){matchup('Make one selection','0',game==='golf'?['Sample Golfer A','Sample Golfer B']:game==='nascar'?['Sample Driver A','Sample Driver B']:['Blue team','Gold team']);return}
+ const count=game==='survivor'?1:2;for(let i=0;i<count;i++){const row=matchup('Sample matchup '+(i+1),String(i),teams.slice(i*2,i*2+2));if(game==='confidence'){const label=document.createElement('label');label.textContent='Confidence';const sel=document.createElement('select');sel.setAttribute('aria-label','Confidence for matchup '+(i+1));for(const n of [0,1,2]){const option=document.createElement('option');option.value=n;option.textContent=n||'Choose points';sel.append(option)}sel.value=ranks[i]||0;sel.disabled=finished;sel.onchange=()=>ranks[i]=Number(sel.value);label.append(sel);row.append(label)}}}
+$('results').onclick=()=>{const required=game==='game33'?['team']:game==='squares'?['square']:['fantasy','dynasty'].includes(game)?['qb','rb']:game==='march'?['semi1','semi2','champion']:['golf','nascar','custom','survivor'].includes(game)?['0']:['0','1'];if(required.some(k=>!picks[k])){$('feedback').textContent='Complete your sample selections first.';return}if(game==='confidence'&&(!ranks[0]||!ranks[1]||ranks[0]===ranks[1])){$('feedback').textContent='Use 1 and 2 confidence points once each.';return}finished=true;render();let message;
+ if(game==='game33')message='Sample FINAL: Bills 33, Dolphins 24. Your assigned Bills team hits exactly 33!';
+ else if(game==='squares')message='Sample FINAL: away 21, home 10. Digits 1 and 0 make square 2-1 the winner. '+(picks.square==='2-1'?'You chose it!':'Try again to explore another square.');
+ else if(['fantasy','dynasty'].includes(game))message='Sample roster: '+picks.qb+' earns 20 points; '+picks.rb+' earns 14. Total: 34 sample points.'+(game==='dynasty'?' This roster would carry into your next dynasty season.':'');
+ else if(game==='march')message='Sample finals: Team A and Team C advance; Team A wins the championship. Your champion: '+picks.champion+'.';
+ else if(game==='props')message='Sample answers: 48 combined points (Yes); no overtime (No). You answered '+Number(picks[0]==='Yes')+' + '+Number(picks[1]==='No')+' correctly.';
+ else if(['golf','nascar','custom'].includes(game))message='Sample result: '+(game==='golf'?'Sample Golfer A finishes first':game==='nascar'?'Sample Driver A finishes first':'Gold team wins')+'. This example uses a simple winner rule; confirm the rules for your real pool.';
+ else {const win0=picks[0]===teams[0],win1=picks[1]===teams[3];message='Sample winners: '+teams[0]+(game==='survivor'?'':', '+teams[3])+'. ';message+=game==='survivor'?(win0?'You survive this sample week!':'Your sample entry loses its one life.'):game==='confidence'?'You earned '+((win0?ranks[0]:0)+(win1?ranks[1]:0))+' confidence points.':game==='playoff'?'You earned '+(2*(Number(win0)+Number(win1)))+' sample round points.':(Number(win0)+Number(win1))+' of 2 correct.'}$('feedback').textContent=message};
+$('reset').onclick=()=>{picks={};ranks={};finished=false;render()};render();
+})();
