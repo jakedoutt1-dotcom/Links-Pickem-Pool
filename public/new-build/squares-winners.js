@@ -1,0 +1,7 @@
+(()=>{
+ const periods=[['q1','First quarter','Q1','payout_q1'],['half','Halftime','HT','payout_half'],['q3','Third quarter','Q3','payout_q3'],['final','Final / overtime','FINAL','payout_final']];
+ const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ function panel(winners={},amounts={}){return '<section class="squares-winners" aria-label="Quarter and final winners">'+periods.map(([key,label,short,amount])=>{const w=winners?.[key];return '<article class="square-period period-'+key+'"><h3>'+label+'</h3><b>'+(w?esc(w.player||'UNCLAIMED'):'Awaiting result')+'</b><p>'+(w?'Square #'+(w.squareIndex+1)+' · Away '+w.awayDigit+' / Home '+w.homeDigit:'Winner appears after this period ends.')+'</p>'+(amounts[amount]!=null?'<small>Payout: '+Number(amounts[amount]).toLocaleString('en-US',{style:'currency',currency:'USD'})+'</small>':'')+'</article>'}).join('')+'</section>'}
+ function mark(button,index,winners={}){const hits=periods.filter(([key])=>winners?.[key]?.squareIndex===index);if(!hits.length)return;button.classList.add('quarter-winner','period-'+hits[0][0]);const tags=document.createElement('span');tags.className='square-win-tags';hits.forEach(([key,label,short])=>{const tag=document.createElement('span');tag.className='period-'+key;tag.textContent=short;tags.append(tag)});button.append(tags);button.setAttribute('aria-label',(button.getAttribute('aria-label')||'Square '+(index+1))+' · Winner: '+hits.map(x=>x[1]).join(', '));}
+ window.LINKS_SQUARE_WINNERS={panel,mark};
+})();
