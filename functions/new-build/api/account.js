@@ -1,3 +1,4 @@
+import {recordAccountLogin} from '../../lib/login-activity.js';
 import {PLANS,GAMES,CREATABLE_GAMES,emailKey,digest,ensureAccounts,accountSession,importOwnedPools,allowance,reserveSlots,releaseSlots,ownedPool,retainedFreeSlot} from '../../lib/commissioner-account.js';
 import {sendPoolEmail,poolEmail} from '../../lib/pool-email.js';
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
@@ -46,7 +47,7 @@ async function verifyFinish(db,b){
  db.prepare('DELETE FROM links_account_codes WHERE email=? AND code_hash=?').bind(email,row.code_hash),
  db.prepare('INSERT OR IGNORE INTO links_accounts(email,verified_at) SELECT ?,? WHERE EXISTS(SELECT 1 FROM links_account_sessions WHERE token_hash=?)').bind(email,now(),hash)
  ]);if(!results[0].meta?.changes)throw fail('That code was already used. Request a new code.',401);
- await importOwnedPools(db,email);return {token,email};
+ await importOwnedPools(db,email);try{await recordAccountLogin(db,email)}catch{console.warn('Account login activity could not be recorded')}return {token,email};
 }
 async function createPool(db,env,email,b,origin,sessionExpiry){
  const name=String(b.name||'').trim(),displayName=String(b.displayName||'').trim(),password=String(b.password||''),games=Array.isArray(b.games)?[...new Set(b.games)]:[];
