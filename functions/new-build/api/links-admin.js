@@ -8,7 +8,7 @@ export async function onRequest({request,env}){const db=env.DB;if(!db)return jso
  if(request.method==='POST'){
  let b;try{b=await request.json()}catch{return json({error:'Invalid request.'},400)}
  if(b.action==='grant-package')return grantPackage(request,db,b);
- if(['delete-preview','delete-pool'].includes(b.action))return ownerPoolDelete(request,db,b);
+ if(['delete-preview','delete-pool'].includes(b.action)){try{return await ownerPoolDelete(request,db,b)}catch(error){console.error('Owner pool deletion failed',error);return json({error:'Pool deletion could not be completed. Refresh LINKS Admin and try again. If this continues, the server needs attention.'},503)}}
  if(b.action==='logout'){const s=await ownerSession(request,db);if(s)await db.prepare('DELETE FROM links_admin_sessions WHERE token=?').bind(s.token).run();return json({ok:true})}
  if(!['login','password'].includes(b.action))return json({error:'Unknown action.'},400);
  if(!await ownerAttempt(request,db))return json({error:'Too many attempts. Try again in 15 minutes.'},429);
