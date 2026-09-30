@@ -28,3 +28,6 @@
   Cache-Control: no-store, no-cache, must-revalidate, max-age=0
 /new-build/api/*
   Cache-Control: no-store, no-cache, must-revalidate, max-age=0
+
+/new-build/*.mjs
+  Cache-Control: no-store, no-cache, must-revalidate, max-age=0

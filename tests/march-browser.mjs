@@ -1,0 +1,95 @@
+import {createServer} from 'node:http';
+import {readFile,mkdir} from 'node:fs/promises';
+import {resolve,extname,sep} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+import {demoTournament} from '../public/new-build/march-core.mjs';
+const require=createRequire(import.meta.url);
+const {chromium}=require('playwright');
+const root=resolve(fileURLToPath(new URL('../public/',import.meta.url)));
+const output=process.env.MARCH_SCREENSHOT_DIR||resolve(root,'../output/march-madness');
+await mkdir(output,{recursive:true});
+const server=createServer(async(req,res)=>{try{const url=new URL(req.url,'http://localhost'),path=resolve(root,'.'+decodeURIComponent(url.pathname));if(!path.startsWith(root+sep)){res.writeHead(403);res.end();return;}const type={'.html':'text/html','.css':'text/css','.js':'text/javascript','.mjs':'text/javascript','.png':'image/png','.jpg':'image/jpeg'}[extname(path)]||'application/octet-stream';res.writeHead(200,{'Content-Type':type,'Cache-Control':'no-store'});res.end(await readFile(path));}catch{res.writeHead(404);res.end('Not found');}});
+await new Promise(r=>server.listen(0,'127.0.0.1',r));
+const base='http://127.0.0.1:'+server.address().port;
+const browser=await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE?{executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE}:process.platform==='win32'?{channel:'msedge'}:{})});
+const errors=[];
+try{
+  const page=await browser.newPage({viewport:{width:1440,height:1100}});
+  page.on('pageerror',e=>errors.push(e.message));
+  await page.goto(base+'/new-build/march-madness.html?demo=1');
+  await page.getByRole('heading',{name:'Your road to the title'}).waitFor();
+  assert.equal(await page.locator('.round-column').count(),4);
+  assert.equal(await page.locator('[data-game="East-2-0"]:enabled').count(),0);
+  await page.locator('[data-game="East-1-0"]').first().click();
+  await page.locator('[data-game="East-1-1"]').first().click();
+  assert.equal(await page.locator('[data-game="East-2-0"]:enabled').count(),2);
+  await page.getByRole('button',{name:'Save draft',exact:true}).click();
+  await page.getByText('Draft saved',{exact:true}).waitFor();
+  await page.reload();
+  await page.locator('[data-game="East-1-0"][aria-pressed="true"]').waitFor();
+  await page.screenshot({path:resolve(output,'march-desktop.png'),fullPage:true});
+  // Complete the entire bracket through the actual visible team controls.
+  for(const region of ['East','West','South','Midwest','Final Four']){
+    await page.locator('[data-region="'+region+'"]').click();
+    for(const round of region==='Final Four'?[5,6]:[1,2,3,4]){
+      const games=demoTournament().games.filter(g=>g.region===region&&g.round===round);
+      for(const game of games)await page.locator('[data-game="'+game.id+'"]').first().click();
+    }
+  }
+  await page.locator('#tie').fill('148');
+  await page.getByRole('button',{name:'Submit bracket',exact:true}).click();
+  await page.getByRole('heading',{name:'Bracket submitted',exact:true}).waitFor();
+  await page.getByRole('button',{name:'Preview sample results',exact:true}).click();
+  await page.getByRole('button',{name:'Pool standings',exact:true}).click();
+  assert.equal(await page.locator('tbody tr').count(),1);
+  await page.getByRole('button',{name:'View bracket',exact:true}).click();
+  assert.equal(await page.locator('[data-game]:enabled').count(),0);
+  await page.screenshot({path:resolve(output,'march-final-four.png'),fullPage:true});
+  await page.getByRole('button',{name:'How to play',exact:true}).click();
+  await page.getByRole('heading',{name:'Every round raises the stakes.'}).waitFor();
+  const phone=await browser.newPage({viewport:{width:390,height:844},isMobile:true,deviceScaleFactor:1,hasTouch:true});
+  phone.on('pageerror',e=>errors.push(e.message));
+  await phone.goto(base+'/new-build/march-madness.html?demo=1');
+  await phone.getByRole('heading',{name:'Your road to the title'}).waitFor();
+  assert.equal(await phone.locator('.round-column:visible').count(),1);
+  assert.ok(await phone.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await phone.locator('[data-game="East-1-0"]').first().click();
+  await phone.locator('[data-game="East-1-1"]').first().click();
+  await phone.locator('#roundSelect').selectOption('2');
+  await phone.locator('[data-game="East-2-0"]').first().click();
+  await phone.screenshot({path:resolve(output,'march-mobile.png'),fullPage:true});
+  // Pool screens use mocked server responses; never write to production.
+  const t=demoTournament();t.season=new Date().getFullYear()+1;t.lockAt=new Date(Date.now()+86400000).toISOString();t.checkedAt=new Date().toISOString();
+  const response={pool:{id:1,name:'Links Test Pool'},player:'Jake',role:'admin',tournament:t,revision:1,entry:null,rows:[],submittedCount:2,serverNow:new Date().toISOString(),closed:false};
+  const poolPage=await browser.newPage({viewport:{width:1440,height:1000}});
+  poolPage.on('pageerror',e=>errors.push(e.message));
+  await poolPage.route('**/api/march?**',route=>route.fulfill({json:response}));
+  await poolPage.goto(base+'/new-build/march-madness.html?pool=1');
+  await poolPage.getByRole('heading',{name:'Your road to the title'}).waitFor();
+  await poolPage.getByRole('button',{name:'Pool standings',exact:true}).click();
+  await poolPage.getByRole('heading',{name:'The standings tip off with the tournament.'}).waitFor();
+  await poolPage.getByRole('button',{name:'Commissioner',exact:true}).click();
+  await poolPage.getByRole('heading',{name:'Set the field. Open the challenge.'}).waitFor();
+  await poolPage.screenshot({path:resolve(output,'march-commissioner.png'),fullPage:true});
+  await poolPage.getByRole('button',{name:'My bracket',exact:true}).click();
+  await poolPage.locator('[data-game="East-1-0"]').first().click();
+  await poolPage.unroute('**/api/march?**');
+  await poolPage.route('**/api/march?**',route=>route.request().method()==='POST'?route.fulfill({status:409,json:{error:'Your bracket changed in another tab. Reload before saving.'}}):route.fulfill({json:response}));
+  await poolPage.getByRole('button',{name:'Save draft',exact:true}).click();
+  await poolPage.getByText('Your bracket changed in another tab. Reload before saving.',{exact:true}).waitFor();
+  assert.equal(await poolPage.locator('[data-game="East-1-0"][aria-pressed="true"]').count(),1);
+  assert.equal(await poolPage.getByRole('heading',{name:'Unsaved changes',exact:true}).count(),1);
+  poolPage.once('dialog',dialog=>dialog.accept());
+  await poolPage.getByRole('button',{name:'Reload saved bracket',exact:true}).click();
+  await poolPage.getByRole('heading',{name:'Start your bracket',exact:true}).waitFor();
+  assert.equal(await poolPage.locator('[data-game="East-1-0"][aria-pressed="true"]').count(),0);
+  response.tournament.lockAt='2020-01-01T00:00:00Z';response.closed=true;
+  await poolPage.getByRole('button',{name:'Refresh',exact:true}).click();
+  await poolPage.getByText('READ ONLY',{exact:true}).waitFor();
+  assert.equal(await poolPage.locator('[data-game]:enabled').count(),0);
+  assert.deepEqual(errors,[]);
+  console.log('PASS: desktop and 390px mobile, full 63-pick submission, draft reload, sample standings, read-only opponent view, commissioner navigation, save-conflict preservation, and deadline lock.');
+  console.log('Screenshots: '+output);
+}finally{await browser.close();await new Promise(r=>server.close(r));}
