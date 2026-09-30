@@ -24,3 +24,5 @@ body[data-demo-game=squares] .square-grid .axis{min-width:0;padding:0;display:gr
 
 /* Final outcomes stay visible even when bracket editing is disabled. */
 .team.result-winner, #board button.result-winner{background:#164b35;border:2px solid #65df9b;color:#fff;opacity:1}.team.result-loser,.team.result-eliminated,#board button.result-loser{background:#581f2a;border:2px solid #ff8292;color:#fff;opacity:1}.outcome-label{display:block;font-size:11px;font-weight:800;margin-top:4px;text-transform:uppercase}
+
+.your-pick-label{display:block;width:fit-content;margin:4px auto;padding:3px 7px;border:1px solid #efc366;border-radius:4px;background:#172330;color:#ffe09a;font-size:11px;font-weight:800;text-transform:uppercase}
