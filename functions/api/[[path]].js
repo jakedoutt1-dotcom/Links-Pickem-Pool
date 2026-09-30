@@ -2006,7 +2006,7 @@ export async function onRequest(context){
       if(!q)return json({pools:[]});
       const like=`%${q.toLowerCase()}%`,codeLike=`%${q.toUpperCase()}%`;
       const rows=(await DB.prepare(`
-        SELECT p.code,p.name
+        SELECT p.code,p.name,(SELECT COUNT(*) FROM pool_players pp WHERE pp.pool_id=p.id) AS playerCount
         FROM pools p
         WHERE lower(p.name) LIKE ? OR upper(p.code) LIKE ?
         ORDER BY CASE WHEN upper(p.code)=? THEN 0 WHEN lower(p.name)=? THEN 1 WHEN lower(p.name) LIKE ? THEN 2 ELSE 3 END,

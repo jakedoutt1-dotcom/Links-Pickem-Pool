@@ -81,7 +81,7 @@ function scoreboard(week) {
       assert.equal(posts.length,2);
       await page.locator('#tieTotal').fill('42');
       await page.locator('#savePicksBtn').click();
-      await page.locator('#skipPlaymaker').click();
+      assert.equal(await page.locator('#savedPickModal').count(),0,'Locking picks does not open Playmaker');assert.doesNotMatch(await page.locator('#slate').innerText(),/\bML\b/,'Money lines are removed');
       await page.clock.runFor(1600);
       assert.equal(await page.locator('#slate button:disabled').count(),2,'Voluntary lock survives both background controllers');
       assert.equal(await page.locator('#tieTotal').isDisabled(),true);
