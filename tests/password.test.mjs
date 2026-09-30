@@ -1,0 +1,21 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {DatabaseSync} from 'node:sqlite';
+import {onRequestPost} from '../functions/new-build/api/password.js';
+const hash=async(p,s)=>btoa(String.fromCharCode(...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s+':'+p)))));
+for(const role of ['player','admin'])test(role+' can change only own password and revoke other sessions',async()=>{
+ const sql=new DatabaseSync(':memory:');sql.exec('CREATE TABLE pool_players(pool_id INTEGER,name TEXT,password_hash TEXT,salt TEXT);CREATE TABLE pool_sessions(token TEXT,pool_id INTEGER,player_name TEXT,role TEXT,expires_at TEXT)');
+ const old=await hash('oldpass','salt');sql.prepare('INSERT INTO pool_players VALUES(1,?,?,?)').run('Me',old,'salt');sql.prepare('INSERT INTO pool_players VALUES(1,?,?,?)').run('Other',old,'salt');
+ for(const t of ['current','other'])sql.prepare('INSERT INTO pool_sessions VALUES(?,1,?,?,?)').run(t,'Me',role,'2099-01-01');
+ const db={prepare(q){let args=[];return{bind(...a){args=a;return this},async first(){return sql.prepare(q).get(...args)},async run(){return{meta:{changes:sql.prepare(q).run(...args).changes}}}}},async batch(items){return Promise.all(items.map(i=>i.run()))}};
+ const call=(body,token='current')=>onRequestPost({env:{DB:db},request:new Request('https://test/api/password',{method:'POST',headers:{Authorization:'Bearer '+token},body:JSON.stringify(body)})});
+ const body={currentPassword:'oldpass',newPassword:'newpassword',confirmPassword:'newpassword',player:'Other'};
+ assert.equal((await call(body,'missing')).status,401);
+ assert.equal((await call({...body,currentPassword:'wrong'})).status,403);
+ assert.equal((await call({...body,confirmPassword:'mismatch'})).status,400);
+ assert.equal((await call(body)).status,200);
+ const me=sql.prepare("SELECT * FROM pool_players WHERE name='Me'").get();assert.equal(me.password_hash,await hash('newpassword',me.salt));
+ assert.equal(sql.prepare("SELECT password_hash FROM pool_players WHERE name='Other'").get().password_hash,old);
+ assert.equal(sql.prepare('SELECT count(*) AS n FROM pool_sessions').get().n,1);
+ assert.equal((await call(body)).status,403);sql.close();
+});

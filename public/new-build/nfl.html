@@ -60,4 +60,4 @@ document.getElementById('openPMBtn').onclick=()=>{let card=[];try{card=JSON.pars
 load();setTimeout(()=>{loadOdds().then(()=>{if(games.length)draw()}).catch(()=>{})},250);
 try{const cp=JSON.parse(localStorage.getItem('links-current-pool')||'null'),line=document.getElementById('gameStatusLine');if(cp&&String(cp.id)===String(poolId)){line.textContent='NFL PICK’EM · '+(cp.name||cp.code||'ACTIVE POOL')+' · PICKS LOCK INDIVIDUALLY AT KICKOFF'}}catch{}
 
-})();</script></body></html>
+})();</script><script src="./change-password.js?v=1"></script></body></html>
