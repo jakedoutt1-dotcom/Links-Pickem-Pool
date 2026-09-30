@@ -2850,6 +2850,20 @@ export async function onRequest(context){
     if(path==="33/default-week"&&method==="GET"){
       return json({week:await game33DefaultWeek(DB,pid),maxWeek:18});
     }
+    if(path==="33/add-player"&&method==="POST"){
+      if(s.role!=="admin")return json({error:"Commissioner only."},403);
+      const name=String(body.name||"").trim(),team=String(body.team||"").toUpperCase(),password=String(body.password||"");
+      if(!name||name.length>80||!NFL_TEAM_CODES_33.includes(team))return json({error:"Enter a player name and choose an unused NFL team."},400);
+      const state=await DB.prepare("SELECT draw_locked FROM pool_33_state WHERE pool_id=?").bind(pid).first();if(!state?.draw_locked)return json({error:"Use the manual season assignments before the draw is locked."},409);
+      const existing=await DB.prepare("SELECT name FROM pool_players WHERE pool_id=? AND lower(name)=lower(?)").bind(pid,name).first(),player=existing?.name||name;
+      const used=await DB.prepare("SELECT 1 AS ok FROM pool_33_assignments WHERE pool_id=? AND (lower(player_name)=lower(?) OR team=?)").bind(pid,player,team).first();if(used)return json({error:"That player or team is already assigned. Existing assignments cannot be changed."},409);
+      if(!existing&&password.length<4)return json({error:"New players need a temporary password of at least four characters."},400);
+      const statements=[];if(!existing){const salt=newSalt(),hash=await hashPassword(password,salt);statements.push(DB.prepare("INSERT INTO pool_players(pool_id,name,password_hash,salt) VALUES(?,?,?,?)").bind(pid,player,hash,salt))}
+      statements.push(DB.prepare("INSERT INTO pool_33_assignments(pool_id,player_name,team,assigned_at,source) VALUES(?,?,?,?,?)").bind(pid,player,team,new Date().toISOString(),'manual-add'));
+      statements.push(DB.prepare("INSERT INTO pool_33_entries(pool_id,player_name,paid) VALUES(?,?,0) ON CONFLICT(pool_id,player_name) DO UPDATE SET paid=0").bind(pid,player));
+      try{await DB.batch(statements)}catch{return json({error:"Player or team was just assigned. Refresh and try again."},409)}
+      return json({ok:true,player,team});
+    }
     if(path==="33/settings"&&method==="POST"){
       if(s.role!=="admin")return json({error:"Commissioner only."},403);
       const fee=body.entryFee;

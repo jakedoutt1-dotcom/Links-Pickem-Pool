@@ -18,6 +18,10 @@ const assert=require('node:assert/strict'),{DatabaseSync}=require('node:sqlite')
  assert.equal(sql.prepare("SELECT selection FROM links_game_entries WHERE period='race-123'").get().selection,'Driver A');
  assert.equal(JSON.parse(sql.prepare("SELECT value FROM pool_settings WHERE key='game_settings:nascar:current'").get().value).settings.period,'race-456');
  assert.equal(sql.prepare('SELECT team FROM pool_picks').get().team,'BUF');
+ global.fetch=async url=>String(url).includes('espn')?new Response('',{status:503}):Response.json({series_1:[{race_id:99,race_name:'Official race',race_date:'2090-07-01T15:00:00'}]});
+ const fallback=await (await call('admin')).json();assert.equal(fallback.source,'NASCAR');assert.equal(fallback.races[0].id,'nascar-99');assert.equal(fallback.races[0].date,'2090-07-01T19:00:00.000Z');assert.deepEqual(fallback.races[0].drivers,[]);
+ assert.equal((await call('admin',{raceId:'nascar-99',drivers:['Confirmed Driver']})).status,200);
+ global.fetch=async()=>new Response('',{status:503});assert.equal((await call('admin')).status,503);
  console.log('PASS NASCAR real-feed parsing, commissioner-only publish, invalid fields, race-specific picks, prior race and NFL preservation');
  }finally{global.fetch=original;sql.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});
