@@ -1,3 +1,4 @@
+import {findLoginPlayer} from '../lib/player-login-name.js';
 import {poolGameKeys} from '../lib/pool-games.js';
 import {recordPoolLogin} from '../lib/login-activity.js';
 import {ownerPasswordOk,ownerAttempt} from '../lib/owner-auth.js';
@@ -2225,7 +2226,7 @@ export async function onRequest(context){
     if(path==="pool/create"&&method==="POST")return json({error:"Use My Commissioner Pools to manage verified accounts, game slots, and packages.",url:"/new-build/commissioner-hub.html"},409);
     if(path==="login"&&method==="POST"){
       const pool=await poolByCode(DB,body.poolCode);if(!pool)return json({error:"Pool not found."},404);
-      const p=await DB.prepare("SELECT * FROM pool_players WHERE pool_id=? AND name=?").bind(pool.id,body.name).first();
+      const p=await findLoginPlayer(DB,pool.id,body.name);
       if(!p||await hashPassword(body.password||"",p.salt)!==p.password_hash)return json({error:"Incorrect name or password."},401);
       const accessRow=await DB.prepare("SELECT status FROM newbuild_player_access WHERE pool_id=? AND lower(player_name)=lower(?)").bind(pool.id,p.name).first().catch(()=>null);if(accessRow?.status==='pending')return json({error:'Your pool access is pending. Contact your commissioner.'},403);
       const commissionerPlayer=await getCommissionerPlayerName(DB,pool.id),isCommissioner=!!commissionerPlayer&&commissionerPlayer.toLowerCase()===String(p.name).toLowerCase();

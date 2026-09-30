@@ -1,0 +1,14 @@
+(()=>{
+ if(document.documentElement.dataset.nflDemo==='true')return;
+ const token=()=>localStorage.getItem('links-legacy-token')||localStorage.getItem('links-token')||'';if(!token())return;
+ const host=document.querySelector('header');if(!host)return;
+ const button=document.createElement('button');button.className='action';button.textContent='Edit My Names';host.append(button);host.style.flexWrap='wrap';host.style.gap='8px';
+ const dialog=document.createElement('dialog');dialog.style.cssText='width:min(440px,calc(100% - 40px));box-sizing:border-box;border:1px solid #b78e39;border-radius:14px;padding:22px;background:#091923;color:#fff';
+ dialog.innerHTML='<form><h2>Edit My Names</h2><p>Choose your sign-in name and the player name shown in this pool. Picks, history, and access stay connected.</p><label>New login name<input name="loginName" autocomplete="username" required minlength="2" maxlength="60"></label><label>Player name shown in pool<input name="displayName" required minlength="2" maxlength="60"></label><label>Current password<input name="currentPassword" type="password" autocomplete="current-password" required maxlength="256"></label><p role="status" aria-live="polite"></p><button class="action primary" type="submit">Save names</button> <button class="action" type="button">Close</button></form>';
+ dialog.querySelectorAll('input').forEach(i=>i.style.cssText='display:block;box-sizing:border-box;width:100%;margin:7px 0 16px;padding:12px;font-size:16px;background:#06111a;color:white;border:1px solid #385e75;border-radius:7px');document.body.append(dialog);
+ const form=dialog.querySelector('form'),status=dialog.querySelector('[role=status]'),save=dialog.querySelector('[type=submit]');
+ async function api(body){const r=await fetch('./api/login-name',{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token(),'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});const j=await r.json();if(!r.ok)throw Error(j.error||'Could not update login name.');return j}
+ button.onclick=async()=>{form.reset();status.textContent='Loading…';save.disabled=true;dialog.showModal();try{const j=await api();form.elements.loginName.value=j.loginName;form.elements.displayName.value=j.displayName;status.textContent='';save.disabled=false}catch(e){status.textContent=e.message}};
+ dialog.querySelector('[type=button]').onclick=()=>dialog.close();dialog.addEventListener('close',()=>form.reset());
+ form.onsubmit=async e=>{e.preventDefault();save.disabled=true;status.textContent='Saving…';try{const j=await api(Object.fromEntries(new FormData(form)));form.elements.currentPassword.value='';window.dispatchEvent(new Event('links:names-changed'));status.textContent='Saved. Next time, sign in as '+j.loginName+'. Your password is unchanged.'}catch(e){status.textContent=e.message}finally{save.disabled=false}};
+})();

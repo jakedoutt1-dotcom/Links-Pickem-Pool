@@ -1,3 +1,4 @@
+import {findLoginPlayer} from '../../lib/player-login-name.js';
 import {recordPoolLogin} from '../../lib/login-activity.js';
 import {poolEmail,sendPoolEmail} from '../../lib/pool-email.js';
 import {commissionerSession} from '../../lib/commissioner-auth.js';
@@ -37,8 +38,8 @@ export async function onRequestPost({request,env}){
   const action=String(b.action||"");
   if(action==="login"){
     const name=String(b.player||b.name||"").trim(),password=String(b.password||"");
-    const row=await db.prepare("SELECT name,password_hash,salt FROM pool_players WHERE pool_id=? AND lower(name)=lower(?) LIMIT 1").bind(p.id,name).first();
-    const access=await db.prepare("SELECT status FROM newbuild_player_access WHERE pool_id=? AND lower(player_name)=lower(?) LIMIT 1").bind(p.id,name).first();
+    const row=await findLoginPlayer(db,p.id,name);
+    const access=await db.prepare("SELECT status FROM newbuild_player_access WHERE pool_id=? AND lower(player_name)=lower(?) LIMIT 1").bind(p.id,row?.name||name).first();
     if(!row||String(access?.status||"active")==="pending"||await hashPassword(password,row.salt)!==row.password_hash)return json({success:false,error:"Incorrect name or password."},401);
     const comm=await commissionerName(db,p.id),role=comm&&comm.toLowerCase()===String(row.name).toLowerCase()?"commissioner":"player";
     let token="";try{const exp=new Date(Date.now()+(b.remember===false?12*60*60*1000:30*24*60*60*1000)).toISOString();token=crypto.randomUUID()+crypto.randomUUID().replaceAll("-","");await db.prepare("INSERT INTO pool_sessions(token,pool_id,player_name,role,expires_at) VALUES(?,?,?,?,?)").bind(token,p.id,row.name,role==="commissioner"?"admin":"player",exp).run()}catch{token=""}
