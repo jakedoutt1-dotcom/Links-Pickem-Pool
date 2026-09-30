@@ -1,5 +1,10 @@
 // Shared pool tabs. The server, never a cached role or display name, grants access.
 (()=>{
+ const picksPage=/\/(nfl|college|survivor|confidence|game33|squares|props|playoff|march-madness|golf|nascar|fantasy|dynasty|custom)(?:\.html)?\/?$/i;
+ if(!picksPage.test(location.pathname))return;
+ const picksVisible=()=>{const row=document.getElementById('linksPoolActions');if(row){const view=new URLSearchParams(location.search).get('view');const hide=view&&view!=='picks';row.style.setProperty('display',hide?'none':'flex','important')}};
+ window.addEventListener('links-game-view',picksVisible);
+
  if(document.getElementById('linksCommissionerEntryModule'))return;
  const marker=document.createElement('meta');marker.id='linksCommissionerEntryModule';document.head.append(marker);
  // Compact shared actions on phones; additional pools stay reachable by swiping.
@@ -38,6 +43,7 @@
  if(!bar)return;const main=document.querySelector('main');if(!main)return;
  let row=document.getElementById('linksPoolActions');if(!row){row=document.createElement('div');row.id='linksPoolActions';row.style.cssText='grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:12px;width:100%;min-width:0;margin:12px 0';main.prepend(row)}
  if(bar.parentElement!==row)row.prepend(bar);
+ picksVisible();
  const home=document.getElementById('addMyHomepage');if(home&&home.parentElement!==row){home.style.margin='0 0 0 auto';home.style.flex='0 0 auto';row.append(home)}
  }
  function render(){
