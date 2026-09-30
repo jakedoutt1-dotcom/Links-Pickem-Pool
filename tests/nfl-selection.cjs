@@ -39,7 +39,7 @@ function scoreboard(week) {
       page.on('pageerror',e=>errors.push(e.message));
       await page.clock.install({time:new Date('2026-09-29T12:00:00Z')});
       await page.addInitScript(()=>{
-        localStorage.setItem('links-current-pool',JSON.stringify({id:'test-pool'}));
+        localStorage.setItem('links-current-pool',JSON.stringify({id:new URL(location.href).searchParams.get('pool')||'test-pool',code:'test-pool'}));
         if(!localStorage.getItem('links-player-id')){
           localStorage.setItem('links-player-id','Alice');
           localStorage.setItem('links-player-name','Alice');
@@ -86,6 +86,13 @@ function scoreboard(week) {
       assert.equal(await page.locator('#slate button:disabled').count(),2,'Voluntary lock survives both background controllers');
       assert.equal(await page.locator('#tieTotal').isDisabled(),true);
       assert.equal(await page.locator('#savePicksBtn').isEnabled(),true,'Unlock remains available before kickoff');
+      // Linked switching uses the numeric ID; normal login uses the pool code.
+      await page.goto(origin+'/new-build/nfl.html?pool=123&week=4');
+      await page.waitForFunction(()=>document.querySelectorAll('#slate [data-g]').length===2);
+      await page.clock.runFor(1600);
+      assert.equal(await page.locator('#slate button:disabled').count(),2,'Linked pool ID preserves saved lock');
+      assert.equal(await page.locator('#savePicksBtn').textContent(),'UNLOCK MY PICKS');
+      await page.goto(origin+'/new-build/nfl.html?pool=test-pool&week=4');
       await page.reload();
       await page.waitForFunction(()=>document.querySelectorAll('#slate [data-g]').length===2);
       await page.clock.runFor(1600);
