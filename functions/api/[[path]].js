@@ -1,3 +1,4 @@
+import {lookupPoolCode} from '../lib/pool-code-lookup.js';
 import {findLoginPlayer} from '../lib/player-login-name.js';
 import {poolGameKeys} from '../lib/pool-games.js';
 import {recordPoolLogin} from '../lib/login-activity.js';
@@ -602,7 +603,7 @@ async function ensureBarnesCommissionerV118(DB){
   await DB.prepare("INSERT INTO app_meta(key,value) VALUES('barnes_commissioner_j_barnes_v118','1') ON CONFLICT(key) DO UPDATE SET value='1'").run();
 }
 
-async function poolByCode(DB,code){return DB.prepare("SELECT * FROM pools WHERE code=?").bind(safeCode(code)).first()}
+async function poolByCode(DB,code){return lookupPoolCode(DB,code)}
 async function uniquePoolCode(DB,name){
   const cleaned=safeCode(name);
   const prefix=(cleaned.slice(0,3)||"LNK").padEnd(3,"X");
@@ -619,7 +620,7 @@ async function uniquePoolCode(DB,name){
 }
 async function poolLookup(DB,input){
   const raw=String(input||"").trim();
-  let p=await DB.prepare("SELECT * FROM pools WHERE code=?").bind(safeCode(raw)).first();
+  let p=await lookupPoolCode(DB,raw);
   if(p)return p;
   return DB.prepare("SELECT * FROM pools WHERE lower(name)=lower(?)").bind(raw).first();
 }
