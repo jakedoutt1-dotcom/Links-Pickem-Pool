@@ -36,7 +36,7 @@ export async function footballEntries({request,env}){
   const weekly=confidenceScore(entries.filter(p=>p.period===period),games),seasonScore=Object.entries(slates).reduce((sum,[w,gs])=>sum+confidenceScore(entries.filter(p=>Number(p.period.split('-')[2])===Number(w)),gs).score,0);return {player,...weekly,seasonScore};
  }).sort((a,b)=>game==='survivor'?a.losses-b.losses||b.wins-a.wins:b.score-a.score||a.player.localeCompare(b.player));
  let rank=0,last;standings.forEach((r,i)=>{const key=game==='survivor'?r.losses+':'+r.wins:r.score;if(key!==last)rank=i+1;r.rank=rank;last=key});
- if(request.method==='GET')return json({success:true,game,season,week,period,games,picks:mine,revision,standings,state:game==='survivor'?state:null,rules,startWeek,used:own.filter(p=>p.period!==period).map(p=>p.selection),player:s.player_name,active:(await poolGameKeys(db,pool.id)).includes(game)});
+ if(request.method==='GET')return json({success:true,role:s.role,game,season,week,period,games,picks:mine,revision,standings,state:game==='survivor'?state:null,rules,startWeek,used:own.filter(p=>p.period!==period).map(p=>p.selection),player:s.player_name,active:(await poolGameKeys(db,pool.id)).includes(game)});
  if(request.method!=='POST')return json({error:'Method not allowed.'},405);
  if(!(await poolGameKeys(db,pool.id)).includes(game))return json({error:'This game is read-only in your pool.'},403);
  if(season!==Number(current.season?.year)||week>currentWeek||Number(current.season?.type)!==2)return json({error:'Picks are open only for the current NFL regular season and available week.'},403);

@@ -51,6 +51,18 @@
  bar.replaceChildren();
  for(const pool of state.pools){const b=button(pool.name,async()=>{b.disabled=true;try{enter(await api({action:'open',pool:pool.id}))}catch(e){message.textContent=e.message;b.disabled=false}});b.style.cssText='flex:0 0 auto;white-space:nowrap';if(pool.id===state.currentPool){b.setAttribute('aria-current','page');b.disabled=true;b.style.cssText+=';background:#edc466!important;color:#101820!important;border-color:#edc466!important;opacity:1!important;filter:none!important;cursor:default;text-shadow:none!important'}bar.append(b)}
  const current=state.pools.find(p=>p.id===state.currentPool);
+ const pagePool=new URLSearchParams(location.search).get('pool');
+ if(state.commissioner&&current?.role==='admin'&&(!pagePool||[String(current.id),String(current.code)].includes(pagePool))){
+ const adminButton=button('Commissioner Admin',()=>{const page=location.pathname.split('/').pop().replace(/\.html$/,'');const setup={golf:'Golf',nascar:'NASCAR',custom:'Custom'};
+ if(page==='nfl'){location.assign('./commissioner.html?pool='+encodeURIComponent(current.id));return}
+ if(setup[page]){location.assign('./game-setup.html?'+new URLSearchParams({pool:current.id,game:setup[page]}));return}
+ const tab=[...document.querySelectorAll('[data-view="admin"],#leagueNav button,.format-nav button')].find(el=>el.dataset.view==='admin'||/Commissioner/i.test(el.textContent));
+ if(tab){tab.click();tab.scrollIntoView({block:'center',behavior:'smooth'});return}
+ const panel=document.getElementById('game33Admin');if(panel){panel.scrollIntoView({block:'start',behavior:'smooth'});return}
+ adminButton.textContent='Controls loading — tap again';
+ });adminButton.id='linksGameAdmin';bar.append(adminButton);
+ }
+
  if(current?.games?.length>1){const change=document.createElement('a');change.className='action';change.href='./control-center.html?pool='+encodeURIComponent(state.currentPool);change.textContent='Change Game';change.style.whiteSpace='nowrap';bar.append(change)}
  if(state.commissioner){const a=document.createElement('a');const page=location.pathname.split('/').pop(),q=new URLSearchParams(location.search);let game=Object.keys(routes).find(k=>routes[k]===page);if(!game&&/^(nfl-|compare-picks|pick-tools|year-standings)/.test(page))game='nfl';if(!game&&page==='commissioner.html')game=/college/i.test(q.get('game')||'')?'college':'nfl';a.href='./commissioner-hub.html'+(game?'?returnGame='+encodeURIComponent(game):'');a.className='action';a.dataset.commissionerPools='1';a.textContent='＋ Add Pool / Game';a.style.whiteSpace='nowrap';bar.append(a)}
  bar.append(button(state.verified?'Link this player':'Connect my pools',connect));const message=document.createElement('span');message.setAttribute('role','status');message.setAttribute('aria-live','polite');bar.append(message);

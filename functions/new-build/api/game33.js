@@ -8,5 +8,6 @@ export async function onRequest(context){
  if(!(await poolGameKeys(env.DB,pool.id)).includes('33'))return Response.json({error:'Game 33 is not active in this pool.'},{status:403});
  if(request.method==='POST'&&!['random-draw','manual-draw','access','finalize','payout'].includes(action)||request.method==='GET'&&!['','default-week'].includes(action))return Response.json({error:'Unsupported Game 33 action.'},{status:400});
  url.pathname='/api/33'+(action?'/'+action:'');
- return legacy({...context,request:new Request(url,request)});
+ const response=await legacy({...context,request:new Request(url,request)});
+ if(request.method==='GET'&&response.ok){const data=await response.json();return Response.json({...data,role:s.role},{headers:{'Cache-Control':'no-store'}})}return response;
 }

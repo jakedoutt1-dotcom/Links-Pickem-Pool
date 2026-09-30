@@ -35,3 +35,5 @@ const LINKS_BUILD=window.LINKS_BUILD||'711';
 })();
 
 (()=>{function start(){const s=document.createElement('script');s.src='./commissioner-entry.js';document.head.appendChild(s)}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start()})();
+
+(()=>{function startGuides(){if(document.getElementById('linksGuideScript'))return;const s=document.createElement('script');s.id='linksGuideScript';s.src='./game-guides.js';document.head.appendChild(s)}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',startGuides,{once:true});else startGuides()})();

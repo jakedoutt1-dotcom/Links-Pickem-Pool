@@ -13,7 +13,7 @@
  const games=data.games;selected.games=games.map(g=>g.name);selected.role=session.role==='admin'?'commissioner':'player';localStorage.setItem('links-current-pool',JSON.stringify(selected));
  document.getElementById('controlTitle').textContent=selected.name+' · CONTROL CENTER';
  grid.innerHTML=games.map(g=>{
- const formatArt={squares:'/football-squares-logo-v102.png',props:'/super-bowl-props-logo-v102.jpg',playoff:'/nfl-playoff-challenge-logo-v102.jpg'};const picture=formatArt[g.key]?'<img src="'+formatArt[g.key]+'" alt="">':art[g.key]?'<img src="./assets/ChatGPT Image Sep 22, 2026, '+art[g.key]+' PM.png" alt="" loading="lazy">':'<span class="game-symbol" aria-hidden="true">🏆</span>';
+ const formatArt={dynasty:'/dynasty-fantasy-football-logo-v157.png',squares:'/football-squares-logo-v102.png',props:'/super-bowl-props-logo-v102.jpg',playoff:'/nfl-playoff-challenge-logo-v102.jpg'};const picture=formatArt[g.key]?'<img src="'+formatArt[g.key]+'" alt="">':art[g.key]?'<img src="./assets/ChatGPT Image Sep 22, 2026, '+art[g.key]+' PM.png" alt="" loading="lazy">':'<span class="game-symbol" aria-hidden="true">🏆</span>';
  const content=picture+'<span>'+esc(g.name)+'</span><small>'+(routes[g.key]?'PLAY NOW →':'Not available yet')+'</small>';
  return routes[g.key]?'<a href="./'+routes[g.key]+'?pool='+encodeURIComponent(selected.id)+'&game='+encodeURIComponent(g.name)+'">'+content+'</a>':'<div class="unavailable-game">'+content+'</div>';
  }).join('')||'<p>No active games are available in this pool. Your commissioner can manage games from My Pools.</p>';
