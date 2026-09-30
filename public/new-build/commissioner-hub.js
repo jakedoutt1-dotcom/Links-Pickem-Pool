@@ -1,6 +1,6 @@
 (()=>{
  const $=id=>document.getElementById(id),key='links-account-token',esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const routes={nfl:'nfl.html',college:'college.html',survivor:'survivor.html',confidence:'confidence.html','33':'game33.html',march:'march-madness.html',masters:'golf.html',nascar:'nascar.html',fantasy:'fantasy.html',custom:'custom.html'};
+ const routes={nfl:'nfl.html',college:'college.html',survivor:'survivor.html',confidence:'confidence.html','33':'game33.html',squares:'squares.html',props:'props.html',playoff:'playoff.html',march:'march-madness.html',masters:'golf.html',nascar:'nascar.html',fantasy:'fantasy.html',dynasty:'dynasty.html',custom:'custom.html'};
  async function returnToPicks(){
  const link=$('backToPicks'),token=localStorage.getItem('links-legacy-token')||localStorage.getItem('links-token');if(!link||!token)return;
  let pool;try{pool=JSON.parse(localStorage.getItem('links-current-pool')||'null')}catch{return}if(!pool?.id)return;

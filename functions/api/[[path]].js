@@ -1387,7 +1387,7 @@ async function syncWeek(DB,pid,sport,w){
     if(!ev)ev=feed.find(x=>(x.away===b.away&&x.home===b.home)||(x.away===b.home&&x.home===b.away));
     let g=ev?{...b,...ev,gameIndex:i}:{...b,gameIndex:i,completed:false,winner:null,status:"",awayScore:null,homeScore:null};
     const snap=snaps.get(i);
-    if(snap){
+    if(snap&&!live&&String(b.status)==="FINAL"){
       g={...g,completed:true,winner:snap.winner,status:"FINAL",state:"post",clock:"",
         awayScore:snap.away_score==null?g.awayScore:Number(snap.away_score),
         homeScore:snap.home_score==null?g.homeScore:Number(snap.home_score)};
@@ -1496,6 +1496,16 @@ function shuffle33(arr){
   }
   return a;
 }
+async function commitGame33Draw(DB,pid,assignments,source){
+ await DB.prepare("CREATE TABLE IF NOT EXISTS links_33_draw_locks(pool_id INTEGER PRIMARY KEY,nonce TEXT NOT NULL)").run();
+ const nonce=crypto.randomUUID(),now=new Date().toISOString(),guard="EXISTS(SELECT 1 FROM links_33_draw_locks WHERE pool_id=? AND nonce=?)";
+ const statements=[DB.prepare("INSERT INTO links_33_draw_locks(pool_id,nonce) SELECT ?,? WHERE NOT EXISTS(SELECT 1 FROM pool_33_state WHERE pool_id=? AND draw_locked=1) ON CONFLICT(pool_id) DO NOTHING").bind(pid,nonce,pid),
+ DB.prepare("DELETE FROM pool_33_assignments WHERE pool_id=? AND "+guard).bind(pid,pid,nonce)];
+ for(const a of assignments)statements.push(DB.prepare("INSERT INTO pool_33_assignments(pool_id,player_name,team,assigned_at,source) SELECT ?,?,?,?,? WHERE "+guard).bind(pid,a.player,String(a.team).toUpperCase(),now,source,pid,nonce));
+ statements.push(DB.prepare("INSERT INTO pool_33_state(pool_id,draw_locked,draw_source,draw_at) SELECT ?,1,?,? WHERE "+guard+" ON CONFLICT(pool_id) DO UPDATE SET draw_locked=1,draw_source=excluded.draw_source,draw_at=excluded.draw_at").bind(pid,source,now,pid,nonce));
+ const saved=await DB.batch(statements);return Number(saved[0].meta?.changes)>0;
+}
+
 async function game33PaidMap(DB,pid){
   const rows=(await DB.prepare("SELECT player_name,paid FROM pool_33_entries WHERE pool_id=?").bind(pid).all()).results||[];
   return Object.fromEntries(rows.map(r=>[r.player_name,Number(r.paid)===1]));
@@ -1519,7 +1529,7 @@ async function game33DefaultWeek(DB,pid){
 }
 async function game33AutoFinalizeV391(DB,pid,w){
   const existing=await DB.prepare("SELECT finalized FROM pool_33_week_meta WHERE pool_id=? AND week=?").bind(pid,w).first();if(Number(existing?.finalized||0)===1)return false;
-  const assignments=(await DB.prepare("SELECT player_name,team FROM pool_33_assignments WHERE pool_id=? ORDER BY rowid").bind(pid).all()).results||[];if(!assignments.length)return false;
+  const assignments=(await DB.prepare("SELECT player_name,team FROM pool_33_assignments WHERE pool_id=? ORDER BY rowid").bind(pid).all()).results||[];if(!assignments.length)return false;if(w>await game33DefaultWeek(DB,pid))return false;
   let live=[];try{live=await fetchNFLWeek(w)}catch(e){return false}if(!live.length||live.some(g=>!g.completed))return false;
   const paid=await game33PaidMap(DB,pid),scores={};for(const g of live){scores[g.away]=Number(g.awayScore);scores[g.home]=Number(g.homeScore)}
   const winners=assignments.filter(a=>paid[a.player_name]&&scores[a.team]===33).map(a=>({player:a.player_name,team:a.team}));
@@ -1815,7 +1825,7 @@ function shuffledDigits(){
   for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}
   return a;
 }
-function numArray(v){try{const a=JSON.parse(v||"[]");return Array.isArray(a)&&a.length===10?a.map(Number):[]}catch(e){return []}}
+function numArray(v){try{const a=JSON.parse(v||"[]");return Array.isArray(a)&&a.length===10&&a.every(x=>Number.isInteger(Number(x))&&Number(x)>=0&&Number(x)<=9)&&new Set(a.map(Number)).size===10?a.map(Number):[]}catch(e){return []}}
 async function squareLiveScore(eventId){
   if(!eventId)return null;
   const j=await getJSON(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=${encodeURIComponent(eventId)}&_=${Date.now()}`);
@@ -1824,11 +1834,12 @@ async function squareLiveScore(eventId){
   const away=cs.find(x=>x.homeAway==="away")||cs[0],home=cs.find(x=>x.homeAway==="home")||cs[1];
   const periods=(c)=>Array.isArray(c?.linescores)?c.linescores.map(x=>Number(x?.value??x?.displayValue??0)||0):[];
   const ap=periods(away),hp=periods(home),sum=(a,n)=>a.slice(0,n).reduce((x,y)=>x+y,0);
-  const finalAway=Number(away?.score||0)||0,finalHome=Number(home?.score||0)||0;
+  const finished=!!comp?.status?.type?.completed,period=Number(comp?.status?.period||0),ended=n=>finished||period>n||n===2&&comp?.status?.type?.name==='STATUS_HALFTIME';
+  const finalAway=finished?Number(away?.score):null,finalHome=finished?Number(home?.score):null;
   return {
-    q1Away:ap.length?sum(ap,1):null,q1Home:hp.length?sum(hp,1):null,
-    halfAway:ap.length>=2?sum(ap,2):null,halfHome:hp.length>=2?sum(hp,2):null,
-    q3Away:ap.length>=3?sum(ap,3):null,q3Home:hp.length>=3?sum(hp,3):null,
+    q1Away:ended(1)&&ap.length?sum(ap,1):null,q1Home:ended(1)&&hp.length?sum(hp,1):null,
+    halfAway:ended(2)&&ap.length>=2?sum(ap,2):null,halfHome:ended(2)&&hp.length>=2?sum(hp,2):null,
+    q3Away:ended(3)&&ap.length>=3?sum(ap,3):null,q3Home:ended(3)&&hp.length>=3?sum(hp,3):null,
     finalAway,finalHome,
     completed:!!comp?.status?.type?.completed,
     period:Number(comp?.status?.period||0),status:comp?.status?.type?.shortDetail||comp?.status?.type?.detail||""
@@ -2389,7 +2400,7 @@ export async function onRequest(context){
       const now=new Date().toISOString(),lives=Math.max(1,Number(settings.lives||1));
       for(const [player,periods] of byPlayer){
         let score=0,status="OPEN",losses=0,graded=0,total=0,detail={periods:[]};
-        for(const p of periods){const games=feeds.get(p.week)||[],finals=games.filter(g=>g.completed&&g.winner),byId=new Map(finals.map((g,i)=>[String(g.eventId||g.id||(g.gameIndex??i)),g.winner])),byIndex=new Map(finals.map((g,i)=>[Number(g.gameIndex??i),g.winner]));
+        for(const p of periods){const games=feeds.get(p.week)||[],finals=games.filter(g=>g.completed&&g.winner),byId=new Map(finals.map((g,i)=>[String(g.eventId||g.id||(g.gameIndex??games.indexOf(g))),g.winner])),byIndex=new Map(finals.map((g,i)=>[Number(g.gameIndex??games.indexOf(g)),g.winner]));
           if(gt==="survivor"){const team=String(p.entry.team||""),game=games.find(g=>g.away===team||g.home===team);let result="PENDING";if(game?.completed){graded++;if(game.winner===team){score++;result="WIN"}else{losses++;result="LOSS"}}detail.periods.push({week:p.week,team,result})}
           else{const picks=Array.isArray(p.entry.picks)?p.entry.picks:[];let periodScore=0,periodGraded=0;total+=picks.length;for(const x of picks){const win=byId.get(String(x.eventId||""))||byIndex.get(Number(x.gameIndex));if(!win)continue;periodGraded++;graded++;if(String(x.team)===String(win))periodScore+=gt==="confidence"?Math.max(0,Number(x.confidence||0)):Math.max(1,Number(settings[p.week===19?"wildCardPoints":p.week===20?"divisionalPoints":p.week===21?"conferencePoints":"superBowlPoints"]||1))}score+=periodScore;detail.periods.push({week:p.week,score:periodScore,graded:periodGraded,picks:picks.length})}
         }
@@ -2400,6 +2411,7 @@ export async function onRequest(context){
       }
     }
     async function autoScorePropsV386(settings){
+      const deadline=Date.parse(settings.lockTime||settings.deadline||settings.eventDate||"");if(!Number.isFinite(deadline)||Date.now()<deadline)return;
       const answers=String(settings.officialAnswers||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
       if(!answers.length)return;
       const rows=(await DB.prepare("SELECT player_name,entry_json FROM special_game_entries WHERE pool_id=? AND game_type='props'").bind(pid).all()).results||[],pts=Math.max(0,Number(settings.pointsPerQuestion||1)),now=new Date().toISOString();
@@ -2451,7 +2463,8 @@ export async function onRequest(context){
       const mine=entries.find(x=>String(x.player_name).toLowerCase()===String(s.player_name||"").toLowerCase());
       let myEntry={};try{myEntry=JSON.parse(mine?.entry_json||"{}")||{}}catch(e){}
       const publicEntries=entries.map(x=>{let entry={};try{entry=JSON.parse(x.entry_json||"{}")||{}}catch(e){}return {playerName:x.player_name,entry,submittedAt:x.submitted_at}});
-      return json({gameType:gt,settings,myEntry,mySubmittedAt:mine?.submitted_at||null,entries:s.role==="admin"||String(settings.revealPicks||"").toLowerCase()==="true"?publicEntries:[],entryCount:entries.length,history:history.map(x=>{let entry={};try{entry=JSON.parse(x.entry_json||"{}")||{}}catch(e){}return {playerName:x.player_name,periodKey:x.period_key,entry,submittedAt:x.submitted_at}}),scores:scores.map(x=>{let detail={};try{detail=JSON.parse(x.detail_json||"{}")||{}}catch(e){}return {playerName:x.player_name,score:Number(x.score||0),status:x.status,updatedAt:x.updated_at,manualOverride:!!detail.manualOverride}})});
+      const visibleSettings={...settings};if(s.role!=="admin")delete visibleSettings.officialAnswers;
+      return json({gameType:gt,settings:visibleSettings,myEntry,mySubmittedAt:mine?.submitted_at||null,entries:s.role==="admin"||String(settings.revealPicks||"").toLowerCase()==="true"?publicEntries:[],entryCount:entries.length,history:history.filter(x=>x.player_name===s.player_name||String(settings.revealPicks).toLowerCase()==="true").map(x=>{let entry={};try{entry=JSON.parse(x.entry_json||"{}")||{}}catch(e){}return {playerName:x.player_name,periodKey:x.period_key,entry,submittedAt:x.submitted_at}}),scores:scores.map(x=>{let detail={};try{detail=JSON.parse(x.detail_json||"{}")||{}}catch(e){}return {playerName:x.player_name,score:Number(x.score||0),status:x.status,updatedAt:x.updated_at,manualOverride:!!detail.manualOverride}})});
     }
     if(path==="special/entry"&&method==="POST"){
       const gt=String(body.gameType||"").trim().toLowerCase();
@@ -2459,13 +2472,39 @@ export async function onRequest(context){
       if(!sessionCanPlay(s))return json({error:"A player account is required to submit an entry."},403);
       const entry=body.entry&&typeof body.entry==="object"&&!Array.isArray(body.entry)?body.entry:{};
       const rawSettings=await getPoolSetting(DB,pid,`game_settings_${gt}`,"{}");let gameSettings={};try{gameSettings=JSON.parse(rawSettings||"{}")||{}}catch(e){}
+      if(["props","playoff"].includes(gt)&&gameSettings.linksFormat&&body.settingsRevision!==gameSettings.linksRevision)return json({error:"The game settings changed. Refresh the new game page before submitting."},409);
       const lockRaw=String(gameSettings.lockTime||gameSettings.deadline||gameSettings.eventDate||"").trim();
       if(lockRaw&&Number.isFinite(Date.parse(lockRaw))&&Date.parse(lockRaw)<=Date.now())return json({error:"Entries are locked for this game."},409);
-      if(gt==="props"){const questions=String(gameSettings.propQuestions||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean),a=Array.isArray(entry.answers)?entry.answers:[];if(questions.length&&a.length!==questions.length)return json({error:"Answer every prop question before saving."},400)}
+      if(gt==="props"&&(!lockRaw||!Number.isFinite(Date.parse(lockRaw))))return json({error:"The commissioner must set a valid deadline before props open."},409);
+      if(gt==="props"){const questions=String(gameSettings.propQuestions||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean),a=Array.isArray(entry.answers)?entry.answers:[];if(!questions.length||a.length!==questions.length||a.some(x=>typeof x!=="string"||!x.trim()||x.length>300))return json({error:"Answer every prop question before saving."},400)}
       if(gt==="masters"){const max=Math.max(1,Number(gameSettings.lineupSize||6)),a=Array.isArray(entry.golfers)?entry.golfers:[];if(a.length!==max)return json({error:`Choose exactly ${max} golfers.`},400)}
       if(gt==="nascar"){const max=Math.max(1,Number(gameSettings.driversPerPlayer||1)),a=Array.isArray(entry.drivers)?entry.drivers:[];if(a.length!==max)return json({error:`Choose exactly ${max} drivers.`},400)}
       if(["survivor","confidence","playoff"].includes(gt)){
-        const wk=Math.max(1,Math.min(22,Number(entry.week||1))),periodKey=String(wk);
+        const wk=Number(entry.week),periodKey=String(wk);
+        if(!Number.isInteger(wk)||wk<1||wk>22||gt==='playoff'&&wk<19||gt!=='playoff'&&wk>18)return json({error:"Choose a valid week for this game."},400);
+        const slate=await fetchNFLWeek(wk);if(!slate.length)return json({error:"NFL schedule unavailable."},503);
+        const first=Math.min(...slate.map(g=>Date.parse(g.kickoff)));
+        if(!Number.isFinite(first)||Date.now()>=first||slate.some(g=>g.completed))return json({error:"This week's entries locked at first kickoff."},409);
+        if(gt==='survivor'&&!slate.some(g=>g.away===String(entry.team)||g.home===String(entry.team)))return json({error:"Choose a team playing this week."},400);
+        if(gt==='survivor'){
+          const history=(await DB.prepare("SELECT player_name,period_key,entry_json FROM special_game_period_entries WHERE pool_id=? AND game_type='survivor'").bind(pid).all()).results||[];
+          const start=Math.min(wk,...history.map(r=>Number(r.period_key))),lives=Math.max(1,Number(gameSettings.lives)||1);let losses=0;
+          for(let previous=start;previous<wk;previous++){
+            const row=history.find(r=>r.player_name===s.player_name&&Number(r.period_key)===previous),pick=row?JSON.parse(row.entry_json):null,prior=await fetchNFLWeek(previous);
+            if(!prior.length)return json({error:"Previous Survivor results are unavailable."},503);
+            const played=prior.find(g=>g.away===pick?.team||g.home===pick?.team);
+            if(pick&&!played?.completed)return json({error:"Your prior Survivor result is pending."},409);
+            if(!pick||played.winner!==pick.team)losses++;
+          }
+          if(losses>=lives)return json({error:"Your Survivor entry is eliminated."},403);
+        }
+        if(gt==='confidence'||gt==='playoff'){
+          const picks=Array.isArray(entry.picks)?entry.picks:[],seen=new Set();
+          for(const pick of picks){const match=pick.eventId?slate.find(g=>String(g.eventId||g.id)===String(pick.eventId)):slate[Number(pick.gameIndex)];
+            if(!match||seen.has(match)||![match.away,match.home].includes(String(pick.team)))return json({error:"Choose one valid team in each matchup."},400);seen.add(match);
+          }
+          if(seen.size!==slate.length)return json({error:"Pick every matchup before saving."},400);
+        }
         if(gt==="survivor"&&String(gameSettings.noReuse||"true")!=="false"){
           const old=(await DB.prepare("SELECT entry_json FROM special_game_period_entries WHERE pool_id=? AND game_type='survivor' AND player_name=? AND period_key<>?").bind(pid,s.player_name,periodKey).all()).results||[];
           const used=old.map(x=>{try{return String(JSON.parse(x.entry_json||"{}").team||"")}catch(e){return ""}}).filter(Boolean);
@@ -2535,6 +2574,7 @@ export async function onRequest(context){
       if(s.role!=="admin")return json({error:"Commissioner only."},403);
       const gt=String(body.gameType||"").trim().toLowerCase();
       if(!VALID_POOL_GAMES.includes(gt))return json({error:"Choose a valid game."},400);
+      const previousSettings=await getPoolSetting(DB,pid,"game_settings_"+gt,"{}");if(["props","playoff"].includes(gt)&&JSON.parse(previousSettings||"{}").linksFormat)return json({error:"Use the new commissioner page for this game to change rules or official answers."},409);
       const incoming=body.settings&&typeof body.settings==="object"&&!Array.isArray(body.settings)?body.settings:{};
       const clean={};
       for(const [k,v] of Object.entries(incoming).slice(0,40)){
@@ -2561,6 +2601,7 @@ export async function onRequest(context){
       const sw=Math.max(1,Math.min(22,Number(body.week||1))),eventId=String(body.eventId||"").trim();
       const games=await fetchNFLWeek(sw),g=games.find(x=>String(x.id||x.eventId||"")===eventId);
       if(!g)return json({error:"Choose a valid NFL game."},400);
+      if(!Number.isFinite(Date.parse(g.kickoff))||Date.now()>=Date.parse(g.kickoff))return json({error:"Create the board before kickoff."},409);
       const price=Math.max(0,Number(body.price||0)),q1=Math.max(0,Number(body.payoutQ1||0)),half=Math.max(0,Number(body.payoutHalf||0)),q3=Math.max(0,Number(body.payoutQ3||0)),fin=Math.max(0,Number(body.payoutFinal||0));
       const title=String(body.title||`${g.awayName||g.away} vs ${g.homeName||g.home} Squares`).trim().slice(0,100);
       const r=await DB.prepare("INSERT INTO squares_boards(pool_id,title,event_id,week,away,home,away_name,home_name,kickoff,price,payout_q1,payout_half,payout_q3,payout_final,status,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,\'OPEN\',?)")
@@ -2571,18 +2612,18 @@ export async function onRequest(context){
       const boardId=Number(body.boardId),idx=Number(body.squareIndex);
       if(!Number.isInteger(idx)||idx<0||idx>99)return json({error:"Choose a valid square."},400);
       const b=await DB.prepare("SELECT * FROM squares_boards WHERE id=? AND pool_id=?").bind(boardId,pid).first();if(!b)return json({error:"Board not found."},404);
-      if(String(b.status)!=="OPEN"||numArray(b.numbers_away).length)return json({error:"This board is closed for square selection."},409);
+      if(String(b.status)!=="OPEN"||numArray(b.numbers_away).length||!Number.isFinite(Date.parse(b.kickoff))||Date.now()>=Date.parse(b.kickoff))return json({error:"This board is closed for square selection."},409);
       let player=s.role==="admin"?String(body.playerName||"").trim():s.player_name;
       if(!player)return json({error:"Choose a player."},400);
       const ex=await DB.prepare("SELECT 1 ok FROM pool_players WHERE pool_id=? AND name=?").bind(pid,player).first();if(!ex)return json({error:"Player not found in this pool."},400);
-      try{await DB.prepare("INSERT INTO squares_claims(board_id,square_index,player_name,paid,claimed_at) VALUES(?,?,?,0,?)").bind(boardId,idx,player,new Date().toISOString()).run()}
+      try{const saved=await DB.prepare("INSERT INTO squares_claims(board_id,square_index,player_name,paid,claimed_at) SELECT ?,?,?,0,? WHERE EXISTS(SELECT 1 FROM squares_boards WHERE id=? AND pool_id=? AND status='OPEN' AND (numbers_away IS NULL OR numbers_away='[]' OR numbers_away='') AND kickoff>?)").bind(boardId,idx,player,new Date().toISOString(),boardId,pid,new Date().toISOString()).run();if(!saved.meta?.changes)return json({error:"This board closed before the claim saved."},409)}
       catch(e){return json({error:"That square has already been claimed."},409)}
       return json({ok:true});
     }
     if(path==="squares/unclaim"&&method==="POST"){
       const boardId=Number(body.boardId),idx=Number(body.squareIndex);
       const b=await DB.prepare("SELECT * FROM squares_boards WHERE id=? AND pool_id=?").bind(boardId,pid).first();if(!b)return json({error:"Board not found."},404);
-      if(numArray(b.numbers_away).length)return json({error:"Numbers have already been drawn."},409);
+      if(String(b.status)!=="OPEN"||numArray(b.numbers_away).length||!Number.isFinite(Date.parse(b.kickoff))||Date.now()>=Date.parse(b.kickoff))return json({error:"Square selections are locked."},409);
       const c=await DB.prepare("SELECT player_name FROM squares_claims WHERE board_id=? AND square_index=?").bind(boardId,idx).first();
       if(!c)return json({ok:true});if(s.role!=="admin"&&c.player_name!==s.player_name)return json({error:"You can only release your own square."},403);
       await DB.prepare("DELETE FROM squares_claims WHERE board_id=? AND square_index=?").bind(boardId,idx).run();return json({ok:true});
@@ -2590,18 +2631,18 @@ export async function onRequest(context){
     if(path==="squares/draw"&&method==="POST"){
       if(s.role!=="admin")return json({error:"Commissioner only."},403);
       const boardId=Number(body.boardId),b=await DB.prepare("SELECT * FROM squares_boards WHERE id=? AND pool_id=?").bind(boardId,pid).first();if(!b)return json({error:"Board not found."},404);
-      if(numArray(b.numbers_away).length)return json({error:"Numbers are already locked for this board."},409);
+      if(String(b.status)!=="OPEN"||numArray(b.numbers_away).length||!Number.isFinite(Date.parse(b.kickoff))||Date.now()>=Date.parse(b.kickoff))return json({error:"Numbers must be drawn once before kickoff."},409);
       const away=shuffledDigits(),home=shuffledDigits();
-      await DB.prepare("UPDATE squares_boards SET numbers_away=?,numbers_home=?,status='LOCKED' WHERE id=? AND pool_id=?").bind(JSON.stringify(away),JSON.stringify(home),boardId,pid).run();
-      return json({ok:true,awayNums:away,homeNums:home});
+      const drawn=await DB.prepare("UPDATE squares_boards SET numbers_away=?,numbers_home=?,status='LOCKED' WHERE id=? AND pool_id=? AND status='OPEN' AND (numbers_away IS NULL OR numbers_away='[]' OR numbers_away='')").bind(JSON.stringify(away),JSON.stringify(home),boardId,pid).run();
+      if(!drawn.meta?.changes)return json({error:"Numbers have already been drawn."},409);return json({ok:true,awayNums:away,homeNums:home});
     }
     if(path==="squares/paid"&&method==="POST"){
       if(s.role!=="admin")return json({error:"Commissioner only."},403);
-      await DB.prepare("UPDATE squares_claims SET paid=? WHERE board_id=? AND square_index=?").bind(body.paid?1:0,Number(body.boardId),Number(body.squareIndex)).run();return json({ok:true});
+      await DB.prepare("UPDATE squares_claims SET paid=? WHERE board_id=? AND square_index=? AND EXISTS(SELECT 1 FROM squares_boards WHERE id=board_id AND pool_id=?)").bind(body.paid?1:0,Number(body.boardId),Number(body.squareIndex),pid).run();return json({ok:true});
     }
     if(path==="squares/delete"&&method==="POST"){
       if(s.role!=="admin")return json({error:"Commissioner only."},403);
-      const id=Number(body.boardId);await DB.prepare("DELETE FROM squares_claims WHERE board_id=?").bind(id).run();await DB.prepare("DELETE FROM squares_results WHERE board_id=?").bind(id).run();await DB.prepare("DELETE FROM squares_boards WHERE id=? AND pool_id=?").bind(id,pid).run();return json({ok:true});
+      const id=Number(body.boardId);const owned=await DB.prepare("SELECT id FROM squares_boards WHERE id=? AND pool_id=?").bind(id,pid).first();if(!owned)return json({error:"Board not found."},404);await DB.prepare("DELETE FROM squares_claims WHERE board_id=?").bind(id).run();await DB.prepare("DELETE FROM squares_results WHERE board_id=?").bind(id).run();await DB.prepare("DELETE FROM squares_boards WHERE id=? AND pool_id=?").bind(id,pid).run();return json({ok:true});
     }
 
     if(path==="march/state"&&method==="GET"){
@@ -2809,10 +2850,7 @@ export async function onRequest(context){
       if(!players.length)return json({error:"Add players before running the draw."},400);
       if(players.length>32)return json({error:"There are only 32 NFL teams. 33 supports up to 32 players."},400);
       const teams=shuffle33(NFL_TEAM_CODES_33);
-      await DB.prepare("DELETE FROM pool_33_assignments WHERE pool_id=?").bind(pid).run();
-      const stm=players.map((p,i)=>DB.prepare("INSERT INTO pool_33_assignments(pool_id,player_name,team,assigned_at,source) VALUES(?,?,?,?,?)").bind(pid,p,teams[i],new Date().toISOString(),"random"));
-      if(stm.length)await DB.batch(stm);
-      await DB.prepare("INSERT INTO pool_33_state(pool_id,draw_locked,draw_source,draw_at) VALUES(?,1,'random',?) ON CONFLICT(pool_id) DO UPDATE SET draw_locked=1,draw_source='random',draw_at=excluded.draw_at").bind(pid,new Date().toISOString()).run();
+      if(!await commitGame33Draw(DB,pid,players.map((player,i)=>({player,team:teams[i]})),"random"))return json({error:"The season draw was already saved. Refresh to see it."},409);
       return json({ok:true,assignments:players.map((p,i)=>({player:p,team:teams[i]}))});
     }
     if(path==="33/manual-draw"&&method==="POST"){
@@ -2831,10 +2869,7 @@ export async function onRequest(context){
         if(seenT.has(t))return json({error:`${t} is assigned to more than one player.`},400);
         seenP.add(p);seenT.add(t);
       }
-      await DB.prepare("DELETE FROM pool_33_assignments WHERE pool_id=?").bind(pid).run();
-      const stm=assignments.map(a=>DB.prepare("INSERT INTO pool_33_assignments(pool_id,player_name,team,assigned_at,source) VALUES(?,?,?,?,?)").bind(pid,a.player,a.team,new Date().toISOString(),"manual"));
-      if(stm.length)await DB.batch(stm);
-      await DB.prepare("INSERT INTO pool_33_state(pool_id,draw_locked,draw_source,draw_at) VALUES(?,1,'manual',?) ON CONFLICT(pool_id) DO UPDATE SET draw_locked=1,draw_source='manual',draw_at=excluded.draw_at").bind(pid,new Date().toISOString()).run();
+      if(!await commitGame33Draw(DB,pid,assignments,"manual"))return json({error:"The season draw was already saved. Refresh to see it."},409);
       return json({ok:true});
     }
     if(path==="33/access"&&method==="POST"){
@@ -2859,11 +2894,12 @@ export async function onRequest(context){
     if(path==="33/finalize"&&method==="POST"){
       if(s.role!=="admin")return json({error:"Commissioner only."},403);
       const week33=Math.max(1,Math.min(18,w));
+      const existing=await DB.prepare("SELECT finalized FROM pool_33_week_meta WHERE pool_id=? AND week=?").bind(pid,week33).first();if(existing?.finalized)return json({error:"This week is already finalized. Saved payout is unchanged."},409);if(week33>await game33DefaultWeek(DB,pid))return json({error:"Finalize earlier weeks first so rollover is correct."},409);
       const assignments=(await DB.prepare("SELECT player_name,team FROM pool_33_assignments WHERE pool_id=? ORDER BY rowid").bind(pid).all()).results||[];
       if(!assignments.length)return json({error:"Set the yearly team draw first."},400);
       const live=await fetchNFLWeek(week33);
       const expected=live.length,completed=live.filter(g=>g.completed).length;
-      if(expected&&completed<expected)return json({error:`Week ${week33} is not finished yet. ${completed} of ${expected} games are final.`},409);
+      if(!expected||completed<expected)return json({error:`Week ${week33} is not finished yet. ${completed} of ${expected} games are final.`},409);
       const paid=await game33PaidMap(DB,pid),scores={};
       for(const g of live)if(g.completed){scores[g.away]=Number(g.awayScore);scores[g.home]=Number(g.homeScore)}
       const winners=assignments.filter(a=>paid[a.player_name]&&scores[a.team]===33).map(a=>({player:a.player_name,team:a.team}));
@@ -3037,7 +3073,10 @@ export async function onRequest(context){
       }
       if(await locked(DB,pid,sport,w))return json({error:"This week is locked."},403);
       const gl=await getGameList(DB,pid,sport,w);if(!gl.length)return json({error:sport==="college"?"The commissioner has not selected the college games for this week yet.":"No games available."},400);
-      const picks=body.picks||{};if(Object.keys(picks).length<gl.length)return json({error:"Every game needs a pick before saving."},400);
+      const firstKickoff=Math.min(...gl.map(g=>Date.parse(g.kickoff)));if(!Number.isFinite(firstKickoff)||Date.now()>=firstKickoff)return json({error:"This week is locked at first kickoff."},403);
+      const picks=body.picks||{};if(Object.entries(picks).some(([i,t])=>!gl[Number(i)]||![gl[Number(i)].away,gl[Number(i)].home].includes(t)))return json({error:"Choose a valid team for every matchup."},400);
+      if(body.tie==null||body.tie===""||!Number.isInteger(Number(body.tie))||Number(body.tie)<0||Number(body.tie)>200)return json({error:"Enter a whole-number tiebreaker from 0 to 200."},400);
+      if(Object.keys(picks).length<gl.length)return json({error:"Every game needs a pick before saving."},400);
       const stm=[DB.prepare("DELETE FROM pool_picks WHERE pool_id=? AND sport=? AND player_name=? AND week=?").bind(pid,sport,s.player_name,w)];
       for(let i=0;i<gl.length;i++)if(picks[i])stm.push(DB.prepare("INSERT INTO pool_picks(pool_id,sport,player_name,week,game_index,team) VALUES(?,?,?,?,?,?)").bind(pid,sport,s.player_name,w,i,picks[i]));
       stm.push(DB.prepare("INSERT INTO pool_ties(pool_id,sport,player_name,week,guess) VALUES(?,?,?,?,?) ON CONFLICT(pool_id,sport,player_name,week) DO UPDATE SET guess=excluded.guess").bind(pid,sport,s.player_name,w,body.tie===""||body.tie==null?null:Number(body.tie)));

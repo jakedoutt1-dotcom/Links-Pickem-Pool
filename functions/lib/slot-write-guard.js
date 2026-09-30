@@ -12,7 +12,7 @@ export async function slotWriteGuard(request,env){
  const pool=await env.DB.prepare('SELECT id FROM pools WHERE CAST(id AS TEXT)=? OR upper(code)=upper(?)').bind(String(raw),String(raw)).first();if(!pool)return null;
  const value=String(b.game||b.sport||new URL(request.url).searchParams.get('sport')||'').toLowerCase();
  const aliases={'nfl pick’em':'nfl','nfl pick\'em':'nfl','college pick’em':'college','college pick\'em':'college','game 33':'33','march madness':'march',golf:'masters'};
- let game=aliases[value]||value;if(!game){if(/college/.test(path))game='college';else if(/nfl|\/picks$|\/pick-page|\/admin\/(results|correction|lock|finalize|unfinalize)/.test(path))game='nfl';else game=['survivor','confidence','dynasty','fantasy','squares','nascar','masters','march','33'].find(g=>path.includes('/'+g))||''}
+ let game=aliases[value]||value;if(!game){if(/college/.test(path))game='college';else if(/nfl|\/picks$|\/pick-page|\/admin\/(results|correction|lock|finalize|unfinalize)/.test(path))game='nfl';else game=['survivor','confidence','dynasty','fantasy','squares','props','playoff','nascar','masters','march','33'].find(g=>path.includes('/'+g))||''}
  if(/\/new-build\/api\/nfl-/.test(path))game='nfl';
  if(/\/new-build\/api\/college$/.test(path))game='college';
  if(legacy&&/\/(picks|pick-page|admin\/(results|correction|lock|finalize|unfinalize))$/.test(path))game=/college/i.test(new URL(request.url).searchParams.get('sport')||b.sport||'')?'college':'nfl';

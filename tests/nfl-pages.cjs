@@ -11,6 +11,7 @@ const root=path.resolve(__dirname,'../public'),origin='http://nfl-pages.test';
     const w=Number(url.searchParams.get('week')||3);
     return json({week:{number:3},season:{type:2,year:2026},events:[{id:'g'+w,date:w<=3?'2026-09-24T00:00:00Z':'2026-10-02T00:00:00Z',status:{type:{completed:w<=3}},competitions:[{competitors:[{homeAway:'away',team:{id:'1',abbreviation:'BUF',shortDisplayName:'Bills'},score:'20',winner:true},{homeAway:'home',team:{id:'2',abbreviation:'MIA',shortDisplayName:'Dolphins'},score:'17'}]}]}]});
    }
+   if(url.pathname.endsWith('/api/season-standings'))return json({rows:[{name:'Alice',wins:36,losses:12,weekWins:3}],gradedWeeks:[1,2,3],failedWeeks:[],finalGames:48});
    if(url.pathname.endsWith('/api/standings-v649')){
     const w=Number(url.searchParams.get('week'));weeks.push(w);
     const wins={1:14,2:10,3:12}[w];
@@ -24,7 +25,7 @@ const root=path.resolve(__dirname,'../public'),origin='http://nfl-pages.test';
   });
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   await page.clock.install({time:new Date('2026-09-29T12:00:00Z')});
-  await page.addInitScript(()=>{localStorage.setItem('links-current-pool',JSON.stringify({id:'1'}));localStorage.setItem('links-player-id','Alice');localStorage.setItem('links-player-name','Alice')});
+  await page.addInitScript(()=>{localStorage.setItem('links-current-pool',JSON.stringify({id:'1'}));localStorage.setItem('links-player-id','Alice');localStorage.setItem('links-legacy-token','test');localStorage.setItem('links-player-name','Alice')});
   for(const file of ['nfl.html','nfl-scores.html','nfl-standings.html','compare-picks.html','pick-tools.html','year-standings.html']){
    await page.goto(origin+'/new-build/'+file+'?pool=1');
    await page.waitForFunction(()=>new URL(location.href).searchParams.get('week')==='4');
@@ -43,7 +44,7 @@ const root=path.resolve(__dirname,'../public'),origin='http://nfl-pages.test';
     await page.waitForFunction(()=>document.querySelector('#standings .player'));
     assert.equal(await page.locator('#standings .row:not(.head) .win').textContent(),'36');
     assert.equal(await page.locator('#standings .row:not(.head) .loss').textContent(),'12');
-    assert.ok(weeks.includes(22),'Season loads all week slots');
+    assert.match(await page.locator('#status').textContent(),/48 final games/);
     await page.waitForFunction(()=>document.querySelector('.links-nfl-shared-nav'));
     assert.equal(await page.locator('.links-unified-nav').count(),0,'No duplicate unstyled nav');
     assert.equal(await page.locator('.links-nfl-shared-nav').count(),1);

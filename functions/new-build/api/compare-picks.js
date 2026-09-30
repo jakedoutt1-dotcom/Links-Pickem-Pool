@@ -5,7 +5,8 @@ async function currentNFLWeek(){try{const r=await fetch("https://site.api.espn.c
 const norm=v=>({WAS:'WSH',JAC:'JAX',LA:'LAR'}[String(v||'').toUpperCase()]||String(v||'').toUpperCase());
 export async function weekGames(week){
  const apiWeek=week<=18?week:({19:1,20:2,21:3,22:5}[week]);
- const query='dates=2026&seasontype='+(week<=18?2:3)+'&week='+apiWeek+'&limit=100&_='+Date.now();
+ const now=new Date(),season=now.getUTCFullYear()-(now.getUTCMonth()<6?1:0);
+ const query='dates='+season+'&seasontype='+(week<=18?2:3)+'&week='+apiWeek+'&limit=100&_='+Date.now();
  // Match the established legacy ESPN transport, including its CDN fallback.
  const urls=['https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?'+query,'https://cdn.espn.com/core/nfl/scoreboard?xhr=1&'+query];
  let j;

@@ -1,5 +1,5 @@
 (async()=>{
- const routes={nfl:'nfl.html',college:'college.html',survivor:'survivor.html',confidence:'confidence.html','33':'game33.html',march:'march-madness.html',masters:'golf.html',nascar:'nascar.html',fantasy:'fantasy.html',custom:'custom.html'};
+ const routes={nfl:'nfl.html',college:'college.html',survivor:'survivor.html',confidence:'confidence.html','33':'game33.html',squares:'squares.html',props:'props.html',playoff:'playoff.html',march:'march-madness.html',masters:'golf.html',nascar:'nascar.html',fantasy:'fantasy.html',dynasty:'dynasty.html',custom:'custom.html'};
  const art={nfl:'06_30_15',college:'06_30_10',march:'06_30_04',masters:'06_30_00',nascar:'06_29_55',fantasy:'06_29_32',survivor:'06_29_27',confidence:'06_29_45','33':'06_29_50',custom:'06_29_20'};
  const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const grid=document.getElementById('topGameGrid');
@@ -12,7 +12,7 @@
  const games=data.games;selected.games=games.map(g=>g.name);selected.role=session.role==='admin'?'commissioner':'player';localStorage.setItem('links-current-pool',JSON.stringify(selected));
  document.getElementById('controlTitle').textContent=selected.name+' · CONTROL CENTER';
  grid.innerHTML=games.map(g=>{
- const picture=art[g.key]?'<img src="./assets/ChatGPT Image Sep 22, 2026, '+art[g.key]+' PM.png" alt="" loading="lazy">':'<span class="game-symbol" aria-hidden="true">🏆</span>';
+ const formatArt={squares:'/football-squares-logo-v102.png',props:'/super-bowl-props-logo-v102.jpg',playoff:'/nfl-playoff-challenge-logo-v102.jpg'};const picture=formatArt[g.key]?'<img src="'+formatArt[g.key]+'" alt="">':art[g.key]?'<img src="./assets/ChatGPT Image Sep 22, 2026, '+art[g.key]+' PM.png" alt="" loading="lazy">':'<span class="game-symbol" aria-hidden="true">🏆</span>';
  const content=picture+'<span>'+esc(g.name)+'</span><small>'+(routes[g.key]?'PLAY NOW →':'Not available yet')+'</small>';
  return routes[g.key]?'<a href="./'+routes[g.key]+'?pool='+encodeURIComponent(selected.id)+'&game='+encodeURIComponent(g.name)+'">'+content+'</a>':'<div class="unavailable-game">'+content+'</div>';
  }).join('')||'<p>No active games are available in this pool. Your commissioner can manage games from My Pools.</p>';

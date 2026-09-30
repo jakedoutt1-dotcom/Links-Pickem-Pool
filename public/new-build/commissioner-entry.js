@@ -3,7 +3,7 @@
  if(document.getElementById('linksCommissionerEntryModule'))return;
  const marker=document.createElement('meta');marker.id='linksCommissionerEntryModule';document.head.append(marker);
  const token=localStorage.getItem('links-legacy-token')||localStorage.getItem('links-token');if(!token)return;
- const routes={nfl:'nfl.html',college:'college.html',survivor:'survivor.html',confidence:'confidence.html','33':'game33.html',march:'march-madness.html',masters:'golf.html',nascar:'nascar.html',fantasy:'fantasy.html',custom:'custom.html'};
+ const routes={nfl:'nfl.html',college:'college.html',survivor:'survivor.html',confidence:'confidence.html','33':'game33.html',squares:'squares.html',props:'props.html',playoff:'playoff.html',march:'march-madness.html',masters:'golf.html',nascar:'nascar.html',fantasy:'fantasy.html',dynasty:'dynasty.html',custom:'custom.html'};
  let state,bar;
  async function api(body,path='pool-switcher'){
  const r=await fetch('/new-build/api/'+path,{method:body?'POST':'GET',cache:'no-store',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token,'x-links-account':localStorage.getItem('links-account-token')||''},...(body?{body:JSON.stringify(body)}:{})});const j=await r.json();if(!r.ok)throw Error(j.error||'Please try again.');return j;

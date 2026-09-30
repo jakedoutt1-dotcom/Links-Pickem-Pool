@@ -1,8 +1,10 @@
+import {footballEntries} from './football.js';
 // Other game entries have their own storage. They must never fall through to NFL picks.
 const TYPES={'Survivor':'survivor','Confidence':'confidence','Game 33':'33','March Madness':'march','Golf':'masters','NASCAR':'nascar','Custom':'custom'};
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
 export const isOfficeGame=game=>Object.hasOwn(TYPES,String(game));
 export async function officeEntries({request,env}){
+ const incoming=request.method==='GET'?new URL(request.url).searchParams.get('game'):(await request.clone().json()).game;if(['Survivor','Confidence'].includes(incoming))return footballEntries({request,env});if(incoming==='Game 33')return json({error:'Game 33 uses season assignments. Open the Game 33 page.',url:'/new-build/game33.html'},409);
  const db=env.DB;if(!db)return json({error:'Pool service unavailable.'},503);
  try{
  const q=new URL(request.url).searchParams,b=request.method==='POST'?await request.json():Object.fromEntries(q),game=TYPES[b.game];if(!game)return json({error:'Unsupported game.'},400);
