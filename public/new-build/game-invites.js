@@ -15,7 +15,7 @@
  function place(){
  let target=null;
  if(/game-setup/.test(path))target=document.querySelector('.hub-panel');
- else if(document.querySelector('[data-view="admin"].active'))target=document.getElementById('game33Admin')||document.getElementById('content')||document.getElementById('formatContent')||document.getElementById('leagueContent')||document.getElementById('confidence')||document.getElementById('survivor');
+ else if(document.querySelector('[data-view="admin"].active'))target=document.getElementById('game33AdminActions')||document.getElementById('game33Admin')||document.getElementById('content')||document.getElementById('formatContent')||document.getElementById('leagueContent')||document.getElementById('confidence')||document.getElementById('survivor');
  document.querySelectorAll('[data-game-invites]').forEach(b=>{if(b.parentElement!==target)b.remove()});
  if(target&&!target.querySelector('[data-game-invites]'))target.prepend(button());
  }
