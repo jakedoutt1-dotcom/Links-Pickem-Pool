@@ -74,7 +74,7 @@ async function changeGame(db,email,b){
  const pool=await ownedPool(db,email,b.pool);if(!pool)throw fail('This pool is not in your verified commissioner account.',403);
  const game=String(b.game||'');if(!GAMES[game])throw fail('Choose a supported game.');
  const existing=await db.prepare('SELECT * FROM links_pool_slots WHERE pool_id=? AND game_type=?').bind(pool.id,game).first();
- if(!existing&&!CREATABLE_GAMES.has(game))throw fail('This game is not available for new pools yet.');
+ if(b.action!=='archive'&&!CREATABLE_GAMES.has(game))throw fail('This game is not available for new pools yet.');
  if(b.action==='archive'){
   if(!existing)throw fail('Game not found.',404);
   await db.batch([db.prepare('UPDATE links_pool_slots SET active=0 WHERE pool_id=? AND game_type=?').bind(pool.id,game),db.prepare('UPDATE pool_active_games SET active=0 WHERE pool_id=? AND game_type=?').bind(pool.id,game)]);return {ok:true};

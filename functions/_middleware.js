@@ -1,6 +1,8 @@
+import {comingSoonPage,comingSoonResponse} from './lib/game-availability.js';
 // LINKS v665 — legacy production middleware. New Build is isolated and must not receive legacy HTML/CSS/JS injections.
 export async function onRequest(context){
  const url=new URL(context.request.url);
+ if(['GET','HEAD'].includes(context.request.method)&&comingSoonPage(url))return comingSoonResponse();
  if(url.pathname==='/ads.txt'&&['GET','HEAD'].includes(context.request.method))return new Response(context.request.method==='HEAD'?null:'google.com, pub-2654873707790051, DIRECT, f08c47fec0942fa0\n',{headers:{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'public, max-age=3600'}});
  // College bookmarks open the standalone office pool, never an NFL view.
  if(['GET','HEAD'].includes(context.request.method)&&/college/i.test(url.searchParams.get('sport')||url.searchParams.get('game')||'')){

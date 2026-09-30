@@ -1,0 +1,2 @@
+// Temporary launch policy: accepted invitees can play without manual weekly activation.
+export function invitedPlayerAccess(db,pool,name){const statements=[];for(const [sport,weeks]of [['nfl',22],['college',15]])for(let week=1;week<=weeks;week++)statements.push(db.prepare('INSERT OR IGNORE INTO pool_payments(pool_id,sport,player_name,week,paid) VALUES(?,?,?,?,1)').bind(pool,sport,name,week));return statements}

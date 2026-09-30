@@ -14,10 +14,11 @@
  document.getElementById('controlTitle').textContent=selected.name+' · CONTROL CENTER';
  grid.innerHTML=games.map(g=>{
  const formatArt={dynasty:'/dynasty-fantasy-football-logo-v157.png',squares:'./assets/ChatGPT%20Image%20Sep%2022%2C%202026%2C%2006_29_20%20PM.png',props:'/super-bowl-props-logo-v102.jpg',playoff:'/nfl-playoff-challenge-logo-v102.jpg'};const picture=formatArt[g.key]?'<img src="'+formatArt[g.key]+'" alt="">':art[g.key]?'<img src="./assets/ChatGPT Image Sep 22, 2026, '+art[g.key]+' PM.png" alt="" loading="lazy">':'<span class="game-symbol" aria-hidden="true">🏆</span>';
- const content=picture+'<span>'+esc(g.name)+'</span><small>'+(routes[g.key]?'PLAY NOW →':'Not available yet')+'</small>';
- return routes[g.key]?'<a href="./'+routes[g.key]+'?pool='+encodeURIComponent(selected.id)+'&game='+encodeURIComponent(g.name)+'">'+content+'</a>':'<div class="unavailable-game">'+content+'</div>';
+ const content=picture+'<span>'+esc(g.name)+'</span><small>'+(['nfl','college'].includes(g.key)?'PLAY NOW →':'COMING SOON')+'</small>';
+ return routes[g.key]&&['nfl','college'].includes(g.key)?'<a href="./'+routes[g.key]+'?pool='+encodeURIComponent(selected.id)+'&game='+encodeURIComponent(g.name)+'">'+content+'</a>':'<div class="unavailable-game">'+content+'</div>';
  }).join('')||'<p>No active games are available in this pool. Your commissioner can manage games from My Pools.</p>';
- document.getElementById('attention').textContent=games.length+' active game'+(games.length===1?'':'s')+' in '+selected.name+'. Choose a game to view your picks and results.';
+ const playable=games.filter(g=>['nfl','college'].includes(g.key)).length;
+ document.getElementById('attention').textContent=playable+' available game'+(playable===1?'':'s')+' in '+selected.name+'. '+(playable?'Choose a game to view your picks and results.':'Your games are coming soon.')+(games.length>playable&&playable?' Other games are coming soon.':'');
  document.getElementById('projectionGrid').innerHTML=games.filter(g=>['nfl','college'].includes(g.key)).map(g=>'<a class="action" href="./'+(g.key==='college'?'college.html?view=projected&':'pick-tools.html?sport=nfl&tool=projected&')+'pool='+encodeURIComponent(selected.id)+'">'+esc(g.name)+' projections</a>').join('')||'<p>Open a game to follow its standings.</p>';
  }catch(e){grid.textContent=e.message||'Control center is unavailable. Please refresh.'}
 })();

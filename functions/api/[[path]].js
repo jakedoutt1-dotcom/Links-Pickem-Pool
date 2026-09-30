@@ -1,3 +1,5 @@
+import {AVAILABLE_GAMES} from '../lib/game-availability.js';
+import {invitedPlayerAccess} from '../lib/invite-access.js';
 import {lookupPoolCode} from '../lib/pool-code-lookup.js';
 import {findLoginPlayer,loginRoster} from '../lib/player-login-name.js';
 import {poolGameKeys} from '../lib/pool-games.js';
@@ -2180,7 +2182,8 @@ export async function onRequest(context){
       await DB.batch([
         DB.prepare("UPDATE pool_players SET salt=?,password_hash=? WHERE pool_id=? AND name=?").bind(salt,hash,inv.pool_id,inv.player_name),
         DB.prepare("UPDATE pool_player_setup_invites SET status='USED',used_at=? WHERE token=?").bind(new Date().toISOString(),setupToken),
-        DB.prepare("DELETE FROM pool_sessions WHERE pool_id=? AND player_name=?").bind(inv.pool_id,inv.player_name)
+        DB.prepare("DELETE FROM pool_sessions WHERE pool_id=? AND player_name=?").bind(inv.pool_id,inv.player_name),
+        ...invitedPlayerAccess(DB,inv.pool_id,inv.player_name)
       ]);
       const welcomeEmailSent=await sendPlayerWelcomeEmail(env,DB,request,{email:inv.email,name:inv.player_name,poolId:inv.pool_id,poolCode:inv.pool_code,poolName:inv.pool_name});
       return json({token:await makeSession(DB,inv.pool_id,inv.player_name,"player"),name:inv.player_name,poolCode:inv.pool_code,poolName:inv.pool_name,gameType:await getPoolGameType(DB,inv.pool_id,inv.pool_code),games:await getPoolGameTypes(DB,inv.pool_id,inv.pool_code),welcomeEmailSent});
@@ -2192,7 +2195,7 @@ export async function onRequest(context){
       if(!inv)return json({error:"Invitation not found or expired."},404);
       if(inv.status!=="PENDING")return json({error:"This invitation has already been used."},409);
       const games=await getPoolGameTypes(DB,inv.pool_id,inv.pool_code);
-      return json({email:inv.email,recipient:inv.email||"text-message invite",poolCode:inv.pool_code,poolName:inv.pool_name,rules:await getPoolRules(DB,inv.pool_id),gameType:await getPoolGameType(DB,inv.pool_id,inv.pool_code),games,hasDynasty:games.includes("dynasty")});
+      return json({email:inv.email,recipient:inv.email||"text-message invite",poolCode:inv.pool_code,poolName:inv.pool_name,rules:await getPoolRules(DB,inv.pool_id),gameType:await getPoolGameType(DB,inv.pool_id,inv.pool_code),games,hasDynasty:AVAILABLE_GAMES.has("dynasty")&&games.includes("dynasty")});
     }
     if(path==="invite/join"&&method==="POST"){
       const inviteToken=String(body.token||""),name=String(body.name||"").trim(),pw=String(body.password||""),dynastyTeamName=String(body.dynastyTeamName||"").trim().slice(0,80);
@@ -2200,10 +2203,10 @@ export async function onRequest(context){
       const inv=await DB.prepare("SELECT i.*,p.code AS pool_code,p.name AS pool_name FROM pool_invites i JOIN pools p ON p.id=i.pool_id WHERE i.token=?").bind(inviteToken).first();
       if(!inv)return json({error:"Invitation not found or expired."},404);
       if(inv.status!=="PENDING")return json({error:"This invitation has already been used."},409);
-      try{await game33PlayerLimitCheck(DB,inv.pool_id,1)}catch(e){return json({error:e.message},409)}
+      try{if(AVAILABLE_GAMES.has("33"))await game33PlayerLimitCheck(DB,inv.pool_id,1)}catch(e){return json({error:e.message},409)}
       const exists=await DB.prepare("SELECT 1 AS ok FROM pool_players WHERE pool_id=? AND lower(name)=lower(?)").bind(inv.pool_id,name).first();
       if(exists)return json({error:"That player name is already being used in this pool. Choose another name or ask the commissioner for your existing login."},409);
-      const games=await getPoolGameTypes(DB,inv.pool_id,inv.pool_code),hasDynasty=games.includes("dynasty");
+      const games=await getPoolGameTypes(DB,inv.pool_id,inv.pool_code),hasDynasty=AVAILABLE_GAMES.has("dynasty")&&games.includes("dynasty");
       if(hasDynasty&&!dynastyTeamName)return json({error:"Enter your Dynasty franchise / team name."},400);
       if(hasDynasty){
         const teamDup=await DB.prepare("SELECT 1 AS ok FROM dynasty_teams WHERE pool_id=? AND lower(name)=lower(?)").bind(inv.pool_id,dynastyTeamName).first();
@@ -2212,7 +2215,8 @@ export async function onRequest(context){
       const salt=newSalt(),hash=await hashPassword(pw,salt),now=new Date().toISOString();
       const stmts=[
         DB.prepare("INSERT INTO pool_players(pool_id,name,password_hash,salt) VALUES(?,?,?,?)").bind(inv.pool_id,name,hash,salt),
-        DB.prepare("UPDATE pool_invites SET status='USED',used_at=? WHERE token=?").bind(now,inviteToken)
+        DB.prepare("UPDATE pool_invites SET status='USED',used_at=? WHERE token=?").bind(now,inviteToken),
+        ...invitedPlayerAccess(DB,inv.pool_id,name)
       ];
       if(hasDynasty){
         const rawDyn=await getPoolSetting(DB,inv.pool_id,"game_settings_dynasty","{}");let dyn={};try{dyn=JSON.parse(rawDyn||"{}")||{}}catch(e){}
