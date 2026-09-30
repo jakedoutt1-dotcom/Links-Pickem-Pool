@@ -12,6 +12,13 @@
  d.querySelector('#gamePendingInvites').onclick=e=>{const b=e.target.closest('[data-resend]');if(b)send([state.invites[Number(b.dataset.resend)].email],true)};pending();try{state=await api();pending()}catch(e){d.querySelector('[role=status]').textContent=e.message}
  }
  function button(){const b=document.createElement('button');b.className='action';b.type='button';b.textContent='Emails & Invitations';b.dataset.gameInvites='1';b.onclick=open;return b}
- function place(){const targets=[document.getElementById('linksPoolTabs'),document.getElementById('game33Admin')];if(/game-setup/.test(path))targets.push(document.querySelector('.hub-panel'));if(/march-madness/.test(path))targets.push(document.querySelector('main'));const active=document.querySelector('[data-view="admin"].active');if(active)targets.push(document.getElementById('content')||document.getElementById('formatContent')||document.getElementById('leagueContent')||document.getElementById('confidence')||document.getElementById('survivor'));for(const target of targets.filter(Boolean))if(!target.querySelector('[data-game-invites]'))target.prepend(button())}
- api().then(j=>{state=j;place();const observer=new MutationObserver(place);observer.observe(document.body,{childList:true,subtree:true});window.addEventListener('pagehide',()=>observer.disconnect(),{once:true})}).catch(()=>{});
+ function place(){
+ let target=null;
+ if(/game-setup/.test(path))target=document.querySelector('.hub-panel');
+ else if(document.querySelector('[data-view="admin"].active'))target=document.getElementById('game33Admin')||document.getElementById('content')||document.getElementById('formatContent')||document.getElementById('leagueContent')||document.getElementById('confidence')||document.getElementById('survivor');
+ document.querySelectorAll('[data-game-invites]').forEach(b=>{if(b.parentElement!==target)b.remove()});
+ if(target&&!target.querySelector('[data-game-invites]'))target.prepend(button());
+ }
+
+ api().then(j=>{state=j;place();const observer=new MutationObserver(place);observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});window.addEventListener('pagehide',()=>observer.disconnect(),{once:true})}).catch(()=>{});
 })();
