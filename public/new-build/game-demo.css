@@ -26,3 +26,14 @@ body[data-demo-game=squares] .square-grid .axis{min-width:0;padding:0;display:gr
 .team.result-winner, #board button.result-winner{background:#164b35;border:2px solid #65df9b;color:#fff;opacity:1}.team.result-loser,.team.result-eliminated,#board button.result-loser{background:#581f2a;border:2px solid #ff8292;color:#fff;opacity:1}.outcome-label{display:block;font-size:11px;font-weight:800;margin-top:4px;text-transform:uppercase}
 
 .your-pick-label{display:block;width:fit-content;margin:4px auto;padding:3px 7px;border:1px solid #efc366;border-radius:4px;background:#172330;color:#ffe09a;font-size:11px;font-weight:800;text-transform:uppercase}
+
+.demo-game-status{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:16px;background:#071722;border:1px solid #315168;border-radius:10px;margin:12px 0}.demo-game-status strong,.demo-game-status small{display:block}.demo-game-status strong{color:#efc366;font-size:14px}.demo-game-status small{color:#b7c8d5;font-size:12px;margin-top:6px;line-height:1.5}.demo-game-status p{grid-column:1/-1;margin:0}.demo-full-bracket{display:block;padding:12px;color:#efc366}.demo-player-directory{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.demo-player-directory .format-card{min-width:0}.demo-player-directory p{font-size:12px}#demoActions{display:flex;flex-wrap:wrap;gap:8px}
+
+/* Focus the other demos on their game workspace, with a review panel on desktop. */
+body:not([data-demo-game=nfl]):not([data-demo-game=march]) .hero{min-height:150px;padding:24px}
+body:not([data-demo-game=nfl]):not([data-demo-game=march]) main>h1{display:none}
+.demo-selection-slip{padding:18px;border:1px solid #315168;border-radius:12px;background:#0b1d29;margin:12px 0}.demo-selection-slip h3{margin:0 0 12px;color:#efc366}.demo-selection-slip p{font-size:13px;line-height:1.6;color:#b7c8d5}.demo-selection-slip ul{padding-left:20px;font-size:14px;line-height:1.9}.demo-selection-slip>strong{font-size:12px;color:#efc366}
+@media(min-width:900px){body:not([data-demo-game=nfl]):not([data-demo-game=march]) #demoPanel{display:flow-root}body:not([data-demo-game=nfl]):not([data-demo-game=march]) #board{float:left;width:calc(100% - 280px)}.demo-selection-slip{float:right;width:260px;margin:0 0 16px}#demoActions,#demoSecondary,#feedback{clear:both}}
+@media(max-width:600px){body:not([data-demo-game=nfl]):not([data-demo-game=march]) .hero h1{font-size:28px}.demo-selection-slip{padding:12px}.demo-game-status{padding:12px}body[data-demo-game=props] #board .options{grid-template-columns:1fr 1fr}body[data-demo-game=props] #board .options button{min-height:54px}}
+
+body[data-demo-game=confidence] #board .game-team,body[data-demo-game=survivor] #board .game-team{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px}

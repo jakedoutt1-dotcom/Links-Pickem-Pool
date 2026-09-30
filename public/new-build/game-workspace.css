@@ -1,0 +1,13 @@
+/* Shared presentation for the secondary games. NFL and March keep their layouts. */
+body[data-workspace] main{min-width:0}
+body[data-workspace] .tabs,body[data-workspace] .format-nav,body[data-workspace] .league-nav{display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;max-width:100%;padding-bottom:8px;scrollbar-width:thin}
+body[data-workspace] .tabs>button,body[data-workspace] .format-nav>button,body[data-workspace] .league-nav>button{flex:0 0 auto;min-height:44px;white-space:nowrap}
+body[data-workspace] .card,body[data-workspace] .format-card,body[data-workspace] .college-panel{min-width:0}
+body[data-workspace] .game-teams{display:grid;grid-template-columns:minmax(0,1fr) 18px minmax(0,1fr);gap:10px;align-items:stretch}
+body[data-workspace] .game-team{width:100%;min-width:0;white-space:normal}
+body[data-workspace] .format-card h2,body[data-workspace] .card h2{line-height:1.2}
+body[data-workspace] .format-scroll,body[data-workspace] .table-scroll{overflow:auto;max-width:100%}
+body[data-workspace] button:focus-visible,body[data-workspace] input:focus-visible,body[data-workspace] select:focus-visible{outline:3px solid #efc366;outline-offset:3px}
+body[data-workspace] .links-admin-workspace label{display:block;margin:12px 0}
+body[data-workspace] .links-admin-workspace input:not([type=checkbox]),body[data-workspace] .links-admin-workspace select,body[data-workspace] .links-admin-workspace textarea{width:100%;max-width:100%;box-sizing:border-box;margin-top:7px;min-height:44px}
+@media(max-width:640px){body[data-workspace] .card,body[data-workspace] .format-card{padding:14px}body[data-workspace] .tabs>button,body[data-workspace] .format-nav>button{font-size:12px;padding:10px 12px}body[data-workspace] .game-team{padding:10px 6px}body[data-workspace] .game-team img{max-width:48px;object-fit:contain}body[data-workspace] input,body[data-workspace] select,body[data-workspace] textarea{font-size:16px}}

@@ -35,6 +35,6 @@ const LINKS_BUILD=window.LINKS_BUILD||'711';
 
 (()=>{function start(){const s=document.createElement('script');s.src='./commissioner-entry.js?v=20261004';document.head.appendChild(s)}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start()})();
 
-(()=>{function startGuides(){if(document.getElementById('linksGuideScript'))return;const s=document.createElement('script');s.id='linksGuideScript';s.src='./game-guides.js?v=20261003';document.head.appendChild(s)}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',startGuides,{once:true});else startGuides()})();
+(()=>{function startGuides(){if(document.getElementById('linksGuideScript'))return;const s=document.createElement('script');s.id='linksGuideScript';s.src='./game-guides.js?v=20261006';document.head.appendChild(s)}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',startGuides,{once:true});else startGuides()})();
 
-(()=>{const load=()=>{if(document.getElementById("gameInviteModule"))return;const s=document.createElement("script");s.id="gameInviteModule";s.src="./game-invites.js?v=20261005";document.head.append(s)};if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",load,{once:true});else load()})();
+(()=>{const load=()=>{if(document.getElementById("gameInviteModule"))return;const s=document.createElement("script");s.id="gameInviteModule";s.src="./game-invites.js?v=20261006";document.head.append(s)};if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",load,{once:true});else load()})();

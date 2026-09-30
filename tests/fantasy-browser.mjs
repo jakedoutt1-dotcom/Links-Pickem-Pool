@@ -23,19 +23,20 @@ try{for(const width of [1280,390]){
   try{return route.fulfill({body:readFileSync(resolve(root,'.'+url.pathname)),contentType:({'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.png':'image/png','.jpg':'image/jpeg'}[extname(url.pathname)]||'application/octet-stream')})}catch{return route.fulfill({status:404,body:'Not found'})}
  });
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());
+ await page.addLocatorHandler(page.locator('dialog.links-guide[open]'),async()=>{await page.getByRole('button',{name:'Got it',exact:true}).click()});
  const go=async game=>{await page.goto(origin+'/new-build/'+game+'.html?pool=1');await page.getByText('League saved across your devices.',{exact:true}).waitFor()};
- const saved=()=>page.getByText('Saved to your league.',{exact:true}).waitFor();
+ const saved=async()=>{await page.getByText('Saved to your league.',{exact:true}).waitFor();while(await page.locator('details.admin-task:not([open]) > summary').count())await page.locator('details.admin-task:not([open]) > summary').first().click()};
  const role=async v=>page.evaluate(v=>localStorage.setItem('test-role',v),v);
  await go('fantasy');
  for(const game of ['fantasy','dynasty']){
   fx.runtime.now=Date.parse('2026-09-01T00:00:00Z');fx.runtime.final=false;
-  await role('admin');await go(game);await page.getByRole('button',{name:'Commissioner',exact:true}).click();
+  await role('admin');await go(game);await page.getByRole('button',{name:'ADMIN',exact:true}).click();while(await page.locator('details.admin-task:not([open]) > summary').count())await page.locator('details.admin-task:not([open]) > summary').first().click();
   await page.getByRole('button',{name:'Open draft',exact:true}).click();await saved();await page.getByRole('button',{name:'Draft',exact:true}).click();
   for(const id of ['p1','p2','p3','p4','p5','p6']){await page.locator('[data-pick="'+id+'"]').click();await saved()}
   await page.getByText('Draft complete',{exact:true}).waitFor();
-  await page.getByRole('button',{name:'Commissioner',exact:true}).click();await page.getByRole('button',{name:'Start season',exact:true}).click();await saved();
+  await page.getByRole('button',{name:'ADMIN',exact:true}).click();while(await page.locator('details.admin-task:not([open]) > summary').count())await page.locator('details.admin-task:not([open]) > summary').first().click();await page.getByRole('button',{name:'Start season',exact:true}).click();await saved();
   await page.getByRole('button',{name:'Refresh NFL schedule',exact:true}).click();await saved();
-  await role('alice');await go(game);assert.equal(await page.getByRole('button',{name:'Commissioner',exact:true}).count(),0);
+  await role('alice');await go(game);assert.equal(await page.getByRole('button',{name:'ADMIN',exact:true}).count(),0);
   await page.locator('[id="QB-1"]').selectOption('p1');await page.locator('[id="RB-1"]').selectOption('p4');await page.getByRole('button',{name:'Save lineup',exact:true}).click();await saved();
   await page.reload();await page.getByText('League saved across your devices.',{exact:true}).waitFor();assert.equal(await page.locator('[id="QB-1"]').inputValue(),'p1');
   if(output)await page.screenshot({path:resolve(output,game+'-roster-'+width+'.png'),fullPage:true});
@@ -46,7 +47,7 @@ try{for(const width of [1280,390]){
   await role('bob');await go(game);await page.getByRole('button',{name:'Trades',exact:true}).click();await page.getByRole('button',{name:'Accept',exact:true}).click();await saved();
   await role('admin');await go(game);await page.getByRole('button',{name:'Trades',exact:true}).click();await page.getByRole('button',{name:'Approve',exact:true}).click();await saved();
   fx.runtime.now=Date.parse(fx.runtime.kickoff)+1000;fx.runtime.final=true;
-  await page.getByRole('button',{name:'Commissioner',exact:true}).click();
+  await page.getByRole('button',{name:'ADMIN',exact:true}).click();while(await page.locator('details.admin-task:not([open]) > summary').count())await page.locator('details.admin-task:not([open]) > summary').first().click();
   for(const id of ['p1','p4']){await page.locator('#stats #player').selectOption(id);await page.locator('#points').fill('15.5');await page.locator('#reason').fill('Verified official box score');await page.getByRole('button',{name:'Save verified score',exact:true}).click();await saved();}
   await page.getByRole('button',{name:'Finalize scores',exact:true}).click();await saved();
   await page.getByRole('button',{name:'Advance week',exact:true}).click();await saved();
