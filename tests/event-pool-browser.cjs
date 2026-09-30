@@ -2,9 +2,9 @@ const fs=require('fs'),path=require('path'),assert=require('assert/strict'),{chr
 (async()=>{const browser=await chromium.launch({headless:true,channel:'msedge'});try{
  for(const width of [390,1280]){
  const page=await browser.newPage({viewport:{width,height:900}}),errors=[],requests=[];page.on('pageerror',e=>errors.push(e.message));
- await page.route('https://event.test/**',r=>{const u=new URL(r.request().url()),f=path.join('public',decodeURIComponent(u.pathname));requests.push(u.pathname);return fs.existsSync(f)?r.fulfill({path:f,contentType:/\.(mjs|js)$/.test(f)?'text/javascript':f.endsWith('.css')?'text/css':f.endsWith('.html')?'text/html':'image/png'}):r.fulfill({status:404,body:''})});
+ await page.route('https://event.test/**',r=>{const u=new URL(r.request().url()),f=path.join('public',decodeURIComponent(u.pathname)+(u.pathname.endsWith('/event-pool-demo')?'.html':''));requests.push(u.pathname);return fs.existsSync(f)?r.fulfill({path:f,contentType:/\.(mjs|js)$/.test(f)?'text/javascript':f.endsWith('.css')?'text/css':f.endsWith('.html')?'text/html':'image/png'}):r.fulfill({status:404,body:''})});
  for(const game of ['golf','nascar']){
- await page.goto('https://event.test/new-build/event-pool-demo.html?game='+game);
+ await page.goto('https://event.test/new-build/event-pool-demo?game='+game);
  await page.locator('.event-choice').first().waitFor();const baseline=await page.evaluate(()=>JSON.stringify([Object.entries(localStorage),Object.entries(sessionStorage)]));
  for(const mode of game==='golf'?['best','tiers','one']:['simple','fantasy']){
  await page.locator('#practiceFormat').selectOption(mode);

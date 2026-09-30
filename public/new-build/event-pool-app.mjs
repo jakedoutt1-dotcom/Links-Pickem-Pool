@@ -1,5 +1,5 @@
 import {FORMATS} from './event-pool-core.mjs';
-const demoMode=location.pathname.endsWith('event-pool-demo.html'),params=new URLSearchParams(location.search),game=demoMode?(params.get('game')==='nascar'?'nascar':'golf'):(location.pathname.includes('nascar')?'nascar':'golf'),pool=params.get('pool');
+const demoMode=/\/event-pool-demo(?:\.html)?\/?$/.test(location.pathname),params=new URLSearchParams(location.search),game=demoMode?(params.get('game')==='nascar'?'nascar':'golf'):(location.pathname.includes('nascar')?'nascar':'golf'),pool=params.get('pool');
 const practice=demoMode?(await import('./event-pool-demo.mjs')).createDemo(game):null;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let state,view='picks',event='',draft={picks:[],garage:''},busy=false,root;
