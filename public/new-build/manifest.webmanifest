@@ -28,5 +28,13 @@
       "short_name": "Admin",
       "url": "./?view=commissioner"
     }
+  ],
+  "icons": [
+    {
+      "src": "/links-small-logo.png?v=1",
+      "sizes": "2172x724",
+      "type": "image/png",
+      "purpose": "any"
+    }
   ]
 }

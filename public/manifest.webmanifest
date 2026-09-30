@@ -9,7 +9,11 @@
   "theme_color": "#090d12",
   "orientation": "any",
   "icons": [
-    {"src":"/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
-    {"src":"/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+    {
+      "src": "/links-small-logo.png?v=1",
+      "sizes": "2172x724",
+      "type": "image/png",
+      "purpose": "any"
+    }
   ]
 }
