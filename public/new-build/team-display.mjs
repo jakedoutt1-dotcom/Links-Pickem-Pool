@@ -1,0 +1,1 @@
+export function nflLogo(code){const key=String(code||'').toLowerCase(),aliases={was:'wsh',jax:'jac',la:'lar'};return /^[a-z]{2,3}$/.test(key)?'https://a.espncdn.com/i/teamlogos/nfl/500/'+(aliases[key]||key)+'.png':''}

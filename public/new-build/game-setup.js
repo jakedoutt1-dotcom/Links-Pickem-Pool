@@ -5,7 +5,8 @@
  const session=await api('/api/session');let selected={};try{selected=JSON.parse(localStorage.getItem('links-current-pool')||'{}')}catch{}
  if(session.role!=='admin'||String(selected.id)!==String(pool)||selected.code!==session.poolCode)throw Error('Sign in as this pool’s commissioner first.');
  if(!['Golf','NASCAR','Custom'].includes(game))throw Error('Open the game’s own commissioner controls for setup.');
- document.getElementById('title').textContent=game+' setup';const query='?pool='+encodeURIComponent(pool)+'&game='+encodeURIComponent(game)+'&period=current';
+ if(game==='NASCAR'){const script=document.createElement('script');script.src='./nascar-admin.js';document.body.append(script);return}
+ document.getElementById('title').textContent=game+' Admin';const back=document.getElementById('backToGame');back.href='./'+({Golf:'golf',NASCAR:'nascar',Custom:'custom'}[game])+'.html?'+new URLSearchParams({pool});back.textContent='← BACK TO '+game.toUpperCase()+' PICKS';back.hidden=false;const query='?pool='+encodeURIComponent(pool)+'&game='+encodeURIComponent(game)+'&period=current';
  const j=await api('./api/game-settings'+query),settings=j.settings||{};form.elements.title.value=settings.title||game;form.elements.limit.value=settings.settings?.pickLimit||1;
  if(settings.lockAt){const d=new Date(settings.lockAt);form.elements.deadline.value=new Date(d-d.getTimezoneOffset()*60000).toISOString().slice(0,16)}
  const options=await api('./api/options'+query);message.textContent=options.options?.length?'Existing eligible names: '+options.options.join(', '):'Add the eligible names for this event.';form.hidden=false;

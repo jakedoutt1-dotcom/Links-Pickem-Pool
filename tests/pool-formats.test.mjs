@@ -1,16 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {fixture} from './helpers/pool-format-fixture.mjs';
-test('Squares complete lifecycle: create, claim/release, duplicate, draw, final winner and pool ownership',async()=>{
+test('Squares complete lifecycle: create, save/immutable claims, duplicate, draw, final winner and pool ownership',async()=>{
  const {db,runtime,call}=fixture();try{
  assert.equal((await call('squares','state',null,'outsider')).status,401);
  assert.equal((await call('squares','boards',{week:1,eventId:'one'})).status,403);
  let result=await call('squares','boards',{week:1,eventId:'one',title:'Sunday',price:10,payoutQ1:100,payoutHalf:100,payoutQ3:100,payoutFinal:200},'admin');assert.equal(result.status,200,JSON.stringify(result));const id=result.id;
- assert.equal((await call('squares','claim',{boardId:id,squareIndex:12})).status,200);
- assert.equal((await call('squares','claim',{boardId:id,squareIndex:12},'bob')).status,409);
- assert.equal((await call('squares','unclaim',{boardId:id,squareIndex:12},'bob')).status,403);
- assert.equal((await call('squares','unclaim',{boardId:id,squareIndex:12})).status,200);
- assert.equal((await call('squares','claim',{boardId:id,squareIndex:12})).status,200);
+ assert.equal((await call('squares','claim',{boardId:id,squareIndices:[12],confirmed:true})).status,200);
+ assert.equal((await call('squares','claim',{boardId:id,squareIndices:[12],confirmed:true},'bob')).status,409);
+ assert.equal((await call('squares','unclaim',{boardId:id,squareIndex:12},'bob')).status,409);
+ assert.equal((await call('squares','unclaim',{boardId:id,squareIndex:12})).status,409);
+ assert.equal((await call('squares','claim',{boardId:id,squareIndices:[12],confirmed:true})).status,409);
  result=await call('squares','draw',{boardId:id},'admin');assert.equal(result.status,200);assert.equal(new Set(result.awayNums).size,10);
  assert.equal((await call('squares','draw',{boardId:id},'admin')).status,409);
  assert.equal((await call('squares','unclaim',{boardId:id,squareIndex:12})).status,409);
@@ -54,3 +54,25 @@ test('Playoffs select correct round, freeze weights, enforce kickoff and grade w
  assert.equal((await call('playoff','entry',{entry:{week:20,picks:[]}})).status,403);
  }finally{db.raw.close()}
 });
+
+test('Squares automatic payouts track claims, preserve cents, and validate splits',async()=>{
+ const {call,db}=fixture();try{
+ assert.equal((await call('squares','boards',{week:1,eventId:'one',price:10,payoutPercentages:[25,25,25,20]},'admin')).status,400);
+ let r=await call('squares','boards',{week:1,eventId:'one',price:10.01,payoutPercentages:[25,25,25,25]},'admin');assert.equal(r.status,200);const id=r.id;
+ let board=(await call('squares')).boards.find(b=>b.id===id);assert.equal(board.claimedPot,0);
+ await call('squares','claim',{boardId:id,squareIndices:[0],confirmed:true},'alice');
+ board=(await call('squares')).boards.find(b=>b.id===id);assert.equal(board.claimedPot,10.01);assert.deepEqual([board.payout_q1,board.payout_half,board.payout_q3,board.payout_final],[2.51,2.5,2.5,2.5]);
+ await call('squares','unclaim',{boardId:id,squareIndex:0},'alice');board=(await call('squares')).boards.find(b=>b.id===id);assert.equal(board.claimedPot,10.01);
+ r=await call('squares','boards',{week:1,eventId:'one',price:10,payoutPercentages:[20,30,20,30]},'admin');await call('squares','claim',{boardId:r.id,squareIndices:[1],confirmed:true},'alice');board=(await call('squares')).boards.find(b=>b.id===r.id);assert.deepEqual([board.payout_q1,board.payout_half,board.payout_q3,board.payout_final],[2,3,2,3]);
+ }finally{db.raw.close()}
+});
+
+test('Squares explicit confirmation, immutable ownership, and atomic collision handling',async()=>{const {db,call}=fixture();try{
+ const r=await call('squares','boards',{week:1,eventId:'one',price:10},'admin'),id=r.id;
+ assert.equal((await call('squares','claim',{boardId:id,squareIndices:[1]})).status,400);
+ const saved=await call('squares','claim',{boardId:id,squareIndices:[1,2],confirmed:true,playerName:'Bob'});assert.equal(saved.status,200);assert.equal(saved.player,'Alice');assert.ok(saved.savedAt);
+ assert.equal((await call('squares','claim',{boardId:id,squareIndices:[3,2],confirmed:true},'bob')).status,409);assert.equal(db.raw.prepare('SELECT COUNT(*) n FROM squares_claims WHERE square_index=3').get().n,0);
+ for(const token of ['alice','admin'])assert.equal((await call('squares','unclaim',{boardId:id,squareIndex:1},token)).status,409);
+ assert.equal((await call('squares','delete',{boardId:id},'admin')).status,409);
+ assert.equal((await call('squares','claim',{boardId:id,squareIndices:[3],confirmed:true})).status,200);
+ }finally{db.raw.close()}});

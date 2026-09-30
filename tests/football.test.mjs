@@ -7,7 +7,7 @@ import {footballEntries} from '../functions/lib/football.js';
 import {parseFootball,confidenceScore,survivorStatus} from '../public/new-build/football-core.mjs';
 import {onRequestPost as nflSave} from '../functions/new-build/api/picks.js';
 class D1{
- constructor(){this.raw=new DatabaseSync(':memory:');this.raw.exec(`CREATE TABLE pools(id INTEGER,code TEXT,name TEXT);INSERT INTO pools VALUES(1,'POOL','Test');CREATE TABLE pool_sessions(token TEXT,pool_id INTEGER,player_name TEXT,role TEXT,expires_at TEXT);INSERT INTO pool_sessions VALUES('alice',1,'Alice','player','2099-01-01'),('bob',2,'Bob','player','2099-01-01'),('admin',1,'Owner','admin','2099-01-01');CREATE TABLE pool_settings(pool_id INTEGER,key TEXT,value TEXT);CREATE TABLE pool_active_games(pool_id INTEGER,game_type TEXT,active INTEGER,is_primary INTEGER);INSERT INTO pool_active_games VALUES(1,'confidence',1,0),(1,'survivor',1,0);CREATE TABLE pool_players(pool_id INTEGER,name TEXT);INSERT INTO pool_players VALUES(1,'Alice');CREATE TABLE pool_games(pool_id INTEGER,sport TEXT,week INTEGER,event_id TEXT,game_index INTEGER);CREATE TABLE pool_week_meta(pool_id INTEGER,sport TEXT,week INTEGER,lock_time TEXT);CREATE TABLE pool_payments(pool_id INTEGER,sport TEXT,player_name TEXT,week INTEGER,paid INTEGER);INSERT INTO pool_payments VALUES(1,'nfl','Alice',1,1);CREATE TABLE pool_picks(pool_id INTEGER,sport TEXT,player_name TEXT,week INTEGER,game_index INTEGER,team TEXT,UNIQUE(pool_id,sport,player_name,week,game_index));`)}
+ constructor(){this.raw=new DatabaseSync(':memory:');this.raw.exec(`CREATE TABLE pools(id INTEGER,code TEXT,name TEXT);INSERT INTO pools VALUES(1,'POOL','Test');CREATE TABLE pool_sessions(token TEXT,pool_id INTEGER,player_name TEXT,role TEXT,expires_at TEXT);INSERT INTO pool_sessions VALUES('alice',1,'Alice','player','2099-01-01'),('bob',2,'Bob','player','2099-01-01'),('admin',1,'Owner','admin','2099-01-01');CREATE TABLE pool_settings(pool_id INTEGER,key TEXT,value TEXT,PRIMARY KEY(pool_id,key));CREATE TABLE pool_active_games(pool_id INTEGER,game_type TEXT,active INTEGER,is_primary INTEGER);INSERT INTO pool_active_games VALUES(1,'confidence',1,0),(1,'survivor',1,0);CREATE TABLE pool_players(pool_id INTEGER,name TEXT);INSERT INTO pool_players VALUES(1,'Alice');CREATE TABLE pool_games(pool_id INTEGER,sport TEXT,week INTEGER,event_id TEXT,game_index INTEGER);CREATE TABLE pool_week_meta(pool_id INTEGER,sport TEXT,week INTEGER,lock_time TEXT);CREATE TABLE pool_payments(pool_id INTEGER,sport TEXT,player_name TEXT,week INTEGER,paid INTEGER);INSERT INTO pool_payments VALUES(1,'nfl','Alice',1,1);CREATE TABLE pool_picks(pool_id INTEGER,sport TEXT,player_name TEXT,week INTEGER,game_index INTEGER,team TEXT,UNIQUE(pool_id,sport,player_name,week,game_index));`)}
  prepare(sql){const raw=this.raw;let args=[];return {bind(...v){args=v;return this},async first(){return raw.prepare(sql).get(...args)||null},async all(){return {results:raw.prepare(sql).all(...args)}},async run(){return {meta:raw.prepare(sql).run(...args)}}}}
  async batch(stmts){this.raw.exec('BEGIN');try{const r=[];for(const s of stmts)r.push(await s.run());this.raw.exec('COMMIT');return r}catch(e){this.raw.exec('ROLLBACK');throw e}}
 }
@@ -79,7 +79,7 @@ test('Legacy Squares ownership/deadlines and Game 33 finalization guard real dat
  try{
  assert.equal((await call('squares/delete',{boardId:9})).status,404);assert.equal(db.raw.prepare('SELECT COUNT(*) n FROM squares_claims').get().n,1);
  assert.equal((await call('squares/paid',{boardId:9,squareIndex:0,paid:true})).status,200);assert.equal(db.raw.prepare('SELECT paid FROM squares_claims').get().paid,0);
- assert.equal((await call('squares/claim',{boardId:10,squareIndex:1,playerName:'Alice'})).status,409);
+ assert.equal((await call('squares/claim',{boardId:10,squareIndices:[1],confirmed:true})).status,409);
  assert.equal((await call('33/finalize',{week:1})).status,409,'Empty schedule cannot create a rollover');
  assert.equal((await call('33/finalize',{week:2})).status,409,'Earlier weeks settle first');
  db.raw.exec("INSERT INTO pool_33_week_meta VALUES(1,1,1,'[]')");assert.equal((await call('33/finalize',{week:1})).status,409,'Finalization is not repeated');
@@ -91,6 +91,11 @@ test('Season draw commits once; legacy Props and playoff validation reject inval
  const source=readFileSync(new URL('../functions/api/[[path]].js',import.meta.url),'utf8').replace(/^import .*;\r?\n/gm,'').replace('export async function onRequest','async function onRequest'),context={Response,Request,URL,console,crypto,Date,Uint32Array,TextEncoder,fetch,session:{pool_id:1,role:'player',player_name:'Alice'},slate:[{id:'a',away:'BUF',home:'MIA',kickoff:'2090-10-01'}]};
  vm.createContext(context);vm.runInContext(source+';ensureV2=async()=>{};auth=async()=>session;fetchNFLWeek=async()=>slate;globalThis.handler=onRequest;globalThis.draw=commitGame33Draw;',context);
  try{
+ const cost=entryFee=>context.handler({request:new Request('https://test/api/33/settings',{method:'POST',body:JSON.stringify({entryFee})}),env:{DB:db}});
+ assert.equal((await cost(75)).status,403);context.session.role='admin';
+ for(const value of [-1,1.234,'75',100001])assert.equal((await cost(value)).status,400);
+ assert.equal((await cost(75)).status,200);assert.equal(db.raw.prepare("SELECT value FROM pool_settings WHERE pool_id=1 AND key='game33_entry_fee'").get().value,'75.00');
+ assert.equal((await cost(0)).status,200);context.session.role='player';
  assert.equal(await context.draw(db,1,[{player:'Alice',team:'BUF'}],'manual'),true);
  assert.equal(await context.draw(db,1,[{player:'Alice',team:'MIA'}],'manual'),false);
  assert.equal(db.raw.prepare('SELECT team FROM pool_33_assignments').get().team,'BUF');

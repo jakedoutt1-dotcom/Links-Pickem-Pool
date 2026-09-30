@@ -1,3 +1,4 @@
+import {teamMoneyline} from '../../public/new-build/football-core.mjs';
 const feedCache=new Map();
 const BASE='https://site.api.espn.com/apis/site/v2/sports/football/college-football/';
 export const settingKey=week=>'game_settings:college-pick-em:week-'+week;
@@ -12,7 +13,7 @@ export async function feed(kind,query=''){
 export function parseGames(data){return [...new Map((data.events||[]).map(e=>[e.id,e])).values()].map(e=>{
  const c=e.competitions?.[0],ts=c?.competitors||[],a=ts.find(t=>t.homeAway==='away'),h=ts.find(t=>t.homeAway==='home');if(!a||!h)return null;
  const completed=!!(e.status?.type?.completed||c.status?.type?.completed),awayScore=Number(a.score),homeScore=Number(h.score),scored=a.score!=null&&h.score!=null&&Number.isFinite(awayScore)&&Number.isFinite(homeScore);
- return {eventId:String(e.id),away:code(a.team.abbreviation||a.team.id),home:code(h.team.abbreviation||h.team.id),awayId:String(a.team.id),homeId:String(h.team.id),awayName:a.team.shortDisplayName||a.team.displayName,homeName:h.team.shortDisplayName||h.team.displayName,awayLogo:a.team.logo||'',homeLogo:h.team.logo||'',kickoff:e.date||c.date,completed,winner:completed&&scored?(awayScore===homeScore?'TIE':awayScore>homeScore?code(a.team.abbreviation||a.team.id):code(h.team.abbreviation||h.team.id)):'',total:completed&&scored?awayScore+homeScore:null,awayScore:a.score??'',homeScore:h.score??'',detail:e.status?.type?.shortDetail||''};
+ return {eventId:String(e.id),away:code(a.team.abbreviation||a.team.id),home:code(h.team.abbreviation||h.team.id),awayId:String(a.team.id),homeId:String(h.team.id),awayName:a.team.shortDisplayName||a.team.displayName,homeName:h.team.shortDisplayName||h.team.displayName,awayMoneyline:teamMoneyline(c,'away'),homeMoneyline:teamMoneyline(c,'home'),awayLogo:a.team.logo||'',homeLogo:h.team.logo||'',kickoff:e.date||c.date,completed,winner:completed&&scored?(awayScore===homeScore?'TIE':awayScore>homeScore?code(a.team.abbreviation||a.team.id):code(h.team.abbreviation||h.team.id)):'',total:completed&&scored?awayScore+homeScore:null,awayScore:a.score??'',homeScore:h.score??'',detail:e.status?.type?.shortDetail||''};
  }).filter(Boolean)}
 export async function collegeContext(){const d=await feed('scoreboard','groups=80&limit=300');let week=Number(d.season?.type)===3?17:Number(d.week?.number||1);const games=parseGames(d);if(games.length&&games.every(g=>g.completed))week++;return {week:Math.min(17,week),season:Number(d.season?.year||new Date().getFullYear()),seasonType:Number(d.season?.type||2)}}
 export async function schedule(week,context){return parseGames(await feed('scoreboard',new URLSearchParams({dates:context.season,seasontype:week===17?3:2,week:week===17?1:week,groups:80,limit:300})))}

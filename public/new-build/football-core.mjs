@@ -1,6 +1,6 @@
 // Shared server/browser rules. Results are settled only from completed games.
 export function parseFootball(events=[]){return events.map(e=>{
- const c=e.competitions?.[0],teams=(c?.competitors||[]).map(t=>({id:String(t.team?.id),name:t.team?.shortDisplayName||t.team?.displayName||String(t.team?.id),code:t.team?.abbreviation||'',logo:t.team?.logo||'',score:t.score==null?null:Number(t.score)}));
+ const c=e.competitions?.[0],teams=(c?.competitors||[]).map(t=>({id:String(t.team?.id),name:t.team?.shortDisplayName||t.team?.displayName||String(t.team?.id),code:t.team?.abbreviation||'',logo:t.team?.logo||'',moneyline:teamMoneyline(c,t.homeAway),score:t.score==null?null:Number(t.score)}));
  const status=e.status||c?.status||{},completed=!!status.type?.completed;
  return {id:String(e.id),date:e.date||c?.date,teams,state:status.type?.state||'',detail:status.type?.shortDetail||'',completed,winner:completed&&teams.length===2&&teams.every(t=>Number.isFinite(t.score))?(teams[0].score===teams[1].score?'TIE':teams.reduce((a,b)=>a.score>b.score?a:b).id):null};
 }).filter(g=>g.teams.length===2)}
@@ -16,4 +16,13 @@ export function survivorStatus(rows,slates,startWeek,week,{lives=1,tieSurvives=f
  history.push({week,eventId:p?.eventId,selection:p?.selection,team:g?.teams.find(t=>t.id===p?.selection)?.name||p?.selection||'No pick',result});
  }
  return {status:losses>=lives?'ELIMINATED':'ALIVE',losses,wins,lives,history};
+}
+
+// Display only published American moneylines; never substitute spreads or probabilities.
+export function teamMoneyline(competition,side){
+ if(!['home','away'].includes(side))return '';
+ const odds=competition?.odds?.[0];
+ const value=odds?.[side+'TeamOdds']?.moneyLine??odds?.[side+'TeamOdds']?.moneyline??odds?.[side+'MoneyLine']??odds?.[side+'Moneyline']??odds?.moneyline?.[side]?.close?.odds;
+ if(value==null||String(value).trim()==='')return '';
+ const n=Number(value);return Number.isFinite(n)&&Math.abs(n)>=100?(n>0?'+':'')+n:'';
 }
