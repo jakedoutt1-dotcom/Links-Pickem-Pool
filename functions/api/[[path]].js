@@ -1,5 +1,5 @@
 import {lookupPoolCode} from '../lib/pool-code-lookup.js';
-import {findLoginPlayer} from '../lib/player-login-name.js';
+import {findLoginPlayer,loginRoster} from '../lib/player-login-name.js';
 import {poolGameKeys} from '../lib/pool-games.js';
 import {recordPoolLogin} from '../lib/login-activity.js';
 import {ownerPasswordOk,ownerAttempt} from '../lib/owner-auth.js';
@@ -2023,7 +2023,7 @@ export async function onRequest(context){
       // The login chooser only needs the pool and player list; access metadata is best-effort here.
       let access={adFree:false,commissionerPlan:"free"};
       try{access=await poolAccessFor(DB,pool.id)}catch(e){}
-      return json({code:pool.code,name:pool.name,players,service:svc||null,access});
+      return json({code:pool.code,name:pool.name,players,loginPlayers:await loginRoster(DB,pool.id),service:svc||null,access});
     }
     if(path==="public-scores"&&method==="GET"){
       const publicSport=String(url.searchParams.get("sport")||"nfl").toLowerCase()==="college"?"college":"nfl";

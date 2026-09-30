@@ -1,4 +1,4 @@
-import {findLoginPlayer} from '../../lib/player-login-name.js';
+import {findLoginPlayer,loginRoster} from '../../lib/player-login-name.js';
 import {recordPoolLogin} from '../../lib/login-activity.js';
 import {poolEmail,sendPoolEmail} from '../../lib/pool-email.js';
 import {commissionerSession} from '../../lib/commissioner-auth.js';
@@ -26,9 +26,9 @@ export async function onRequestGet({request,env}){
   await ensureAccess(db);
   const q=new URL(request.url).searchParams,p=await resolvePool(db,q.get("pool"),q.get("name"),q.get("code"));
   if(!p)return json({success:false,error:"Pool not found"},404);
-  const comm=(await commissionerName(db,p.id)).toLowerCase();
+  const comm=(await commissionerName(db,p.id)).toLowerCase(),loginNames=await loginRoster(db,p.id);
   const {results=[]}=await db.prepare("SELECT pp.name,COALESCE(a.status,'active') status FROM pool_players pp LEFT JOIN newbuild_player_access a ON a.pool_id=pp.pool_id AND lower(a.player_name)=lower(pp.name) WHERE pp.pool_id=? ORDER BY pp.rowid").bind(p.id).all();
-  return json({success:true,resolvedPoolId:String(p.id),poolName:p.name,poolCode:p.code,members:results.map(x=>({playerId:x.name,displayName:x.name,email:"",role:String(x.name).toLowerCase()===comm?"commissioner":"player",status:x.status||"active"})),dataSource:"legacy-production-DB",build:"634"});
+  return json({success:true,resolvedPoolId:String(p.id),poolName:p.name,poolCode:p.code,members:results.map(x=>({playerId:x.name,loginName:loginNames.find(n=>n.playerId===x.name)?.loginName||x.name,displayName:loginNames.find(n=>n.playerId===x.name)?.displayName||x.name,email:"",role:String(x.name).toLowerCase()===comm?"commissioner":"player",status:x.status||"active"})),dataSource:"legacy-production-DB",build:"634"});
 }
 export async function onRequestPost({request,env}){
   const db=env.DB;if(!db)return json({success:false,error:"Legacy LINKS database binding DB is unavailable",build:"634"},503);
