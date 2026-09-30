@@ -9,6 +9,7 @@
  const auth=await fetch('/api/session',{headers:{Authorization:'Bearer '+token},cache:'no-store'}),session=await auth.json();
  if(!auth.ok||session.poolCode!==selected.code){location.replace('./pool-login.html');return}
  const response=await fetch('./api/pool-games?pool='+encodeURIComponent(selected.id),{cache:'no-store'}),data=await response.json();if(!response.ok||!Array.isArray(data.games))throw Error('Pool games could not be loaded. Please refresh.');
+ if(data.resolvedPoolId){selected.id=String(data.resolvedPoolId);const url=new URL(location.href);url.searchParams.set('pool',selected.id);history.replaceState(null,'',url)}
  const games=data.games;selected.games=games.map(g=>g.name);selected.role=session.role==='admin'?'commissioner':'player';localStorage.setItem('links-current-pool',JSON.stringify(selected));
  document.getElementById('controlTitle').textContent=selected.name+' · CONTROL CENTER';
  grid.innerHTML=games.map(g=>{

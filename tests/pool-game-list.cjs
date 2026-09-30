@@ -22,5 +22,8 @@ const assert=require('node:assert/strict'),{DatabaseSync}=require('node:sqlite')
  sql.exec("INSERT INTO pool_active_games VALUES(2,'college',1,0,'2026-01-01')");assert.deepEqual(await poolGameKeys(db,2),[],'Archived legacy game stays hidden');
  assert.deepEqual(await poolGameKeys(db,999),[],'Unknown pool never becomes NFL');
  sql.exec("INSERT INTO pool_active_games VALUES(3,'nfl',1,1,'2026-01-01'); INSERT INTO pool_active_games VALUES(3,'college',0,1,'2026-01-01'); INSERT INTO links_pool_slots VALUES('new1','new@example.com',3,'nfl',1,NULL); INSERT INTO links_pool_slots VALUES('new2','new@example.com',3,'college',1,NULL)");assert.deepEqual(await poolGameKeys(db,3),['college','nfl'],'New multi-game pool');
+ const {onRequestGet}=await import('../functions/new-build/api/pool-games.js');sql.exec("INSERT INTO pools(id,code,name) VALUES(3,'JAKVEX','Jake Doutt')");
+ const get=async pool=>{const r=await onRequestGet({env:{DB:db},request:new Request('https://test/api/pool-games?pool='+pool)});return {status:r.status,data:await r.json()}};
+ const byId=await get('3'),byCode=await get('jakvex');assert.deepEqual(byCode.data,byId.data);assert.equal(byCode.data.resolvedPoolId,'3');assert.equal(byCode.data.games.length,2);assert.equal((await get('MISSING')).status,404);
  console.log('PASS settings-only, stale rows, new multi-game pools, archive protection, single-game and unknown pools');
 })().catch(e=>{console.error(e);process.exitCode=1});
