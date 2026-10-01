@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {fixture} from './helpers/pool-format-fixture.mjs';
+import {ensureOwner} from '../functions/lib/owner-auth.js';
+import {onRequest} from '../functions/new-build/api/partners.js';
+import {onRequest as qrRequest} from '../functions/new-build/api/qr-invite.js';
+import {partnerInvite} from '../functions/lib/partners.js';
+import {nearby} from '../public/new-build/partner-match.mjs';
+const {db}=fixture();await ensureOwner(db);db.raw.exec("INSERT INTO links_admin_sessions VALUES('owner','2099-01-01')");
+const call=(body,token='owner',publicList=false)=>onRequest({env:{DB:db},request:new Request('https://links.test/new-build/api/partners'+(publicList?'?public=1':''),{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token},...(body?{body:JSON.stringify(body)}:{})})});
+const bar={action:'save',name:'Joe Dirt',logo:'https://example.com/logo.png',address:'1 Main St',latitude:40,longitude:-90,radius:50,offer:'Welcome',website:'https://example.com',pool_id:1,active:true};
+assert.equal((await call(bar,'admin')).status,401);assert.equal((await call({...bar,logo:'javascript:alert(1)'})).status,400);assert.equal((await call({...bar,radius:10000})).status,400);
+const saved=await (await call(bar)).json();assert.ok(saved.id);let listing=await (await call(null,'',true)).json();assert.equal(listing.partners.length,1);assert.equal(listing.partners[0].pool_id,undefined);
+const qr=await (await call({action:'qr',id:saved.id})).json(),token=new URL(qr.url).searchParams.get('qr');assert.equal((await partnerInvite(db,token)).partner_name,'Joe Dirt');assert.equal((await partnerInvite(db,token)).pool_id,1);const branded=await (await qrRequest({env:{DB:db},request:new Request('https://links.test/new-build/api/qr-invite?qr='+token)})).json();assert.equal(branded.partner.name,'Joe Dirt');assert.equal(branded.poolCode,'POOL');
+await call({...bar,id:saved.id,active:false});assert.equal(await partnerInvite(db,token),null);assert.equal((await (await call(null,'',true)).json()).partners.length,0);
+await call({...bar,id:saved.id,pool_id:2});assert.equal(await partnerInvite(db,token),null,'Pool changes invalidate old QR');
+const q2=await (await call({action:'qr',id:saved.id})).json();await call({action:'revoke',id:saved.id});assert.equal(await partnerInvite(db,new URL(q2.url).searchParams.get('qr')),null);
+const point={latitude:40,longitude:-90,accuracy:10};assert.equal(nearby([bar],point).certain,true);assert.equal(nearby([bar,{...bar,name:'Next door',longitude:-90.0001}],point).certain,false);assert.equal(nearby([bar],{...point,accuracy:1000}).certain,false);assert.equal(nearby([bar],{...point,latitude:41}).candidates.length,0);assert.equal(nearby([bar],{...point,accuracy:NaN}).certain,false);
+db.raw.close();console.log('PASS owner-only management, URL/radius validation, public data, QR branding/revoke/deactivation/pool change, location confidence and overlap');

@@ -1,3 +1,4 @@
+import {partnerInvite} from '../../lib/partners.js';
 import {poolFor,sessionFor} from '../../lib/college.js';
 import {onRequest as legacy} from '../../api/[[path]].js';
 const reply=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
@@ -8,9 +9,9 @@ export async function onRequest(context){
  await db.prepare('CREATE TABLE IF NOT EXISTS pool_qr_invites(pool_id INTEGER PRIMARY KEY,token TEXT UNIQUE NOT NULL,expires_at TEXT NOT NULL)').run();
  const url=new URL(request.url),body=request.method==='POST'?await request.json():{},token=body.qr||url.searchParams.get('qr');
  if(token){
-  const invite=await db.prepare('SELECT q.*,p.code,p.name FROM pool_qr_invites q JOIN pools p ON p.id=q.pool_id WHERE q.token=? AND q.expires_at>?').bind(String(token),new Date().toISOString()).first();
+  const invite=await db.prepare('SELECT q.*,p.code,p.name FROM pool_qr_invites q JOIN pools p ON p.id=q.pool_id WHERE q.token=? AND q.expires_at>?').bind(String(token),new Date().toISOString()).first() || await partnerInvite(db,String(token));
   if(!invite)return reply({error:'This QR invitation has expired or been turned off. Ask your commissioner for a new code.'},404);
-  if(request.method==='GET')return reply({poolName:invite.name,poolCode:invite.code,email:'anyone invited by the commissioner'});
+  if(request.method==='GET')return reply({poolName:invite.name,poolCode:invite.code,email:'anyone invited by the commissioner',partner:invite.partner_id?{name:invite.partner_name,logo:invite.logo}:null});
   if(body.action!=='join')return reply({error:'Invalid invitation action.'},400);
   if(!String(body.name||'').trim()||String(body.password||'').length<4)return reply({error:'Enter your name and a password of at least 4 characters.'},400);
   // Each scan joins through a separate normal invitation, so one player cannot consume the group QR.

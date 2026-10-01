@@ -47,6 +47,7 @@
  let row=document.getElementById('linksPoolActions');if(!row){row=document.createElement('section');row.id='linksPoolActions';row.setAttribute('aria-labelledby','linksPoolHeading');const heading=document.createElement('h2');heading.id='linksPoolHeading';heading.className='pool-panel-title';heading.textContent='My Pools';row.append(heading);row.style.cssText='grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:12px;width:100%;min-width:0;margin:12px 0';main.prepend(row)}
  if(bar.parentElement!==row)row.append(bar);
  picksVisible();
+ import('./partner-banner.mjs').then(m=>m.mountPartners(row)).catch(()=>{});
  const home=document.getElementById('addMyHomepage');if(home&&home.parentElement!==row){home.style.margin='0 0 0 auto';home.style.flex='0 0 auto';row.append(home)}
  }
  function render(){
