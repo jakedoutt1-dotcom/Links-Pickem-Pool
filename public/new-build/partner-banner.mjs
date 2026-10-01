@@ -11,7 +11,17 @@ export function mountPartners(panel){if(started)return;started=true;
  base(message);box.append(button('Show partners near me',()=>{dismissed=false;enabled=true;try{localStorage.setItem('links-partner-location','yes')}catch{}check(true)}));box.append(text('small','Optional location access. Your coordinates stay on this device.'));if(enabled)box.append(button('Turn off location ads',()=>{enabled=false;generation++;try{localStorage.removeItem('links-partner-location')}catch{}general()}));
  }
  function controls(){box.append(button('Check my location again',()=>check(true)),button('Turn off location ads',()=>{enabled=false;generation++;try{localStorage.removeItem('links-partner-location')}catch{}general()}))}
- function show(p){base('Partner offer');const img=document.createElement('img');img.src=p.logo;img.alt=p.name;img.referrerPolicy='no-referrer';img.style.cssText='width:80px;height:64px;object-fit:contain;float:left;margin:0 14px 8px 0';img.onerror=()=>img.remove();const link=document.createElement('a');link.href=p.website;link.target='_blank';link.rel='noopener noreferrer';link.className='action';link.textContent='View Offer';box.append(img,text('h3',p.name),text('p',p.offer||p.address));if(p.website)box.append(link);controls()}
+ function show(p){
+   base('Partner offer');
+   const identity=document.createElement('div');identity.style.cssText='display:flex;align-items:center;gap:14px;min-width:0';
+   const img=document.createElement('img');img.src=p.logo;img.alt=p.name;img.referrerPolicy='no-referrer';img.style.cssText='width:80px;height:64px;object-fit:contain;flex-shrink:0';img.onerror=()=>img.remove();
+   const name=text('h3',p.name);name.style.cssText='margin:0;min-width:0;overflow-wrap:anywhere';identity.append(img,name);
+   const offer=text('p',p.offer||p.address);offer.style.cssText='margin:16px 0;padding:16px;border:1px solid #edc466;border-radius:12px;background:#102b3b;color:#fff;font-size:1.2rem;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere';
+   box.append(identity,offer);
+   if(p.website){const link=document.createElement('a');link.href=p.website;link.target='_blank';link.rel='noopener noreferrer';link.className='action';link.textContent='Visit website';link.style.cssText='display:inline-block;max-width:100%;box-sizing:border-box;white-space:normal;margin-bottom:12px';box.append(link)}
+   controls();
+ }
+
  async function check(explicit=false){const serial=++generation;base('Checking nearby partners…');if(!enabled||dismissed)return;
  if(!navigator.geolocation){general('Location is unavailable. Enjoy your LINKS pool.');return}
  if(!explicit){try{const permission=await navigator.permissions.query({name:'geolocation'});if(serial!==generation)return;if(permission.state!=='granted'){general('Allow location to see offers from the bar you are visiting.');return}}catch{general();return}}
