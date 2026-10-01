@@ -10,7 +10,7 @@ window.LINKS_NFL_REWRITE=(function(){
  const abbr=x=>String(x||'').toUpperCase().replace(/^WAS$/,'WSH');
  const matchupKey=(a,b)=>[abbr(a),abbr(b)].sort().join('|');
  const record=x=>{const r=x?.records?.find?.(z=>z.type==='total')||x?.records?.[0];return r?.summary||''};
- const money=(odds,side)=>{if(!odds)return'';const keys=side==='home'?['homeTeamOdds','homeMoneyLine','homeMoneyline']:['awayTeamOdds','awayMoneyLine','awayMoneyline'];let v='';for(const k of keys){const x=odds[k];if(x&&typeof x==='object')v=x.moneyLine??x.moneyline??x.value??'';else if(x!==undefined)v=x;if(v!==''&&v!=null)break}if(v===''||v==null)return'';const n=Number(v);return Number.isFinite(n)?(n>0?'+':'')+n:String(v)};
+ const money=(odds,side)=>{if(!odds)return'';const keys=side==='home'?['homeTeamOdds','homeMoneyLine','homeMoneyline']:['awayTeamOdds','awayMoneyLine','awayMoneyline'];let v=odds.moneyline?.[side]?.current?.odds??odds.moneyline?.[side]?.close?.odds??'';if(v!==''&&v!=null){const n=Number(v);if(Number.isFinite(n)&&Math.abs(n)>=100)return(n>0?'+':'')+n}v='';for(const k of keys){const x=odds[k];if(x&&typeof x==='object')v=x.moneyLine??x.moneyline??x.value??'';else if(x!==undefined)v=x;if(v!==''&&v!=null)break}if(v===''||v==null)return'';const n=Number(v);return Number.isFinite(n)?(n>0?'+':'')+n:String(v)};
  async function scoreboard(w=week()){
    const u='https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates='+SEASON+'&seasontype='+type(w)+'&week='+(w<=18?w:w-18)+'&limit=100';
    const r=await fetch(u,{cache:'no-store'});if(!r.ok)throw Error('NFL schedule unavailable');const j=await r.json();

@@ -7,7 +7,7 @@ const root = path.resolve(__dirname, '../public');
 const origin = 'http://nfl-regression.test';
 const kickoff = {3:'2026-09-24T00:00:00Z',4:'2026-10-02T00:00:00Z',5:'2026-10-09T00:00:00Z'};
 function scoreboard(week) {
-  return {week:{number:4},season:{type:2},events:[{id:'event-'+week,date:kickoff[week],status:{type:{completed:week===3}},competitions:[{competitors:[
+  return {week:{number:4},season:{type:2},events:[{id:'event-'+week,date:kickoff[week],status:{type:{completed:week===3}},competitions:[{odds:[{moneyline:{home:{close:{odds:'+124'}},away:{close:{odds:'-148'}}}}],competitors:[
     {homeAway:'away',team:{id:'1',abbreviation:'BUF',shortDisplayName:'Bills'},records:[{summary:'2-1'}]},
     {homeAway:'home',team:{id:'2',abbreviation:'MIA',shortDisplayName:'Dolphins'},records:[{summary:'1-2'}]}
   ]}]}]};
@@ -81,7 +81,7 @@ function scoreboard(week) {
       assert.equal(posts.length,2);
       await page.locator('#tieTotal').fill('42');
       await page.locator('#savePicksBtn').click();
-      assert.equal(await page.locator('#savedPickModal').count(),0,'Locking picks does not open Playmaker');assert.doesNotMatch(await page.locator('#slate').innerText(),/\bML\b/,'Money lines are removed');
+      assert.equal(await page.locator('#savedPickModal').count(),0,'Locking picks does not open Playmaker');assert.match(await page.locator('#slate [data-t="1"]').innerText(),/2-1 · ML -148/);assert.match(await page.locator('#slate [data-t="2"]').innerText(),/1-2 · ML \+124/);
       await page.clock.runFor(1600);
       assert.equal(await page.locator('#slate button:disabled').count(),2,'Voluntary lock survives both background controllers');
       assert.equal(await page.locator('#tieTotal').isDisabled(),true);
