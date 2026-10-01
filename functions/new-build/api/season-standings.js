@@ -23,7 +23,7 @@ export async function onRequestGet({request,env}){
  ]);
  const activeWeeks=new Set((access.results||[]).map(r=>Number(r.week)));
  const weeks=[...new Set([...(picks.results||[]),...(ties.results||[])].map(r=>Number(r.week)))].filter(w=>Number.isInteger(w)&&w>=1&&w<=22&&activeWeeks.has(w)).sort((a,b)=>a-b);
- const totals=new Map(),gradedWeeks=[],failedWeeks=[];let cursor=0,finalGames=0;
+ const totals=new Map((players.results||[]).map(({name})=>[name,{name,wins:0,losses:0,weekWins:0}])),gradedWeeks=[],failedWeeks=[];let cursor=0,finalGames=0;
  const slice=(rows,w)=>({results:(rows.results||[]).filter(r=>Number(r.week)===w)});
  async function worker(){while(cursor<weeks.length){const week=weeks[cursor++];try{
  const games=(await schedule(week)).map(g=>({...g})),first=Math.min(...games.map(g=>Date.parse(g.kickoff)).filter(Number.isFinite));
@@ -31,7 +31,7 @@ export async function onRequestGet({request,env}){
  const result=gradeWeek(pool,week,games,{players,picks:slice(picks,week),ties:slice(ties,week),manual:slice(manual,week),access:slice(access,week)});
  if(!result.rows.length||!result.finalGames)continue;
  gradedWeeks.push(week);finalGames+=result.finalGames;const winners=new Set(result.allFinal?result.finalizedWinners:[]);
- for(const row of result.rows){const name=row.player,v=totals.get(name)||{name,wins:0,losses:0,weekWins:0};v.wins+=row.wins;v.losses+=row.losses;if(winners.has(name))v.weekWins++;totals.set(name,v)}
+ for(const row of result.rows){const name=row.player,v=totals.get(name);if(!v)continue;v.wins+=row.wins;v.losses+=row.losses;if(winners.has(name))v.weekWins++;totals.set(name,v)}
  }catch{failedWeeks.push(week)}}}
  await Promise.all(Array.from({length:Math.min(4,weeks.length)},worker));
  return json({rows:[...totals.values()].sort((a,b)=>b.wins-a.wins||a.losses-b.losses||b.weekWins-a.weekWins||a.name.localeCompare(b.name)),gradedWeeks:gradedWeeks.sort((a,b)=>a-b),failedWeeks:failedWeeks.sort((a,b)=>a-b),finalGames,checkedWeeks:weeks,updatedAt:new Date().toISOString()});
