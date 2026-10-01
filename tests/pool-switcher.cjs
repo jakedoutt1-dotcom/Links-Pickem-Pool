@@ -22,6 +22,15 @@ const assert=require('node:assert/strict'),{DatabaseSync}=require('node:sqlite')
  assert.equal((await call({action:'link'})).status,200);
  assert.equal((await call({action:'link'},'session2')).status,200);
  assert.equal((await call()).data.pools.length,2);
+ assert.equal((await call({action:'verify-link'})).data.verified,true);
+ assert.equal((await call({action:'verify-link'},'session3')).data.verified,false,'Unlinked player cannot inherit an account');
+ assert.equal((await call({action:'verify-link'},'session1','forged')).data.verified,false);
+ const hash=btoa(String.fromCharCode(...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode('salt:password')))));
+ sql.prepare('UPDATE pool_players SET password_hash=? WHERE pool_id=1').run(hash);
+ const {onRequest:rename}=await import('../functions/new-build/api/login-name.js');
+ const renamed=await rename({env:{DB:db},request:new Request('https://test/new-build/api/login-name',{method:'POST',headers:{Authorization:'Bearer session1'},body:JSON.stringify({loginName:'New Login',displayName:'New Display',currentPassword:'password'})})});assert.equal(renamed.status,200);
+ assert.equal((await call()).data.pools.length,2,'My Profile name changes retain linked pools');
+ assert.equal((await call({action:'verify-link'})).data.verified,true,'Renamed player can preserve account on next login');
  const opened=await call({action:'open',pool:2});assert.equal(opened.status,200);assert.deepEqual(opened.data.gameKeys,['college']);assert.equal(opened.data.pool.role,'player');assert.equal(sql.prepare('SELECT pool_id FROM pool_sessions WHERE token=?').get(opened.data.token).pool_id,2);
  assert.equal((await call({action:'open',pool:3})).status,403);
  sql.exec('CREATE TABLE newbuild_player_access(pool_id INTEGER,player_name TEXT,status TEXT)');sql.prepare('INSERT INTO newbuild_player_access VALUES(?,?,?)').run(2,'Same Name','pending');assert.equal((await call({action:'open',pool:2})).status,403,'Revoked access blocks switching');

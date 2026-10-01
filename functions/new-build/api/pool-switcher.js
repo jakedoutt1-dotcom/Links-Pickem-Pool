@@ -12,6 +12,12 @@ export async function onRequest({request,env}){
  const current=await db.prepare('SELECT id,code,name FROM pools WHERE id=?').bind(session.pool_id).first();
  if(!current)return json({error:'Pool not found.'},404);
  const body=request.method==='POST'?await request.json():{};
+ if(body.action==='verify-link'){
+ if(!account)return json({verified:false});
+ const linked=await db.prepare('SELECT email FROM links_player_memberships WHERE pool_id=? AND player_name=?').bind(session.pool_id,session.player_name).first();
+ const owned=session.role==='admin'?await db.prepare('SELECT email FROM links_pool_owners WHERE pool_id=?').bind(session.pool_id).first():null;
+ return json({verified:linked?.email===account.email||owned?.email===account.email});
+ }
  if(body.action==='link'){
  if(!account)return json({error:'Verify your email first.'},401);
  const player=await db.prepare('SELECT name FROM pool_players WHERE pool_id=? AND name=?').bind(session.pool_id,session.player_name).first();

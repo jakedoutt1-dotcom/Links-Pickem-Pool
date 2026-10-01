@@ -26,3 +26,6 @@
 })();
 
 (()=>{const script=document.createElement("script");script.src="/new-build/password-visibility.js?v=1";document.head.append(script)})();
+
+// Preserve a verified linked account only for a server-confirmed member signing in again.
+window.LINKS_ACCOUNT_FOR_LOGIN=async token=>{const account=localStorage.getItem('links-account-token');if(!account)return '';try{const r=await fetch('/new-build/api/pool-switcher',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token,'x-links-account':account},body:JSON.stringify({action:'verify-link'})});return r.ok&&(await r.json()).verified?account:''}catch{return ''}};
