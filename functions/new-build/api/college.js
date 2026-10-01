@@ -1,3 +1,4 @@
+import {submitCorrection} from '../../lib/pick-corrections.js';
 import {collegeContext,schedule,apCandidates,poolFor,sessionFor,storedSlate,deadline,rowsFor,playerCard,standings,settingKey,lockKey,sameName,code} from '../../lib/college.js';
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
 const fail=(message,status=400)=>Object.assign(Error(message),{status});
@@ -29,6 +30,7 @@ export async function onRequest({request,env}){
    for(const r of rows.results){const g=games.find(g=>[g.away,g.home].includes(code(r.winner)));if(g&&g.completed)g.winner=code(r.winner)}
    return json({...response,players:players.filter(p=>Object.keys(p.picks).length||p.tie!=null),...standings(players,games)});
   }
+  if(b.action==='correction'){if(session.role!=='admin')throw fail('Commissioner access required.',403);return submitCorrection(db,session,'college',week,games,{...b,action:b.kind})}
   if(b.action==='access'){
    if(session.role!=='admin')throw fail('Commissioner access required.',403);
    if(typeof b.active!=='boolean')throw fail('Choose Active or Pending.');

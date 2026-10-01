@@ -3270,6 +3270,7 @@ export async function onRequest(context){
       }
       return json({ok:true});
     }
+    if(["admin/results","admin/correction","admin/finalize","admin/unfinalize"].includes(path)&&method==="POST")return json({error:"LINKS finalizes weeks automatically. Submit corrections from the game Admin page for LINKS approval."},409);
     if(path==="admin/results"&&method==="POST"){
       if(s.role!=="admin")return json({error:"Commissioner only."},403);
       const stm=[DB.prepare("DELETE FROM pool_results WHERE pool_id=? AND sport=? AND week=?").bind(pid,sport,w)];

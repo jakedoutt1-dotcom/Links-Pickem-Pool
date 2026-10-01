@@ -4,7 +4,7 @@ const json=(d,s=200)=>Response.json(d,{status:s,headers:{'Cache-Control':'no-sto
 export async function nflPickGuard(request,db,pool,player,week,body){
  const s=await sessionFor(request,db,pool);if(!s||s.role!=='admin'&&String(s.player_name).toLowerCase()!==String(player).toLowerCase())return {response:json({error:'Sign in as this player to access picks.'},403)};
  if(!Number.isInteger(week)||week<1||week>22)return {response:json({error:'Choose a valid NFL week.'},400)};
- if(!body)return {};const correction=s.role==='admin'&&body.commissionerCorrection===true;if(!correction&&String(s.player_name).toLowerCase()!==String(player).toLowerCase())return {response:json({error:'You can only save your own picks.'},403)};
+ if(!body)return {};if(body.commissionerCorrection===true)return {response:json({error:'Submit corrections from Admin for LINKS approval.'},409)};const correction=false;if(!correction&&String(s.player_name).toLowerCase()!==String(player).toLowerCase())return {response:json({error:'You can only save your own picks.'},403)};
  let games;try{games=await weekGames(week)}catch{return {response:json({error:'NFL schedule unavailable. Picks were not changed.'},503)}}
  const first=Math.min(...games.map(g=>Date.parse(g.kickoff))),meta=await db.prepare("SELECT lock_time FROM pool_week_meta WHERE pool_id=? AND sport='nfl' AND week=?").bind(pool,week).first();
  if(!correction&&(!Number.isFinite(first)||Date.now()>=first||meta?.lock_time&&Date.now()>=Date.parse(meta.lock_time)))return {response:json({error:'This week is locked.'},403)};

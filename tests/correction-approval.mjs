@@ -1,0 +1,33 @@
+import assert from 'node:assert/strict';
+import {fixture} from './helpers/pool-format-fixture.mjs';
+import {submitCorrection,reviewCorrection} from '../functions/lib/pick-corrections.js';
+import {ensureOwner,ownerHash} from '../functions/lib/owner-auth.js';
+import {gradeWeek} from '../functions/new-build/api/standings-v649.js';
+import {nflPickGuard} from '../functions/lib/nfl-pick-guard.js';
+const {db}=fixture();
+try{
+ await ensureOwner(db);db.raw.prepare('INSERT INTO links_owner_password VALUES(1,?,?)').run('salt',await ownerHash('owner-password','salt'));db.raw.exec("INSERT INTO links_admin_sessions VALUES('owner','2099-01-01')");
+ const session={pool_id:1,player_name:'Owner',role:'admin'},games=[{eventId:'game',gameIndex:0,away:'BUF',home:'MIA',kickoff:'2020-01-01',completed:true,total:40}];
+ const request=(token='owner')=>new Request('https://test',{headers:{Authorization:'Bearer '+token}});
+ const submit=(action='pick',extra={},sport='nfl')=>submitCorrection(db,session,sport,4,games,{action,player:'Alice',eventId:'game',team:'MIA',guess:42,reason:'Player reported wrong saved selection',...extra});
+ const review=async(id,decision='approve',token='owner',password='owner-password')=>{db.raw.exec('DELETE FROM links_owner_attempts');return reviewCorrection(request(token),db,{id,decision,password})};
+ db.raw.exec("INSERT INTO pool_picks VALUES(1,'nfl','Alice',4,0,'BUF')");
+ assert.equal((await submit('pick',{reason:''})).status,400);
+ let pending=await (await submit()).json();assert.equal(pending.pending,true);assert.equal(db.raw.prepare("SELECT team FROM pool_picks WHERE pool_id=1 AND player_name='Alice' AND week=4").get().team,'BUF');
+ assert.equal((await review(pending.id,'approve','admin')).status,401);
+ assert.equal((await review(pending.id,'approve','owner','wrong')).status,403);
+ assert.equal((await review(pending.id)).status,200);assert.equal(db.raw.prepare("SELECT team FROM pool_picks WHERE pool_id=1 AND player_name='Alice' AND week=4").get().team,'MIA');assert.equal((await review(pending.id)).status,409);
+ pending=await (await submit('pick',{team:'BUF'})).json();assert.equal((await review(pending.id,'reject')).status,200);assert.equal(db.raw.prepare("SELECT team FROM pool_picks WHERE pool_id=1 AND player_name='Alice' AND week=4").get().team,'MIA');
+ pending=await (await submit('tie')).json();assert.equal(db.raw.prepare("SELECT guess FROM pool_ties WHERE player_name='Alice' AND week=4").get(),undefined);assert.equal((await review(pending.id)).status,200);assert.equal(db.raw.prepare("SELECT guess FROM pool_ties WHERE player_name='Alice' AND week=4").get().guess,42);
+ pending=await (await submit('tie',{guess:43})).json();db.raw.exec("UPDATE pool_ties SET guess=44 WHERE player_name='Alice' AND week=4");assert.equal((await review(pending.id)).status,409);assert.equal(db.raw.prepare("SELECT guess FROM pool_ties WHERE player_name='Alice' AND week=4").get().guess,44);
+ pending=await (await submit('pick',{},'college')).json();assert.equal(pending.pending,true);assert.equal((await review(pending.id)).status,200);
+ const open=await submitCorrection(db,session,'nfl',5,[{...games[0],kickoff:'2090-01-01',completed:false}],{action:'pick',player:'Alice',eventId:'game',team:'BUF'});assert.equal((await open.json()).pending,false);
+ assert.equal((await nflPickGuard(request('admin'),db,1,'Alice',4,{commissionerCorrection:true})).response.status,409);
+ const snapshot={players:{results:[{name:'Alice'}]},picks:{results:[{player_name:'Alice',game_index:0,team:'BUF'}]},ties:{results:[{player_name:'Alice',guess:40}]},manual:{results:[]},access:{results:[{player_name:'Alice'}]}};
+ const game={i:0,id:'game',teams:['BUF','MIA'],completed:true,winner:'TIE',total:40,kickoff:'2020-01-01'};
+ let graded=gradeWeek({id:1},4,[game],structuredClone(snapshot));assert.equal(graded.allFinal,true);assert.equal(graded.rows[0].losses,0);assert.deepEqual(graded.finalizedWinners,['Alice']);
+ graded=gradeWeek({id:1},4,[{...game,completed:false,winner:'',total:null}],{...structuredClone(snapshot),manual:{results:[{game_index:0,winner:'BUF'}]}});assert.equal(graded.allFinal,false);assert.deepEqual(graded.finalizedWinners,[]);
+ assert.equal(gradeWeek({id:1},4,[{...game,total:null}],structuredClone(snapshot)).allFinal,false);
+ const history=await (await reviewCorrection(request(),db,null)).json();assert.ok(history.requests.some(r=>r.status==='approved'&&r.decided_at&&r.requested_by==='Owner'));assert.ok(history.requests.some(r=>r.status==='rejected'));
+ console.log('PASS pending isolation, owner password/role, approve/reject audit, stale/duplicate decisions, NFL/College, open-week edits, bypass protection and automatic final ties/postponements');
+}finally{db.raw.close()}
