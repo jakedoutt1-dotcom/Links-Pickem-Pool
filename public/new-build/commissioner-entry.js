@@ -9,9 +9,12 @@
  const marker=document.createElement('meta');marker.id='linksCommissionerEntryModule';document.head.append(marker);
  // Compact shared actions on phones; additional pools stay reachable by swiping.
  const compact=document.createElement('style');compact.textContent=`
+ #linksPoolActions{box-sizing:border-box;flex-direction:column;align-items:stretch!important;padding:18px;border:1px solid #304b5d;border-radius:16px;background:linear-gradient(120deg,#0b1b27,#07121b);box-shadow:inset 0 1px 0 #ffffff06}
+ #linksPoolActions .pool-panel-title{margin:0;color:#edc466;font-size:13px;font-weight:800;line-height:1.3;letter-spacing:2px;text-transform:uppercase}
+ #linksPoolTabs{flex:0 1 auto!important;width:100%;padding:2px 0 6px}
  @media(max-width:640px){
- #linksPoolActions{flex-wrap:nowrap!important;gap:6px!important;overflow-x:auto;max-width:100%;padding:2px 0 6px;align-items:center!important}
- #linksPoolTabs{flex:0 0 auto!important;flex-wrap:nowrap!important;gap:6px!important;max-width:none!important}
+ #linksPoolActions{flex-wrap:nowrap!important;gap:12px!important;max-width:100%;padding:14px}
+ #linksPoolTabs{flex:0 1 auto!important;flex-wrap:nowrap!important;gap:6px!important;max-width:100%!important;overflow-x:auto}
  #linksPoolTabs .action,#linksPoolActions #addMyHomepage{font-size:11px!important;line-height:1.2!important;letter-spacing:0!important;padding:8px!important;min-height:40px!important;white-space:nowrap!important;width:auto!important;max-width:none!important;margin:0!important;border-radius:8px!important;text-transform:none!important}
  #linksPoolTabs [role=status]:empty{display:none}
  #linksPoolActions #addMyHomepage{flex:0 0 auto!important}
@@ -41,8 +44,8 @@
  }
  function place(){
  if(!bar)return;const main=document.querySelector('main');if(!main)return;
- let row=document.getElementById('linksPoolActions');if(!row){row=document.createElement('div');row.id='linksPoolActions';row.style.cssText='grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:12px;width:100%;min-width:0;margin:12px 0';main.prepend(row)}
- if(bar.parentElement!==row)row.prepend(bar);
+ let row=document.getElementById('linksPoolActions');if(!row){row=document.createElement('section');row.id='linksPoolActions';row.setAttribute('aria-labelledby','linksPoolHeading');const heading=document.createElement('h2');heading.id='linksPoolHeading';heading.className='pool-panel-title';heading.textContent='My Pools';row.append(heading);row.style.cssText='grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:12px;width:100%;min-width:0;margin:12px 0';main.prepend(row)}
+ if(bar.parentElement!==row)row.append(bar);
  picksVisible();
  const home=document.getElementById('addMyHomepage');if(home&&home.parentElement!==row){home.style.margin='0 0 0 auto';home.style.flex='0 0 auto';row.append(home)}
  }
