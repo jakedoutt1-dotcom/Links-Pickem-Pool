@@ -1,3 +1,4 @@
+import {referralPartner} from '../../lib/partners.js';
 import {poolGameKeys} from '../../lib/pool-games.js';
 import {recordAccountLogin} from '../../lib/login-activity.js';
 import {PLANS,GAMES,CREATABLE_GAMES,emailKey,digest,ensureAccounts,accountSession,importOwnedPools,allowance,reserveSlots,releaseSlots,ownedPool,retainedFreeSlot} from '../../lib/commissioner-account.js';
@@ -53,12 +54,14 @@ async function verifyFinish(db,b){
 async function createPool(db,env,email,b,origin,sessionExpiry){
  const name=String(b.name||'').trim(),displayName=String(b.displayName||'').trim(),password=String(b.password||''),games=Array.isArray(b.games)?[...new Set(b.games)]:[];
  if(name.length<3||name.length>60||!displayName||displayName.length>50||password.length<8||password.length>200||!games.length||games.some(g=>!CREATABLE_GAMES.has(g)))throw fail('Enter a pool name, your name, a password of at least eight characters, and supported games.');
+ const referredBy=b.partnerRef?await referralPartner(db,b.partnerRef):null;
  await importOwnedPools(db,email);const ids=await reserveSlots(db,email,games),code='LINK-'+crypto.randomUUID().slice(0,8).toUpperCase();
  const salt=btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16)))),hash=btoa(String.fromCharCode(...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(salt+':'+password)))));
  const pid='(SELECT id FROM pools WHERE code=?)',token=crypto.randomUUID()+crypto.randomUUID();
  try{await db.batch([
  db.prepare('INSERT INTO pools(code,name,admin_salt,admin_hash,created_at) VALUES(?,?,?,?,?)').bind(code,name,salt,hash,now()),
  db.prepare(`INSERT INTO links_pool_owners(pool_id,email) VALUES(${pid},?)`).bind(code,email),
+ ...(referredBy?[db.prepare(`INSERT INTO links_partner_referrals(pool_id,partner_id,created_at) VALUES(${pid},?,?)`).bind(code,referredBy.id,now())]:[]),
  ...games.flatMap((g,i)=>[
  db.prepare(`INSERT INTO pool_active_games(pool_id,game_type,is_primary,active,added_at) VALUES(${pid},?,?,1,?)`).bind(code,g,i===0?1:0,now()),
  db.prepare(`UPDATE links_pool_slots SET pool_id=${pid},expires_at=NULL WHERE id=?`).bind(code,ids[i])]),

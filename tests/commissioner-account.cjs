@@ -22,13 +22,13 @@ const assert=require('node:assert/strict'),{DatabaseSync}=require('node:sqlite')
  const env={DB:db,RESEND_API_KEY:'fixture',PAYPAL_CLIENT_ID:'fixture',PAYPAL_CLIENT_SECRET:'fixture'};
  const call=async(body,token='',ip='1')=>{const r=await onRequest({request:new Request('https://test/new-build/api/account',{method:body?'POST':'GET',headers:{'x-links-account':token,'cf-connecting-ip':ip},...(body?{body:JSON.stringify(body)}:{})}),env});return {status:r.status,data:await r.json()}};
  const verify=async(email,ip)=>{assert.equal((await call({action:'send-code',email},'',ip)).status,200);const code=sent.at(-1).text.match(/code is (\d{8})/)[1];const r=await call({action:'verify',email,code},'',ip);assert.equal(r.status,200);return {token:r.data.token,code}};
- const create=(token,name='Office',games=['nfl'])=>call({action:'create',name,displayName:'Owner',password:'longpassword',games},token);
+ let partnerRef='';const create=(token,name='Office',games=['nfl'])=>call({action:'create',name,displayName:'Owner',password:'longpassword',games,partnerRef},token);
  try{
  assert.equal((await call()).status,401);assert.equal((await create('forged')).status,401);
  const a=await verify('First.Last+pool@gmail.com','1');assert.equal(lib.emailKey('firstlast@googlemail.com'),'firstlast@gmail.com');
  assert.equal((await call({action:'verify',email:'firstlast@gmail.com',code:a.code})).status,401,'Code cannot be replayed');
  let snapshot=(await call(null,a.token)).data;assert.equal(snapshot.plan.slots,1);
- let made=await create(a.token);assert.equal(made.status,200,JSON.stringify(made));const pool=made.data.pool.id;assert.equal(made.data.pool.games[0],'NFL Pick’em');
+ const {ensurePartners}=await import('../functions/lib/partners.js');await ensurePartners(db);sql.exec("INSERT INTO links_partners VALUES('partner','Bar','https://test/logo','Main St',40,-90,50,'Offer','https://test',0,1,'2026-01-01');INSERT INTO links_partner_links VALUES('partner','ref-token')");partnerRef='ref-token';let made=await create(a.token);assert.equal(made.status,200,JSON.stringify(made));const pool=made.data.pool.id;assert.equal(sql.prepare('SELECT partner_id FROM links_partner_referrals WHERE pool_id=?').get(pool).partner_id,'partner');partnerRef='';assert.equal(made.data.pool.games[0],'NFL Pick’em');
  assert.equal((await create(a.token,'Second')).status,402,'Second free pool is blocked');
  sql.prepare('INSERT INTO pool_picks VALUES(?,?)').run(pool,'BUF');
  const b=await verify('other@example.com','2');assert.equal((await call({action:'open',pool},b.token)).status,403);assert.equal((await call({action:'archive',pool,game:'nfl'},b.token)).status,403);
