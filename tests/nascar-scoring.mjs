@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {parseRace,liveRaceSummary} from '../functions/lib/nascar-results.js';
+import {rankEntries,cleanConfig} from '../public/new-build/event-pool-core.mjs';
+const stage={stage_number:1,results:Array.from({length:10},(_,i)=>({driver_id:i+1,stage_points:10-i}))};
+const race={race_id:123,series_id:1,race_season:2026,inspection_complete:true,number_of_cars_in_field:2,results:[{driver_fullname:'A',driver_id:1,finishing_position:1},{driver_fullname:'B',driver_id:2,finishing_position:2}],stage_results:[stage,{...stage,stage_number:2}]};
+const result=parseRace({weekend_race:[race]},123,2026);assert.equal(result.results.A.points,75);assert.equal(result.results.B.points,53);
+assert.deepEqual(parseRace({weekend_race:[race]},999,2026).results,{});
+assert.deepEqual(parseRace({weekend_race:[{...race,inspection_complete:false}]},123,2026).results,{});
+assert.equal(parseRace({weekend_race:[{...race,stage_results:[]}]},123,2026).results.A.points,undefined);
+const results={A:{finish:1},B:{finish:8},C:{finish:3},D:{finish:6}};
+const rows=[{player:'Z',score:9,card:{picks:['A','B']}},{player:'A',score:9,card:{picks:['C','D']}}];
+assert.deepEqual(rankEntries('nascar',{format:'simple',pickCount:2,tieRule:'best-finish'},results,structuredClone(rows)).map(r=>[r.player,r.rank]),[['Z',1],['A',2]]);
+assert.deepEqual(rankEntries('nascar',{format:'simple',pickCount:2},results,structuredClone(rows)).map(r=>r.rank),[1,1]);
+assert.equal(liveRaceSummary({race_id:99,series_id:1,run_type:3},123),null);
+assert.equal(liveRaceSummary({race_id:123,series_id:2,run_type:3},123),null);
+console.log('PASS official final gating, stage totals, missing stages, race isolation and tie ranks');

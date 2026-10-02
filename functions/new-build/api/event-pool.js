@@ -1,4 +1,6 @@
-import {cleanConfig,validateCard,scoreCard,rules} from '../../../public/new-build/event-pool-core.mjs';
+import {automaticGolf} from '../../lib/golf-results.js';
+import {automaticRace,readLiveRace} from '../../lib/nascar-results.js';
+import {cleanConfig,validateCard,scoreCard,rules,rankEntries} from '../../../public/new-build/event-pool-core.mjs';
 const json=(v,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store'}});
 export async function onRequest({request,env}){
  try{
@@ -17,16 +19,19 @@ export async function onRequest({request,env}){
  const history=(await db.prepare('SELECT c.card,e.config FROM links_event_cards c JOIN links_event_pools e ON e.pool_id=c.pool_id AND e.game=c.game AND e.event_id=c.event_id WHERE c.pool_id=? AND c.game=? AND c.player=? AND c.event_id<>?').bind(pool,game,actor.player_name,event?.event_id||'').all()).results||[];
  const used=config?history.filter(h=>{const c=JSON.parse(h.config);return c.year===config.year&&c.format===config.format&&(config.format!=='fantasy'||c.phase===config.phase)}).flatMap(h=>JSON.parse(h.card).picks):[];
  if(request.method==='GET'){
+ let liveRace=null;if(game==='nascar'&&config?.raceId){try{liveRace=await readLiveRace(config.raceId)}catch{}}
  const closed=config&&Date.now()>=Date.parse(config.lockAt),mine=cards.find(c=>c.player===actor.player_name);
+ let scoringMessage='';if(game==='nascar'&&config?.scoring==='automatic'&&closed){try{const auto=await automaticRace(db,config);results=auto.results;scoringMessage=auto.message}catch{results={};scoringMessage='Automatic results temporarily unavailable. Retry shortly.'}}
+ let liveGolf=null;if(game==='golf'&&config?.scoring==='automatic'){try{const auto=await automaticGolf(db,config);results=auto.results;liveGolf=auto.live;scoringMessage=auto.message}catch{results={};scoringMessage='Automatic golf results unavailable. Retry shortly.'}}
  const rows=closed?cards.map(c=>({player:c.player,card:JSON.parse(c.card),...scoreCard(game,config,JSON.parse(c.card),results)})):[];
  if(config?.format==='one'){
 const seasonCards=(await db.prepare('SELECT c.player,c.card,e.config,e.results FROM links_event_cards c JOIN links_event_pools e ON e.pool_id=c.pool_id AND e.game=c.game AND e.event_id=c.event_id WHERE c.pool_id=? AND c.game=?').bind(pool,game).all()).results||[];
-const totals=new Map();for(const item of seasonCards){const cfg=JSON.parse(item.config);if(cfg.format!=='one'||cfg.year!==config.year||Date.parse(cfg.lockAt)>Date.now())continue;const scored=scoreCard(game,cfg,JSON.parse(item.card),JSON.parse(item.results));if(scored.score!==null)totals.set(item.player,(totals.get(item.player)||0)+scored.score);}
+const automaticHistory=new Map(),totals=new Map();for(const item of seasonCards){const cfg=JSON.parse(item.config);if(cfg.format!=='one'||cfg.year!==config.year||Date.parse(cfg.lockAt)>Date.now())continue;let pastResults=JSON.parse(item.results);if(cfg.scoring==='automatic'){try{if(!automaticHistory.has(cfg.tournamentId))automaticHistory.set(cfg.tournamentId,await automaticGolf(db,cfg));pastResults=automaticHistory.get(cfg.tournamentId).results;}catch{pastResults={};scoringMessage='Some tournament results are unavailable; season totals may be incomplete.'}}const scored=scoreCard(game,cfg,JSON.parse(item.card),pastResults);if(scored.score!==null)totals.set(item.player,(totals.get(item.player)||0)+scored.score);}
 for(const [player,total] of totals)if(!rows.some(r=>r.player===player))rows.push({player,score:total,card:null});
  for(const row of rows){row.eventScore=row.score;row.score=totals.get(row.player)??null;row.detail='Season tournament earnings';}
 }
-rows.sort((a,b)=>a.score===null?1:b.score===null?-1:(game==='golf'&&config.format==='one'||config.format==='fantasy'?b.score-a.score:a.score-b.score)||a.player.localeCompare(b.player));
- return json({role:actor.role,player:actor.player_name,events:events.map(e=>({id:e.event_id,title:JSON.parse(e.config).title})),event:event?.event_id,config,results:closed||admin?results:{},version:event?.version,closed:!!closed,card:mine?JSON.parse(mine.card):null,savedAt:mine?.saved_at,used,rows,rules:config?rules(game,config):'',entries:cards.length});
+const ranked=rankEntries(game,config,results,rows);
+ return json({role:actor.role,player:actor.player_name,events:events.map(e=>({id:e.event_id,title:JSON.parse(e.config).title})),event:event?.event_id,config,results:closed||admin?results:{},version:event?.version,closed:!!closed,card:mine?JSON.parse(mine.card):null,savedAt:mine?.saved_at,used,rows:ranked,scoringMessage,liveRace,liveGolf,rules:config?rules(game,config):'',entries:cards.length});
  }
  if(request.method!=='POST')return json({error:'Method not allowed.'},405);
  const action=b.action;
@@ -66,6 +71,7 @@ rows.sort((a,b)=>a.score===null?1:b.score===null?-1:(game==='golf'&&config.forma
  if(action==='closeGarage'){if(!admin||config.format!=='fantasy')return json({error:'Commissioner only.'},403);const next={...config,garageClosesAt:new Date().toISOString()};const changed=await db.prepare('UPDATE links_event_pools SET config=?,version=version+1 WHERE pool_id=? AND game=? AND event_id=? AND version=?').bind(JSON.stringify(next),pool,game,event.event_id,event.version).run();if(!changed.meta?.changes)return json({error:'Event changed. Refresh first.'},409);return json({ok:true});}
  if(action==='results'){
  if(!admin)return json({error:'Commissioner only.'},403);
+ if(config.scoring==='automatic')return json({error:'This event uses automatic official scoring.'},409);
  if(Date.now()<Date.parse(config.lockAt))return json({error:'Record results after the deadline.'},409);
  const next={};for(const item of b.results||[]){
  if(!config.field.some(f=>f.name===item.name)||next[item.name]||!['final','cut','withdrawn','pending'].includes(item.status))throw Error('Check result names and statuses.');

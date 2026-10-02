@@ -9,7 +9,7 @@ export async function onRequest({request,env}){try{
  const currentRow=await env.DB.prepare('SELECT value FROM pool_settings WHERE pool_id=? AND key=?').bind(pool,'game_settings:nascar:current').first();const current=currentRow?JSON.parse(currentRow.value):null;
  const official=String(b.raceId||current?.settings?.raceId||'').startsWith('nascar-');
  let races=[],source='';
- const providers=official?['nascar','espn']:['espn','nascar'];
+ const providers=official||b.provider==='nascar'?['nascar','espn']:['espn','nascar'];
  for(const provider of providers){try{
  const url=provider==='espn'?'https://site.api.espn.com/apis/site/v2/sports/racing/nascar-premier/scoreboard?dates='+year+'&limit=100':'https://cf.nascar.com/cacher/'+year+'/race_list_basic.json';
  const r=await fetch(url,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(10000)});if(!r.ok)continue;const feed=await r.json();
@@ -18,6 +18,14 @@ export async function onRequest({request,env}){try{
  if(races.length){source=provider==='espn'?'ESPN':'NASCAR';break}
  }catch{}}
  if(!races.length)throw Error('Race schedule unavailable. Use Load race schedule to retry.');
+ if(request.method==='GET'&&b.raceId){
+ const race=races.find(e=>e.id===String(b.raceId));if(!race)return json({error:'Race not found in this season.'},404);
+ if(race.id.startsWith('nascar-')){try{const id=race.id.slice(7);const response=await fetch(`https://cf.nascar.com/cacher/${year}/1/${id}/weekend-feed.json`,{signal:AbortSignal.timeout(10000)});if(response.ok){const feed=await response.json();const event=feed.weekend_race?.find(r=>String(r.race_id)===id&&Number(r.series_id)===1&&Number(r.race_season)===year);race.drivers=[...new Set((event?.results||[]).map(r=>r.driver_fullname).filter(Boolean))];}}catch{}}
+ if(!race.drivers.length&&!race.id.startsWith('nascar-')){
+ try{const date=race.date.slice(0,10).replaceAll('-','');const r=await fetch('https://site.api.espn.com/apis/site/v2/sports/racing/nascar-premier/scoreboard?dates='+date,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(10000)});if(r.ok){const feed=await r.json(),event=(feed.events||[]).find(e=>String(e.id)===race.id);race.drivers=[...new Set((event?.competitions||[]).flatMap(c=>(c.competitors||[]).map(p=>p.athlete?.displayName||p.athlete?.fullName).filter(Boolean)))];}}catch{}
+ }
+ return json({race,source,message:race.drivers.length?'Review the driver field and deadline before saving.':'The driver field has not been published by this feed. Retry closer to race day or enter confirmed drivers manually.'});
+ }
  if(request.method==='GET'){const row=await env.DB.prepare('SELECT value FROM pool_settings WHERE pool_id=? AND key=?').bind(pool,'game_settings:nascar:current').first();return json({races,current:row?JSON.parse(row.value):null,source});}
  if(request.method!=='POST')return json({error:'Method not allowed'},405);
  const race=races.find(e=>e.id===String(b.raceId)),limit=Number(b.pickLimit);

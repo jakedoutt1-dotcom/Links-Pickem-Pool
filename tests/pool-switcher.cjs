@@ -37,5 +37,17 @@ const assert=require('node:assert/strict'),{DatabaseSync}=require('node:sqlite')
  sql.exec('DELETE FROM newbuild_player_access; DELETE FROM pool_players WHERE pool_id=2');assert.equal((await call({action:'open',pool:2})).status,403,'Deleted memberships cannot return');
  sql.prepare('INSERT INTO links_pool_owners VALUES(?,?)').run(3,'player@example.com');sql.prepare('INSERT INTO pool_settings VALUES(?,?,?)').run(3,'commissioner_player_name','Same Name');assert.equal((await call({action:'open',pool:3})).data.pool.role,'commissioner');
  assert.equal((await call({action:'open',pool:3},'session1','forged')).status,401);
+ assert.equal((await call({action:'leave-game',pool:1,game:'nfl'})).status,200);
+ assert.deepEqual((await call()).data.pools.find(p=>p.id==='1').games,[]);
+ assert.deepEqual((await call()).data.pools.find(p=>p.id==='1').allGames,['nfl']);
+ assert.equal((await call({action:'rejoin-game',pool:1,game:'nfl'})).status,200);
+ assert.deepEqual((await call()).data.pools.find(p=>p.id==='1').games,['nfl']);
+ assert.equal((await call({action:'leave-game',pool:2,game:'college'})).status,403);
+ assert.equal((await call({action:'leave',pool:3})).status,409);
+ assert.equal((await call({action:'leave',pool:1},'session1','forged')).status,401);
+ assert.equal((await call({action:'leave',pool:1})).data.current,true);
+ assert.equal(sql.prepare('SELECT count(*) AS n FROM pool_sessions WHERE pool_id=1').get().n,0);
+ assert.ok(sql.prepare('SELECT name FROM pool_players WHERE pool_id=1').get());
+ assert.equal(sql.prepare('SELECT count(*) AS n FROM links_player_memberships WHERE pool_id=1').get().n,0);
  console.log('PASS pool switching: identity isolation, linked College membership, revoked/deleted access, commissioner ownership, scoped sessions');
 })().catch(e=>{console.error(e);process.exitCode=1});

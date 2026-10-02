@@ -10,6 +10,7 @@ const assert=require('node:assert/strict'),{DatabaseSync}=require('node:sqlite')
  try{
  assert.equal((await call('alice')).status,403);assert.equal((await call('bob',{})).status,403);
  assert.equal((await (await call('admin')).json()).races[0].drivers[0],'Driver A');
+ const detail=await onRequest({request:new Request('https://test/api/nascar-schedule?pool=1&year=2026&raceId=123',{headers:{Authorization:'Bearer admin'}}),env:{DB:db}});assert.deepEqual((await detail.json()).race.drivers,['Driver A']);
  assert.equal((await call('admin',{raceId:'bogus'})).status,400);assert.equal((await call('admin',{drivers:[]})).status,400);
  assert.equal((await call('admin',{})).status,200);
  const request=()=>new Request('https://test/api/picks',{method:'POST',headers:{Authorization:'Bearer alice'},body:JSON.stringify({pool:1,game:'NASCAR',player:'Alice',period:'race-123',eventId:'option:Driver A',selection:'Driver A'})});

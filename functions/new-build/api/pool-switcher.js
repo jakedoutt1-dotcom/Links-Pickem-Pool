@@ -5,6 +5,7 @@ export async function onRequest({request,env}){
  try{
  const db=env.DB;await ensureAccounts(db);
  await db.prepare('CREATE TABLE IF NOT EXISTS links_player_memberships (pool_id INTEGER NOT NULL,player_name TEXT NOT NULL,email TEXT NOT NULL,PRIMARY KEY(pool_id,player_name))').run();
+ await db.prepare('CREATE TABLE IF NOT EXISTS links_left_games(pool_id INTEGER NOT NULL,player_name TEXT NOT NULL,game TEXT NOT NULL,PRIMARY KEY(pool_id,player_name,game))').run();
  const token=(request.headers.get('authorization')||'').replace(/^Bearer /,'');
  const session=await db.prepare('SELECT * FROM pool_sessions WHERE token=?').bind(token).first();
  if(!session||!Number.isFinite(Date.parse(session.expires_at))||Date.parse(session.expires_at)<=Date.now())return json({error:'Sign into your pool first.'},401);
@@ -39,7 +40,27 @@ export async function onRequest({request,env}){
  // Weekly pending status does not remove membership; global access revocation does.
  let access=null;try{access=await db.prepare('SELECT status FROM newbuild_player_access WHERE pool_id=? AND player_name=?').bind(p.id,p.playerName).first()}catch(e){if(!/no such table/i.test(String(e)))throw e}
  if(p.role!=='admin'&&access?.status==='pending'){pools.delete(id);continue}
- p.games=await poolGameKeys(db,p.id);
+ p.allGames=await poolGameKeys(db,p.id);
+ p.leftGames=(await db.prepare('SELECT game FROM links_left_games WHERE pool_id=? AND player_name=?').bind(p.id,p.playerName).all()).results.map(r=>r.game);
+ p.games=p.allGames.filter(g=>!p.leftGames.includes(g));
+ }
+ if(['leave-game','rejoin-game'].includes(body.action)){
+ const p=pools.get(String(body.pool));if(!p||!p.allGames.includes(body.game))return json({error:'Game not available in your pool.'},403);
+ if(String(p.id)!==String(current.id)&&!account)return json({error:'Verify your email first.'},401);
+ if(body.action==='leave-game')await db.prepare('INSERT OR IGNORE INTO links_left_games(pool_id,player_name,game) VALUES(?,?,?)').bind(p.id,p.playerName,body.game).run();
+ else await db.prepare('DELETE FROM links_left_games WHERE pool_id=? AND player_name=? AND game=?').bind(p.id,p.playerName,body.game).run();
+ return json({ok:true});
+ }
+ if(body.action==='leave'){
+ if(!account)return json({error:'Verify your email before leaving a connected pool.'},401);
+ const p=pools.get(String(body.pool));if(!p)return json({error:'You do not have access to this pool.'},403);
+ const owner=await db.prepare('SELECT email FROM links_pool_owners WHERE pool_id=?').bind(p.id).first();
+ if(p.role==='admin'||owner?.email===account.email)return json({error:'Commissioners cannot leave a pool they manage.'},409);
+ await db.batch([
+ db.prepare('DELETE FROM links_player_memberships WHERE pool_id=? AND player_name=? AND email=?').bind(p.id,p.playerName,account.email),
+ db.prepare('DELETE FROM pool_sessions WHERE pool_id=? AND player_name=?').bind(p.id,p.playerName)
+ ]);
+ return json({ok:true,leftPool:p.id,current:String(p.id)===String(session.pool_id)});
  }
  if(body.action==='open'){
  if(!account)return json({error:'Verify your email to switch pools.'},401);
