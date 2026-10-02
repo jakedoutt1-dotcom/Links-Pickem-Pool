@@ -5,3 +5,6 @@
 
 /* Keep mobile Safari from zooming focused sign-in controls. */
 #linksPoolLoginModal input,#linksPoolLoginModal select,#linksPoolLoginModal textarea,.locker-login input,.locker-login select{font-size:16px!important;line-height:1.4}#linksPoolLoginModal,.locker-login{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+
+@keyframes links-password-filled{from{opacity:.99}to{opacity:1}}
+#poolPassword:-webkit-autofill,#lpmPassword:-webkit-autofill{animation:links-password-filled .01s}

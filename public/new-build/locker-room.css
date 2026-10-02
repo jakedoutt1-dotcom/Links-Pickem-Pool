@@ -17,3 +17,5 @@
 .partner-offer{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px}.partner-offer>img{width:100%;max-height:85px;object-fit:contain}.partner-offer>p{font-size:13px;line-height:1.5;color:var(--gold);margin:0;overflow-wrap:anywhere}
 #partnerMobileControls #linksPartnerBanner{margin:0!important;padding:8px!important;background:#0b151b!important}#partnerMobileControls #linksPartnerBanner:has(>.partner-location-controls:only-child){border:0;background:transparent!important}#partnerMobileControls .partner-location-controls{display:flex;gap:8px;justify-content:center}
 @media(min-width:901px){#partnerMobileControls{position:absolute;left:20%;right:20%;bottom:2%;z-index:2}}
+
+@media(max-width:900px){.locker-room>.wall-panel{display:none}.locker-room{padding-top:0}.shelf-area{margin-top:0}}
