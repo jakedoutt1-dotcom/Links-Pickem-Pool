@@ -1,7 +1,8 @@
 // Shared pool tabs. The server, never a cached role or display name, grants access.
 (()=>{
+ const locker=/\/control-center(?:\.html)?\/?$/i.test(location.pathname);
  const picksPage=/\/(nfl|college|survivor|confidence|game33|squares|props|playoff|march-madness|golf|nascar|fantasy|dynasty|custom)(?:\.html)?\/?$/i;
- if(!picksPage.test(location.pathname))return;
+ if(!locker&&!picksPage.test(location.pathname))return;
  const picksVisible=()=>{const row=document.getElementById('linksPoolActions');if(row){const view=new URLSearchParams(location.search).get('view');const hide=view&&view!=='picks';row.style.setProperty('display',hide?'none':'flex','important')}};
  window.addEventListener('links-game-view',picksVisible);
 
@@ -30,7 +31,7 @@
  function enter(j){
  localStorage.setItem('links-legacy-token',j.token);localStorage.setItem('links-token',j.token);localStorage.setItem('links-current-pool',JSON.stringify(j.pool));localStorage.setItem('links-player-id',j.playerId);localStorage.setItem('links-player-name',j.playerId);localStorage.setItem('links-player-role',j.pool.role);
  for(const key of ['links-playmaker-import','links-signed-out','links-nfl-selected-week'])sessionStorage.removeItem(key);
- const route=j.gameKeys.length===1?routes[j.gameKeys[0]]:null;location.assign('./'+(route||'control-center.html')+'?pool='+encodeURIComponent(j.pool.id));
+ location.assign('./control-center.html?pool='+encodeURIComponent(j.pool.id));
  }
  function button(text,fn){const b=document.createElement('button');b.type='button';b.textContent=text;b.className='action';b.addEventListener('click',fn);return b}
  function connect(){
@@ -43,6 +44,7 @@
  if(state.verified){form.hidden=true;status.textContent='';const link=button('Link this player to my verified account',async()=>{link.disabled=true;try{await finish()}catch(e){form.hidden=false;status.textContent=e.message}finally{link.disabled=false}});dialog.prepend(link)}
  }
  function place(){
+ if(locker)return;
  if(!bar)return;const main=document.querySelector('main');if(!main)return;
  let row=document.getElementById('linksPoolActions');if(!row){row=document.createElement('section');row.id='linksPoolActions';row.setAttribute('aria-labelledby','linksPoolHeading');const heading=document.createElement('h2');heading.id='linksPoolHeading';heading.className='pool-panel-title';heading.textContent='My Pools';row.append(heading);row.style.cssText='grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:12px;width:100%;min-width:0;margin:12px 0';main.prepend(row)}
  if(bar.parentElement!==row)row.append(bar);
@@ -51,6 +53,7 @@
  const home=document.getElementById('addMyHomepage');if(home&&home.parentElement!==row){home.style.margin='0 0 0 auto';home.style.flex='0 0 auto';row.append(home)}
  }
  function render(){
+ if(locker){const b=document.getElementById('connectPools');if(b){b.disabled=false;b.onclick=connect}window.dispatchEvent(new CustomEvent('links:pools-ready',{detail:state}));return}
  if(!bar){bar=document.createElement('nav');bar.id='linksPoolTabs';bar.setAttribute('aria-label','My pools');bar.style.cssText='display:flex;flex:1 1 300px;gap:8px;flex-wrap:wrap;align-items:center;box-sizing:border-box;min-width:0;max-width:100%';place()}
  bar.replaceChildren();
  for(const pool of state.pools){const b=button(pool.name,async()=>{b.disabled=true;try{enter(await api({action:'open',pool:pool.id}))}catch(e){message.textContent=e.message;b.disabled=false}});b.style.cssText='flex:0 0 auto;white-space:nowrap';if(pool.id===state.currentPool){b.setAttribute('aria-current','page');b.disabled=true;b.style.cssText+=';background:#edc466!important;color:#101820!important;border-color:#edc466!important;opacity:1!important;filter:none!important;cursor:default;text-shadow:none!important'}bar.append(b)}
@@ -62,7 +65,7 @@
  const tabs=document.querySelector('main .tabs');if(tabs&&!tabs.querySelector('[data-game-admin]')){const adminButton=button('ADMIN',()=>location.assign('./game-setup.html?'+new URLSearchParams({pool:current.id,game:setup[page]})));adminButton.dataset.gameAdmin='1';adminButton.style.cssText='background:#0d293b;color:#fff;border:1px solid #3b6178';tabs.append(adminButton)}
  }
 
- if(current?.games?.length>1){const change=document.createElement('a');change.className='action';change.href='./control-center.html?pool='+encodeURIComponent(state.currentPool);change.textContent='Change Game';change.style.whiteSpace='nowrap';bar.append(change)}
+ if(current){const change=document.createElement('a');change.className='action';change.href='./control-center.html?pool='+encodeURIComponent(state.currentPool);change.textContent='Back to Locker Room';change.style.whiteSpace='nowrap';bar.append(change)}
  if(state.commissioner){const a=document.createElement('a');const page=location.pathname.split('/').pop(),q=new URLSearchParams(location.search);let game=Object.keys(routes).find(k=>routes[k]===page);if(!game&&/^(nfl-|compare-picks|pick-tools|year-standings)/.test(page))game='nfl';if(!game&&page==='commissioner.html')game=/college/i.test(q.get('game')||'')?'college':'nfl';a.href='./commissioner-hub.html'+(game?'?returnGame='+encodeURIComponent(game):'');a.className='action';a.dataset.commissionerPools='1';a.textContent='＋ Add Pool / Game';a.style.whiteSpace='nowrap';bar.append(a)}
  bar.append(button(state.verified?'Link this player':'Connect my pools',connect));const message=document.createElement('span');message.setAttribute('role','status');message.setAttribute('aria-live','polite');bar.append(message);
  }
