@@ -18,6 +18,7 @@ try{for(const width of [1280,390]){
   }
   if(url.pathname.endsWith('/api/pool-games'))return route.fulfill({json:{games:[{key:'squares',name:'Squares'},{key:'props',name:'Props'},{key:'playoff',name:'Playoffs'}]}});
   if(url.pathname==='/api/session'){const admin=(req.headers().authorization||'').includes('admin');return route.fulfill({json:{role:admin?'admin':'player',poolCode:'POOL',name:admin?'Owner':'Alice',access:{adFree:true}}})}
+  if(url.pathname.endsWith('/api/pool-switcher'))return route.fulfill({json:{currentPool:'1',pools:[{id:'1',code:'POOL',name:'Test pool',playerName:'Owner',role:'admin',games:['squares','props','playoff']}]}});
   if(url.pathname.includes('/api/'))return route.fulfill({json:{}});
   try{return route.fulfill({body:readFileSync(resolve(root,'.'+url.pathname)),contentType:({'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.png':'image/png','.jpg':'image/jpeg'}[extname(url.pathname)]||'application/octet-stream')})}catch{return route.fulfill({status:404,body:'Not found'})}
  });
@@ -52,6 +53,6 @@ try{for(const width of [1280,390]){
  fx.runtime.slate=[{...fx.runtime.slate[0],kickoff:'2020-01-01',completed:true,winner:'BUF',awayScore:20,homeScore:10}];
  await page.getByRole('button',{name:'Refresh',exact:true}).click();await page.getByText('Your pool is up to date.',{exact:true}).waitFor();assert.equal(await page.locator('[name="pick0"]:enabled').count(),0);
  await page.getByRole('button',{name:'Standings',exact:true}).click();assert.match(await page.locator('tbody').textContent(),/Alice2FINAL/);
- await page.getByRole('link',{name:'Back to my pool',exact:true}).click();await page.locator('#topGameGrid a').first().waitFor();for(const g of ['squares','props','playoff'])assert.equal(await page.locator('#topGameGrid a[href*=\"'+g+'.html\"]').count(),1);
+ await page.locator('#formatPoolLink').click();await page.locator('#topGameGrid .game-plaque').first().waitFor();assert.equal(await page.getByRole('button',{name:'Test pool · Squares',exact:true}).isEnabled(),true);for(const g of ['Props','Playoffs'])assert.equal(await page.getByRole('button',{name:'Test pool · '+g+' · Coming soon',exact:true}).isDisabled(),true);
  assert.deepEqual(errors,[]);fx.db.raw.close();await context.close();console.log('PASS '+width+'px complete Squares, Props and Playoffs player/commissioner flows against database handlers');
  }}finally{await browser.close()}

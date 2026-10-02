@@ -3,25 +3,8 @@
  const locker=/\/control-center(?:\.html)?\/?$/i.test(location.pathname);
  const picksPage=/\/(nfl|college|survivor|confidence|game33|squares|props|playoff|march-madness|golf|nascar|fantasy|dynasty|custom)(?:\.html)?\/?$/i;
  if(!locker&&!picksPage.test(location.pathname))return;
- const picksVisible=()=>{const row=document.getElementById('linksPoolActions');if(row){const view=new URLSearchParams(location.search).get('view');const hide=view&&view!=='picks';row.style.setProperty('display',hide?'none':'flex','important')}};
- window.addEventListener('links-game-view',picksVisible);
-
  if(document.getElementById('linksCommissionerEntryModule'))return;
  const marker=document.createElement('meta');marker.id='linksCommissionerEntryModule';document.head.append(marker);
- // Compact shared actions on phones; additional pools stay reachable by swiping.
- const compact=document.createElement('style');compact.textContent=`
- #linksPoolActions{box-sizing:border-box;flex-direction:column;align-items:stretch!important;padding:18px;border:1px solid #304b5d;border-radius:16px;background:linear-gradient(120deg,#0b1b27,#07121b);box-shadow:inset 0 1px 0 #ffffff06}
- #linksPoolActions .pool-panel-title{margin:0;color:#edc466;font-size:13px;font-weight:800;line-height:1.3;letter-spacing:2px;text-transform:uppercase}
- #linksPoolTabs{flex:0 1 auto!important;width:100%;padding:2px 0 6px}
- @media(max-width:640px){
- #linksPoolActions{flex-wrap:nowrap!important;gap:12px!important;max-width:100%;padding:14px}
- #linksPoolTabs{flex:0 1 auto!important;flex-wrap:nowrap!important;gap:6px!important;max-width:100%!important;overflow-x:auto}
- #linksPoolTabs .action,#linksPoolActions #addMyHomepage{font-size:11px!important;line-height:1.2!important;letter-spacing:0!important;padding:8px!important;min-height:40px!important;white-space:nowrap!important;width:auto!important;max-width:none!important;margin:0!important;border-radius:8px!important;text-transform:none!important}
- #linksPoolTabs [role=status]:empty{display:none}
- #linksPoolActions #addMyHomepage{flex:0 0 auto!important}
- }
- @media(max-width:420px){#linksPoolTabs .action,#linksPoolActions #addMyHomepage{font-size:10px!important;padding:8px 6px!important}}
- `;document.head.append(compact);
  const token=localStorage.getItem('links-legacy-token')||localStorage.getItem('links-token');if(!token)return;
  const routes={nfl:'nfl.html',college:'college.html',survivor:'survivor.html',confidence:'confidence.html','33':'game33.html',squares:'squares.html',props:'props.html',playoff:'playoff.html',march:'march-madness.html',masters:'golf.html',nascar:'nascar.html',fantasy:'fantasy.html',dynasty:'dynasty.html',custom:'custom.html'};
  let state,bar;
@@ -44,19 +27,13 @@
  if(state.verified){form.hidden=true;status.textContent='';const link=button('Link this player to my verified account',async()=>{link.disabled=true;try{await finish()}catch(e){form.hidden=false;status.textContent=e.message}finally{link.disabled=false}});dialog.prepend(link)}
  }
  function place(){
- if(locker)return;
- if(!bar)return;const main=document.querySelector('main');if(!main)return;
- let row=document.getElementById('linksPoolActions');if(!row){row=document.createElement('section');row.id='linksPoolActions';row.setAttribute('aria-labelledby','linksPoolHeading');const heading=document.createElement('h2');heading.id='linksPoolHeading';heading.className='pool-panel-title';heading.textContent='My Pools';row.append(heading);row.style.cssText='grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:12px;width:100%;min-width:0;margin:12px 0';main.prepend(row)}
- if(bar.parentElement!==row)row.append(bar);
- picksVisible();
- import('./partner-banner.mjs').then(m=>m.mountPartners(row)).catch(()=>{});
- const home=document.getElementById('addMyHomepage');if(home&&home.parentElement!==row){home.style.margin='0 0 0 auto';home.style.flex='0 0 auto';row.append(home)}
+ if(locker||!bar)return;
+ const header=document.querySelector('header');if(header&&bar.parentElement!==header)header.append(bar);
  }
  function render(){
  if(locker){const b=document.getElementById('connectPools');if(b){b.disabled=false;b.onclick=connect}window.dispatchEvent(new CustomEvent('links:pools-ready',{detail:state}));return}
- if(!bar){bar=document.createElement('nav');bar.id='linksPoolTabs';bar.setAttribute('aria-label','My pools');bar.style.cssText='display:flex;flex:1 1 300px;gap:8px;flex-wrap:wrap;align-items:center;box-sizing:border-box;min-width:0;max-width:100%';place()}
+ if(!bar){const main=document.querySelector('main');if(main){const anchor=document.createElement('div');anchor.hidden=true;main.prepend(anchor);import('./partner-banner.mjs').then(m=>m.mountPartners(anchor)).catch(()=>{})}bar=document.createElement('nav');bar.id='linksPoolTabs';bar.setAttribute('aria-label','Locker Room');bar.style.cssText='display:flex;gap:8px;align-items:center;box-sizing:border-box;min-width:0;max-width:100%';place()}
  bar.replaceChildren();
- for(const pool of state.pools){const b=button(pool.name,async()=>{b.disabled=true;try{enter(await api({action:'open',pool:pool.id}))}catch(e){message.textContent=e.message;b.disabled=false}});b.style.cssText='flex:0 0 auto;white-space:nowrap';if(pool.id===state.currentPool){b.setAttribute('aria-current','page');b.disabled=true;b.style.cssText+=';background:#edc466!important;color:#101820!important;border-color:#edc466!important;opacity:1!important;filter:none!important;cursor:default;text-shadow:none!important'}bar.append(b)}
  const current=state.pools.find(p=>p.id===state.currentPool);
  const pagePool=new URLSearchParams(location.search).get('pool');
  // Games with their own Admin tabs keep those tabs. Generic games get one inside the game navigation.
@@ -66,8 +43,7 @@
  }
 
  if(current){const change=document.createElement('a');change.className='action';change.href='./control-center.html?pool='+encodeURIComponent(state.currentPool);change.textContent='Back to Locker Room';change.style.whiteSpace='nowrap';bar.append(change)}
- if(state.commissioner){const a=document.createElement('a');const page=location.pathname.split('/').pop(),q=new URLSearchParams(location.search);let game=Object.keys(routes).find(k=>routes[k]===page);if(!game&&/^(nfl-|compare-picks|pick-tools|year-standings)/.test(page))game='nfl';if(!game&&page==='commissioner.html')game=/college/i.test(q.get('game')||'')?'college':'nfl';a.href='./commissioner-hub.html'+(game?'?returnGame='+encodeURIComponent(game):'');a.className='action';a.dataset.commissionerPools='1';a.textContent='＋ Add Pool / Game';a.style.whiteSpace='nowrap';bar.append(a)}
- bar.append(button(state.verified?'Link this player':'Connect my pools',connect));const message=document.createElement('span');message.setAttribute('role','status');message.setAttribute('aria-live','polite');bar.append(message);
+
  }
  const observer=new MutationObserver(place);observer.observe(document.body,{childList:true,subtree:true});window.addEventListener('pagehide',()=>observer.disconnect(),{once:true});
  api().then(j=>{state=j;render()}).catch(()=>{});

@@ -1,6 +1,6 @@
 import {nearby} from './partner-match.mjs';
 let started=false;
-export function mountPartners(panel,{host,controlsHost,onPartner=()=>{}}={}){if(started)return;started=true;
+export function mountPartners(panel,{host,controlsHost,brandingOnly=false,onPartner=()=>{}}={}){if(started)return;started=true;
  const box=document.createElement('section');box.id='linksPartnerBanner';box.setAttribute('aria-label','LINKS partners');box.style.cssText='box-sizing:border-box;grid-column:1/-1;width:100%;min-width:0;padding:16px;border:1px solid #304b5d;border-radius:16px;background:#0b1b27;color:#fff;margin:0 0 16px';if(host)host.append(box);else panel.after(box);
  let generation=0,enabled=false,dismissed=false,controlRow=null;
  const mobile=matchMedia('(max-width:900px)');
@@ -18,6 +18,7 @@ export function mountPartners(panel,{host,controlsHost,onPartner=()=>{}}={}){if(
  function controls(){actionControls(button('Check my location again',()=>check(true)),button('Turn off location ads',()=>{enabled=false;generation++;try{localStorage.removeItem('links-partner-location')}catch{}general()}))}
  function show(p){
    base('Partner offer');onPartner(p);
+   if(brandingOnly){box.replaceChildren();controls();return}
    const identity=document.createElement('div');identity.className='partner-brand';identity.style.cssText='display:flex;align-items:center;gap:14px;min-width:0';
    const img=document.createElement('img');img.src=p.logo;img.alt=p.name;img.referrerPolicy='no-referrer';img.style.cssText='width:80px;height:64px;object-fit:contain;flex-shrink:0';img.onerror=()=>img.remove();
    const name=text('h3',p.name);name.style.cssText='margin:0;min-width:0;overflow-wrap:anywhere';identity.append(img,name);
