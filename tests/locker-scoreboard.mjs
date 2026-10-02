@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {summarize} from '../public/new-build/locker-scoreboard.mjs';
+assert.match(summarize('nfl',{rows:[{player:'Other',wins:15},{player:'Jake',wins:7,losses:3}]},'Jake').lines[0],/^7 correct/);
+assert.equal(summarize('33',{week:4,assignments:[{player:'Jake',team:'KC',score:33,hit33:true,paid:true,completed:false}]},'Jake').win,false);
+assert.equal(summarize('33',{week:4,assignments:[{player:'Jake',team:'KC',score:33,hit33:true,paid:true,completed:true}]},'Jake').win,true);
+const squares=summarize('squares',{boards:[{title:'Sunday',away:'KC',home:'BUF',awayNums:[0,1,2,3],homeNums:[9,8,7],claims:[{square_index:23,player_name:'Jake'}],winners:{q1:{player:'Jake'}}}]},'Jake');
+assert.match(squares.lines[1],/KC 3 \/ BUF 7/);assert.equal(squares.win,true);
+assert.match(summarize('march',{stats:{points:80,correct:8}},'Jake').lines[0],/80 bracket/);
+assert.match(summarize('nascar',{card:{picks:['Driver']},results:{Driver:{status:'final',finish:2,points:40}}},'Jake').lines[0],/Finished 2.*40 points/);
+assert.match(summarize('future',{},'Jake').lines[0],/Open this game/);
+console.log('PASS scoreboard identity, final-only wins, squares axes, bracket and driver results, future fallback');
