@@ -19,3 +19,7 @@
 @media(min-width:901px){#partnerMobileControls{position:absolute;left:20%;right:20%;bottom:2%;z-index:2}}
 
 @media(max-width:900px){.locker-room>.wall-panel{display:none}.locker-room{padding-top:0}.shelf-area{margin-top:0}}
+
+/* One uniform jersey lettering style for every player, including the center. */
+.jersey-name,.jersey-name.me,.jersey-name.long,.jersey-name.me.long{font-family:Arial,Helvetica,sans-serif;font-size:clamp(6px,.72vw,13px);font-weight:900;letter-spacing:.025em;color:#edcf92;text-shadow:0 1px 1px #000;line-height:1.15;width:6.5%;text-wrap:balance}
+@media(max-width:900px){.jersey-name,.jersey-name.me,.jersey-name.long,.jersey-name.me.long{width:19%;font-size:clamp(8px,2.4vw,17px)}}

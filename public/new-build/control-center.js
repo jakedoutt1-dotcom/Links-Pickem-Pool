@@ -18,3 +18,8 @@ function render(j){state=j;const current=j.pools.find(p=>String(p.id)===String(j
 async function load(){try{$('retryRoom').hidden=true;render(await api())}catch(e){$('attention').textContent=e.message;$('topGameGrid').textContent='Your game shelf is temporarily unavailable.';$('retryRoom').hidden=false}}
 $('retryRoom').onclick=load;window.addEventListener('links:pools-ready',e=>render(e.detail));window.addEventListener('links:names-changed',heading);window.addEventListener('pageshow',e=>{if(e.persisted){opening=false;load()}});
 if(!token())location.replace('./pool-login.html');else load()
+
+// The Locker Room is the signed-in landing page; Back exits to home.
+// Profile dialogs add their own history entry and close before leaving the room.
+if(!history.state?.linksLockerLanding){history.replaceState({...history.state,linksLockerBase:true},'',location.href);history.pushState({linksLockerLanding:true},'',location.href)}
+window.addEventListener('popstate',()=>{if(history.state?.linksLockerBase)location.replace('./index.html')});
