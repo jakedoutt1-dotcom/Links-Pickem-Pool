@@ -13,7 +13,7 @@ async function host(action,extra={}){const j=await call({action,gameNumber:hostS
 function raw(){return JSON.parse(db.raw.prepare('SELECT state FROM links_trivia_night_rooms WHERE code=?').get(code).state)}
 function edit(f){const s=raw();f(s);db.raw.prepare('UPDATE links_trivia_night_rooms SET state=? WHERE code=?').run(JSON.stringify(s),code)}
 try{
- assert.equal(validateBank(STARTER).length,51);
+ assert.equal(validateBank(STARTER).length,63);
  assert.throws(()=>validateBank([{...STARTER[0],correct:5}]),/Question/);
  assert.throws(()=>validateBank([STARTER[0],STARTER[0]]),/unique/);
  assert.throws(()=>validateBank([{...STARTER[0],source:''}]),/source/);
@@ -40,7 +40,7 @@ try{
  edit(s=>{s.deadline=Date.now()-1});await host('reveal');assert.equal(hostState.question.correct,current.correct);assert.ok(hostState.leaders.find(p=>p.name==='Alice').score>0);assert.equal(hostState.leaders.find(p=>p.name==='Bob').score,0);
  const total=hostState.leaders[0].score;assert.equal((await host('reveal')).status,409);assert.equal((await call(null,{guest:alice.token})).leaders[0].score,total);
  assert.equal((await call(null,{guest:alice.token,query:'?action=library'})).status,403);
- const bank=await call(null,{admin:'admin',query:'?action=library'});assert.equal(bank.count,51);assert.equal(bank.questions,undefined);await ensureOwner(db);await db.prepare("INSERT INTO links_admin_sessions VALUES('owner','2099-01-01')").run();assert.equal((await call({action:'import',questions:STARTER},{admin:'admin'})).status,403);
+ const bank=await call(null,{admin:'admin',query:'?action=library'});assert.equal(bank.count,63);assert.equal(bank.questions,undefined);await ensureOwner(db);await db.prepare("INSERT INTO links_admin_sessions VALUES('owner','2099-01-01')").run();assert.equal((await call({action:'import',questions:STARTER},{admin:'admin'})).status,403);
  assert.equal((await call({action:'import',questions:[{...STARTER[0],answers:[]}]},{admin:'owner'})).status,400);
  const replacement=[{...STARTER.find(q=>q.category==='general'),text:'Replacement sample question?'}];
  assert.equal((await call({action:'import',questions:replacement},{admin:'owner'})).status,200);assert.equal(raw().deck.length,3);

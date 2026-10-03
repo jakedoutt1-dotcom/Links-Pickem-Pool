@@ -1,7 +1,7 @@
 import qrcode from './vendor/qrcode.mjs';
 import {mountPartners} from './partner-banner.mjs';
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const themes={football:['FOOTBALL','🏈'],music:['MUSIC','♫'],movies:['MOVIES & TV','▶'],history:['HISTORY','Ⅲ'],science:['SCIENCE','⚛'],general:['MIXED BAG','✦']};
+const themes={football:['SPORTS','🏆'],music:['MUSIC','♫'],movies:['MOVIES & TV','▶'],history:['HISTORY','Ⅲ'],science:['SCIENCE','⚛'],general:['MIXED BAG','✦']};
 let state=null,offset=0,busy=false,bank=[],pending=null,signature='',sequence=0,roomCode=new URL(location.href).searchParams.get('room')||sessionStorage.getItem('trivia-night-room')||'';
 const token=()=>localStorage.getItem('links-legacy-token')||localStorage.getItem('links-token')||'';
 const seat=()=>localStorage.getItem('trivia-night-seat-'+roomCode)||'';

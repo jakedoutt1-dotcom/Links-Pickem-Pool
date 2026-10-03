@@ -4,6 +4,18 @@ export const CATEGORIES = ['football','music','movies','history','science','gene
 export const SECONDS = {easy:10,medium:15,hard:20};
 export const BASE = {easy:500,medium:1000,hard:1500};
 const extras = [
+ ['football','easy','Which sport uses a bat, bases, and a home plate?',['Baseball','Basketball','Golf','Tennis']],
+ ['football','easy','In which sport would you shoot a ball through a hoop?',['Basketball','Soccer','Hockey','Baseball']],
+ ['football','easy','Which sport is played at Wimbledon?',['Tennis','Golf','Cricket','Rugby']],
+ ['football','easy','Which sport uses clubs to hit a ball into a hole?',['Golf','Baseball','Hockey','Lacrosse']],
+ ['football','medium','In golf, what is a score of two under par on one hole called?',['Eagle','Birdie','Bogey','Albatross']],
+ ['football','medium','Which motor-racing series is associated with the Daytona 500?',['NASCAR','Formula One','IndyCar','MotoGP']],
+ ['football','medium','Which trophy is awarded to the NHL playoff champion?',['Stanley Cup','Ryder Cup','Davis Cup','Claret Jug']],
+ ['football','medium','In baseball statistics, what does RBI stand for?',['Run batted in','Runner behind inning','Runs before innings','Recorded base interval']],
+ ['football','hard','Who invented basketball in 1891?',['James Naismith','Abner Doubleday','Walter Camp','William Morgan']],
+ ['football','hard','Which city hosted the first modern Olympic Games in 1896?',['Athens','Paris','London','Rome']],
+ ['football','hard','Which golfer completed the career Grand Slam by winning the 1965 U.S. Open?',['Gary Player','Arnold Palmer','Lee Trevino','Tom Watson']],
+ ['football','hard','Which driver won the first Daytona 500 in 1959?',['Lee Petty','Richard Petty','Junior Johnson','David Pearson']],
  ['music','easy','How many strings does a standard violin have?',['4','5','6','8']],
  ['music','medium','What does a sharp sign do to a musical note?',['Raises it one semitone','Lowers it one semitone','Doubles its duration','Makes it silent']],
  ['music','hard','Which mode uses the same notes as C major but starts on D?',['Dorian','Phrygian','Lydian','Mixolydian']],
@@ -22,12 +34,13 @@ const extras = [
 ];
 export const STARTER = [
  ...QUESTIONS.map(q=>({...q,category:'football',correct:0,source:q.source,license:'Original LINKS'})),
- ...extras.map((q,i)=>({id:'links-'+i,category:q[0],difficulty:q[1],text:q[2],answers:q[3],correct:0,source:'Original LINKS starter question',license:'Original LINKS'}))
+ ...extras.map((q,i)=>({id:i<12?'sports-'+i:'links-'+(i-12),category:q[0],difficulty:q[1],text:q[2],answers:q[3],correct:0,source:'Original LINKS starter question',license:'Original LINKS'}))
 ];
 export function validateBank(rows){
  if(!Array.isArray(rows)||!rows.length||rows.length>500)throw Error('Upload between 1 and 500 questions.');
  const ids=new Set();
  return rows.map((q,i)=>{
+  if(q?.category==='sports')q={...q,category:'football'};
   if(!q||typeof q!=='object')throw Error(`Question ${i+1} is invalid.`);
   const id=String(q.id||'q-'+(i+1)).trim();
   if(!id||id.length>80||ids.has(id))throw Error(`Question ${i+1} needs a unique ID.`);ids.add(id);
