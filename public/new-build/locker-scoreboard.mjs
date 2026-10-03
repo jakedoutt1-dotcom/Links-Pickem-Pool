@@ -2,6 +2,8 @@
 const same=(a,b)=>String(a||'').toLowerCase()===String(b||'').toLowerCase();
 export function summarize(game,d,player){
  const mine=(d.rows||d.standings||[]).find(r=>same(r.player||r.name,player));
+ if(game==='homerun'){const row=(d.season||[]).find(r=>same(r.player,player));return {period:'Home Run season',lines:[(row?.points||0)+' home runs / points',d.lineup?'Weekly lineup saved':'No lineup saved this week']};}
+ if(game==='mlb'){const row=(d.season||[]).find(r=>same(r.player,player));return {period:'MLB season',lines:row?[`${row.wins} correct picks · ${row.losses} losses`,`${row.pending} results pending`]:['No graded baseball picks yet.']};}
  if(game==='nfl'||game==='college')return {period:game==='nfl'?'Season totals':`Week ${d.week??"�"}`,lines:mine?[`${mine.wins??mine.correct??0} correct picks · ${mine.losses??0} losses`]:['No graded picks available yet.']};
  if(game==='33'){const hit=(d.assignments||[]).filter(a=>a.completed&&a.hit33&&a.paid),me=(d.assignments||[]).find(a=>same(a.player,player));return {period:`Week ${d.week??"�"}`,win:hit.some(a=>same(a.player,player)),lines:[me?`${me.team} · ${me.score??'Score pending'} · ${me.completed?'Final':me.status||'In progress'}`:'Your team has not been assigned.',...hit.map(a=>`${same(a.player,player)?'Your team hit 33!':a.player+' hit 33!'} · ${a.team}`),d.finalized?(hit.length?'Week finalized':'No winner · rollover'): 'Payouts pending until the week is finalized.']}}
  if(game==='squares'){const lines=[];let win=false;for(const b of d.boards||[]){const claims=(b.claims||[]).filter(c=>same(c.player_name,player));if(!claims.length)continue;lines.push(`${b.title} · ${b.away} at ${b.home}`);for(const c of claims){const i=c.square_index;lines.push(`Square #${i+1}: ${b.away} ${b.awayNums?.[i%10]??'?'} / ${b.home} ${b.homeNums?.[Math.floor(i/10)]??'?'}`)}for(const [period,w] of Object.entries(b.winners||{}))if(w&&same(w.player,player)){win=true;lines.push(`${({q1:'First quarter',half:'Halftime',q3:'Third quarter',final:'Final'})[period]||period} winner!`)}}return {period:'Your boards',win,lines:lines.length?lines:['No saved squares yet. Numbers appear after the draw.']}}
@@ -12,7 +14,7 @@ export function summarize(game,d,player){
  if(game==='fantasy'||game==='dynasty'){const r=d.league?.standings?.find(r=>same(r.owner,player));return {period:'Regular season',lines:r?[`${r.wins} wins � ${r.losses} losses � ${r.ties} ties`,`${r.pf} points scored`]:['No team results yet.']}}
  return {period:'Game summary',lines:mine?[`${mine.score??mine.points??'—'} points · ${mine.status||'Results available'}`]:['Open this game for your picks and results.']};
 }
-const endpoints={nfl:'season-standings',college:'college','33':'game33',squares:'pool-format',march:'march',nascar:'event-pool',masters:'event-pool',survivor:'football',confidence:'football',props:'pool-format',playoff:'pool-format',fantasy:'fantasy',dynasty:'fantasy'};
+const endpoints={homerun:'home-run',mlb:'mlb',nfl:'season-standings',college:'college','33':'game33',squares:'pool-format',march:'march',nascar:'event-pool',masters:'event-pool',survivor:'football',confidence:'football',props:'pool-format',playoff:'pool-format',fantasy:'fantasy',dynasty:'fantasy'};
 let refreshTimer,revision=0;
 export function mountScoreboard({state,names,routes,enter,token}){
  clearTimeout(refreshTimer);const rev=++revision,root=document.getElementById('myScoreboard');if(!root)return;

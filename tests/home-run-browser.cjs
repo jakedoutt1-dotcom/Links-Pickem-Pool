@@ -1,0 +1,11 @@
+const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs');
+(async()=>{const browser=await chromium.launch({channel:'msedge',headless:true});try{for(const width of [390,1280]){const page=await browser.newPage({viewport:{width,height:900}});const errors=[];page.on('pageerror',e=>errors.push(e.message));let requests=0;await page.route('**/api/**',route=>{requests++;return route.abort()});await page.goto('http://127.0.0.1:8765/new-build/home-run.html?demo=1');await page.waitForSelector('[data-add]');
+ for(let i=0;i<6;i++)await page.locator('[data-add]').nth(i).click();assert.match(await page.locator('#summary').innerText(),/6\/6/);assert.match(await page.locator('#summary').innerText(),/4\/4/);
+ await page.locator('#saveLineup').click();await page.getByText('Your lineup is saved.',{exact:true}).waitFor();
+ await page.locator('[data-view="results"]').click();assert.match(await page.locator('#content').innerText(),/appear after the deadline/);
+ await page.locator('[data-view="lineup"]').click();await page.locator('#simulate').click();assert.match(await page.locator('#summary').innerText(),/10/);assert.equal(await page.locator('#saveLineup').isDisabled(),true);
+ await page.locator('[data-view="standings"]').click();assert.match(await page.locator('tbody').innerText(),/You\s+10/);
+ await page.locator('[data-view="results"]').click();assert.match(await page.locator('#content').innerText(),/BENCH/);
+ fs.mkdirSync('output/home-run',{recursive:true});await page.screenshot({path:`output/home-run/results-${width}.png`,fullPage:true});
+ await page.locator('[data-view="admin"]').click();assert.match(await page.locator('#content').innerText(),/disabled in this demo/);
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);assert.deepEqual(errors,[]);assert.equal(requests,0);await page.close();console.log('PASS Home Run '+width+'px selection, save, privacy, simulated scoring, bench labels, admin and layout');}}finally{await browser.close()}})().catch(e=>{console.error(e);process.exit(1)});
