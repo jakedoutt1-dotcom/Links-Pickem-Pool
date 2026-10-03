@@ -28,6 +28,7 @@ export async function onRequest({request,env}){
    const players=rows.access.filter(a=>Number(a.paid)===1).map(a=>playerCard(rows,games,a.player_name));
    // Result corrections are matched by team, never by a reordered feed index.
    for(const r of rows.results){const g=games.find(g=>[g.away,g.home].includes(code(r.winner)));if(g&&g.completed)g.winner=code(r.winner)}
+   for(const p of players){p.picks=Object.fromEntries(Object.entries(p.picks).filter(([id])=>{const g=games.find(g=>g.eventId===id);return g&&Date.now()>=Date.parse(g.kickoff)}));if(games.some(g=>Date.now()<Date.parse(g.kickoff)))p.tie=null;}
    return json({...response,players:players.filter(p=>Object.keys(p.picks).length||p.tie!=null),...standings(players,games)});
   }
   if(b.action==='correction'){if(session.role!=='admin')throw fail('Commissioner access required.',403);return submitCorrection(db,session,'college',week,games,{...b,action:b.kind})}
@@ -49,19 +50,21 @@ export async function onRequest({request,env}){
    return json({success:true});
   }
   if(!me.active)throw fail('Contact your commissioner to make picks. Your access is Pending for Week '+week+'.',403);
-  if(closed)throw fail('Picks are closed at the first kickoff of this week’s selected games.',403);
+  if(!games.some(g=>Number.isFinite(Date.parse(g.kickoff))&&Date.now()<Date.parse(g.kickoff)&&!g.completed))throw fail('All games have kicked off. Picks are locked.',403);
   if(b.action==='lock'){
    if(typeof b.locked!=='boolean')throw fail('Choose lock or unlock.');
-   if(b.locked&&(games.some(g=>!me.picks[g.eventId])||me.tie==null))throw fail('Complete every pick and your tiebreaker first.');
+   if(b.locked&&(games.some(g=>Date.now()<Date.parse(g.kickoff)&&!me.picks[g.eventId])||me.tie==null))throw fail('Complete every pick and your tiebreaker first.');
    await db.prepare('INSERT INTO pool_settings(pool_id,key,value) VALUES(?,?,?) ON CONFLICT(pool_id,key) DO UPDATE SET value=excluded.value').bind(pool.id,lockKey(week,session.player_name),b.locked?'1':'0').run();return json({success:true,cardLocked:b.locked});
   }
   if(cardLocked)throw fail('Unlock your picks before making changes.',403);
   if(b.action==='tie'){
+   const last=[...games].sort((a,b)=>Date.parse(a.kickoff)-Date.parse(b.kickoff)).at(-1);if(!last||!Number.isFinite(Date.parse(last.kickoff))||Date.now()>=Date.parse(last.kickoff)||last.completed)throw fail('The tiebreaker game has kicked off.',403);
    const guess=Number(b.guess);if(b.guess==null||b.guess===''||!Number.isInteger(guess)||guess<0||guess>200)throw fail('Enter a whole-number combined score from 0 to 200.');
    await db.prepare("INSERT INTO pool_ties(pool_id,sport,player_name,week,guess) VALUES(?,'college',?,?,?) ON CONFLICT(pool_id,sport,player_name,week) DO UPDATE SET guess=excluded.guess").bind(pool.id,session.player_name,week,guess).run();return json({success:true});
   }
   if(b.action==='pick'){
    const g=games.find(g=>g.eventId===String(b.eventId)),team=code(b.team);if(!g||![g.away,g.home].includes(team))throw fail('Choose a team from this week’s selected slate.');
+   if(!Number.isFinite(Date.parse(g.kickoff))||Date.now()>=Date.parse(g.kickoff)||g.completed)throw fail('This game has kicked off. Its pick is locked.',403);
    const own=rows.picks.filter(p=>sameName(p.player_name,session.player_name));const existing=own.find(p=>[g.away,g.home].includes(code(p.team)));let index=existing?.game_index??g.gameIndex;
    // Preserve existing positions and allocate an unused slot if legacy ordering differs.
    if(!existing){const used=new Set(own.map(p=>Number(p.game_index)));while(used.has(index))index++}

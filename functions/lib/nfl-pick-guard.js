@@ -6,11 +6,14 @@ export async function nflPickGuard(request,db,pool,player,week,body){
  if(!Number.isInteger(week)||week<1||week>22)return {response:json({error:'Choose a valid NFL week.'},400)};
  if(!body)return {};if(body.commissionerCorrection===true)return {response:json({error:'Submit corrections from Admin for LINKS approval.'},409)};const correction=false;if(!correction&&String(s.player_name).toLowerCase()!==String(player).toLowerCase())return {response:json({error:'You can only save your own picks.'},403)};
  let games;try{games=await weekGames(week)}catch{return {response:json({error:'NFL schedule unavailable. Picks were not changed.'},503)}}
- const first=Math.min(...games.map(g=>Date.parse(g.kickoff))),meta=await db.prepare("SELECT lock_time FROM pool_week_meta WHERE pool_id=? AND sport='nfl' AND week=?").bind(pool,week).first();
- if(!correction&&(!Number.isFinite(first)||Date.now()>=first||meta?.lock_time&&Date.now()>=Date.parse(meta.lock_time)))return {response:json({error:'This week is locked.'},403)};
- if(body.eventId==='__TIEBREAKER__')return {games,correction};
+ if(body.eventId==='__TIEBREAKER__'){
+ const last=[...games].sort((a,b)=>Date.parse(a.kickoff)-Date.parse(b.kickoff)).at(-1);
+ if(!last||!Number.isFinite(Date.parse(last.kickoff))||Date.now()>=Date.parse(last.kickoff)||last.completed)return {response:json({error:'The tiebreaker game has kicked off.'},403)};
+ return {games,correction};
+ }
  const g=body.eventId?games.find(g=>g.eventId===String(body.eventId)):games.find(g=>g.gameIndex===Number(body.gameIndex)),team=String(body.teamCode||body.selection||'').toUpperCase(),norm=({WAS:'WSH',JAC:'JAX',LA:'LAR'}[team]||team);
  if(!g||!g.teams.includes(norm))return {response:json({error:'Choose a valid team in this matchup.'},400)};
+ if(!Number.isFinite(Date.parse(g.kickoff))||Date.now()>=Date.parse(g.kickoff)||g.completed)return {response:json({error:'This game has kicked off. Its pick is locked.'},403)};
  return {games,event:g,team:norm,correction};
 }
 export async function publicNFLPicks(request,env,pool,week){

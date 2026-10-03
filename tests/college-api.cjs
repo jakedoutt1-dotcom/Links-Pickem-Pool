@@ -17,7 +17,7 @@ const assert=require('node:assert/strict'),{DatabaseSync}=require('node:sqlite')
  const db={prepare(text){let args=[];return{bind(...v){args=v;return this},async first(){return sql.prepare(text).get(...args)||null},async all(){return{results:sql.prepare(text).all(...args)}},async run(){const r=sql.prepare(text).run(...args);return{meta:{changes:Number(r.changes)}}}}}};
  let now=Date.parse('2026-09-29T12:00:00Z'),final=false,reverse=false,ap=true;const oldNow=Date.now,oldFetch=fetch;Date.now=()=>now;
  const kickoff='2026-10-01T18:00:00Z';
- const event=(id,away,home)=>({id,date:kickoff,status:{type:{completed:final}},competitions:[{competitors:[{homeAway:'away',team:{id:away,abbreviation:away,displayName:away},score:final?'17':null},{homeAway:'home',team:{id:home,abbreviation:home,displayName:home},score:final?'20':null}]}]});
+ const event=(id,away,home)=>({id,date:id==='g2'?'2026-10-02T18:00:00Z':kickoff,status:{type:{completed:final}},competitions:[{competitors:[{homeAway:'away',team:{id:away,abbreviation:away,displayName:away},score:final?'17':null},{homeAway:'home',team:{id:home,abbreviation:home,displayName:home},score:final?'20':null}]}]});
  global.fetch=async url=>{const u=new URL(url);if(u.pathname.endsWith('/rankings'))return Response.json({rankings:[{name:ap?'AP Top 25':'Coaches Poll',ranks:[{current:1,team:{id:'A'}},{current:2,team:{id:'C'}}]}]});let events=[event('g1','A','B'),event('g2','C','D'),event('g3','E','F')];if(reverse)events.reverse();return Response.json({week:{number:5},season:{year:2026,type:2},events})};
  const {onRequest}=await import('../functions/new-build/api/college.js');
  const call=async(token,body=null,query='week=5&view=picks',pool=1)=>{const r=await onRequest({request:new Request('https://test/new-build/api/college?pool='+pool+'&'+query,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token},...(body?{body:JSON.stringify({pool,week:5,...body})}:{})}),env:{DB:db}});return{status:r.status,data:await r.json()}};
@@ -45,7 +45,13 @@ const assert=require('node:assert/strict'),{DatabaseSync}=require('node:sqlite')
   assert.equal((await call('alice',{action:'lock',locked:false})).status,200);
   assert.deepEqual((await call('admin',null,'week=5&view=compare')).data.players,[],'Commissioner cannot reveal early');
   assert.equal((await call('alice',null,'week=6&view=picks')).data.active,false,'Activation is week-specific');
-  now=Date.parse(kickoff);final=true;
+  now=Date.parse(kickoff);
+  assert.equal((await call('alice',{action:'pick',eventId:'g1',team:'A'})).status,403);
+  assert.equal((await call('alice',{action:'pick',eventId:'g2',team:'C'})).status,200,'Later game stays editable');
+  assert.equal((await call('alice',{action:'tie',guess:37})).status,200);
+  const shared=(await call('alice',null,'week=5&view=compare')).data.players[0];assert.equal(shared.picks.g2,undefined,'Future picks remain private');
+  await call('alice',{action:'pick',eventId:'g2',team:'D'});
+  now=Date.parse('2026-10-02T18:00:00Z');final=true;
   assert.equal((await call('alice',{action:'pick',eventId:'g1',team:'A'})).status,403);
   assert.equal((await call('alice',{action:'lock',locked:false})).status,403);
   d=await call('alice',null,'week=5&view=standings');assert.equal(d.data.rows[0].wins,2);assert.deepEqual(d.data.finalizedWinners,['Alice']);

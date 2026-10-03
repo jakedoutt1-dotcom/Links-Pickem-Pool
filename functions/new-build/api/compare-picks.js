@@ -25,7 +25,8 @@ export async function weekGames(week){
   if(completed&&!winner&&teams.length===2&&scores.every(Number.isFinite)&&scores[0]!==scores[1])winner=teams[scores[0]>scores[1]?0:1].team?.abbreviation||'';
   return {gameIndex:i,eventId:String(e.id),home:norm(teams.find(t=>t.homeAway==='home')?.team?.abbreviation),away:norm(teams.find(t=>t.homeAway==='away')?.team?.abbreviation),teams:teams.map(t=>norm(t.team?.abbreviation)),completed,winner:completed?norm(winner):'',total:completed&&scores.length===2&&scores.every(Number.isFinite)?scores[0]+scores[1]:null,kickoff:e.date||c.date||null};
  });
-}function nameKey(v){const s=String(v||"").toLowerCase().replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim(),a=s.split(" ").filter(Boolean);if(!a.length)return"";return (a[0][0]||"")+"|"+(a[a.length-1]||"")}
+}
+function nameKey(v){const s=String(v||"").toLowerCase().replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim(),a=s.split(" ").filter(Boolean);if(!a.length)return"";return (a[0][0]||"")+"|"+(a[a.length-1]||"")}
 function exactKey(v){return String(v||"").toLowerCase().replace(/[^a-z0-9]/g,"")}
 export async function onRequestGet({request,env}){
  const db=env.DB;if(!db)return json({success:false,error:"Legacy LINKS database unavailable",build:"732"},503);
@@ -45,9 +46,9 @@ export async function onRequestGet({request,env}){
   db.prepare("SELECT player_name FROM pool_payments WHERE pool_id=? AND sport='nfl' AND week=? AND paid=1").bind(p.id,week).all()
  ]);
  const roster=(pr.results||[]).map(x=>String(x.name||"")),canonical=(raw)=>{const e=exactKey(raw),n=nameKey(raw);return roster.find(x=>exactKey(x)===e)||roster.find(x=>nameKey(x)===n)||String(raw||"")};
- const pickMap={},tieMap={};for(const r of pk.results||[]){const who=canonical(r.player_name);(pickMap[who]??={})[games.find(g=>g.home===norm(r.team)||g.away===norm(r.team))?.gameIndex??Number(r.game_index)]=norm(r.team)}for(const r of tr.results||[]){const who=canonical(r.player_name);tieMap[who]=r.guess}
+ const pickMap={},tieMap={};for(const r of pk.results||[]){const game=games.find(g=>g.home===norm(r.team)||g.away===norm(r.team));if(!game||!Number.isFinite(Date.parse(game.kickoff))||Date.now()<Date.parse(game.kickoff))continue;const who=canonical(r.player_name);(pickMap[who]??={})[games.find(g=>g.home===norm(r.team)||g.away===norm(r.team))?.gameIndex??Number(r.game_index)]=norm(r.team)}for(const r of tr.results||[]){const who=canonical(r.player_name);tieMap[who]=r.guess}
  const eligible=new Set((access.results||[]).map(x=>exactKey(canonical(x.player_name))));
- const players=roster.filter(name=>eligible.has(exactKey(name))).map(name=>({player:name,picks:pickMap[name]||{},tie:tieMap[name]??null})).filter(x=>Object.keys(x.picks).length||x.tie!=null);
+ const players=roster.filter(name=>eligible.has(exactKey(name))).map(name=>({player:name,picks:pickMap[name]||{},tie:games.every(g=>Date.now()>=Date.parse(g.kickoff))?(tieMap[name]??null):null})).filter(x=>Object.keys(x.picks).length||x.tie!=null);
  const results=Object.fromEntries(games.filter(g=>g.winner).map(g=>[g.gameIndex,g.winner]));
  for(const r of rr.results||[]){const winner=norm(r.winner),g=games.find(g=>g.home===winner||g.away===winner);if(g){results[g.gameIndex]=winner;g.winner=winner;g.completed=true}}
  return json({success:true,locked:true,week,pool:{id:String(p.id),name:p.name,code:p.code},players,games,results,finalGames:Object.keys(results).length,build:"732"});

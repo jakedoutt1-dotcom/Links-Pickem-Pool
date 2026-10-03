@@ -1,18 +1,13 @@
-/* LINKS NFL deadline adapter — one weekly deadline: selected week's first kickoff */
-(function(){
- 'use strict';
- if(!/\/nfl(?:\.html)?$/i.test(location.pathname))return;
- const week=()=>document.getElementById('weekSelect')?.value||new URLSearchParams(location.search).get('week')||'';
- const kickoff=g=>g?.date||g?.kickoff||g?.startTime||null;
- function discoverGames(){if(Array.isArray(window.games)&&window.games.length)return window.games;return[...document.querySelectorAll('[data-kickoff]')].map(el=>({date:el.dataset.kickoff})).filter(x=>x.date)}
- async function fetchWeekGames(w){const base='https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?limit=100';try{const cur=await fetch(base,{cache:'no-store'}).then(r=>r.json()),st=Number(cur.season?.type||2),j=await fetch(base+'&seasontype='+st+'&week='+encodeURIComponent(w),{cache:'no-store'}).then(r=>r.json());return(j.events||[]).map(e=>({date:e.date})).filter(x=>x.date)}catch{return[]}}
- function format(ms){if(ms<=0)return'PICKS CLOSED';const d=Math.floor(ms/86400000),h=Math.floor(ms%86400000/3600000),m=Math.floor(ms%3600000/60000),s=Math.floor(ms%60000/1000);return(d?d+'D ':'')+String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')}
- let seq=0,timer=null,lastText='LOADING…',writing=false,clockObserver=null;
- function removeRedundantBanner(){const status=document.getElementById('gameStatusLine');if(status)status.style.display='none';document.querySelectorAll('body *').forEach(el=>{if(el.children.length)return;const t=(el.textContent||'').trim();if(/^NFL PICK[’']?EM\s*[·•]\s*Week\s+\d+\s*[·•]\s*(SAVED PICKS|PICKS LOCK INDIVIDUALLY AT KICKOFF)$/i.test(t)){const parent=el.parentElement;if(parent&&parent.children.length===1)parent.style.display='none';else el.style.display='none'}})}
- function ownClock(){const el=document.getElementById('countdownClock')||document.getElementById('countdown')||document.getElementById('deadlineCountdown')||document.querySelector('[data-nfl-countdown]');if(!el)return null;if(!clockObserver){clockObserver=new MutationObserver(()=>{if(writing)return;if(el.textContent!==lastText){writing=true;el.textContent=lastText;writing=false}});clockObserver.observe(el,{childList:true,characterData:true,subtree:true})}return el}
- function setClock(text){lastText=text;const el=ownClock();if(el&&el.textContent!==text){writing=true;el.textContent=text;el.dataset.linksDeadline='weekly-first-kickoff';writing=false}}
- function applyClosed(closed,w){if(String(week())!==String(w))return;document.documentElement.dataset.nflDeadlineClosed=closed?'1':'0';const cardLocked=!!window.LINKS_NFL_CARD_LOCKED?.();const cards=[...document.querySelectorAll('#slate .game-matchup')];cards.forEach(card=>{const status=[...card.querySelectorAll('*')].find(el=>el.children.length===0&&/^(OPEN|LOCKED)$/i.test((el.textContent||'').trim()));if(status)status.textContent=closed?'LOCKED':'OPEN';card.querySelectorAll('.game-team').forEach(el=>el.disabled=closed||cardLocked)});const save=document.getElementById('savePicksBtn'),tie=document.getElementById('tieTotal');if(save)save.disabled=closed;if(tie)tie.disabled=closed||cardLocked;const msg=document.getElementById('saveMsg');if(msg){if(closed)msg.textContent='WEEK '+w+' PICKS ARE CLOSED · The first kickoff of this week has passed.';else if(/^WEEK \d+ PICKS ARE CLOSED/i.test(msg.textContent||''))msg.textContent='Save your picks to this pool first. After saving, choose which picks you want to send to Playmaker.'}}
- async function sync(){if(!window.LINKSNFLDeadline)return;const my=++seq,w=week();if(!w)return;clearInterval(timer);timer=null;removeRedundantBanner();let games=discoverGames();if(!games.length)games=await fetchWeekGames(w);if(my!==seq||String(week())!==String(w)||!games.length)return;window.LINKSNFLDeadline.setWeek(w,games.map(g=>({date:kickoff(g)})));window.LINKSNFLDeadline.clearOverride();const label=document.querySelector('#pickCountdown span');if(label)label.textContent='PICKS LOCK AT FIRST KICKOFF';const paint=()=>{if(String(week())!==String(w)){clearInterval(timer);timer=null;return}const snap=window.LINKSNFLDeadline.snapshot();setClock(snap.closed?'PICKS CLOSED':format(snap.remaining));applyClosed(snap.closed,w);window.dispatchEvent(new CustomEvent('links:nfl-deadline',{detail:{...snap,week:w}}))};paint();timer=setInterval(paint,1000)}
- function boot(){removeRedundantBanner();ownClock();document.getElementById('weekSelect')?.addEventListener('change',()=>{clearInterval(timer);timer=null;setTimeout(sync,150)});document.getElementById('prevWeek')?.addEventListener('click',()=>{clearInterval(timer);timer=null;setTimeout(sync,250)});document.getElementById('nextWeek')?.addEventListener('click',()=>{clearInterval(timer);timer=null;setTimeout(sync,250)});const slate=document.getElementById('slate');if(slate)new MutationObserver(()=>setTimeout(sync,100)).observe(slate,{childList:true,subtree:true});sync()}
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+/* Each matchup locks independently; never reopen a started game's pick. */
+(()=>{
+ const paint=()=>{
+ const cards=[...document.querySelectorAll('#slate .game-matchup')],now=Date.now();if(!cards.length)return;
+ const open=cards.filter(c=>Number.isFinite(Date.parse(c.dataset.kickoff))&&Date.parse(c.dataset.kickoff)>now);
+ document.documentElement.dataset.nflDeadlineClosed=open.length?'0':'1';
+ for(const card of cards){const closed=!open.includes(card),status=card.querySelector('.game-state');if(status&&status.textContent!=='FINAL')status.textContent=closed?'LOCKED':'OPEN';if(closed)card.querySelectorAll('.game-team').forEach(b=>b.disabled=true);}
+ const label=document.querySelector('#pickCountdown span');if(label)label.textContent=open.length?'NEXT GAME LOCKS AT KICKOFF':'ALL GAMES LOCKED';
+ const save=document.getElementById('savePicksBtn');if(save)save.disabled=!open.length;
+ if(!open.length){const tie=document.getElementById('tieTotal');if(tie)tie.disabled=true;}
+ };
+ setInterval(paint,1000);document.addEventListener('DOMContentLoaded',paint);
 })();

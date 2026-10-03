@@ -121,7 +121,7 @@ function scoreboard(week) {
       await page.clock.runFor(1500);
       await page.waitForFunction(()=>document.documentElement.dataset.nflDeadlineClosed==='1');
       assert.equal(await page.locator('#slate button:disabled').count(),2,'Existing deadline disables both teams after kickoff');
-      assert.equal(await page.locator('#countdownClock').textContent(),'PICKS CLOSED');
+      assert.equal(await page.locator('#countdownClock').textContent(),'ALL GAMES LOCKED');
       await page.clock.setSystemTime(new Date('2026-09-29T12:00:00Z'));
       await page.locator('#weekSelect').selectOption('3');
       await page.waitForFunction(()=>document.querySelector('#slate [data-g="event-3"]'));
