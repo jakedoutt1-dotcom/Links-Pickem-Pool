@@ -84,7 +84,7 @@ function joinLink(){const u=new URL('./trivia-night.html',location.href);u.searc
 $('invite').onclick=()=>{const qr=qrcode(0,'M');qr.addData(joinLink());qr.make();$('qr').innerHTML=qr.createSvgTag({cellSize:5,margin:20,scalable:true});$('qr').querySelector('svg').setAttribute('aria-label','Scan to join trivia');$('inviteCode').textContent=roomCode;$('copyStatus').textContent='';$('invitation').showModal()};
 $('copy').onclick=async()=>{try{await navigator.clipboard.writeText(joinLink());$('copyStatus').textContent='Join link copied.'}catch{$('copyStatus').textContent=joinLink()}};
 async function poll(){
- if(roomCode&&!busy&&!document.hidden&&(state||seat()||token())){const n=++sequence;try{const j=await api(null,'?code='+encodeURIComponent(roomCode));if(n===sequence){adopt(j);$('message').textContent=''}}catch(e){if(n===sequence)$('message').textContent=e.message}}
+ if(roomCode&&!busy&&$('setup').hidden&&!document.hidden&&(state||seat()||token())){const n=++sequence;try{const j=await api(null,'?code='+encodeURIComponent(roomCode));if(n===sequence){adopt(j);$('message').textContent=''}}catch(e){if(n===sequence)$('message').textContent=e.message}}
  setTimeout(poll,state?.phase==='question'?2500:5000);
 }
 mountPartners($('triviaPartners'),{host:$('triviaPartners')});

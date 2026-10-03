@@ -9,7 +9,7 @@ const {db}=fixture(),browser=await chromium.launch({headless:true,channel:'msedg
 let queue=Promise.resolve();
 async function page(width,admin=false){
  const context=await browser.newContext({viewport:{width,height:900}}),p=await context.newPage();p.on('pageerror',e=>errors.push(e.message));
- if(admin)await p.addInitScript(()=>localStorage.setItem('links-token','admin'));
+ if(admin)await p.addInitScript(()=>{sessionStorage.setItem('links-temporary-session','1');sessionStorage.setItem('links-token','admin');});
  await p.route('https://trivia.local/**',async r=>{
   const u=new URL(r.request().url());
   if(u.pathname.includes('/api/')){
