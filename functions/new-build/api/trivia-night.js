@@ -11,10 +11,11 @@ export async function onRequest({request,env}){
   const db=env.DB;if(!db)return json({error:'Trivia needs a database connection.'},503);
   let b={};if(request.method==='POST'){const raw=await request.text();if(raw.length>600000)return json({error:'Question file is too large.'},413);try{b=JSON.parse(raw)}catch{return json({error:'Invalid request.'},400)}}
   const action=b.action||url.searchParams.get('action')||'state';
-  if(request.method==='GET'&&!['state','library','owner-library'].includes(action))return json({error:'Use POST for changes.'},405);
+  if(request.method==='GET'&&!['state','display','library','owner-library'].includes(action))return json({error:'Use POST for changes.'},405);
   await db.batch([
    db.prepare('CREATE TABLE IF NOT EXISTS links_trivia_night_rooms(code TEXT PRIMARY KEY,pool_id INTEGER NOT NULL,host_name TEXT NOT NULL,state TEXT NOT NULL,version INTEGER NOT NULL DEFAULT 0,expires INTEGER NOT NULL)'),
    db.prepare('CREATE TABLE IF NOT EXISTS links_trivia_night_banks(pool_id INTEGER PRIMARY KEY,questions TEXT NOT NULL,updated TEXT NOT NULL)'),
+   db.prepare('CREATE TABLE IF NOT EXISTS links_trivia_night_displays(code TEXT PRIMARY KEY,seen INTEGER NOT NULL)'),
    db.prepare('CREATE TABLE IF NOT EXISTS links_trivia_night_limits(id TEXT PRIMARY KEY,starts INTEGER NOT NULL,hits INTEGER NOT NULL)')
   ]);
   if(['join','create','import'].includes(action)){
@@ -62,6 +63,10 @@ export async function onRequest({request,env}){
    const row=await db.prepare('SELECT * FROM links_trivia_night_rooms WHERE code=? AND expires>?').bind(code,Date.now()).first();
    if(!row)return json({error:'Room not found or expired. Ask the host for a current code.'},404);
    const s=JSON.parse(row.state),host=!!admin&&admin.pool_id===row.pool_id&&admin.player_name===row.host_name,now=Date.now();let issued;
+   if(action==='display'){
+    if(request.method==='POST')await db.prepare('INSERT INTO links_trivia_night_displays(code,seen) VALUES(?,?) ON CONFLICT(code) DO UPDATE SET seen=excluded.seen').bind(code,now).run();
+    return json(view(s,'',false,now));
+   }
    if(action==='join'){
     if(s.players[seat])return json(view(s,seat,host));
     if(Object.keys(s.players).length>=200)return json({error:'This room is full (200 players or teams).'},409);
@@ -71,7 +76,7 @@ export async function onRequest({request,env}){
     s.players[id]={name,score:0,eligible:s.index+1,answer:null};
    }else{
     if(!host&&!s.players[seat])return json({error:'Join this room first.'},401);
-    if(action==='state')return json(view(s,seat,host,now));
+    if(action==='state'){const display=host?await db.prepare('SELECT seen FROM links_trivia_night_displays WHERE code=?').bind(code).first():null;return json({...view(s,seat,host,now),...(host?{tvConnected:!!display&&display.seen>now-45000}:{})});}
     if(action==='answer'){
      const p=s.players[seat];
      if(!p||s.phase!=='question'||now<(s.startsAt||0)||b.gameNumber!==s.game||b.index!==s.index||now>=s.deadline||p.eligible>s.index||p.answer?.index===s.index)return json({error:'Answer locked. Wait for the next question.'},409);

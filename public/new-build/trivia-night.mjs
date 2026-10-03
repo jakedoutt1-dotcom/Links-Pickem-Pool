@@ -31,6 +31,7 @@ async function act(action,extra={}){
 }
 function render(){
  const stable=JSON.stringify({...state,serverNow:0,token:undefined});if(stable===signature){tick();return}signature=stable;
+ $('tvStatus').textContent=state.tvConnected?'TV display connected':'Waiting for a display…';
  const q=state.question,revealed=['reveal','ended'].includes(state.phase),theme=state.categoryIntro||q?.category||'general';document.body.dataset.category=theme;
  $('symbol').textContent=themes[theme][1];$('categoryLabel').textContent=themes[theme][0]+(q?' · '+q.difficulty.toUpperCase():'');
  $('roomTitle').textContent=state.title+' · ROOM '+state.code;
@@ -99,7 +100,9 @@ $('next').onclick=()=>{document.querySelectorAll('[name=roundLevel]').forEach(r=
 $('startQuestion').onclick=()=>act('start-question');$('finalRound').onclick=()=>act('final');$('reveal').onclick=()=>act('reveal');$('end').onclick=()=>{if(state.isFinal||confirm('End this game and show the final scoreboard?'))act('end')};
 $('restart').onclick=()=>{if(confirm('Start another game in this room? Scores reset to zero and questions can repeat. Everyone stays joined.'))act('restart',{categories:state.categories,difficulty:state.difficulty})};
 $('leave').onclick=()=>{if(!confirm('Exit this room? Your score is saved, and you can return using this room code.'))return;sessionStorage.removeItem('trivia-night-room');location.href='./trivia-night.html'};
-$('screen').onclick=()=>{document.body.classList.toggle('big');$('screen').textContent=document.body.classList.contains('big')?'Normal view':'Big screen'};
+function tvLink(){const u=new URL('./trivia-tv.html',location.href);u.searchParams.set('room',roomCode);return u.href}
+$('screen').onclick=()=>{const u=new URL('./trivia-tv.html',location.href);$('tvAddress').textContent=u.host+u.pathname;$('tvAddress').href=u.href;$('tvCode').textContent=roomCode;$('tvOpen').href=tvLink();$('tvCopyStatus').textContent='';$('tvConnect').showModal()};
+$('tvCopy').onclick=async()=>{try{await navigator.clipboard.writeText(tvLink());$('tvCopyStatus').textContent='Display link copied.'}catch{$('tvCopyStatus').textContent=tvLink()}};
 
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).close());
 function joinLink(){const u=new URL('./trivia-night.html',location.href);u.searchParams.set('room',roomCode);return u.href}

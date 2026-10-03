@@ -22,13 +22,17 @@ try{
  assert.equal((await call({action:'create'},{admin:'admin',badOrigin:true})).status,403);
  hostState=await call({action:'create',categories:['general'],difficulty:'mixed',title:'Local trivia test'},{admin:'admin'});assert.equal(hostState.status,200);code=hostState.code;
  assert.equal((await call()).status,401);
+ const display=await call({action:'display'});assert.equal(display.status,200);assert.equal(display.host,false);assert.equal(display.playerCount,0);assert.equal(display.token,undefined);assert.equal(display.question,null);
+ assert.equal((await call(null,{admin:'admin'})).tvConnected,true);
+ db.raw.prepare('UPDATE links_trivia_night_displays SET seen=0 WHERE code=?').run(code);assert.equal((await call(null,{admin:'admin'})).tvConnected,false);
+ assert.equal((await call({action:'next'})).status,401);
  assert.equal((await call(null,{admin:'outsider'})).status,401);
  const alice=await call({action:'join',name:'Alice'}),bob=await call({action:'join',name:'Bob'});assert.equal(alice.status,200);assert.ok(alice.token);
  assert.equal((await call({action:'join',name:'alice'})).status,409);
  assert.equal((await call({action:'next'},{guest:alice.token})).status,403);
  await host('next');assert.equal(hostState.phase,'question');
  const current=raw().deck[0];
- assert.equal('correct' in hostState.question,false);
+ assert.equal('correct' in hostState.question,false);const tvQuestion=await call(null,{query:'?action=display&code='+code});assert.equal(tvQuestion.question.correct,undefined);assert.equal(tvQuestion.availableLevels,undefined);assert.equal(tvQuestion.eligible,false);assert.equal(tvQuestion.choice,null);assert.equal(tvQuestion.deck,undefined);
  assert.equal(JSON.stringify(await call(null,{guest:alice.token})).includes('deck'),false);
  assert.equal((await host('reveal')).status,409);
  const late=await call({action:'join',name:'Late arrival'});assert.equal(late.eligible,false);
@@ -37,7 +41,7 @@ try{
  assert.equal((await call({action:'answer',gameNumber:1,index:0,choice:current.correct},{guest:alice.token})).status,409);
  assert.equal((await call({action:'answer',gameNumber:1,index:0,choice:99},{guest:bob.token})).status,400);
  await call({action:'answer',gameNumber:1,index:0,choice:(current.correct+1)%4},{guest:bob.token});
- edit(s=>{s.deadline=Date.now()-1});await host('reveal');assert.equal(hostState.question.correct,current.correct);assert.ok(hostState.leaders.find(p=>p.name==='Alice').score>0);assert.equal(hostState.leaders.find(p=>p.name==='Bob').score,0);
+ edit(s=>{s.deadline=Date.now()-1});await host('reveal');assert.equal(hostState.question.correct,current.correct);assert.equal((await call(null,{query:'?action=display&code='+code})).question.correct,current.correct);assert.ok(hostState.leaders.find(p=>p.name==='Alice').score>0);assert.equal(hostState.leaders.find(p=>p.name==='Bob').score,0);
  const total=hostState.leaders[0].score;assert.equal((await host('reveal')).status,409);assert.equal((await call(null,{guest:alice.token})).leaders[0].score,total);
  assert.equal((await call(null,{guest:alice.token,query:'?action=library'})).status,403);
  const bank=await call(null,{admin:'admin',query:'?action=library'});assert.equal(bank.count,63);assert.equal(bank.questions,undefined);await ensureOwner(db);await db.prepare("INSERT INTO links_admin_sessions VALUES('owner','2099-01-01')").run();assert.equal((await call({action:'import',questions:STARTER},{admin:'admin'})).status,403);
