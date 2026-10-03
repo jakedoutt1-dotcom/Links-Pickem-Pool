@@ -1,7 +1,9 @@
+import {identitySwitcher} from '../../lib/player-identity.js';
 import {poolGameKeys} from '../../lib/pool-games.js';
 import {accountSession,ensureAccounts,importOwnedPools,GAMES} from '../../lib/commissioner-account.js';
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
 export async function onRequest({request,env}){
+ const identity=await identitySwitcher({request,env});if(identity)return identity;
  try{
  const db=env.DB;await ensureAccounts(db);
  await db.prepare('CREATE TABLE IF NOT EXISTS links_player_memberships (pool_id INTEGER NOT NULL,player_name TEXT NOT NULL,email TEXT NOT NULL,PRIMARY KEY(pool_id,player_name))').run();

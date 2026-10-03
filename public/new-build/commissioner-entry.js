@@ -2,6 +2,7 @@
 (()=>{
  const locker=/\/control-center(?:\.html)?\/?$/i.test(location.pathname);
  const picksPage=/\/(nfl|college|survivor|confidence|game33|squares|props|playoff|march-madness|golf|nascar|fantasy|dynasty|custom)(?:\.html)?\/?$/i;
+ if(window.LINKS_IDENTITY_TEST&&locker)return;
  if(!locker&&!picksPage.test(location.pathname))return;
  if(document.getElementById('linksCommissionerEntryModule'))return;
  const marker=document.createElement('meta');marker.id='linksCommissionerEntryModule';document.head.append(marker);

@@ -64,16 +64,17 @@ export function gradeWeek(p,week,games,{players,picks,ties,manual,access,credits
  const finalGames=games.filter(g=>g.completed&&g.winner&&g.total!=null).length;
  const allFinal=expectedGames>0&&finalGames===expectedGames;
  const last=[...games].sort((a,b)=>Date.parse(b.kickoff)-Date.parse(a.kickoff)||b.i-a.i)[0];
- const actualTie=allFinal?(last?.total??null):null;
+ const tieLocked=games.length>0&&games.every(g=>Number.isFinite(Date.parse(g.kickoff))&&Date.now()>=Date.parse(g.kickoff));
+ const actualTie=allFinal&&tieLocked?(last?.total??null):null;
  const tieMap={},by=new Map();
  for(const x of ties.results||[])tieMap[canonical(x.player_name)]=x.guess;
  for(const x of picks.results||[]){const name=canonical(x.player_name);if(!by.has(name))by.set(name,[]);by.get(name).push(x);}
  const rows=[...new Set([...roster,...by.keys()])].filter(name=>eligible.has(exactKey(name))||credited.has(exactKey(name))).map(player=>{
   let wins=0,losses=0;const seen=new Set();
   for(const pick of by.get(player)||[]){const team=norm(pick.team),g=byTeam.get(team);if(!g?.completed||!g.winner||g.winner==='TIE'||seen.has(g.id))continue;seen.add(g.id);if(team===g.winner)wins++;else losses++;}
-  const tiePick=tieMap[player]??null,tieDiff=actualTie!=null&&tiePick!=null?Math.abs(Number(tiePick)-actualTie):null;
+  const tiePick=tieLocked?(tieMap[player]??null):null,tieDiff=actualTie!=null&&tiePick!=null?Math.abs(Number(tiePick)-actualTie):null;
   return {player,wins,losses,correct:wins,tiePick,tieDiff,...(credited.has(exactKey(player))?{courtesyCredit:true}:{})};
- }).filter(x=>by.get(x.player)?.length||x.tiePick!=null).sort((a,b)=>b.wins-a.wins||(a.tieDiff??Infinity)-(b.tieDiff??Infinity)||a.player.localeCompare(b.player));
+ }).filter(x=>by.get(x.player)?.length||tieMap[x.player]!=null).sort((a,b)=>b.wins-a.wins||(a.tieDiff??Infinity)-(b.tieDiff??Infinity)||a.player.localeCompare(b.player));
  const top=rows[0],finalizedWinners=allFinal&&top?rows.filter(x=>x.wins===top.wins&&(actualTie==null||(x.tieDiff??Infinity)===(top.tieDiff??Infinity))).map(x=>x.player):[];
- return {success:true,week,locked:true,rows,actualTie,finalizedWinner:finalizedWinners[0]||null,finalizedWinners,allFinal,finalGames,expectedGames,pool:{id:String(p.id),name:p.name,code:p.code}};
+ return {success:true,week,locked:true,tieLocked,rows,actualTie,finalizedWinner:finalizedWinners[0]||null,finalizedWinners,allFinal,finalGames,expectedGames,pool:{id:String(p.id),name:p.name,code:p.code}};
 }

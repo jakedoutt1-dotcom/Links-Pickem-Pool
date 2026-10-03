@@ -1,0 +1,6 @@
+import assert from 'node:assert/strict';
+import {gradeWeek} from '../functions/new-build/api/standings-v649.js';
+const now=Date.now,deadline=Date.parse('2026-10-05T00:20:00Z');
+const games=[{id:'first',i:0,teams:['BUF','MIA'],kickoff:'2026-10-01T00:20:00Z',completed:true,winner:'BUF',total:40},{id:'last',i:1,teams:['KC','DEN'],kickoff:'2026-10-05T00:20:00Z',completed:false,winner:'',total:null}];
+const data=()=>({players:{results:[{name:'A'},{name:'B'}]},picks:{results:[{player_name:'A',game_index:0,team:'BUF'}]},ties:{results:[{player_name:'A',guess:43},{player_name:'B',guess:44}]},manual:{results:[]},access:{results:[{player_name:'A'},{player_name:'B'}]}});
+try{Date.now=()=>deadline-1;let r=gradeWeek({id:1,name:'Test'},4,structuredClone(games),data());assert.equal(r.tieLocked,false);assert.equal(r.rows.length,2);assert.ok(r.rows.every(x=>x.tiePick===null&&x.tieDiff===null));Date.now=()=>deadline;r=gradeWeek({id:1,name:'Test'},4,structuredClone(games),data());assert.equal(r.tieLocked,true);assert.deepEqual(r.rows.map(x=>x.tiePick),[43,44]);const missing=structuredClone(games);missing[1].kickoff=null;r=gradeWeek({id:1,name:'Test'},4,missing,data());assert.ok(r.rows.every(x=>x.tiePick===null));console.log('PASS standings tiebreaker hidden before kickoff, revealed at kickoff, hidden with missing schedule; roster preserved');}finally{Date.now=now}

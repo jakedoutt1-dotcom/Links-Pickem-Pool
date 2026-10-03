@@ -1,4 +1,5 @@
 (()=>{
+ if(window.LINKS_IDENTITY_TEST)return;
  if(document.documentElement.dataset.nflDemo==='true')return;
  const token=()=>localStorage.getItem('links-legacy-token')||localStorage.getItem('links-token')||'';if(!token())return;
  const host=document.querySelector('#lockerAccount');if(!host)return;

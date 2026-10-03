@@ -20,4 +20,5 @@ export function creditPicks(rows,credits,games,week){
  const missing=credits.filter(c=>!picked.has(String(c.player_name).trim().toLowerCase()));
  return [...rows,...missing.map(c=>({player_name:c.player_name,week:4,game_index:game.i??game.gameIndex,team:game.winner,courtesy_credit:true}))];
 }
-export function creditNotice(credits,week,player){if(Number(week)!==4||!credits.length||player&&!credits.some(c=>c.player_name===player))return null;return {week:4,eventId:FEEDBACK.eventId,cutoff:FEEDBACK.cutoff,count:credits.length,message:'Feedback credit: Week 4’s first game counts as a win only for members with no pick for that game who joined before Sunday, October 4 at 11:20 AM Central. Existing picks and all other games score normally.'}}
+// Keep adjustment records internal; player pages show the normal game results.
+export function creditNotice(){return null}
