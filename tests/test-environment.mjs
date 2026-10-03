@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {testEnvironment} from '../functions/lib/test-environment.js';
+const db={prepare(){return {async first(){return {name:'links-test-data'}}}}};let reached=0;
+const next=async c=>{reached++;assert.equal(c.env.RESEND_API_KEY,undefined);assert.equal(c.env.PAYPAL_CLIENT_ID,undefined);return new Response('<body><a href="https://linkspickempools.com/new-build/">Home</a>',{headers:{'Content-Type':'text/html'}})};
+const context={request:new Request('https://links-pickem-test.pages.dev/'),env:{DB:db,LINKS_DB:db,RESEND_API_KEY:'fake',PAYPAL_CLIENT_ID:'fake'}};
+let r=await testEnvironment(context,next);assert.equal(r.status,200);let html=await r.text();assert.match(html,/TEST SITE/);assert.ok(!html.includes('https://linkspickempools.com'));assert.equal(r.headers.get('X-Robots-Tag'),'noindex, nofollow');
+r=await testEnvironment({...context,env:{DB:db}},next);assert.equal(r.status,503);assert.equal(reached,1);
+r=await testEnvironment({...context,request:new Request('https://linkspickempools.com/')},async c=>{assert.equal(c.env.RESEND_API_KEY,'fake');return new Response('live')});assert.equal(await r.text(),'live');
+r=await testEnvironment({...context,request:new Request('https://links-test.doutt-it-pics-pool.pages.dev/'),env:{CF_PAGES_BRANCH:'links-test'}},next);assert.equal(r.status,503);
+console.log('PASS test isolation guard, live pass-through, test banner/link rewriting, disabled integrations and missing binding rejection');

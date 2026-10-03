@@ -1,6 +1,7 @@
+import {testEnvironment} from './lib/test-environment.js';
 import {comingSoonPage,comingSoonResponse} from './lib/game-availability.js';
 // LINKS v665 — legacy production middleware. New Build is isolated and must not receive legacy HTML/CSS/JS injections.
-export async function onRequest(context){
+async function productionRequest(context){
  const url=new URL(context.request.url);
  if(['GET','HEAD'].includes(context.request.method)&&comingSoonPage(url))return comingSoonResponse();
  if(url.pathname==='/ads.txt'&&['GET','HEAD'].includes(context.request.method))return new Response(context.request.method==='HEAD'?null:'google.com, pub-2654873707790051, DIRECT, f08c47fec0942fa0\n',{headers:{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'public, max-age=3600'}});
@@ -33,3 +34,5 @@ export async function onRequest(context){
  html=html.replace("</head>",fix+"\n</head>");
  const headers=new Headers(response.headers);headers.delete("content-length");headers.set("cache-control","no-cache, no-store, must-revalidate");headers.set("x-links-build",isHome?"v665-home-runtime":"v665");return new Response(html,{status:response.status,statusText:response.statusText,headers});
 }
+
+export async function onRequest(context){return testEnvironment(context,productionRequest)}
