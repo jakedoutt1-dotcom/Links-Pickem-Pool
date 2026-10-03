@@ -1,7 +1,9 @@
+import {mountTriviaSound} from './trivia-sound.mjs';
 import qrcode from './vendor/qrcode.mjs';
+const sounds=mountTriviaSound({button:document.getElementById('soundToggle')});
 const $=id=>document.getElementById(id),themes={football:'SPORTS',music:'MUSIC',movies:'MOVIES & TV',history:'HISTORY',science:'SCIENCE',general:'MIXED BAG'};
 let code='',state=null,offset=0,heartbeat=0,timer,version=0,signature='';
-function tick(){if(!state)return;const now=Date.now()+offset,count=Math.max(0,Math.ceil((state.startsAt-now)/1000)),waiting=state.phase==='question'&&!state.question;$('countdown').hidden=!waiting;$('questionArea').hidden=waiting;$('countdownNumber').textContent=count||'GO';$('clock').textContent=state.phase==='question'&&!waiting?String(Math.max(0,Math.ceil((state.deadline-now)/1000))).padStart(2,'0'):'—';}
+function tick(){if(!state)return;sounds.update(state,Date.now()+offset);const now=Date.now()+offset,count=Math.max(0,Math.ceil((state.startsAt-now)/1000)),waiting=state.phase==='question'&&!state.question;$('countdown').hidden=!waiting;$('questionArea').hidden=waiting;$('countdownNumber').textContent=count||'GO';$('clock').textContent=state.phase==='question'&&!waiting?String(Math.max(0,Math.ceil((state.deadline-now)/1000))).padStart(2,'0'):'—';}
 function render(){
  const q=state.question,phase=state.phase,theme=state.categoryIntro||q?.category||'general';document.body.dataset.category=theme;
  $('title').textContent=state.title;$('roomLabel').textContent='ROOM '+code;$('lobby').hidden=phase!=='lobby';$('stage').hidden=['lobby','ended'].includes(phase);$('standings').hidden=!['lobby','reveal','ended'].includes(phase);

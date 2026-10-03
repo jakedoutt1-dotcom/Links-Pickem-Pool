@@ -1,4 +1,6 @@
+import {mountTriviaSound} from './trivia-sound.mjs';
 import qrcode from './vendor/qrcode.mjs';
+const sounds=mountTriviaSound({button:document.getElementById('soundToggle')});
 import {mountPartners} from './partner-banner.mjs';
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const themes={football:['SPORTS','🏆'],music:['MUSIC','♫'],movies:['MOVIES & TV','▶'],history:['HISTORY','Ⅲ'],science:['SCIENCE','⚛'],general:['MIXED BAG','✦']};
@@ -66,7 +68,7 @@ function render(){
  tick();
 }
 function tick(){
- if(!state)return;const seconds=Math.max(0,Math.ceil((state.deadline-Date.now()-offset)/1000));
+ if(!state)return;sounds.update(state,Date.now()+offset);const seconds=Math.max(0,Math.ceil((state.deadline-Date.now()-offset)/1000));
  const count=Math.max(0,Math.ceil(((state.startsAt||0)-Date.now()-offset)/1000)),waiting=state.phase==='question'&&!state.question;
  document.body.dataset.view=waiting?'countdown':state.phase;
  $('startCountdown').hidden=!waiting;document.querySelector('.question-area').hidden=waiting;
