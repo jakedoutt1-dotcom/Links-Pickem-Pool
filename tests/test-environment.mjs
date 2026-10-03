@@ -8,4 +8,5 @@ r=await testEnvironment({...context,env:{DB:db}},next);assert.equal(r.status,503
 r=await testEnvironment({...context,env:{RESEND_API_KEY:'fake'},request:new Request('https://linkspickempools.com/')},async c=>{assert.equal(c.env.RESEND_API_KEY,'fake');return new Response('live')});assert.equal(await r.text(),'live');
 r=await testEnvironment({...context,request:new Request('https://links-test.doutt-it-pics-pool.pages.dev/'),env:{CF_PAGES_BRANCH:'links-test'}},next);assert.equal(r.status,503);
 r=await testEnvironment({...context,env:{...context.env,RESEND_API_KEY:'fake'}},next);assert.equal(r.status,503);
+r=await testEnvironment({...context,request:new Request('https://links-pickem-test.pages.dev/__test-status'),env:{...context.env,RESEND_API_KEY:'fake'}},next);assert.equal(r.status,503);
 console.log('PASS test isolation guard, live pass-through, test banner/link rewriting, disabled integrations and missing binding rejection');
