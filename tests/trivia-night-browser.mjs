@@ -24,6 +24,7 @@ try{
  const host=await page(1360,true),phone=await page(390);
  await host.goto('https://trivia.local/new-build/trivia-night.html');await host.getByRole('button',{name:'Set up a game'}).click();
  assert.equal(await host.getByRole('button',{name:'Manage questions'}).count(),0);
+ if(process.env.TRIVIA_TEAMS==='1'){await host.locator('#playMode').selectOption('teams');assert.match(await host.locator('#modeHelp').textContent(),/One phone|one phone/);assert.match(await host.locator('#difficulty option[value=hard]').textContent(),/45 seconds/);}
  for(const checkbox of await host.locator('[name=category]').all())await checkbox.uncheck();await host.locator('[value=science]').check();await host.locator('#difficulty').selectOption('hard');
  await host.getByRole('button',{name:'Create room'}).click();await host.locator('#room:visible').waitFor();
  const code=new URL(host.url()).searchParams.get('room');assert.ok(code);
@@ -31,7 +32,7 @@ try{
  const tv=await page(1920);await tv.goto('https://trivia.local/new-build/trivia-tv.html');await tv.locator('#roomCode').fill(code);await tv.getByRole('button',{name:'Connect display',exact:true}).click();await tv.locator('#display:visible').waitFor();assert.ok(await tv.locator('#qr svg').isVisible());assert.equal(await tv.locator('#hostControls').count(),0);await host.waitForFunction(()=>document.getElementById('tvStatus').textContent==='TV display connected');
 
  await host.getByRole('button',{name:'Invite / QR code'}).click();assert.ok(await host.locator('#qr svg').isVisible());await host.getByRole('button',{name:'Close invitation'}).click();
- await phone.goto('https://trivia.local/new-build/trivia-night.html?room='+code);await phone.locator('#quickJoin[open]').waitFor();assert.equal(await phone.locator('#entry').isVisible(),false);await phone.getByLabel('Your name',{exact:true}).fill('Phone Team');await phone.getByRole('button',{name:'Join game',exact:true}).click();await phone.locator('#room:visible').waitFor();
+ await phone.goto('https://trivia.local/new-build/trivia-night.html?room='+code);await phone.locator('#quickJoin[open]').waitFor();assert.equal(await phone.locator('#entry').isVisible(),false);await phone.getByLabel(process.env.TRIVIA_TEAMS==='1'?'Team name':'Your name',{exact:true}).fill('Phone Team');await phone.getByRole('button',{name:'Join game',exact:true}).click();await phone.locator('#room:visible').waitFor();
  await host.getByRole('button',{name:'Show leaderboard',exact:true}).click();await host.locator('#triviaStandingsScreen[open]').waitFor();await host.getByRole('button',{name:'Back to game',exact:true}).click();assert.ok(await host.locator('#lobbyQR svg').isVisible());await host.getByRole('button',{name:'Start game',exact:true}).click();await host.locator('#roundCategories button[data-theme=science]').click();await host.getByRole('button',{name:'Start question',exact:true}).click();await phone.locator('[data-choice="0"]').waitFor();
  await tv.locator('.tv-answer').first().waitFor();assert.equal(await tv.locator('.correct').count(),0);assert.equal(await tv.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);await tv.screenshot({path:'output/trivia-night/tv-question.png',fullPage:true});
  assert.equal(await phone.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);

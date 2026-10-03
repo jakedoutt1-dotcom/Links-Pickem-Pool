@@ -1,7 +1,7 @@
 import {loadGameQuestions} from '../../lib/trivia-provider.js';
 import {ensureAccounts,allowance,emailKey} from '../../lib/commissioner-account.js';
 import {ownerSession} from '../../lib/owner-auth.js';
-import {STARTER,validateBank,makeDeck,SECONDS,reveal,view} from '../../lib/trivia-night.js';
+import {STARTER,validateBank,makeDeck,answerSeconds,reveal,view} from '../../lib/trivia-night.js';
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
 const hash=async value=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)))).map(x=>x.toString(16).padStart(2,'0')).join('');
 export async function onRequest({request,env}){
@@ -12,7 +12,7 @@ export async function onRequest({request,env}){
   const db=env.DB;if(!db)return json({error:'Trivia needs a database connection.'},503);
   let b={};if(request.method==='POST'){const raw=await request.text();if(raw.length>600000)return json({error:'Question file is too large.'},413);try{b=JSON.parse(raw)}catch{return json({error:'Invalid request.'},400)}}
   const action=b.action||url.searchParams.get('action')||'state';
-  if(request.method==='GET'&&!['state','display','library','owner-library'].includes(action))return json({error:'Use POST for changes.'},405);
+  if(request.method==='GET'&&!['state','display','info','library','owner-library'].includes(action))return json({error:'Use POST for changes.'},405);
   await db.batch([
    db.prepare('CREATE TABLE IF NOT EXISTS links_trivia_night_rooms(code TEXT PRIMARY KEY,pool_id INTEGER NOT NULL,host_name TEXT NOT NULL,state TEXT NOT NULL,version INTEGER NOT NULL DEFAULT 0,expires INTEGER NOT NULL)'),
    db.prepare('CREATE TABLE IF NOT EXISTS links_trivia_night_banks(pool_id INTEGER PRIMARY KEY,questions TEXT NOT NULL,updated TEXT NOT NULL)'),
@@ -46,6 +46,7 @@ export async function onRequest({request,env}){
    const placeholders=pools.map(()=>'?').join(',');
    const active=(await db.prepare(`SELECT code,pool_id,host_name FROM links_trivia_night_rooms WHERE pool_id IN (${placeholders}) AND expires>?`).bind(...pools,Date.now()).all()).results||[];
    if(action==='library')return json({providerConfigured:!!env.TRIVIA_API_KEY,count:(await bank()).length,roomLimit:plan.slots,plan:plan.label,activeRooms:active.length,rooms:active.filter(r=>r.pool_id===admin.pool_id&&r.host_name===admin.player_name).map(r=>({code:r.code}))});
+   if(b.mode!==undefined&&!['individual','teams'].includes(b.mode))return json({error:'Choose Individual or Teams.'},400);
    if(!['easy','medium','hard','mixed'].includes(b.difficulty))return json({error:'Choose a valid difficulty.'},400);
    if(active.length>=plan.slots)return json({error:plan.label+' has no available trivia rooms. Reopen a room or choose a larger package.'},402);
    await db.prepare('DELETE FROM links_trivia_night_rooms WHERE expires<=?').bind(Date.now()).run();
@@ -54,7 +55,7 @@ export async function onRequest({request,env}){
    const finalQuestion=finals.find(q=>!deck.some(d=>d.id===q.id))||(deck.length>1?finals[0]:null)||null;
    if(finalQuestion){const at=deck.findIndex(q=>q.id===finalQuestion.id);if(at>=0)deck.splice(at,1);}
    const code=crypto.randomUUID().replace(/-/g,'').slice(0,10).toUpperCase();
-   const state={code,title:String(b.title||'LINKS Trivia Night').trim().slice(0,70),categories:b.categories,difficulty:b.difficulty,game:1,phase:'lobby',index:-1,deadline:0,questionSource:loaded.source,questionNotice:loaded.notice,seenQuestions:[],deck,finalQuestion,isFinal:false,players:{}};
+   const state={code,mode:b.mode||'individual',title:String(b.title||'LINKS Trivia Night').trim().slice(0,70),categories:b.categories,difficulty:b.difficulty,game:1,phase:'lobby',index:-1,deadline:0,questionSource:loaded.source,questionNotice:loaded.notice,seenQuestions:[],deck,finalQuestion,isFinal:false,players:{}};
    const inserted=await db.prepare(`INSERT INTO links_trivia_night_rooms(code,pool_id,host_name,state,expires) SELECT ?,?,?,?,? WHERE (SELECT COUNT(*) FROM links_trivia_night_rooms WHERE pool_id IN (${placeholders}) AND expires>?)<?`).bind(code,admin.pool_id,admin.player_name,JSON.stringify(state),Date.now()+86400000,...pools,Date.now(),plan.slots).run();
    if(!inserted.meta?.changes)return json({error:plan.label+' allows '+plan.slots+' active trivia room'+(plan.slots===1?'':'s')+'. Reopen your existing room to play again, or choose a larger package. Rooms expire after 24 hours.'},402);
    return json(view(state,'',true));
@@ -67,6 +68,7 @@ export async function onRequest({request,env}){
    const row=await db.prepare('SELECT * FROM links_trivia_night_rooms WHERE code=? AND expires>?').bind(code,Date.now()).first();
    if(!row)return json({error:'Room not found or expired. Ask the host for a current code.'},404);
    const s=JSON.parse(row.state),host=!!admin&&admin.pool_id===row.pool_id&&admin.player_name===row.host_name,now=Date.now();let issued;
+   if(action==='info')return json({code,title:s.title,mode:s.mode||'individual'});
    if(action==='display'){
     if(request.method==='POST')await db.prepare('INSERT INTO links_trivia_night_displays(code,seen) VALUES(?,?) ON CONFLICT(code) DO UPDATE SET seen=excluded.seen').bind(code,now).run();
     return json(view(s,'',false,now));
@@ -85,7 +87,7 @@ export async function onRequest({request,env}){
      const p=s.players[seat];
      if(!p||s.phase!=='question'||now<(s.startsAt||0)||b.gameNumber!==s.game||b.index!==s.index||now>=s.deadline||p.eligible>s.index||p.answer?.index===s.index)return json({error:'Answer locked. Wait for the next question.'},409);
      if(!Number.isInteger(b.choice)||b.choice<0||b.choice>3)return json({error:'Choose an answer.'},400);
-     p.answer={index:s.index,choice:b.choice,elapsed:Math.max(0,now-(s.deadline-SECONDS[s.deck[s.index].difficulty]*1000))};
+     p.answer={index:s.index,choice:b.choice,elapsed:Math.max(0,now-(s.deadline-answerSeconds(s.deck[s.index].difficulty,s.mode)*1000))};
     }else{
      if(!host)return json({error:'Only this room’s host can control the game.'},403);
      if(b.gameNumber!==s.game||b.index!==s.index||b.phase!==s.phase)return json({error:'The room changed. Refresh and try again.'},409);
@@ -100,7 +102,7 @@ export async function onRequest({request,env}){
       [s.deck[s.index+1],s.deck[at]]=[s.deck[at],s.deck[s.index+1]];s.difficulty=difficulty;s.phase='category';s.deadline=0;
      }else if(action==='start-question'){
       if(s.phase!=='category')return json({error:'Choose a category first.'},409);
-      s.index++;s.phase='question';s.startsAt=now+3000;s.deadline=s.startsAt+SECONDS[s.deck[s.index].difficulty]*1000;
+      s.index++;s.phase='question';s.startsAt=now+3000;s.deadline=s.startsAt+answerSeconds(s.deck[s.index].difficulty,s.mode)*1000;
      }else if(action==='final'){
       if(s.phase!=='reveal'||!s.finalQuestion||s.isFinal)return json({error:'Reveal a regular question first. A hard question must be available for the final.'},409);
       s.deck.splice(s.index+1,0,{...s.finalQuestion,final:true});s.isFinal=true;s.phase='category';s.deadline=0;

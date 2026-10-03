@@ -5,7 +5,7 @@ const themes={football:['SPORTS','🏆'],music:['MUSIC','♫'],movies:['MOVIES &
 let state=null,offset=0,busy=false,bank=[],pending=null,signature='',sequence=0,roomCode=new URL(location.href).searchParams.get('room')||sessionStorage.getItem('trivia-night-room')||'';
 const token=()=>localStorage.getItem('links-legacy-token')||localStorage.getItem('links-token')||'';
 const seat=()=>localStorage.getItem('trivia-night-seat-'+roomCode)||'';
-const selection=()=>({categories:[...document.querySelectorAll('[name=category]:checked')].map(e=>e.value),difficulty:$('difficulty').value});
+const selection=()=>({mode:$('playMode').value,categories:[...document.querySelectorAll('[name=category]:checked')].map(e=>e.value),difficulty:$('difficulty').value});
 $('categories').innerHTML=Object.entries(themes).map(([key,[name,icon]])=>`<label><span>${icon}</span><input type="checkbox" name="category" value="${key}" checked> ${name}</label>`).join('');
 if(new URL(location.href).searchParams.get('host')==='1')roomCode='';
 $('code').value=roomCode;
@@ -35,7 +35,7 @@ function render(){
  const q=state.question,revealed=['reveal','ended'].includes(state.phase),theme=state.categoryIntro||q?.category||'general';document.body.dataset.category=theme;
  $('symbol').textContent=themes[theme][1];$('categoryLabel').textContent=themes[theme][0]+(q?' · '+q.difficulty.toUpperCase():'');
  $('roomTitle').textContent=state.title+' · ROOM '+state.code;
- $('roomStatus').textContent=state.phase==='ended'?'That’s a wrap.':state.phase==='lobby'?'The night starts here.':'Game '+state.game+' · '+state.playerCount+' players / teams';
+ $('roomStatus').textContent=state.phase==='ended'?'That’s a wrap.':state.phase==='lobby'?'The night starts here.':'Game '+state.game+' · '+state.playerCount+(state.mode==='teams'?' teams':' players');
  $('questionNumber').textContent=state.isFinal?'FINAL ROUND · DOUBLE POINTS':q?'QUESTION '+(state.index+1):'READY WHEN YOU ARE';
  $('phaseLabel').textContent=state.phase==='lobby'?'WAITING FOR THE HOST':state.phase==='ended'?'FINAL SCOREBOARD':revealed?'THE ANSWER IS IN':'THINK FAST. MAKE IT COUNT.';
  $('question').textContent=state.phase==='category'?(state.isFinal?'FINAL ROUND · ':'')+themes[theme][0]+' ROUND':q?.text||(state.host?'Your room is ready.':'Waiting for host to start game');
@@ -48,11 +48,11 @@ function render(){
  $('playerSummary').hidden=state.host;const me=state.leaders.find(p=>p.you);$('playerSummary').textContent=me?me.name+' · '+me.score.toLocaleString()+' points · Rank '+me.rank:'';
  $('questionProvider').textContent=state.host?[state.questionSource,state.questionNotice].filter(Boolean).join(' · '):'';
  $('hostStep').textContent=state.isFinal&&state.phase==='reveal'?'Final answer · Review the result, then show final standings':({lobby:'1 · Invite your players, then start the game',category:'2 · Category ready — start when everyone is ready',question:'3 · Wait for answers, then reveal',reveal:'4 · Choose the next category or play the final round',ended:'Game complete · Show standings or play again'})[state.phase];
- if(state.host&&state.phase==='lobby'){const qr=qrcode(0,'M');qr.addData(joinLink());qr.make();$('lobbyQR').innerHTML=qr.createSvgTag({cellSize:6,margin:20,scalable:true});$('lobbyCode').textContent=roomCode;$('lobbyCount').textContent=state.playerCount+' players / teams joined';$('lobbyRoster').textContent=state.leaders.map(p=>p.name).join(' · ');}
+ if(state.host&&state.phase==='lobby'){const qr=qrcode(0,'M');qr.addData(joinLink());qr.make();$('lobbyQR').innerHTML=qr.createSvgTag({cellSize:6,margin:20,scalable:true});$('lobbyCode').textContent=roomCode;$('lobbyCount').textContent=state.playerCount+(state.mode==='teams'?' teams joined':' players joined');$('lobbyRoster').textContent=state.leaders.map(p=>p.name).join(' · ');}
  $('answers').hidden=state.phase==='category';
  $('answers').innerHTML=q?q.answers.map((a,i)=>`<button data-choice="${i}" class="${state.choice===i?'selected ':''}${revealed?(q.correct===i?'correct':state.choice===i?'wrong':''):''}"><b>${'ABCD'[i]}</b><span>${esc(a)}${revealed&&q.correct===i?' ✓':''}${state.choice===i?' · Your answer':''}</span></button>`).join(''):'';
  $('source').textContent=revealed&&q?'Source: '+q.source+' · '+q.license:'';
- $('answerNote').textContent=state.phase==='category'?(state.isFinal?'One hard question. Double base and speed points. 20 seconds. Final scores appear after the host reveals.':'Get ready. The host starts the clock when everyone is ready.'):state.phase==='lobby'?(state.host?'Show the QR code so players can join.':'Waiting for host to start game.'):state.phase==='ended'?'Thanks for playing! Stay here if the host starts another game.':revealed?(state.isFinal?'Final answer revealed. The host will show final standings when everyone is ready.':'Scores are updated. The host will start the next question.'):state.host?'Players answer on their phones. Reveal after the timer ends.':!state.eligible?'You’re in! Your first question is the next one.':state.choice!==null?'Answer saved. Wait for the host to reveal.':'Choose one answer. You cannot change it after submitting.';
+ $('answerNote').textContent=state.phase==='category'?(state.isFinal?'One hard question. Double base and speed points. '+(state.mode==='teams'?45:20)+' seconds. Final scores appear after the host reveals.':'Get ready. The host starts the clock when everyone is ready.'):state.phase==='lobby'?(state.host?'Show the QR code so players can join.':'Waiting for host to start game.'):state.phase==='ended'?'Thanks for playing! Stay here if the host starts another game.':revealed?(state.isFinal?'Final answer revealed. The host will show final standings when everyone is ready.':'Scores are updated. The host will start the next question.'):state.host?(state.mode==='teams'?'Each team submits on one phone. Reveal after the timer ends.':'Players answer on their phones. Reveal after the timer ends.'):!state.eligible?'You’re in! Your first question is the next one.':state.choice!==null?'Answer saved. Wait for the host to reveal.':(state.mode==='teams'?'Discuss with your team, then submit one answer. You cannot change it.':'Choose one answer. You cannot change it after submitting.');
  $('hostControls').hidden=!state.host;$('showStandings').hidden=!['lobby','reveal','ended'].includes(state.phase);$('scoreboardTitle').textContent=state.phase==='ended'?'Final standings':'Live standings';$('answered').textContent=state.answered+' answers received · '+state.remaining+' questions remaining';
  $('leaders').innerHTML=state.leaders.length?state.leaders.map(p=>`<li class="${p.you?'you':''}"><span>${p.rank}</span><span>${esc(p.name)}${p.you?' · You':''}</span><strong>${p.score.toLocaleString()}</strong></li>`).join(''):'<li>Waiting for the first player or team.</li>';
 
@@ -97,7 +97,7 @@ $('create').onclick=()=>act('create',{title:$('title').value,...selection()});
 $('answers').onclick=e=>{const b=e.target.closest('[data-choice]');if(b&&!b.disabled)act('answer',{choice:Number(b.dataset.choice)})};
 function roundCategories(){const difficulty=document.querySelector('[name=roundLevel]:checked')?.value||'mixed';$('roundCategories').replaceChildren();for(const key of state.availableCategories){const b=document.createElement('button');b.textContent=themes[key][0];b.dataset.theme=key;b.disabled=difficulty!=='mixed'&&state.availableLevels&&!state.availableLevels[key]?.includes(difficulty);b.onclick=()=>{$('categoryPicker').close();act('next',{category:key,difficulty})};$('roundCategories').append(b)}}
 $('roundDifficulty').onchange=roundCategories;
-$('next').onclick=()=>{document.querySelectorAll('[name=roundLevel]').forEach(r=>r.checked=r.value===(state.difficulty||'mixed'));roundCategories();$('categoryPicker').showModal()};
+$('next').onclick=()=>{document.querySelectorAll('[name=roundLevel]').forEach(r=>{r.parentElement.lastChild.textContent=' '+r.value[0].toUpperCase()+r.value.slice(1)+(r.value==='mixed'?'':' · '+(state.mode==='teams'?{easy:20,medium:30,hard:45}:{easy:10,medium:15,hard:20})[r.value]+' sec')});document.querySelectorAll('[name=roundLevel]').forEach(r=>r.checked=r.value===(state.difficulty||'mixed'));roundCategories();$('categoryPicker').showModal()};
 $('startQuestion').onclick=()=>act('start-question');$('finalRound').onclick=()=>act('final');$('reveal').onclick=()=>act('reveal');$('end').onclick=()=>{if(state.isFinal||confirm('End this game and show the final scoreboard?'))act('end')};
 $('restart').onclick=()=>{if(confirm('Start another game in this room? Scores reset to zero and a new question set loads. Everyone stays joined.'))act('restart',{categories:state.categories,difficulty:state.difficulty})};
 $('leave').onclick=()=>{if(!confirm('Exit this room? Your score is saved, and you can return using this room code.'))return;sessionStorage.removeItem('trivia-night-room');location.href='./trivia-night.html'};
@@ -119,6 +119,7 @@ async function openQRJoin(){
  if(!linkedCode||new URL(location.href).searchParams.get('host')==='1')return;
  document.body.classList.add('qr-joining');$('entry').hidden=true;
  if(seat()||token()){try{adopt(await api(null,'?code='+encodeURIComponent(roomCode)));return}catch(e){if(![401,403].includes(e.status)){$('quickJoinMessage').textContent=e.message}}}
+ try{const info=await api(null,'?action=info&code='+encodeURIComponent(roomCode));if(info.mode==='teams'){$('quickNameLabel').textContent='Team name';$('quickName').placeholder='Choose your team name';$('quickJoinHelp').textContent='Use one phone for your whole team. Talk through each question and submit one answer together.'}}catch{}
  $('quickJoin').showModal();$('quickName').focus();
 }
 $('quickJoinForm').onsubmit=async e=>{e.preventDefault();if(busy)return;busy=true;++sequence;$('quickJoinButton').disabled=true;$('quickJoinMessage').textContent='Joining…';try{adopt(await api({action:'join',code:roomCode,name:$('quickName').value.trim()}))}catch(error){$('quickJoinMessage').textContent=error.message}finally{busy=false;$('quickJoinButton').disabled=false}};
@@ -126,3 +127,5 @@ $('quickJoinExit').onclick=()=>location.href='./trivia-night.html';
 $('quickJoin').addEventListener('cancel',e=>{e.preventDefault();location.href='./trivia-night.html'});
 setInterval(tick,200);openQRJoin().finally(poll);
 if(new URL(location.href).searchParams.get('host')==='1')$('hostOpen').click();
+
+$('playMode').onchange=()=>{const team=$('playMode').value==='teams',times=team?[20,30,45]:[10,15,20];$('modeHelp').textContent=team?'Use one phone per team. Discuss together and submit one answer. Easy 20s · Medium 30s · Hard 45s. Up to 250 speed points.':'Answer on your own. Easy 10s · Medium 15s · Hard 20s. Up to 500 speed points.';['easy','medium','hard'].forEach((level,i)=>{$('difficulty').querySelector('[value='+level+']').textContent=level[0].toUpperCase()+level.slice(1)+' · '+times[i]+' seconds · '+[500,1000,1500][i].toLocaleString()+' + speed'})};

@@ -2,6 +2,9 @@ import { QUESTIONS, shuffled } from './football-trivia.js';
 
 export const CATEGORIES = ['football','music','movies','history','science','general'];
 export const SECONDS = {easy:10,medium:15,hard:20};
+export const TEAM_SECONDS = {easy:20,medium:30,hard:45};
+export const answerSeconds=(difficulty,mode)=>(mode==='teams'?TEAM_SECONDS:SECONDS)[difficulty];
+export const speedBonus=mode=>mode==='teams'?250:500;
 export const BASE = {easy:500,medium:1000,hard:1500};
 const extras = [
  ['football','easy','Which sport uses a bat, bases, and a home plate?',['Baseball','Basketball','Golf','Tennis']],
@@ -57,11 +60,11 @@ export function makeDeck(bank,categories,difficulty){
  });
  if(!deck.length)throw Error('No questions match these settings. Add questions or choose other categories.');return deck;
 }
-export function points(q,elapsed){return BASE[q.difficulty]+Math.floor(500*Math.max(0,1-elapsed/(SECONDS[q.difficulty]*1000)));}
+export function points(q,elapsed,mode='individual'){return BASE[q.difficulty]+Math.floor(speedBonus(mode)*Math.max(0,1-elapsed/(answerSeconds(q.difficulty,mode)*1000)));}
 export function reveal(state){
  if(state.phase!=='question')throw Error('There is no question to reveal.');
  const q=state.deck[state.index];
- for(const p of Object.values(state.players)){const a=p.answer;if(a?.index===state.index&&a.choice===q.correct)p.score+=points(q,a.elapsed)*(q.final?2:1);}
+ for(const p of Object.values(state.players)){const a=p.answer;if(a?.index===state.index&&a.choice===q.correct)p.score+=points(q,a.elapsed,state.mode)*(q.final?2:1);}
  state.phase='reveal';
 }
 export function view(state,seat,host,now=Date.now()){
@@ -70,7 +73,7 @@ export function view(state,seat,host,now=Date.now()){
  const leaders=Object.entries(state.players).map(([id,p])=>({name:p.name,score:p.score,you:id===seat})).sort((a,b)=>b.score-a.score||a.name.localeCompare(b.name));
  leaders.forEach((p,i)=>{p.rank=i&&p.score===leaders[i-1].score?leaders[i-1].rank:i+1;});
  const p=state.players[seat];
- return {...(host?{questionSource:state.questionSource||'LINKS question library',questionNotice:state.questionNotice||''}:{}),code:state.code,title:state.title,phase:state.phase,game:state.game,index:state.index,host,categories:state.categories,difficulty:state.difficulty,serverNow:now,deadline:state.deadline,startsAt:state.startsAt||0,countdown,isFinal:!!state.isFinal,categoryIntro:state.phase==='category'?state.deck[state.index+1]?.category:countdown?state.deck[state.index]?.category:null,canFinal:!!state.finalQuestion&&!state.isFinal,availableCategories:[...new Set(state.deck.slice(state.index+1).map(q=>q.category))],availableLevels:host?Object.fromEntries([...new Set(state.deck.slice(state.index+1).map(q=>q.category))].map(c=>[c,[...new Set(state.deck.slice(state.index+1).filter(q=>q.category===c).map(q=>q.difficulty))]])):undefined,remaining:state.deck.length-state.index-1,playerCount:leaders.length,leaders,
+ return {...(host?{questionSource:state.questionSource||'LINKS question library',questionNotice:state.questionNotice||''}:{}),code:state.code,title:state.title,mode:state.mode||'individual',phase:state.phase,game:state.game,index:state.index,host,categories:state.categories,difficulty:state.difficulty,serverNow:now,deadline:state.deadline,startsAt:state.startsAt||0,countdown,isFinal:!!state.isFinal,categoryIntro:state.phase==='category'?state.deck[state.index+1]?.category:countdown?state.deck[state.index]?.category:null,canFinal:!!state.finalQuestion&&!state.isFinal,availableCategories:[...new Set(state.deck.slice(state.index+1).map(q=>q.category))],availableLevels:host?Object.fromEntries([...new Set(state.deck.slice(state.index+1).map(q=>q.category))].map(c=>[c,[...new Set(state.deck.slice(state.index+1).filter(q=>q.category===c).map(q=>q.difficulty))]])):undefined,remaining:state.deck.length-state.index-1,playerCount:leaders.length,leaders,
   answered:Object.values(state.players).filter(p=>p.answer?.index===state.index).length,
   eligible:!!p&&p.eligible<=state.index,choice:p?.answer?.index===state.index?p.answer.choice:null,
   question:q?{text:q.text,answers:q.answers,category:q.category,difficulty:q.difficulty,...(revealed?{correct:q.correct,source:q.source,license:q.license}: {})}:null};
