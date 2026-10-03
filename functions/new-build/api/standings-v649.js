@@ -1,3 +1,4 @@
+import {feedbackCredits,creditPicks,creditNotice} from '../../lib/nfl-feedback-credit.js';
 const json=(d,s=200)=>Response.json(d,{status:s,headers:{'Cache-Control':'no-store'}});
 export async function resolvePool(db,value){const raw=String(value||'').trim();if(/^\d+$/.test(raw)){const p=await db.prepare('SELECT id,code,name FROM pools WHERE id=? LIMIT 1').bind(Number(raw)).first();if(p)return p}return raw?await db.prepare('SELECT id,code,name FROM pools WHERE upper(code)=upper(?) OR lower(trim(name))=lower(trim(?)) LIMIT 1').bind(raw,raw).first():null}
 const ALIAS={WSH:'WAS',JAC:'JAX',LA:'LAR'};const norm=x=>ALIAS[String(x||'').toUpperCase()]||String(x||'').toUpperCase();
@@ -39,18 +40,21 @@ export async function onRequestGet({request,env}){
   db.prepare("SELECT game_index,winner FROM pool_results WHERE pool_id=? AND sport='nfl' AND week=?").bind(p.id,week).all(),
   db.prepare("SELECT player_name FROM pool_payments WHERE pool_id=? AND sport='nfl' AND week=? AND paid=1").bind(p.id,week).all()
  ]);
- return json(gradeWeek(p,week,games,{players,picks,ties,manual,access}));
+ const credits=Number(week)===4?await feedbackCredits(db,p):[];
+ return json({...gradeWeek(p,week,games,{players,picks,ties,manual,access,credits}),courtesy:creditNotice(credits,week)});
 }
-export function gradeWeek(p,week,games,{players,picks,ties,manual,access}){
+export function gradeWeek(p,week,games,{players,picks,ties,manual,access,credits=[]}){
  const roster=(players.results||[]).map(x=>String(x.name||''));
  const canonical=raw=>roster.find(x=>exactKey(x)===exactKey(raw))||roster.find(x=>nameKey(x)===nameKey(raw))||String(raw||'');
  const eligible=new Set((access.results||[]).map(x=>exactKey(canonical(x.player_name))));
- picks.results=(picks.results||[]).filter(x=>eligible.has(exactKey(canonical(x.player_name))));
- ties.results=(ties.results||[]).filter(x=>eligible.has(exactKey(canonical(x.player_name))));
  const byTeam=new Map();for(const g of games)for(const team of g.teams)byTeam.set(team,g);
  // Saved indexes and ESPN ordering can differ. A team's matchup is stable within a week.
  // Resolve commissioner winners by their team too; blank result placeholders never erase finals.
  for(const r of manual.results||[]){const team=norm(r.winner),g=byTeam.get(team);if(g?.completed&&team)g.winner=team;}
+ picks.results=creditPicks(picks.results||[],credits,games,week);
+ const credited=new Set(picks.results.filter(r=>r.courtesy_credit).map(r=>exactKey(canonical(r.player_name))));
+ picks.results=(picks.results||[]).filter(x=>x.courtesy_credit||eligible.has(exactKey(canonical(x.player_name))));
+ ties.results=(ties.results||[]).filter(x=>eligible.has(exactKey(canonical(x.player_name))));
  const slots=new Set((picks.results||[]).map(x=>Number(x.game_index)).filter(Number.isInteger));
  const expectedGames=Math.max(games.length,slots.size);
  const finalGames=games.filter(g=>g.completed&&g.winner&&g.total!=null).length;
@@ -60,11 +64,11 @@ export function gradeWeek(p,week,games,{players,picks,ties,manual,access}){
  const tieMap={},by=new Map();
  for(const x of ties.results||[])tieMap[canonical(x.player_name)]=x.guess;
  for(const x of picks.results||[]){const name=canonical(x.player_name);if(!by.has(name))by.set(name,[]);by.get(name).push(x);}
- const rows=[...new Set([...roster,...by.keys()])].filter(name=>eligible.has(exactKey(name))).map(player=>{
+ const rows=[...new Set([...roster,...by.keys()])].filter(name=>eligible.has(exactKey(name))||credited.has(exactKey(name))).map(player=>{
   let wins=0,losses=0;const seen=new Set();
   for(const pick of by.get(player)||[]){const team=norm(pick.team),g=byTeam.get(team);if(!g?.completed||!g.winner||g.winner==='TIE'||seen.has(g.id))continue;seen.add(g.id);if(team===g.winner)wins++;else losses++;}
   const tiePick=tieMap[player]??null,tieDiff=actualTie!=null&&tiePick!=null?Math.abs(Number(tiePick)-actualTie):null;
-  return {player,wins,losses,correct:wins,tiePick,tieDiff};
+  return {player,wins,losses,correct:wins,tiePick,tieDiff,...(credited.has(exactKey(player))?{courtesyCredit:true}:{})};
  }).filter(x=>by.get(x.player)?.length||x.tiePick!=null).sort((a,b)=>b.wins-a.wins||(a.tieDiff??Infinity)-(b.tieDiff??Infinity)||a.player.localeCompare(b.player));
  const top=rows[0],finalizedWinners=allFinal&&top?rows.filter(x=>x.wins===top.wins&&(actualTie==null||(x.tieDiff??Infinity)===(top.tieDiff??Infinity))).map(x=>x.player):[];
  return {success:true,week,locked:true,rows,actualTie,finalizedWinner:finalizedWinners[0]||null,finalizedWinners,allFinal,finalGames,expectedGames,pool:{id:String(p.id),name:p.name,code:p.code}};

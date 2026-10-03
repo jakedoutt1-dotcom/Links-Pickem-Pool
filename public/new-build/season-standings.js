@@ -6,6 +6,7 @@
  async function load(){if(busy)return;if(!pool||!token){el.textContent='Sign in to your pool to view standings.';return}busy=true;
  try{const r=await fetch('./api/season-standings?pool='+encodeURIComponent(pool),{headers:{Authorization:'Bearer '+token},cache:'no-store'}),j=await r.json();if(!r.ok)throw Error(j.error||'Standings are unavailable.');
  status.textContent=j.gradedWeeks.length?'Season totals · '+j.gradedWeeks.length+' weeks · '+j.finalGames+' final games':'No final games counted yet.';
+ if(j.courtesy?.message)status.textContent+=' '+j.courtesy.message;
  if(j.failedWeeks.length)status.textContent+=' · Incomplete: could not load weeks '+j.failedWeeks.join(', ');
  const rows=j.rows;if(!rows.length){el.className='empty';el.textContent=j.failedWeeks.length?'Season standings could not be loaded. Please try again.':'No players have joined this pool yet.'}
  else{el.className='table';el.innerHTML='<div class="row head"><div>Rank</div><div>Player</div><div class="center">W</div><div class="center">L</div><div class="center">Record</div><div class="center">Week Wins</div></div>'+rows.map((x,i)=>'<div class="row"><b>'+(i+1)+'</b><b class="player">'+esc(x.name)+'</b><span class="center win">'+x.wins+'</span><span class="center loss">'+x.losses+'</span><b class="center">'+x.wins+'–'+x.losses+'</b><b class="center">'+x.weekWins+'</b></div>').join('')}loaded=true;

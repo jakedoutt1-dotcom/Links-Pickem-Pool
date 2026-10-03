@@ -1,7 +1,6 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 (async()=>{
- const source=fs.readFileSync(path.join(__dirname,'../functions/new-build/api/standings-v649.js'),'utf8');
- const {onRequestGet}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+ const {onRequestGet}=await import('../functions/new-build/api/standings-v649.js');
  let eligible=['Alice','Bob'],count=16,events=[],manual=[],seenUrl;
  const db={prepare(sql){assert.ok(sql.startsWith('SELECT'),'Read-only queries only');return{bind(){return this},async first(){return{id:1,name:'Test'}},async all(){
   if(sql.includes('pool_payments'))return{results:eligible.map(player_name=>({player_name}))};

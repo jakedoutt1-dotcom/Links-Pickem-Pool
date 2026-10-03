@@ -1,3 +1,4 @@
+import {feedbackCredits,creditPicks,creditNotice} from '../../lib/nfl-feedback-credit.js';
 const json=(d,s=200)=>Response.json(d,{status:s,headers:{"Cache-Control":"no-store"}});
 const TEAM_ALIAS={WAS:"WSH",WSH:"WSH",JAX:"JAX",LV:"LV",LAC:"LAC",LAR:"LAR"};
 async function resolvePool(db,value){const raw=String(value||"").trim();if(!raw)return null;if(/^\d+$/.test(raw)){const p=await db.prepare("SELECT id,code,name FROM pools WHERE id=? LIMIT 1").bind(Number(raw)).first();if(p)return p}return await db.prepare("SELECT id,code,name FROM pools WHERE upper(code)=upper(?) OR lower(trim(name))=lower(trim(?)) LIMIT 1").bind(raw,raw).first()}
@@ -46,10 +47,13 @@ export async function onRequestGet({request,env}){
   db.prepare("SELECT player_name FROM pool_payments WHERE pool_id=? AND sport='nfl' AND week=? AND paid=1").bind(p.id,week).all()
  ]);
  const roster=(pr.results||[]).map(x=>String(x.name||"")),canonical=(raw)=>{const e=exactKey(raw),n=nameKey(raw);return roster.find(x=>exactKey(x)===e)||roster.find(x=>nameKey(x)===n)||String(raw||"")};
- const pickMap={},tieMap={};for(const r of pk.results||[]){const game=games.find(g=>g.home===norm(r.team)||g.away===norm(r.team));if(!game||!Number.isFinite(Date.parse(game.kickoff))||Date.now()<Date.parse(game.kickoff))continue;const who=canonical(r.player_name);(pickMap[who]??={})[games.find(g=>g.home===norm(r.team)||g.away===norm(r.team))?.gameIndex??Number(r.game_index)]=norm(r.team)}for(const r of tr.results||[]){const who=canonical(r.player_name);tieMap[who]=r.guess}
+ for(const r of rr.results||[]){const winner=norm(r.winner),g=games.find(g=>g.home===winner||g.away===winner);if(g?.completed&&winner)g.winner=winner;}
+ const credits=week===4?await feedbackCredits(db,p):[];pk.results=creditPicks(pk.results||[],credits,games,week);
+ const credited=new Set(pk.results.filter(r=>r.courtesy_credit).map(r=>exactKey(r.player_name)));
+ const pickMap={},tieMap={};for(const r of pk.results||[]){if(!r.courtesy_credit&&credited.has(exactKey(r.player_name))&&!(access.results||[]).some(a=>exactKey(a.player_name)===exactKey(r.player_name)))continue;const game=games.find(g=>g.home===norm(r.team)||g.away===norm(r.team));if(!game||!Number.isFinite(Date.parse(game.kickoff))||Date.now()<Date.parse(game.kickoff))continue;const who=canonical(r.player_name);(pickMap[who]??={})[games.find(g=>g.home===norm(r.team)||g.away===norm(r.team))?.gameIndex??Number(r.game_index)]=norm(r.team)}for(const r of tr.results||[]){const who=canonical(r.player_name);tieMap[who]=r.guess}
  const eligible=new Set((access.results||[]).map(x=>exactKey(canonical(x.player_name))));
- const players=roster.filter(name=>eligible.has(exactKey(name))).map(name=>({player:name,picks:pickMap[name]||{},tie:games.every(g=>Date.now()>=Date.parse(g.kickoff))?(tieMap[name]??null):null})).filter(x=>Object.keys(x.picks).length||x.tie!=null);
+ const players=roster.filter(name=>eligible.has(exactKey(name))||credited.has(exactKey(name))).map(name=>({player:name,picks:pickMap[name]||{},tie:games.every(g=>Date.now()>=Date.parse(g.kickoff))?(tieMap[name]??null):null})).filter(x=>Object.keys(x.picks).length||x.tie!=null);
  const results=Object.fromEntries(games.filter(g=>g.winner).map(g=>[g.gameIndex,g.winner]));
  for(const r of rr.results||[]){const winner=norm(r.winner),g=games.find(g=>g.home===winner||g.away===winner);if(g){results[g.gameIndex]=winner;g.winner=winner;g.completed=true}}
- return json({success:true,locked:true,week,pool:{id:String(p.id),name:p.name,code:p.code},players,games,results,finalGames:Object.keys(results).length,build:"732"});
+ return json({success:true,locked:true,week,courtesy:creditNotice(credits,week),pool:{id:String(p.id),name:p.name,code:p.code},players,games,results,finalGames:Object.keys(results).length,build:"732"});
 }
