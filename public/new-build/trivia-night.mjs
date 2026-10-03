@@ -7,10 +7,11 @@ const token=()=>localStorage.getItem('links-legacy-token')||localStorage.getItem
 const seat=()=>localStorage.getItem('trivia-night-seat-'+roomCode)||'';
 const selection=()=>({categories:[...document.querySelectorAll('[name=category]:checked')].map(e=>e.value),difficulty:$('difficulty').value});
 $('categories').innerHTML=Object.entries(themes).map(([key,[name,icon]])=>`<label><span>${icon}</span><input type="checkbox" name="category" value="${key}" checked> ${name}</label>`).join('');
+if(new URL(location.href).searchParams.get('host')==='1')roomCode='';
 $('code').value=roomCode;
 async function api(body,query=''){
  const r=await fetch('./api/trivia-night'+query,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token(),'x-trivia-token':seat(),'Content-Type':'application/json'},cache:'no-store',signal:AbortSignal.timeout(12000),...(body?{body:JSON.stringify(body)}:{})});
- const j=await r.json();if(!r.ok)throw Error(j.error||'Unable to reach trivia.');return j;
+ const j=await r.json();if(!r.ok){const e=Error(j.error||'Unable to reach trivia.');e.status=r.status;throw e}return j;
 }
 function adopt(j){
  offset=j.serverNow-Date.now();state=j;roomCode=j.code;sessionStorage.setItem('trivia-night-room',roomCode);
@@ -59,7 +60,13 @@ function tick(){
 }
 $('joinForm').onsubmit=e=>{e.preventDefault();roomCode=$('code').value.trim().toUpperCase();act('join',{name:$('name').value.trim()})};
 async function loadBank(){const j=await api(null,'?action=library');bank=j.questions;$('bankCount').textContent=bank.length+' questions available. Starter categories other than football contain three sample questions each; expand the library for a full evening.';}
-$('hostOpen').onclick=async()=>{try{await loadBank();$('setup').hidden=false;$('setup').scrollIntoView({behavior:'smooth'});$('message').textContent=''}catch(e){$('message').textContent=e.message}};
+$('hostOpen').onclick=async()=>{
+ if(!token()){location.href='./pool-login.html?triviaHost=1';return}
+ const button=$('hostOpen');button.disabled=true;button.textContent='Checking host access…';$('hostMessage').textContent='Checking your commissioner sign-in…';$('hostSignIn').hidden=true;
+ try{await loadBank();$('setup').hidden=false;$('setup').scrollIntoView({behavior:'smooth'});$('hostMessage').textContent='Ready to create your room.';$('message').textContent=''}
+ catch(e){$('hostMessage').textContent=e.message;$('hostSignIn').hidden=![401,403].includes(e.status);$('hostMessage').scrollIntoView({behavior:'smooth',block:'center'})}
+ finally{button.disabled=false;button.textContent='Set up a game'}
+};
 $('create').onclick=()=>act('create',{title:$('title').value,...selection()});
 $('answers').onclick=e=>{const b=e.target.closest('[data-choice]');if(b&&!b.disabled)act('answer',{choice:Number(b.dataset.choice)})};
 $('next').onclick=()=>{$('roundCategories').replaceChildren();for(const key of state.availableCategories){const b=document.createElement('button');b.textContent=themes[key][0];b.dataset.theme=key;b.onclick=()=>{$('categoryPicker').close();act('next',{category:key})};$('roundCategories').append(b)}$('categoryPicker').showModal()};
@@ -82,3 +89,4 @@ async function poll(){
 }
 mountPartners($('triviaPartners'),{host:$('triviaPartners')});
 setInterval(tick,200);poll();
+if(new URL(location.href).searchParams.get('host')==='1')$('hostOpen').click();
