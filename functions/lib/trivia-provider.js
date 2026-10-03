@@ -11,7 +11,7 @@ export function normalizeQuestions(rows,category,difficulty){
  }
  return result;
 }
-export async function loadGameQuestions({env,categories,backup,exclude=[],fetcher=fetch}){
+export async function loadGameQuestions({env,categories,backup,exclude=[],fetcher=fetch,perGroup=6}){
  if(!Array.isArray(categories)||!categories.length||categories.some(c=>!CATEGORIES.includes(c)))throw Error('Choose categories and a difficulty.');
  const selected=[...new Set(categories)],key=typeof env.TRIVIA_API_KEY==='string'?env.TRIVIA_API_KEY.trim():'';
  if(!key)return {questions:backup,source:'LINKS question library',notice:''};
@@ -20,7 +20,7 @@ export async function loadGameQuestions({env,categories,backup,exclude=[],fetche
  const groups=selected.flatMap(category=>Object.keys(SECONDS).map(difficulty=>({category,difficulty})));
  try{
   const settled=await Promise.allSettled(groups.map(async({category,difficulty})=>{
-   const url=new URL('https://the-trivia-api.com/v2/questions');url.search=new URLSearchParams({limit:'6',categories:PROVIDER_CATEGORIES[category],difficulties:difficulty,types:'text_choice',region:'US',contentFilter:'family'}).toString();
+   const url=new URL('https://the-trivia-api.com/v2/questions');url.search=new URLSearchParams({limit:String(Math.max(1,Math.min(20,Number(perGroup)||6))),categories:PROVIDER_CATEGORIES[category],difficulties:difficulty,types:'text_choice',region:'US',contentFilter:'family'}).toString();
    const response=await fetcher(url.href,{headers:{'X-API-Key':key,Accept:'application/json'},signal:controller.signal,redirect:'error'});
    if(!response.ok)throw Error('Provider unavailable');
    return normalizeQuestions(await response.json(),category,difficulty);
