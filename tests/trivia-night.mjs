@@ -75,5 +75,14 @@ try{
  assert.equal((await call(null,{admin:'admin',query:'?action=library'})).roomLimit,1);
  db.raw.exec("UPDATE links_trivia_night_rooms SET expires=0");
  assert.equal((await call(create,{admin:'admin'})).status,200,'Expired rooms release capacity');
+ db.raw.exec('UPDATE links_trivia_night_rooms SET expires=0');
+ hostState=await call({...create,difficulty:'easy'},{admin:'admin'});code=hostState.code;
+ assert.ok(hostState.availableLevels.football.includes('hard'));
+ await host('next',{category:'football',difficulty:'easy'});assert.equal(raw().deck[raw().index].difficulty,'easy');
+ edit(s=>s.deadline=Date.now()-1);await host('reveal');
+ await host('next',{category:'football',difficulty:'hard'});assert.equal(raw().deck[raw().index].difficulty,'hard');
+ assert.equal((await host('next',{difficulty:'medium'})).status,409,'Cannot change a running question');
+ edit(s=>s.deadline=Date.now()-1);await host('reveal');
+ await host('next',{category:'football',difficulty:'medium'});assert.equal(raw().deck[raw().index].difficulty,'medium');
  console.log('PASS: room authorization, CSRF, hidden answers, late joining, server deadlines, immutable answers, scoring/reveal, import validation/isolation, restart, stale requests, write-conflict retry, expiry.');
 }finally{db.raw.close()}

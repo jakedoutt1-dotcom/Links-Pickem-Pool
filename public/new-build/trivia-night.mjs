@@ -92,7 +92,9 @@ $('hostOpen').onclick=async()=>{
 };
 $('create').onclick=()=>act('create',{title:$('title').value,...selection()});
 $('answers').onclick=e=>{const b=e.target.closest('[data-choice]');if(b&&!b.disabled)act('answer',{choice:Number(b.dataset.choice)})};
-$('next').onclick=()=>{$('roundCategories').replaceChildren();for(const key of state.availableCategories){const b=document.createElement('button');b.textContent=themes[key][0];b.dataset.theme=key;b.onclick=()=>{$('categoryPicker').close();act('next',{category:key})};$('roundCategories').append(b)}$('categoryPicker').showModal()};
+function roundCategories(){const difficulty=document.querySelector('[name=roundLevel]:checked')?.value||'mixed';$('roundCategories').replaceChildren();for(const key of state.availableCategories){const b=document.createElement('button');b.textContent=themes[key][0];b.dataset.theme=key;b.disabled=difficulty!=='mixed'&&state.availableLevels&&!state.availableLevels[key]?.includes(difficulty);b.onclick=()=>{$('categoryPicker').close();act('next',{category:key,difficulty})};$('roundCategories').append(b)}}
+$('roundDifficulty').onchange=roundCategories;
+$('next').onclick=()=>{document.querySelectorAll('[name=roundLevel]').forEach(r=>r.checked=r.value===(state.difficulty||'mixed'));roundCategories();$('categoryPicker').showModal()};
 $('startQuestion').onclick=()=>act('start-question');$('finalRound').onclick=()=>act('final');$('reveal').onclick=()=>act('reveal');$('end').onclick=()=>{if(state.isFinal||confirm('End this game and show the final scoreboard?'))act('end')};
 $('restart').onclick=()=>{if(confirm('Start another game in this room? Scores reset to zero and questions can repeat. Everyone stays joined.'))act('restart',{categories:state.categories,difficulty:state.difficulty})};
 $('leave').onclick=()=>{if(!confirm('Exit this room? Your score is saved, and you can return using this room code.'))return;sessionStorage.removeItem('trivia-night-room');location.href='./trivia-night.html'};

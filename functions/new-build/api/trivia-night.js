@@ -44,7 +44,8 @@ export async function onRequest({request,env}){
    const placeholders=pools.map(()=>'?').join(',');
    const active=(await db.prepare(`SELECT code,pool_id,host_name FROM links_trivia_night_rooms WHERE pool_id IN (${placeholders}) AND expires>?`).bind(...pools,Date.now()).all()).results||[];
    if(action==='library')return json({count:(await bank()).length,roomLimit:plan.slots,plan:plan.label,activeRooms:active.length,rooms:active.filter(r=>r.pool_id===admin.pool_id&&r.host_name===admin.player_name).map(r=>({code:r.code}))});
-   const full=await bank(),deck=makeDeck(full,b.categories,b.difficulty);
+   if(!['easy','medium','hard','mixed'].includes(b.difficulty))return json({error:'Choose a valid difficulty.'},400);
+   const full=await bank(),deck=makeDeck(full,b.categories,'mixed');
    const finals=makeDeck(full,[...new Set(full.map(q=>q.category))],'mixed').filter(q=>q.difficulty==='hard');
    const finalQuestion=finals.find(q=>!deck.some(d=>d.id===q.id))||(deck.length>1?finals[0]:null)||null;
    if(finalQuestion){const at=deck.findIndex(q=>q.id===finalQuestion.id);if(at>=0)deck.splice(at,1);}
@@ -83,9 +84,11 @@ export async function onRequest({request,env}){
       if(s.isFinal)return json({error:'The final answer is revealed. Show final standings to finish.'},409);
       if(!['lobby','reveal'].includes(s.phase))return json({error:'Reveal this answer before continuing.'},409);
       if(s.index+1>=s.deck.length)return json({error:'No unused questions remain. End this game to start another.'},409);
-      const at=s.deck.findIndex((q,i)=>i>s.index&&(!b.category||q.category===b.category));
-      if(at<0)return json({error:'No unused questions in that category. Choose another.'},409);
-      [s.deck[s.index+1],s.deck[at]]=[s.deck[at],s.deck[s.index+1]];s.phase='category';s.deadline=0;
+      const difficulty=b.difficulty||s.difficulty||'mixed';
+      if(!['easy','medium','hard','mixed'].includes(difficulty))return json({error:'Choose Easy, Medium, Hard, or Mixed.'},400);
+      const at=s.deck.findIndex((q,i)=>i>s.index&&(!b.category||q.category===b.category)&&(difficulty==='mixed'||q.difficulty===difficulty));
+      if(at<0)return json({error:'No unused questions at that difficulty in this category. Choose another level or category.'},409);
+      [s.deck[s.index+1],s.deck[at]]=[s.deck[at],s.deck[s.index+1]];s.difficulty=difficulty;s.phase='category';s.deadline=0;
      }else if(action==='start-question'){
       if(s.phase!=='category')return json({error:'Choose a category first.'},409);
       s.index++;s.phase='question';s.startsAt=now+3000;s.deadline=s.startsAt+SECONDS[s.deck[s.index].difficulty]*1000;
@@ -98,7 +101,8 @@ export async function onRequest({request,env}){
       if(s.phase==='question'){if(now<s.deadline)return json({error:'Wait for the current timer to finish.'},409);reveal(s);}s.phase='ended';
      }else if(action==='restart'){
       if(s.phase!=='ended')return json({error:'End this game first.'},409);
-      const full=await bank();s.deck=makeDeck(full,b.categories,b.difficulty);const finals=makeDeck(full,[...new Set(full.map(q=>q.category))],'mixed').filter(q=>q.difficulty==='hard');s.finalQuestion=finals.find(q=>!s.deck.some(d=>d.id===q.id))||(s.deck.length>1?finals[0]:null)||null;if(s.finalQuestion)s.deck=s.deck.filter(q=>q.id!==s.finalQuestion.id);s.isFinal=false;s.categories=b.categories;s.difficulty=b.difficulty;s.game++;s.index=-1;s.phase='lobby';s.deadline=0;
+      if(!['easy','medium','hard','mixed'].includes(b.difficulty))return json({error:'Choose a valid difficulty.'},400);
+      const full=await bank();s.deck=makeDeck(full,b.categories,'mixed');const finals=makeDeck(full,[...new Set(full.map(q=>q.category))],'mixed').filter(q=>q.difficulty==='hard');s.finalQuestion=finals.find(q=>!s.deck.some(d=>d.id===q.id))||(s.deck.length>1?finals[0]:null)||null;if(s.finalQuestion)s.deck=s.deck.filter(q=>q.id!==s.finalQuestion.id);s.isFinal=false;s.categories=b.categories;s.difficulty=b.difficulty;s.game++;s.index=-1;s.phase='lobby';s.deadline=0;
       for(const p of Object.values(s.players)){p.score=0;p.answer=null;p.eligible=0;}
      }else return json({error:'Unknown action.'},400);
     }
