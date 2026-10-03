@@ -14,7 +14,7 @@ try{for(const mode of ['hotseat','duel']){
  await call({action:'ready'},h);await call({action:'ready'},p);let s=await call({action:'start'},h);assert.equal(s.phase,'intro');assert.equal(s.bank,undefined);assert.equal(s.deck,undefined);assert.equal((await call({action:'join',name:'Late'})).status,409);
  async function step(){const r=await raw();now=r.deadline+1;return call({},h)}
  async function play(action,token=h,extra={}){const r=await raw();return call({action,game:r.game,phaseId:r.phaseId,...extra},token)}
- s=await step();assert.equal(s.phase,'question');assert.equal(s.question.correct,undefined);
+ s=await step();assert.equal(s.phase,'question');assert.equal(s.deadline-now,mode==='duel'?25000:60000);assert.equal(s.question.correct,undefined);
  if(mode==='hotseat'){
   assert.equal((await play('answer',p,{choice:0})).status,409);
   const original=(await raw()).deck[0].id;assert.equal((await play('lifeline',h,{kind:'swap'})).status,200);assert.notEqual((await raw()).deck[0].id,original);assert.equal((await play('lifeline',h,{kind:'swap'})).status,409);

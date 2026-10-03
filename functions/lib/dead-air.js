@@ -73,7 +73,11 @@ export function view(s,seat,now,display=false){const p=s.players[seat],out={code
  const quizVisible=['question','answer'].includes(s.phase)||(['final','finalAnswer'].includes(s.phase)&&s.finalType==='trivia');if(quizVisible)out.question={text:s.question.text,options:s.question.options,...(['answer','finalAnswer'].includes(s.phase)?{correct:s.question.correct}:{})};
  if(['brief','observe','challenge','result'].includes(s.phase)||(['final','finalAnswer'].includes(s.phase)&&s.finalType==='frequency')){const c=s.challenge;out.challenge={type:c.type,title:TITLES[c.type]};if(c.type==='signal'){out.challenge.length=c.sequence.length;if(s.phase==='observe'||s.phase==='result')out.challenge.sequence=c.sequence}
  if(c.type==='evidence'){if(s.phase==='observe')out.challenge.board=c.before;if(['challenge','result'].includes(s.phase))out.challenge.board=c.after}
- if(c.type==='frequency'){out.challenge.clues=c.clues;out.challenge.options=c.options;if(s.phase==='finalAnswer')out.challenge.correct=c.correct}
+ if(c.type==='frequency'){
+ const revealed=['result','finalAnswer'].includes(s.phase),answering=['challenge','final'].includes(s.phase),count=revealed?c.clues.length:answering?Math.min(c.clues.length,1+Math.floor(Math.max(0,now-s.startsAt)/5000)):0;
+ out.challenge.clues=c.clues.slice(0,count);out.challenge.clueCount=c.clues.length;out.challenge.nextClueAt=answering&&count<c.clues.length?s.startsAt+count*5000:null;
+ out.challenge.options=answering||revealed?c.options:[];if(s.phase==='finalAnswer')out.challenge.correct=c.correct;
+ }
  if(c.type==='power')out.challenge.capacities=c.capacities;if(s.phase==='result')out.outcome=s.challengeOutcome;}
  if(['answer','result','finalAnswer'].includes(s.phase))out.results=s.results;return out;
 }
