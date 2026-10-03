@@ -1,6 +1,7 @@
+import {supportedGolfEvent} from '../../public/new-build/golf-event-support.mjs';
 const normalize=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
 export function parseGolf(feed,id){
- const event=feed.events?.find(e=>String(e.id)===String(id)&&e.league?.slug==='pga');if(!event)throw Error('Tournament not found.');
+ const event=feed.events?.find(e=>String(e.id)===String(id)&&e.league?.slug==='pga');if(!event)throw Error('Tournament not found.');if(!supportedGolfEvent(event.name))throw Error('Team and match-play events are not supported. Choose an individual stroke-play tournament.');
  const final=event.status?.type?.completed===true&&event.status?.type?.state==='post';const results={},leaders=[];
  for(const r of event.competitions?.[0]?.competitors||[]){const name=r.athlete?.displayName;if(!name)continue;
  const stat=r.statistics?.find(s=>s.name==='scoreToPar'),raw=stat?.value??r.score?.displayValue;

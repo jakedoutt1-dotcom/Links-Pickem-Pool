@@ -1,7 +1,8 @@
+import {supportedGolfEvent} from '../../../public/new-build/golf-event-support.mjs';
 import {commissionerSession} from '../../lib/commissioner-auth.js';
 import {poolGameKeys} from '../../lib/pool-games.js';
 const json=(v,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store'}});
-export function tournaments(feed){return (feed.leagues?.[0]?.calendar||[]).filter(e=>/^\d+$/.test(String(e.id))&&Number.isFinite(Date.parse(e.startDate))&&Number.isFinite(Date.parse(e.endDate))).map(e=>({id:String(e.id),name:e.label,date:e.startDate,end:e.endDate}));}
+export function tournaments(feed){return (feed.leagues?.[0]?.calendar||[]).filter(e=>supportedGolfEvent(e.label)&&/^\d+$/.test(String(e.id))&&Number.isFinite(Date.parse(e.startDate))&&Number.isFinite(Date.parse(e.endDate))).map(e=>({id:String(e.id),name:e.label,date:e.startDate,end:e.endDate}));}
 export function golfers(feed,id){const event=feed.events?.find(e=>String(e.id)===String(id));if(!event)return [];return [...new Set((event.competitions||[]).flatMap(c=>(c.competitors||[]).map(p=>p.athlete?.displayName||p.athlete?.fullName).filter(Boolean)))].sort((a,b)=>a.localeCompare(b));}
 export async function onRequest({request,env}){try{
  if(request.method!=='GET')return json({error:'Method not allowed.'},405);

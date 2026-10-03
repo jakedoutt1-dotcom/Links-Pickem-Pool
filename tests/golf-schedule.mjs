@@ -5,3 +5,5 @@ const feed={events:[{id:'123',competitions:[{competitors:[{athlete:{displayName:
 assert.deepEqual(golfers(feed,'123'),['Golfer A','Golfer B']);assert.deepEqual(golfers(feed,'999'),[]);
 assert.equal((await onRequest({request:new Request('https://test/?pool=1'),env:{}})).status,403);
 console.log('PASS golf calendar, event isolation, duplicate golfers, unavailable field and authorization');
+
+assert.equal(tournaments({leagues:[{calendar:['Presidents Cup','Ryder Cup','Zurich Classic','World Match Play'].map((label,i)=>({id:String(i+1),label,startDate:'2026-04-09',endDate:'2026-04-12'}))}]}).length,0);

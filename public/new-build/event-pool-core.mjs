@@ -1,3 +1,4 @@
+import {supportedGolfEvent} from './golf-event-support.mjs';
 export const FORMATS={golf:{best:'Pick golfers · best scores count',tiers:'Tiered golf · best scores count',one:'One-and-done'},nascar:{simple:'Race finish pool',fantasy:'Fantasy roster · five starters + garage'}};
 export function cleanConfig(game,input){
  const c={...input},n=Number;
@@ -12,6 +13,7 @@ export function cleanConfig(game,input){
  c.scoring=c.scoring==='automatic'?'automatic':'manual';
  if(game==='nascar'&&c.scoring==='automatic'&&(!/^nascar-\d+$/.test(c.raceId||'')||c.year!==2026))throw Error('Automatic scoring requires a 2026 race from the NASCAR schedule.');
  if(game==='golf'&&c.scoring==='automatic'&&!/^\d+$/.test(c.tournamentId||''))throw Error('Choose a PGA tournament for automatic scoring.');
+ if(game==='golf'&&!supportedGolfEvent(c.title))throw Error('Choose an individual stroke-play tournament. Team and match-play events are not supported.');
  c.phase=c.phase==='chase'?'chase':'regular';
  c.field=(c.field||[]).map(x=>({name:String(x.name||'').trim(),tier:n(x.tier)||1}));
  if(c.field.length<c.pickCount+(c.format==='fantasy'?1:0)||c.field.length>200||c.field.some(x=>!x.name||x.name.length>150)||new Set(c.field.map(x=>x.name.toLowerCase())).size!==c.field.length)throw Error('Enter a unique eligible field large enough for this format.');
