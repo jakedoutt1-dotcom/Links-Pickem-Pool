@@ -46,6 +46,7 @@ function render(){
  $('triviaPartners').hidden=!['lobby','reveal','ended'].includes(state.phase);
  const screenKey=state.game+':'+state.index+':'+state.phase;if(window.triviaScreenKey!==screenKey){window.triviaScreenKey=screenKey;window.scrollTo({top:0,behavior:'instant'})}
  $('playerSummary').hidden=state.host;const me=state.leaders.find(p=>p.you);$('playerSummary').textContent=me?me.name+' · '+me.score.toLocaleString()+' points · Rank '+me.rank:'';
+ $('questionProvider').textContent=state.host?[state.questionSource,state.questionNotice].filter(Boolean).join(' · '):'';
  $('hostStep').textContent=state.isFinal&&state.phase==='reveal'?'Final answer · Review the result, then show final standings':({lobby:'1 · Invite your players, then start the game',category:'2 · Category ready — start when everyone is ready',question:'3 · Wait for answers, then reveal',reveal:'4 · Choose the next category or play the final round',ended:'Game complete · Show standings or play again'})[state.phase];
  if(state.host&&state.phase==='lobby'){const qr=qrcode(0,'M');qr.addData(joinLink());qr.make();$('lobbyQR').innerHTML=qr.createSvgTag({cellSize:6,margin:20,scalable:true});$('lobbyCode').textContent=roomCode;$('lobbyCount').textContent=state.playerCount+' players / teams joined';$('lobbyRoster').textContent=state.leaders.map(p=>p.name).join(' · ');}
  $('answers').hidden=state.phase==='category';
@@ -74,7 +75,7 @@ function tick(){
  if(state.phase==='question'&&seconds===0&&state.choice===null&&!state.host&&state.eligible)$('answerNote').textContent='Time is up. Waiting for the host to reveal the answer.';
 }
 $('joinForm').onsubmit=e=>{e.preventDefault();roomCode=$('code').value.trim().toUpperCase();act('join',{name:$('name').value.trim()})};
-async function loadBank(){const j=await api(null,'?action=library');$('bankCount').textContent=j.count+' questions · '+j.plan+': '+j.activeRooms+' of '+j.roomLimit+' active trivia rooms. Reuse a room for more games. Rooms expire after 24 hours.';$('existingRooms').replaceChildren();for(const room of j.rooms){const a=document.createElement('a');a.href='./trivia-night.html?room='+room.code;a.textContent='Reopen room '+room.code;$('existingRooms').append(a)}$('create').disabled=j.activeRooms>=j.roomLimit;}
+async function loadBank(){const j=await api(null,'?action=library');$('bankCount').textContent=(j.providerConfigured?'Fresh questions load when you create a game. '+j.count+' backup questions':j.count+' questions')+' · '+j.plan+': '+j.activeRooms+' of '+j.roomLimit+' active trivia rooms. Reuse a room for more games. Rooms expire after 24 hours.';$('existingRooms').replaceChildren();for(const room of j.rooms){const a=document.createElement('a');a.href='./trivia-night.html?room='+room.code;a.textContent='Reopen room '+room.code;$('existingRooms').append(a)}$('create').disabled=j.activeRooms>=j.roomLimit;}
 async function hostPoolRequest(body){
  const r=await fetch('./api/pool-switcher',{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token(),'x-links-account':localStorage.getItem('links-account-token')||'','Content-Type':'application/json'},cache:'no-store',signal:AbortSignal.timeout(12000),...(body?{body:JSON.stringify(body)}:{})});const j=await r.json();if(!r.ok)throw Error(j.error||'Your connected pools could not be loaded.');return j;
 }
@@ -98,7 +99,7 @@ function roundCategories(){const difficulty=document.querySelector('[name=roundL
 $('roundDifficulty').onchange=roundCategories;
 $('next').onclick=()=>{document.querySelectorAll('[name=roundLevel]').forEach(r=>r.checked=r.value===(state.difficulty||'mixed'));roundCategories();$('categoryPicker').showModal()};
 $('startQuestion').onclick=()=>act('start-question');$('finalRound').onclick=()=>act('final');$('reveal').onclick=()=>act('reveal');$('end').onclick=()=>{if(state.isFinal||confirm('End this game and show the final scoreboard?'))act('end')};
-$('restart').onclick=()=>{if(confirm('Start another game in this room? Scores reset to zero and questions can repeat. Everyone stays joined.'))act('restart',{categories:state.categories,difficulty:state.difficulty})};
+$('restart').onclick=()=>{if(confirm('Start another game in this room? Scores reset to zero and a new question set loads. Everyone stays joined.'))act('restart',{categories:state.categories,difficulty:state.difficulty})};
 $('leave').onclick=()=>{if(!confirm('Exit this room? Your score is saved, and you can return using this room code.'))return;sessionStorage.removeItem('trivia-night-room');location.href='./trivia-night.html'};
 function tvLink(){const u=new URL('./trivia-tv.html',location.href);u.searchParams.set('room',roomCode);return u.href}
 $('screen').onclick=()=>{const u=new URL('./trivia-tv.html',location.href);$('tvAddress').textContent=u.host+u.pathname;$('tvAddress').href=u.href;$('tvCode').textContent=roomCode;$('tvOpen').href=tvLink();$('tvCopyStatus').textContent='';$('tvConnect').showModal()};
