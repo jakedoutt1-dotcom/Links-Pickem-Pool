@@ -66,6 +66,7 @@ export async function onRequest({request,env}){
      if(!host)return json({error:'Only this room’s host can control the game.'},403);
      if(b.gameNumber!==s.game||b.index!==s.index||b.phase!==s.phase)return json({error:'The room changed. Refresh and try again.'},409);
      if(action==='next'){
+      if(s.isFinal)return json({error:'The final answer is revealed. Show final standings to finish.'},409);
       if(!['lobby','reveal'].includes(s.phase))return json({error:'Reveal this answer before continuing.'},409);
       if(s.index+1>=s.deck.length)return json({error:'No unused questions remain. End this game to start another.'},409);
       const at=s.deck.findIndex((q,i)=>i>s.index&&(!b.category||q.category===b.category));

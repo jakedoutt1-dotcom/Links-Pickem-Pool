@@ -49,7 +49,7 @@ export function reveal(state){
  if(state.phase!=='question')throw Error('There is no question to reveal.');
  const q=state.deck[state.index];
  for(const p of Object.values(state.players)){const a=p.answer;if(a?.index===state.index&&a.choice===q.correct)p.score+=points(q,a.elapsed)*(q.final?2:1);}
- state.phase=q.final?'ended':'reveal';
+ state.phase='reveal';
 }
 export function view(state,seat,host,now=Date.now()){
  const countdown=state.phase==='question'&&now<(state.startsAt||0);

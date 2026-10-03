@@ -58,7 +58,7 @@ try{
  const fq=raw().deck[hostState.index];assert.equal(fq.difficulty,'hard');
  await call({action:'answer',gameNumber:hostState.game,index:hostState.index,choice:fq.correct},{guest:alice.token});
  const beforeFinal=hostState.leaders.find(p=>p.name==='Alice').score;
- edit(s=>{s.deadline=Date.now()-1});await host('reveal');assert.equal(hostState.phase,'ended');assert.ok(hostState.leaders.find(p=>p.name==='Alice').score-beforeFinal>=3000);assert.equal((await host('final')).status,409);
+ edit(s=>{s.deadline=Date.now()-1});await host('reveal');assert.equal(hostState.phase,'reveal');assert.equal(hostState.question.correct,fq.correct);assert.ok(hostState.leaders.find(p=>p.name==='Alice').score-beforeFinal>=3000);assert.equal((await host('next')).status,409);assert.equal((await host('final')).status,409);await host('end');assert.equal(hostState.phase,'ended');
  db.raw.prepare('UPDATE links_trivia_night_rooms SET expires=0 WHERE code=?').run(code);assert.equal((await call(null,{guest:alice.token})).status,404);
  console.log('PASS: room authorization, CSRF, hidden answers, late joining, server deadlines, immutable answers, scoring/reveal, import validation/isolation, restart, stale requests, write-conflict retry, expiry.');
 }finally{db.raw.close()}
