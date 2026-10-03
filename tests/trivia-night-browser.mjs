@@ -1,0 +1,42 @@
+import {createRequire} from 'node:module';
+const {chromium}=createRequire(import.meta.url)('playwright');
+import fs from 'node:fs';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import {fixture} from './helpers/pool-format-fixture.mjs';
+import {onRequest} from '../functions/new-build/api/trivia-night.js';
+const {db}=fixture(),browser=await chromium.launch({headless:true,channel:'msedge'}),errors=[];
+let queue=Promise.resolve();
+async function page(width,admin=false){
+ const context=await browser.newContext({viewport:{width,height:900}}),p=await context.newPage();p.on('pageerror',e=>errors.push(e.message));
+ if(admin)await p.addInitScript(()=>localStorage.setItem('links-token','admin'));
+ await p.route('https://trivia.local/**',async r=>{
+  const u=new URL(r.request().url());
+  if(u.pathname.includes('/api/')){
+   const headers=new Headers(r.request().headers());headers.set('Origin',u.origin);
+   const request=new Request(u,{method:r.request().method(),headers,...(r.request().method()==='POST'?{body:r.request().postData()}:{})});
+   const result=queue.then(()=>onRequest({request,env:{DB:db}}));queue=result.then(()=>{});const response=await result;return r.fulfill({status:response.status,body:await response.text(),contentType:'application/json'});
+  }
+  const file=path.join('public',u.pathname);return fs.existsSync(file)?r.fulfill({path:file,contentType:(file.endsWith('.mjs')||file.endsWith('.js'))?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.html')?'text/html':'image/png'}):r.fulfill({status:404,body:''});
+ });return p;
+}
+try{
+ const host=await page(1360,true),phone=await page(390);
+ await host.goto('https://trivia.local/new-build/trivia-night.html');await host.getByRole('button',{name:'Set up a game'}).click();
+ await host.getByRole('button',{name:'Manage questions'}).click();await host.getByRole('button',{name:'Close question library'}).click();
+ for(const checkbox of await host.locator('[name=category]').all())await checkbox.uncheck();await host.locator('[value=science]').check();await host.locator('#difficulty').selectOption('hard');
+ await host.getByRole('button',{name:'Create room'}).click();await host.locator('#room:visible').waitFor();
+ const code=new URL(host.url()).searchParams.get('room');assert.ok(code);
+ await host.getByRole('button',{name:'Invite / QR code'}).click();assert.ok(await host.locator('#qr svg').isVisible());await host.getByRole('button',{name:'Close invitation'}).click();
+ await phone.goto('https://trivia.local/new-build/trivia-night.html?room='+code);await phone.getByLabel('Your player or team name').fill('Phone Team');await phone.getByRole('button',{name:'Join trivia night',exact:true}).click();await phone.locator('#room:visible').waitFor();
+ await host.getByRole('button',{name:'Show leaderboard',exact:true}).click();await host.locator('#triviaStandingsScreen[open]').waitFor();await host.getByRole('button',{name:'Back to game',exact:true}).click();assert.ok(await host.locator('#lobbyQR svg').isVisible());await host.getByRole('button',{name:'Start game',exact:true}).click();await host.locator('#roundCategories button[data-theme=science]').click();await host.getByRole('button',{name:'Start question',exact:true}).click();await phone.locator('[data-choice="0"]').waitFor();
+ assert.equal(await phone.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+ const s=JSON.parse(db.raw.prepare('SELECT state FROM links_trivia_night_rooms WHERE code=?').get(code).state);
+ await phone.locator('[data-choice="'+s.deck[0].correct+'"]').click();await phone.getByText('Answer saved. Wait for the host to reveal.',{exact:true}).waitFor();
+ fs.mkdirSync('output/trivia-night',{recursive:true});await phone.screenshot({path:'output/trivia-night/phone.png',fullPage:true});await host.screenshot({path:'output/trivia-night/host.png',fullPage:true});
+ const updated=JSON.parse(db.raw.prepare('SELECT state FROM links_trivia_night_rooms WHERE code=?').get(code).state);updated.deadline=Date.now()-1;db.raw.prepare('UPDATE links_trivia_night_rooms SET state=? WHERE code=?').run(JSON.stringify(updated),code);
+ await host.waitForFunction(()=>!document.getElementById('reveal').disabled);await host.getByRole('button',{name:'Reveal answer',exact:true}).click();await phone.locator('.answers .correct').waitFor();
+ assert.ok(Number((await phone.locator('#leaders strong').innerText()).replace(/,/g,''))>=1500);
+ await phone.reload();await phone.locator('.answers .correct').waitFor();assert.ok(await phone.locator('#leaders').getByText('Phone Team · You').isVisible());
+ assert.deepEqual(errors,[]);console.log('PASS local desktop host + phone join, question manager, QR, answer/save/reveal, score, refresh resume, no overflow or browser errors.');
+}finally{await browser.close();db.raw.close()}

@@ -1,0 +1,13 @@
+{
+  "tool": "built-in image_gen",
+  "style": "LINKS black and metallic gold cinematic 3D game artwork; category objects at edges, dark readable center, no text on category scenes",
+  "assets": {
+    "card": "c6373117-7fea-4419-b8ef-f38607254950",
+    "football": "46a23146-a32a-498f-917b-5f6b7c21486f",
+    "music": "54474917-fce1-42d6-8d8a-172f83c6495e",
+    "movies": "ec1477f4-2d76-40c0-9ed4-1b7188aa83d7",
+    "history": "62ed10fe-387c-43a9-8e03-f5683692034a",
+    "science": "3c564487-910f-44cf-94a4-2b021844a73a",
+    "general": "4a87f910-f4ef-4895-946b-28812dcbfc16"
+  }
+}
