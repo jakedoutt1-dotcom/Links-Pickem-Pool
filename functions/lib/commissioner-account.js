@@ -2,7 +2,7 @@
 export const PLANS={free:{label:'Free',amount:0,slots:1},plus:{label:'LINKS Plus',amount:1999,slots:3},nfl_package:{label:'LINKS Pro',amount:2999,slots:6},all_access:{label:'LINKS All Access',amount:4999,slots:10}};
 export const GAMES={nfl:'NFL Pick’em',college:'College Pick’em',homerun:'Home Run Club',mlb:'MLB Pick’em',survivor:'Survivor',confidence:'Confidence','33':'Game 33',squares:'Squares',march:'March Madness',masters:'Golf',nascar:'NASCAR',fantasy:'Fantasy',dynasty:'Dynasty',custom:'Custom',props:'Props',playoff:'Playoffs'};
 // Only games with connected player and commissioner flows are available for creation.
-export const CREATABLE_GAMES=new Set(['nfl','college','squares','march','mlb','homerun']); // Other games are temporarily Coming Soon.
+export const CREATABLE_GAMES=new Set(['nfl','college','squares','march','mlb','homerun','masters','nascar']); // Other games are temporarily Coming Soon.
 export function emailKey(value){let email=String(value||'').trim().toLowerCase();const [local,domain]=email.split('@');if(domain==='gmail.com'||domain==='googlemail.com')email=local.split('+')[0].replaceAll('.','')+'@gmail.com';return email}
 export async function digest(value){return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value))),x=>x.toString(16).padStart(2,'0')).join('')}
 export async function ensureAccounts(db){await db.batch([
