@@ -1,3 +1,5 @@
+import {ensureAccounts,allowance,emailKey} from '../../lib/commissioner-account.js';
+import {ownerSession} from '../../lib/owner-auth.js';
 import {STARTER,validateBank,makeDeck,SECONDS,reveal,view} from '../../lib/trivia-night.js';
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
 const hash=async value=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)))).map(x=>x.toString(16).padStart(2,'0')).join('');
@@ -9,7 +11,7 @@ export async function onRequest({request,env}){
   const db=env.DB;if(!db)return json({error:'Trivia needs a database connection.'},503);
   let b={};if(request.method==='POST'){const raw=await request.text();if(raw.length>600000)return json({error:'Question file is too large.'},413);try{b=JSON.parse(raw)}catch{return json({error:'Invalid request.'},400)}}
   const action=b.action||url.searchParams.get('action')||'state';
-  if(request.method==='GET'&&!['state','library'].includes(action))return json({error:'Use POST for changes.'},405);
+  if(request.method==='GET'&&!['state','library','owner-library'].includes(action))return json({error:'Use POST for changes.'},405);
   await db.batch([
    db.prepare('CREATE TABLE IF NOT EXISTS links_trivia_night_rooms(code TEXT PRIMARY KEY,pool_id INTEGER NOT NULL,host_name TEXT NOT NULL,state TEXT NOT NULL,version INTEGER NOT NULL DEFAULT 0,expires INTEGER NOT NULL)'),
    db.prepare('CREATE TABLE IF NOT EXISTS links_trivia_night_banks(pool_id INTEGER PRIMARY KEY,questions TEXT NOT NULL,updated TEXT NOT NULL)'),
@@ -23,22 +25,34 @@ export async function onRequest({request,env}){
   }
   const bearer=(request.headers.get('Authorization')||'').replace(/^Bearer /,'');
   const admin=bearer?await db.prepare("SELECT * FROM pool_sessions WHERE token=? AND expires_at>? AND role='admin'").bind(bearer,new Date().toISOString()).first():null;
-  const bank=async()=>{const row=await db.prepare('SELECT questions FROM links_trivia_night_banks WHERE pool_id=?').bind(admin.pool_id).first();return row?JSON.parse(row.questions):STARTER};
-  if(['library','import','create'].includes(action)){
-   if(!admin)return json({error:'Sign in as a pool commissioner to host or manage questions.'},403);
-   if(action==='library')return json({questions:await bank()});
-   if(action==='import'){
-    const rows=validateBank(b.questions);await db.prepare('INSERT INTO links_trivia_night_banks(pool_id,questions,updated) VALUES(?,?,?) ON CONFLICT(pool_id) DO UPDATE SET questions=excluded.questions,updated=excluded.updated').bind(admin.pool_id,JSON.stringify(rows),new Date().toISOString()).run();return json({count:rows.length});
-   }
-   const active=await db.prepare('SELECT code FROM links_trivia_night_rooms WHERE pool_id=? AND expires>?').bind(admin.pool_id,Date.now()).all();
-   if(active.results.length>=5)return json({error:'This pool already has five rooms today. Reuse a room for another game.'},429);
+  const bank=async()=>{const row=await db.prepare('SELECT questions FROM links_trivia_night_banks WHERE pool_id=?').bind(0).first();return row?JSON.parse(row.questions):STARTER};
+  if(['owner-library','import'].includes(action)){
+   if(!await ownerSession(request,db))return json({error:'Only LINKS Admin can manage trivia questions.'},403);
+   if(action==='owner-library')return json({questions:await bank()});
+   const rows=validateBank(b.questions);await db.prepare('INSERT INTO links_trivia_night_banks(pool_id,questions,updated) VALUES(?,?,?) ON CONFLICT(pool_id) DO UPDATE SET questions=excluded.questions,updated=excluded.updated').bind(0,JSON.stringify(rows),new Date().toISOString()).run();return json({count:rows.length});
+  }
+  if(['library','create'].includes(action)){
+   if(!admin)return json({error:'Sign in as a pool commissioner to host.'},403);
+   await ensureAccounts(db);
+   const owner=await db.prepare('SELECT email FROM links_pool_owners WHERE pool_id=?').bind(admin.pool_id).first();
+   const contact=await db.prepare("SELECT value FROM pool_settings WHERE pool_id=? AND key='commissioner_email'").bind(admin.pool_id).first();
+   const email=emailKey(owner?.email||contact?.value||'');
+   const plan=owner?await allowance(db,email):{label:'Free',slots:1};
+   const ownership=(await db.prepare('SELECT pool_id,email FROM links_pool_owners').all()).results||[];
+   const contacts=(await db.prepare("SELECT pool_id,value FROM pool_settings WHERE key='commissioner_email'").all()).results||[];
+   const pools=[...new Set([admin.pool_id,...(email?ownership.filter(p=>emailKey(p.email)===email).map(p=>p.pool_id):[]),...(email?contacts.filter(p=>emailKey(p.value)===email&&!ownership.some(o=>o.pool_id===p.pool_id&&emailKey(o.email)!==email)).map(p=>p.pool_id):[])])];
+   const placeholders=pools.map(()=>'?').join(',');
+   const active=(await db.prepare(`SELECT code,pool_id,host_name FROM links_trivia_night_rooms WHERE pool_id IN (${placeholders}) AND expires>?`).bind(...pools,Date.now()).all()).results||[];
+   if(action==='library')return json({count:(await bank()).length,roomLimit:plan.slots,plan:plan.label,activeRooms:active.length,rooms:active.filter(r=>r.pool_id===admin.pool_id&&r.host_name===admin.player_name).map(r=>({code:r.code}))});
    const full=await bank(),deck=makeDeck(full,b.categories,b.difficulty);
    const finals=makeDeck(full,[...new Set(full.map(q=>q.category))],'mixed').filter(q=>q.difficulty==='hard');
    const finalQuestion=finals.find(q=>!deck.some(d=>d.id===q.id))||(deck.length>1?finals[0]:null)||null;
    if(finalQuestion){const at=deck.findIndex(q=>q.id===finalQuestion.id);if(at>=0)deck.splice(at,1);}
    const code=crypto.randomUUID().replace(/-/g,'').slice(0,10).toUpperCase();
    const state={code,title:String(b.title||'LINKS Trivia Night').trim().slice(0,70),categories:b.categories,difficulty:b.difficulty,game:1,phase:'lobby',index:-1,deadline:0,deck,finalQuestion,isFinal:false,players:{}};
-   await db.prepare('INSERT INTO links_trivia_night_rooms(code,pool_id,host_name,state,expires) VALUES(?,?,?,?,?)').bind(code,admin.pool_id,admin.player_name,JSON.stringify(state),Date.now()+86400000).run();return json(view(state,'',true));
+   const inserted=await db.prepare(`INSERT INTO links_trivia_night_rooms(code,pool_id,host_name,state,expires) SELECT ?,?,?,?,? WHERE (SELECT COUNT(*) FROM links_trivia_night_rooms WHERE pool_id IN (${placeholders}) AND expires>?)<?`).bind(code,admin.pool_id,admin.player_name,JSON.stringify(state),Date.now()+86400000,...pools,Date.now(),plan.slots).run();
+   if(!inserted.meta?.changes)return json({error:plan.label+' allows '+plan.slots+' active trivia room'+(plan.slots===1?'':'s')+'. Reopen your existing room to play again, or choose a larger package. Rooms expire after 24 hours.'},402);
+   return json(view(state,'',true));
   }
   const code=String(b.code||url.searchParams.get('code')||'').toUpperCase();
   if(!/^[A-F0-9]{10}$/.test(code))return json({error:'Enter the 10-character room code.'},400);

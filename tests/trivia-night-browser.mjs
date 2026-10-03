@@ -23,12 +23,12 @@ async function page(width,admin=false){
 try{
  const host=await page(1360,true),phone=await page(390);
  await host.goto('https://trivia.local/new-build/trivia-night.html');await host.getByRole('button',{name:'Set up a game'}).click();
- await host.getByRole('button',{name:'Manage questions'}).click();await host.getByRole('button',{name:'Close question library'}).click();
+ assert.equal(await host.getByRole('button',{name:'Manage questions'}).count(),0);
  for(const checkbox of await host.locator('[name=category]').all())await checkbox.uncheck();await host.locator('[value=science]').check();await host.locator('#difficulty').selectOption('hard');
  await host.getByRole('button',{name:'Create room'}).click();await host.locator('#room:visible').waitFor();
  const code=new URL(host.url()).searchParams.get('room');assert.ok(code);
  await host.getByRole('button',{name:'Invite / QR code'}).click();assert.ok(await host.locator('#qr svg').isVisible());await host.getByRole('button',{name:'Close invitation'}).click();
- await phone.goto('https://trivia.local/new-build/trivia-night.html?room='+code);await phone.getByLabel('Your player or team name').fill('Phone Team');await phone.getByRole('button',{name:'Join trivia night',exact:true}).click();await phone.locator('#room:visible').waitFor();
+ await phone.goto('https://trivia.local/new-build/trivia-night.html?room='+code);await phone.locator('#quickJoin[open]').waitFor();assert.equal(await phone.locator('#entry').isVisible(),false);await phone.getByLabel('Your name',{exact:true}).fill('Phone Team');await phone.getByRole('button',{name:'Join game',exact:true}).click();await phone.locator('#room:visible').waitFor();
  await host.getByRole('button',{name:'Show leaderboard',exact:true}).click();await host.locator('#triviaStandingsScreen[open]').waitFor();await host.getByRole('button',{name:'Back to game',exact:true}).click();assert.ok(await host.locator('#lobbyQR svg').isVisible());await host.getByRole('button',{name:'Start game',exact:true}).click();await host.locator('#roundCategories button[data-theme=science]').click();await host.getByRole('button',{name:'Start question',exact:true}).click();await phone.locator('[data-choice="0"]').waitFor();
  assert.equal(await phone.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
  const s=JSON.parse(db.raw.prepare('SELECT state FROM links_trivia_night_rooms WHERE code=?').get(code).state);

@@ -14,6 +14,7 @@ async function api(body,query=''){
  const j=await r.json();if(!r.ok){const e=Error(j.error||'Unable to reach trivia.');e.status=r.status;throw e}return j;
 }
 function adopt(j){
+ if($('quickJoin').open)$('quickJoin').close();document.body.classList.remove('qr-joining');
  offset=j.serverNow-Date.now();state=j;roomCode=j.code;sessionStorage.setItem('trivia-night-room',roomCode);
  if(j.token)localStorage.setItem('trivia-night-seat-'+roomCode,j.token);
  document.body.classList.add('in-room');document.body.dataset.role=j.host?'host':'player';$('screen').hidden=!j.host;
@@ -71,7 +72,7 @@ function tick(){
  if(state.phase==='question'&&seconds===0&&state.choice===null&&!state.host&&state.eligible)$('answerNote').textContent='Time is up. Waiting for the host to reveal the answer.';
 }
 $('joinForm').onsubmit=e=>{e.preventDefault();roomCode=$('code').value.trim().toUpperCase();act('join',{name:$('name').value.trim()})};
-async function loadBank(){const j=await api(null,'?action=library');bank=j.questions;$('bankCount').textContent=bank.length+' questions available. Starter categories other than football contain three sample questions each; expand the library for a full evening.';}
+async function loadBank(){const j=await api(null,'?action=library');$('bankCount').textContent=j.count+' questions · '+j.plan+': '+j.activeRooms+' of '+j.roomLimit+' active trivia rooms. Reuse a room for more games. Rooms expire after 24 hours.';$('existingRooms').replaceChildren();for(const room of j.rooms){const a=document.createElement('a');a.href='./trivia-night.html?room='+room.code;a.textContent='Reopen room '+room.code;$('existingRooms').append(a)}$('create').disabled=j.activeRooms>=j.roomLimit;}
 async function hostPoolRequest(body){
  const r=await fetch('./api/pool-switcher',{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token(),'x-links-account':localStorage.getItem('links-account-token')||'','Content-Type':'application/json'},cache:'no-store',signal:AbortSignal.timeout(12000),...(body?{body:JSON.stringify(body)}:{})});const j=await r.json();if(!r.ok)throw Error(j.error||'Your connected pools could not be loaded.');return j;
 }
@@ -96,19 +97,25 @@ $('startQuestion').onclick=()=>act('start-question');$('finalRound').onclick=()=
 $('restart').onclick=()=>{if(confirm('Start another game in this room? Scores reset to zero and questions can repeat. Everyone stays joined.'))act('restart',{categories:state.categories,difficulty:state.difficulty})};
 $('leave').onclick=()=>{if(!confirm('Exit this room? Your score is saved, and you can return using this room code.'))return;sessionStorage.removeItem('trivia-night-room');location.href='./trivia-night.html'};
 $('screen').onclick=()=>{document.body.classList.toggle('big');$('screen').textContent=document.body.classList.contains('big')?'Normal view':'Big screen'};
-$('libraryOpen').onclick=()=>{$('library').showModal()};
+
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).close());
-function download(value,name){const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
-$('download').onclick=()=>download(bank,'links-trivia-questions.json');
-$('file').onchange=async()=>{pending=null;$('import').disabled=true;try{const f=$('file').files[0];if(!f)return;if(f.size>550000)throw Error('Use a JSON file under 550 KB.');const rows=JSON.parse(await f.text());if(!Array.isArray(rows)||!rows.length||rows.length>500)throw Error('Use a JSON array of 1–500 questions.');pending=rows;$('importPreview').textContent=rows.length+' questions selected. Replacing will remove the current library for future games. Download your backup first.';$('import').disabled=false}catch(e){$('importPreview').textContent=e.message}};
-$('import').onclick=async()=>{if(!pending||!confirm('Replace this pool’s question library with the uploaded file?'))return;$('import').disabled=true;try{const j=await api({action:'import',questions:pending});await loadBank();$('importPreview').textContent='Saved '+j.count+' questions. Future games will use this library.';pending=null}catch(e){$('importPreview').textContent=e.message;$('import').disabled=false}};
 function joinLink(){const u=new URL('./trivia-night.html',location.href);u.searchParams.set('room',roomCode);return u.href}
 $('invite').onclick=()=>{const qr=qrcode(0,'M');qr.addData(joinLink());qr.make();$('qr').innerHTML=qr.createSvgTag({cellSize:5,margin:20,scalable:true});$('qr').querySelector('svg').setAttribute('aria-label','Scan to join trivia');$('inviteCode').textContent=roomCode;$('copyStatus').textContent='';$('invitation').showModal()};
 $('copy').onclick=async()=>{try{await navigator.clipboard.writeText(joinLink());$('copyStatus').textContent='Join link copied.'}catch{$('copyStatus').textContent=joinLink()}};
 async function poll(){
- if(roomCode&&!busy&&$('setup').hidden&&!document.hidden&&(state||seat()||token())){const n=++sequence;try{const j=await api(null,'?code='+encodeURIComponent(roomCode));if(n===sequence){adopt(j);$('message').textContent=''}}catch(e){if(n===sequence)$('message').textContent=e.message}}
+ if(roomCode&&!busy&&!$('quickJoin').open&&$('setup').hidden&&!document.hidden&&(state||seat()||token())){const n=++sequence;try{const j=await api(null,'?code='+encodeURIComponent(roomCode));if(n===sequence){adopt(j);$('message').textContent=''}}catch(e){if(n===sequence)$('message').textContent=e.message}}
  setTimeout(poll,state?.countdown?250:state?.phase==='question'?1000:2000);
 }
-mountPartners($('triviaPartners'),{host:$('triviaPartners')});
-setInterval(tick,200);poll();
+mountPartners($('triviaPartners'),{host:$('triviaPartners'),autoLocate:true});
+async function openQRJoin(){
+ const linkedCode=new URL(location.href).searchParams.get('room');
+ if(!linkedCode||new URL(location.href).searchParams.get('host')==='1')return;
+ document.body.classList.add('qr-joining');$('entry').hidden=true;
+ if(seat()||token()){try{adopt(await api(null,'?code='+encodeURIComponent(roomCode)));return}catch(e){if(![401,403].includes(e.status)){$('quickJoinMessage').textContent=e.message}}}
+ $('quickJoin').showModal();$('quickName').focus();
+}
+$('quickJoinForm').onsubmit=async e=>{e.preventDefault();if(busy)return;busy=true;++sequence;$('quickJoinButton').disabled=true;$('quickJoinMessage').textContent='Joining…';try{adopt(await api({action:'join',code:roomCode,name:$('quickName').value.trim()}))}catch(error){$('quickJoinMessage').textContent=error.message}finally{busy=false;$('quickJoinButton').disabled=false}};
+$('quickJoinExit').onclick=()=>location.href='./trivia-night.html';
+$('quickJoin').addEventListener('cancel',e=>{e.preventDefault();location.href='./trivia-night.html'});
+setInterval(tick,200);openQRJoin().finally(poll);
 if(new URL(location.href).searchParams.get('host')==='1')$('hostOpen').click();

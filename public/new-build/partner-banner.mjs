@@ -1,6 +1,6 @@
 import {nearby} from './partner-match.mjs';
 let started=false;
-export function mountPartners(panel,{host,controlsHost,brandingOnly=false,onPartner=()=>{}}={}){if(started)return;started=true;
+export function mountPartners(panel,{host,controlsHost,brandingOnly=false,autoLocate=false,onPartner=()=>{}}={}){if(started)return;started=true;
  const box=document.createElement('section');box.id='linksPartnerBanner';box.setAttribute('aria-label','LINKS partners');box.style.cssText='box-sizing:border-box;grid-column:1/-1;width:100%;min-width:0;padding:16px;border:1px solid #304b5d;border-radius:16px;background:#0b1b27;color:#fff;margin:0 0 16px';if(host)host.append(box);else panel.after(box);
  let generation=0,enabled=false,dismissed=false,controlRow=null;
  const mobile=matchMedia('(max-width:900px)');
@@ -8,14 +8,14 @@ export function mountPartners(panel,{host,controlsHost,brandingOnly=false,onPart
  function placeControls(){if(controlRow)(controlsHost&&mobile.matches?controlsHost:box).append(controlRow)}
  function actionControls(...buttons){clearControls();controlRow=document.createElement('div');controlRow.className='partner-location-controls';controlRow.append(...buttons);placeControls()}
  mobile.addEventListener('change',placeControls);
- try{enabled=localStorage.getItem('links-partner-location')==='yes'}catch{}
+ try{const preference=localStorage.getItem('links-partner-location');enabled=preference==='yes'||(autoLocate&&preference!=='no')}catch{enabled=autoLocate}
  const button=(label,fn)=>{const b=document.createElement('button');b.type='button';b.className='action';b.textContent=label;b.style.cssText='max-width:100%;white-space:normal;margin:4px 4px 0 0';b.onclick=fn;return b};
  function text(tag,value){const el=document.createElement(tag);el.textContent=value;return el}
  function base(message){clearControls();onPartner(null);box.replaceChildren();box.hidden=dismissed;const head=text('strong','Check out these offers');head.style.color='#edc466';const close=button('×',()=>{dismissed=true;generation++;clearControls();onPartner(null);box.hidden=true;box.replaceChildren()});close.setAttribute('aria-label','Dismiss partner banner');close.style.float='right';box.append(close,head,text('p',message));}
  function general(message='Discover offers from the LINKS partners you visit.'){
- base(message);box.append(button('Show partners near me',()=>{dismissed=false;enabled=true;try{localStorage.setItem('links-partner-location','yes')}catch{}check(true)}));box.append(text('small','Optional location access. Your coordinates stay on this device.'));if(enabled)actionControls(button('Turn off location ads',()=>{enabled=false;generation++;try{localStorage.removeItem('links-partner-location')}catch{}general()}));
+ base(message);box.append(button('Show partners near me',()=>{dismissed=false;enabled=true;try{localStorage.setItem('links-partner-location','yes')}catch{}check(true)}));box.append(text('small','Optional location access. Your coordinates stay on this device.'));if(enabled)actionControls(button('Turn off location ads',()=>{enabled=false;generation++;try{localStorage.setItem('links-partner-location','no')}catch{}general()}));
  }
- function controls(){actionControls(button('Check my location again',()=>check(true)),button('Turn off location ads',()=>{enabled=false;generation++;try{localStorage.removeItem('links-partner-location')}catch{}general()}))}
+ function controls(){actionControls(button('Check my location again',()=>check(true)),button('Turn off location ads',()=>{enabled=false;generation++;try{localStorage.setItem('links-partner-location','no')}catch{}general()}))}
  function show(p){
    base('Partner offer');onPartner(p);
    if(brandingOnly){box.replaceChildren();controls();return}
@@ -41,5 +41,5 @@ export function mountPartners(panel,{host,controlsHost,brandingOnly=false,onPart
  }
  document.addEventListener('visibilitychange',()=>{generation++;if(document.hidden){clearControls();onPartner(null);box.replaceChildren();return}if(!dismissed){general();if(enabled)check()}});
  window.addEventListener('pagehide',()=>{generation++;clearControls();onPartner(null);box.replaceChildren()});window.addEventListener('pageshow',e=>{if(e.persisted&&!dismissed){general();if(enabled)check()}});
- const sync=()=>{box.style.display=panel.style.display==='none'?'none':''};new MutationObserver(sync).observe(panel,{attributes:true,attributeFilter:['style']});sync();general();if(enabled)check();
+ const sync=()=>{box.style.display=panel.style.display==='none'?'none':''};new MutationObserver(sync).observe(panel,{attributes:true,attributeFilter:['style']});sync();general();if(enabled)check(autoLocate);
 }
