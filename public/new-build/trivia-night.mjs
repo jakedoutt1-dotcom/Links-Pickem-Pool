@@ -9,6 +9,7 @@ const selection=()=>({categories:[...document.querySelectorAll('[name=category]:
 $('categories').innerHTML=Object.entries(themes).map(([key,[name,icon]])=>`<label><span>${icon}</span><input type="checkbox" name="category" value="${key}" checked> ${name}</label>`).join('');
 if(new URL(location.href).searchParams.get('host')==='1')roomCode='';
 $('code').value=roomCode;
+$('hostAccountChoices').hidden=!!token();$('hostAccountHelp').hidden=!!token();$('hostOpen').hidden=!token();
 async function api(body,query=''){
  const r=await fetch('./api/trivia-night'+query,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token(),'x-trivia-token':seat(),'Content-Type':'application/json'},cache:'no-store',signal:AbortSignal.timeout(12000),...(body?{body:JSON.stringify(body)}:{})});
  const j=await r.json();if(!r.ok){const e=Error(j.error||'Unable to reach trivia.');e.status=r.status;throw e}return j;
@@ -84,10 +85,10 @@ async function offerHostPools(){
  for(const pool of pools){const button=document.createElement('button');button.textContent='Host with '+pool.name;button.onclick=async()=>{button.disabled=true;$('hostMessage').textContent='Opening commissioner access…';try{const opened=await hostPoolRequest({action:'open',pool:pool.id});localStorage.setItem('links-legacy-token',opened.token);localStorage.setItem('links-token',opened.token);localStorage.setItem('links-current-pool',JSON.stringify(opened.pool));localStorage.setItem('links-player-id',opened.playerId);localStorage.setItem('links-player-name',opened.playerId);localStorage.setItem('links-player-role',opened.pool.role);await loadBank();$('setup').hidden=false;$('setup').scrollIntoView({behavior:'smooth'});$('hostPools').replaceChildren();$('hostSignIn').hidden=true;$('hostMessage').textContent='Hosting with '+pool.name;}catch(e){$('hostMessage').textContent=e.message;button.disabled=false}};$('hostPools').append(button)}
 }
 $('hostOpen').onclick=async()=>{
- if(!token()){location.href='./pool-login.html?triviaHost=1';return}
+ if(!token()){$('hostAccountChoices').hidden=false;$('hostAccountHelp').hidden=false;return}
  const button=$('hostOpen');button.disabled=true;button.textContent='Checking host access…';$('hostMessage').textContent='Checking your commissioner sign-in…';$('hostSignIn').hidden=true;
  try{await loadBank();$('setup').hidden=false;$('setup').scrollIntoView({behavior:'smooth'});$('hostMessage').textContent='Ready to create your room.';$('message').textContent=''}
- catch(e){$('hostMessage').textContent=e.message;$('hostSignIn').hidden=![401,403].includes(e.status);if(e.status===403){try{await offerHostPools()}catch(problem){$('hostMessage').textContent=problem.message}}$('hostMessage').scrollIntoView({behavior:'smooth',block:'center'})}
+ catch(e){$('hostAccountChoices').hidden=false;$('hostAccountHelp').hidden=false;$('hostMessage').textContent=e.message;$('hostSignIn').hidden=![401,403].includes(e.status);if(e.status===403){try{await offerHostPools()}catch(problem){$('hostMessage').textContent=problem.message}}$('hostMessage').scrollIntoView({behavior:'smooth',block:'center'})}
  finally{button.disabled=false;button.textContent='Set up a game'}
 };
 $('create').onclick=()=>act('create',{title:$('title').value,...selection()});
