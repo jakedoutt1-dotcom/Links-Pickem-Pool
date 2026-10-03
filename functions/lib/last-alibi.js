@@ -21,6 +21,13 @@ export const CHAPTERS=[
 export function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b}
 const names=ps=>ps.map(p=>p.character.name).join(', ');
 export function buildCase(s){
+ if(Object.keys(s.players).length<4){
+  const cast={players:Object.fromEntries(Array.from({length:6},(_,i)=>['suspect'+i,{id:'suspect-'+i,name:'Case suspect'}])),previousCulprit:s.previousCulprit,previousMethod:s.previousMethod};
+  buildCase(cast);s.cooperative=true;s.suspects=cast.players;s.case=cast.case;s.published=[];
+  for(const p of Object.values(s.players))Object.assign(p,{character:{name:p.name,title:'Investigator',intro:'You were asked to investigate Blackthorn Manor.',secret:'Your notebook is private. Share discoveries with your partner when you are ready.',motive:'Find the truth.'},alibi:'You are an investigator, not a suspect.',searched:{},shared:[],notes:'',accusation:null,score:0});
+  return;
+ }
+ s.cooperative=false;delete s.suspects;
  const seats=Object.keys(s.players),roles=shuffle(ROLES).slice(0,seats.length);seats.forEach((seat,i)=>{Object.assign(s.players[seat],{character:roles[i],searched:{},shared:[],notes:'',accusation:null,score:0})});
  const eligible=seats.filter(x=>s.players[x].id!==s.previousCulprit),killer=shuffle(eligible.length?eligible:seats)[0],innocents=shuffle(seats.filter(x=>x!==killer)),groups=[[],[],[]];innocents.forEach((x,i)=>groups[i%3].push(x));
  const method=shuffle(METHODS.filter(m=>m.id!==s.previousMethod))[0],scene=method.scene?ROOMS.find(r=>r.id===method.scene):shuffle(ROOMS.slice(0,3))[0],time=shuffle(['9:12–9:18 PM','9:24–9:30 PM','9:36–9:42 PM'])[0],object=method.object;
@@ -53,9 +60,9 @@ export function buildCase(s){
  s.case={killer,scene,time,object,method,evidence};s.published=[];
  if(solve(s).length!==1||solve(s)[0]!==s.players[killer].id)throw Error('Case validation failed');
 }
-export function solve(s){const eliminated=new Set(s.case.evidence.flatMap(e=>e.eliminates));return Object.values(s.players).map(p=>p.id).filter(id=>!eliminated.has(id))}
+export function solve(s){const eliminated=new Set(s.case.evidence.flatMap(e=>e.eliminates));return Object.values(s.suspects||s.players).map(p=>p.id).filter(id=>!eliminated.has(id))}
 export function begin(s,now){buildCase(s);s.phase='briefing';s.chapter=0;s.deadline=now+180000;s.phaseStarted=now;s.pausedAt=null;}
-export function finish(s){s.phase='ended';s.deadline=0;const killer=s.players[s.case.killer],votes=Object.values(s.players).filter(p=>p.accusation?.suspect===killer.id).length;s.caught=votes>Object.keys(s.players).length/2;for(const [seat,p] of Object.entries(s.players)){p.score=seat===s.case.killer?(s.caught?0:500):(p.accusation?.suspect===killer.id?500:0)+(p.accusation?.scene===s.case.scene.id?100:0)+(p.accusation?.object===s.case.object?100:0)} s.previousCulprit=killer.id;s.previousMethod=s.case.method.id;}
+export function finish(s){s.phase='ended';s.deadline=0;const killer=(s.suspects||s.players)[s.case.killer],votes=Object.values(s.players).filter(p=>p.accusation?.suspect===killer.id).length;s.caught=votes>Object.keys(s.players).length/2;for(const [seat,p] of Object.entries(s.players)){p.score=!s.cooperative&&seat===s.case.killer?(s.caught?0:500):(p.accusation?.suspect===killer.id?500:0)+(p.accusation?.scene===s.case.scene.id?100:0)+(p.accusation?.object===s.case.object?100:0)} s.previousCulprit=killer.id;s.previousMethod=s.case.method.id;}
 export function next(s,now){
  if(s.phase==='briefing'){s.phase='investigate';s.chapter=1}
  else if(s.phase==='investigate'){for(const e of s.case.evidence.filter(e=>e.chapter<=s.chapter))if(!s.published.includes(e.id))s.published.push(e.id);if(s.chapter<4)s.chapter++;else s.phase='accuse'}
@@ -64,14 +71,15 @@ export function next(s,now){
 }
 export function advance(s,now){if(!s.pausedAt&&['briefing','investigate','accuse'].includes(s.phase)&&now>=s.deadline){next(s,now);return true}return false}
 export function view(s,seat,now,display=false){
- const player=s.players[seat],end=s.phase==='ended',c=s.case,discovered=player?Object.values(player.searched||{}).flat():[],publicClues=c?c.evidence.filter(e=>s.published.includes(e.id)):[];
+ const cast=s.suspects||s.players,player=s.players[seat],end=s.phase==='ended',c=s.case,discovered=player?Object.values(player.searched||{}).flat():[],publicClues=c?c.evidence.filter(e=>s.published.includes(e.id)):[];
  const clue=e=>({id:e.id,title:e.title,kind:e.kind,text:e.text,inspect:e.inspect,chapter:e.chapter,room:e.room});
- return {code:s.code,game:s.game,phase:s.phase,chapter:s.chapter||0,minutes:s.minutes,serverNow:now,deadline:s.deadline,paused:!!s.pausedAt,pausedAt:s.pausedAt,host:seat===s.owner&&!display,display,
+ return {code:s.code,game:s.game,cooperative:!!s.cooperative,phase:s.phase,chapter:s.chapter||0,minutes:s.minutes,serverNow:now,deadline:s.deadline,paused:!!s.pausedAt,pausedAt:s.pausedAt,host:seat===s.owner&&!display,display,
  players:Object.entries(s.players).map(([id,p])=>({id:p.id,name:p.name,ready:p.ready,you:!display&&id===seat,character:c?{name:p.character.name,title:p.character.title,intro:p.character.intro}:null,...(end?{score:p.score,accusation:p.accusation?.suspect||null,killer:id===c.killer}:{})})),
- chapterInfo:s.phase==='lobby'?null:CHAPTERS[s.chapter||0],rooms:ROOMS,publicClues:publicClues.map(clue),
+ suspects:c?Object.values(cast).map(p=>({id:p.id,name:s.cooperative?'Case suspect':p.name,character:{name:p.character.name,title:p.character.title,intro:p.character.intro}})):[],
+ chapterInfo:s.phase==='lobby'?null:s.cooperative&&s.chapter===0?{...CHAPTERS[0],story:CHAPTERS[0].story+' You are investigating this case together. Neither investigator is a suspect. Examine the six guests and compare your discoveries.'}:CHAPTERS[s.chapter||0],rooms:ROOMS,publicClues:publicClues.map(clue),
  discovered:!display&&c?c.evidence.filter(e=>discovered.includes(e.id)).map(clue):[],searched:!display?player?.searched?.[s.chapter]||[]:[],notes:!display?player?.notes||'':'',objects:!display&&c&&s.phase==='investigate'?c.evidence.filter(e=>e.chapter<=s.chapter).map(e=>({id:e.id,title:e.title,room:e.room,collected:discovered.includes(e.id)||s.published.includes(e.id)})):[],
- privateRole:!display&&c&&player?{...player.character,guilty:seat===c.killer,alibi:player.alibi,...(seat===c.killer?{truth:'You confronted Adrian in '+c.scene.name.toLowerCase()+' during '+c.time+'. The '+c.object+' was used in the attack. '+player.character.motive+' Your goal is to avoid a majority accusation. You may lie in conversation; the verified evidence cannot be altered.'}:{truth:'You are innocent of the murder. Your secret may make you look suspicious. Find the murderer using the verified alibis.'})}:null,
+ privateRole:!display&&c&&player?{...player.character,guilty:!s.cooperative&&seat===c.killer,alibi:player.alibi,...(seat===c.killer?{truth:'You confronted Adrian in '+c.scene.name.toLowerCase()+' during '+c.time+'. The '+c.object+' was used in the attack. '+player.character.motive+' Your goal is to avoid a majority accusation. You may lie in conversation; the verified evidence cannot be altered.'}:{truth:s.cooperative?'You and your partner are investigators. Neither of you is a suspect. Search the manor, share clues, correct the device clocks, and identify which of the six guests has no verified alibi. Both investigators should submit their own conclusion.':'You are innocent of the murder. Your secret may make you look suspicious. Find the murderer using the verified alibis.'})}:null,
  accusation:!display?player?.accusation||null:null,objectsToChoose:METHODS.map(m=>m.object),accusationsReceived:Object.values(s.players).filter(p=>p.accusation).length,
- ...(end?{ending:{caught:s.caught,culprit:c?s.players[c.killer].character.name:'',playerName:c?s.players[c.killer].name:'',story:'Adrian’s midnight revelation never came. '+s.players[c.killer].character.name+' confronted him in '+c.scene.name.toLowerCase()+'. '+s.players[c.killer].character.motive+' The confrontation ended in murder during '+c.time+'. The '+c.object+' was left behind. The dining-room camera, gatehouse log, and rehearsal recording cleared every other guest. The dining-room story offered by the murderer had no witness to support it.',evidence:c.evidence.map(clue)}}:{}),
+ ...(end?{ending:{caught:s.caught,culprit:c?cast[c.killer].character.name:'',playerName:s.cooperative?'Case suspect':c?cast[c.killer].name:'',story:'Adrian’s midnight revelation never came. '+cast[c.killer].character.name+' confronted him in '+c.scene.name.toLowerCase()+'. '+cast[c.killer].character.motive+' The confrontation ended in murder during '+c.time+'. The '+c.object+' was left behind. The dining-room camera, gatehouse log, and rehearsal recording cleared every other guest. The dining-room story offered by the murderer had no witness to support it.',evidence:c.evidence.map(clue)}}:{}),
  ...(seat===s.owner&&!display?{displayKey:s.displayKey}:{})};
 }
