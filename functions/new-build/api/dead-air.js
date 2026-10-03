@@ -1,4 +1,6 @@
-import {AVATARS,start,advance,view,respond} from '../../lib/dead-air.js';
+import {loadGameQuestions,completeQuestionBank} from '../../lib/trivia-provider.js';
+import {CATEGORIES} from '../../lib/trivia-night.js';
+import {QUESTIONS,AVATARS,start,advance,view,respond} from '../../lib/dead-air.js';
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
 const hash=async t=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t)))).map(n=>n.toString(16).padStart(2,'0')).join('');
 export async function onRequest({request,env}){try{
@@ -18,6 +20,7 @@ export async function onRequest({request,env}){try{
  const s={code,game:1,index:-1,phase:'lobby',owner:seat,displayKey:crypto.randomUUID()+crypto.randomUUID(),players:{[seat]:{name,avatar,score:0,ready:false,lives:3,echoCharge:0,progress:0}}};await db.prepare('INSERT INTO links_dead_air_rooms(code,state,expires) VALUES(?,?,?)').bind(code,JSON.stringify(s),now+7200000).run();return json({...view(s,seat,now),token});}
  const code=String(b.code||u.searchParams.get('code')||'').toUpperCase();if(!/^[A-F0-9]{10}$/.test(code))return json({error:'Enter your room code.'},400);
  const token=request.headers.get('x-dead-air-token')||'',seat=token?await hash(token):'',displayKey=request.headers.get('x-dead-air-display')||'';
+ let questionLoad;
  for(let n=0;n<5;n++){
  const row=await db.prepare('SELECT * FROM links_dead_air_rooms WHERE code=? AND expires>?').bind(code,Date.now()).first();if(!row)return json({error:'Room expired or not found.'},404);
  const s=JSON.parse(row.state),time=Date.now(),display=!!displayKey&&displayKey===s.displayKey;let changed=advance(s,time),issued,current=seat;
@@ -35,7 +38,11 @@ export async function onRequest({request,env}){try{
  else if(action==='start'){
  if(seat!==s.owner)return json({error:'Only the creator can start.'},403);
  if(s.phase!=='lobby'||Object.keys(s.players).length<2||!Object.values(s.players).every(p=>p.ready))return json({error:'Need 2–8 players, all ready.'},409);
- start(s,time);changed=true;
+ const backup=QUESTIONS.map(q=>({id:'dead-air-'+q.id,category:'general',difficulty:'medium',text:q.text,answers:[q.correct,...q.wrong],correct:0,source:'LINKS'}));
+ const seen=s.seenQuestions||[];
+ questionLoad ||= loadGameQuestions({env,categories:CATEGORIES,backup,exclude:seen,perGroup:2});
+ const loaded=await questionLoad,bank=completeQuestionBank(loaded.questions,backup,{exclude:seen,minimum:16}).map(q=>({id:q.id,text:q.text,correct:q.answers[q.correct],wrong:q.answers.filter((_,i)=>i!==q.correct)}));
+ start(s,Date.now(),bank);s.questionSource=loaded.source;s.questionNotice=loaded.notice;s.seenQuestions=[...new Set([...seen,...s.deck])].slice(-1500);changed=true;
  }else if(action==='again'){
  if(seat!==s.owner||s.phase!=='ended')return json({error:'Only the creator can restart after results.'},403);
  s.phase='lobby';s.game++;s.phaseId=0;s.deadline=0;s.responses={};s.results=[];delete s.question;delete s.challenge;delete s.challengeOutcome;for(const p of Object.values(s.players)){p.score=0;p.ready=false;p.lives=3;p.echoCharge=0;p.progress=0;p.atRisk=false}changed=true;

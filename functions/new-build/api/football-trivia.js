@@ -1,3 +1,4 @@
+import {loadGameQuestions,completeQuestionBank} from '../../lib/trivia-provider.js';
 import {accountSession,digest} from '../../lib/commissioner-account.js';
 import {QUESTIONS,POINTS,SECONDS,shuffled,weekKey,publicAttempt,grade} from '../../lib/football-trivia.js';
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
@@ -21,8 +22,11 @@ export async function onRequest({request,env}){try{
  const b=await request.json();
  if(b.action==='start'){
  if(!a){if(!Object.hasOwn(POINTS,b.difficulty))return json({error:'Choose a difficulty.'},400);const display=String(b.name||session.player_name).trim().slice(0,40);if(!display)return json({error:'Choose a leaderboard name.'},400);
- const deck=shuffled(QUESTIONS.filter(q=>q.difficulty===b.difficulty)).slice(0,10).map(q=>({id:q.id,order:shuffled([0,1,2,3])}));
- await db.prepare('INSERT OR IGNORE INTO links_football_trivia(id,owner,week,season,difficulty,display_name,deck,deadline) VALUES(?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(),identity,week,season,b.difficulty,display,JSON.stringify(deck),now+SECONDS[b.difficulty]*1000).run();
+ const backup=QUESTIONS.filter(q=>q.difficulty===b.difficulty).map(q=>({...q,category:'football',correct:0}));
+ const loaded=await loadGameQuestions({env,categories:['football'],difficulties:[b.difficulty],tags:['american_football'],backup,perGroup:12});
+ const bank=completeQuestionBank(loaded.questions,backup,{minimum:10});
+ const deck=shuffled(bank).slice(0,10).map(q=>({id:q.id,question:q,order:shuffled([0,1,2,3])}));
+ await db.prepare('INSERT OR IGNORE INTO links_football_trivia(id,owner,week,season,difficulty,display_name,deck,deadline) VALUES(?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(),identity,week,season,b.difficulty,display,JSON.stringify(deck),Date.now()+SECONDS[b.difficulty]*1000).run();
  a=await db.prepare('SELECT * FROM links_football_trivia WHERE owner=? AND week=?').bind(identity,week).first();}
  }else if(b.action==='answer'){
  if(!a||a.status!=='active'||b.id!==a.id||Number(b.version)!==a.version)return json({error:'This play has already changed. Resume your drive.'},409);

@@ -1,5 +1,5 @@
 import {CATEGORIES,STARTER} from '../../lib/trivia-night.js';
-import {loadGameQuestions} from '../../lib/trivia-provider.js';
+import {loadGameQuestions,completeQuestionBank} from '../../lib/trivia-provider.js';
 import {challengeDeck,begin,advance,challengeView} from '../../lib/friend-challenge.js';
 const json=(value,status=200)=>Response.json(value,{status,headers:{'Cache-Control':'no-store'}});
 const hash=async text=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text)))).map(x=>x.toString(16).padStart(2,'0')).join('');
@@ -17,12 +17,13 @@ export async function onRequest({request,env}){
   if(action==='create'){
    if(!validName())return json({error:'Enter your name (up to 32 characters).'},400);
    if(!['mixed',...CATEGORIES].includes(b.category)||!['mixed','easy','medium','hard'].includes(b.difficulty))return json({error:'Choose a category and difficulty.'},400);
-   const categories=b.category==='mixed'?CATEGORIES:[b.category];const loaded=await loadGameQuestions({env,categories,backup:STARTER,perGroup:20});let deck;try{deck=challengeDeck(loaded.questions,categories,b.difficulty)}catch(e){return json({error:e.message},400)}
+   const categories=b.category==='mixed'?CATEGORIES:[b.category];const loaded=await loadGameQuestions({env,categories,backup:STARTER,perGroup:20,difficulties:b.difficulty==='mixed'?['easy','medium','hard']:[b.difficulty]});let deck;try{deck=challengeDeck(completeQuestionBank(loaded.questions,STARTER.filter(q=>categories.includes(q.category)&&(b.difficulty==='mixed'||q.difficulty===b.difficulty)),{minimum:30}),categories,b.difficulty)}catch(e){return json({error:e.message},400)}
    const code=crypto.randomUUID().replace(/-/g,'').slice(0,10).toUpperCase(),token=crypto.randomUUID()+crypto.randomUUID(),seat=await hash(token);
    const s={code,category:b.category,difficulty:b.difficulty,phase:'lobby',game:1,index:-1,deck,notice:loaded.notice,players:{[seat]:{name,score:0,ready:false,answer:null}}};await db.prepare('DELETE FROM links_friend_rooms WHERE expires<=?').bind(now).run();await db.prepare('INSERT INTO links_friend_rooms(code,state,expires) VALUES(?,?,?)').bind(code,JSON.stringify(s),now+7200000).run();return json({...challengeView(s,seat,now),token});
   }
   const code=String(b.code||url.searchParams.get('code')||'').trim().toUpperCase();if(!/^[A-F0-9]{10}$/.test(code))return json({error:'Enter a valid room code.'},400);
   const token=request.headers.get('x-challenge-token')||'',seat=token?await hash(token):'';
+  let rematchQuestions;
   for(let attempt=0;attempt<5;attempt++){
    const row=await db.prepare('SELECT * FROM links_friend_rooms WHERE code=? AND expires>?').bind(code,Date.now()).first();if(!row)return json({error:'Challenge expired or not found. Ask your friend for a new link.'},404);
    const s=JSON.parse(row.state),time=Date.now();let changed=advance(s,time),issued,newSeat=seat;
@@ -32,9 +33,12 @@ export async function onRequest({request,env}){
     if(!s.players[seat])return json({error:'Join the challenge first.'},401);
     if(action==='ready'){
      if(!['lobby','ended'].includes(s.phase)||b.game!==s.game)return json({error:'The game has already moved on.'},409);s.players[seat].ready=true;changed=true;
-     if(Object.keys(s.players).length>=2&&Object.values(s.players).every(p=>p.ready)){if(s.phase==='ended'){// Reuse this room’s question set, shuffled for the rematch.
-      s.deck=challengeDeck(s.deck,s.category==='mixed'?CATEGORIES:[s.category],s.difficulty);s.game++;delete s.winners;
-     }begin(s,time)}
+     if(Object.keys(s.players).length>=2&&Object.values(s.players).every(p=>p.ready)){if(s.phase==='ended'){const categories=s.category==='mixed'?CATEGORIES:[s.category];
+      s.seenQuestions=[...new Set([...(s.seenQuestions||[]),...s.deck.map(q=>q.id)])].slice(-1500);
+      rematchQuestions ||= loadGameQuestions({env,categories,backup:STARTER,exclude:s.seenQuestions,perGroup:20,difficulties:s.difficulty==='mixed'?['easy','medium','hard']:[s.difficulty]});
+      const loaded=await rematchQuestions;
+      s.deck=challengeDeck(completeQuestionBank(loaded.questions,STARTER.filter(q=>categories.includes(q.category)&&(s.difficulty==='mixed'||q.difficulty===s.difficulty)),{exclude:s.seenQuestions,minimum:30}),categories,s.difficulty);s.notice=loaded.notice;s.game++;delete s.winners;
+     }begin(s,Date.now())}
     }else if(action==='answer'){
      const p=s.players[seat];if(s.phase!=='question'||time<s.startsAt||time>=s.deadline||b.game!==s.game||b.index!==s.index||p.answer?.index===s.index||(s.contenders&&!s.contenders.includes(seat)))return json({error:'Answer locked. Wait for the next question.'},409);if(!Number.isInteger(b.choice)||b.choice<0||b.choice>3)return json({error:'Choose one answer.'},400);p.answer={index:s.index,choice:b.choice,elapsed:Math.max(0,time-s.startsAt)};changed=true;
     }else if(action==='leave'){
