@@ -22,11 +22,12 @@ try{
  const rows=[{player_name:'Wrong',game_index:0,team:'PIT'},{player_name:'Right',game_index:0,team:'CLE'},{player_name:'Wrong',game_index:1,team:'MIA'},{player_name:'Pending',game_index:1,team:'BUF'}];
  const original=JSON.stringify(rows),data={players:{results:credits.map(c=>({name:c.player_name}))},picks:{results:rows},ties:{results:[]},manual:{results:[]},access:{results:['Wrong','Right','Missing'].map(player_name=>({player_name}))},credits};
  const result=gradeWeek(pool,4,structuredClone(games),structuredClone(data));
- for(const row of result.rows)assert.equal(row.wins,1);
- assert.equal(result.rows.find(r=>r.player==='Wrong').losses,1);
+ assert.equal(result.rows.find(r=>r.player==='Wrong').wins,0);
+ for(const row of result.rows.filter(r=>r.player!=='Wrong'))assert.equal(row.wins,1);
+ assert.equal(result.rows.find(r=>r.player==='Wrong').losses,2);
  assert.equal(result.rows.find(r=>r.player==='Pending').losses,0);
  assert.equal(JSON.stringify(rows),original);
- const overridden=gradeWeek(pool,4,structuredClone(games),{...structuredClone(data),manual:{results:[{winner:'PIT'}]}});for(const row of overridden.rows)assert.equal(row.wins,1);
+ const overridden=gradeWeek(pool,4,structuredClone(games),{...structuredClone(data),manual:{results:[{winner:'PIT'}]}});assert.equal(overridden.rows.find(r=>r.player==='Right').wins,0);assert.equal(overridden.rows.find(r=>r.player==='Wrong').wins,1);assert.equal(overridden.rows.find(r=>r.player==='Missing').wins,1);
  assert.equal(creditPicks(rows,credits,games,5),rows);
  const oldFetch=globalThis.fetch;
  globalThis.fetch=async()=>Response.json({events:[{id:FEEDBACK.eventId,date:'2026-10-02T00:15:00Z',status:{type:{completed:true}},competitions:[{competitors:[{homeAway:'home',team:{abbreviation:'CLE'},score:'27',winner:true},{homeAway:'away',team:{abbreviation:'PIT'},score:'24'}]}]}]});
@@ -36,8 +37,10 @@ try{
  const {onRequestGet:season}=await import('../functions/new-build/api/season-standings.js');
  const request=new Request('https://test/?pool=26&week=4',{headers:{Authorization:'Bearer feedback-test'}});
  db.raw.exec("INSERT INTO pool_sessions VALUES('feedback-test',26,'Missing','player','2099-01-01')");
- const w=await (await weekly({request,env:{DB:db}})).json();assert.equal(w.courtesy.count,4);assert.equal(w.rows.length,4);assert.ok(w.rows.every(r=>r.wins===1&&r.losses===0));
- const c=await (await compare({request,env:{DB:db}})).json();assert.equal(c.players.length,4);assert.ok(c.players.every(r=>r.picks[0]==='CLE'));
+ db.raw.exec("INSERT INTO pool_picks VALUES(26,'nfl','Wrong',4,0,'PIT'),(26,'nfl','Right',4,0,'CLE');INSERT INTO pool_payments(pool_id,sport,player_name,week,paid) VALUES(26,'nfl','Wrong',4,1),(26,'nfl','Right',4,1)");
+ assert.equal((await feedbackCredits(db,pool)).length,2);
+ const w=await (await weekly({request,env:{DB:db}})).json();assert.equal(w.courtesy.count,2);assert.equal(w.rows.length,4);assert.equal(w.rows.find(r=>r.player==='Wrong').losses,1);assert.equal(w.rows.filter(r=>r.courtesyCredit).length,2);
+ const c=await (await compare({request,env:{DB:db}})).json();assert.equal(c.players.length,4);assert.equal(c.players.find(r=>r.player==='Wrong').picks[0],'PIT');assert.equal(c.players.find(r=>r.player==='Missing').picks[0],'CLE');
  const t=await (await season({request,env:{DB:db}})).json();assert.equal(t.rows.find(r=>r.name==='Missing').wins,1);assert.equal(t.rows.find(r=>r.name==='Late').wins,0);
  }finally{globalThis.fetch=oldFetch}
  console.log('PASS target isolation, trigger joins, exact cutoff, persistent credits, rename/delete, missing/wrong/right picks, pending access, other games, result overrides and untouched originals');
