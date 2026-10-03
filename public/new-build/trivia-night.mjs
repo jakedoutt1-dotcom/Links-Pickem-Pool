@@ -16,6 +16,7 @@ async function api(body,query=''){
 function adopt(j){
  offset=j.serverNow-Date.now();state=j;roomCode=j.code;sessionStorage.setItem('trivia-night-room',roomCode);
  if(j.token)localStorage.setItem('trivia-night-seat-'+roomCode,j.token);
+ document.body.classList.add('in-room');document.body.dataset.role=j.host?'host':'player';$('screen').hidden=!j.host;
  $('entry').hidden=true;$('setup').hidden=true;$('room').hidden=false;
  const u=new URL(location.href);u.searchParams.set('room',roomCode);history.replaceState(null,'',u);
  render();
@@ -34,27 +35,38 @@ function render(){
  $('roomStatus').textContent=state.phase==='ended'?'That’s a wrap.':state.phase==='lobby'?'The night starts here.':'Game '+state.game+' · '+state.playerCount+' players / teams';
  $('questionNumber').textContent=state.isFinal?'FINAL ROUND · DOUBLE POINTS':q?'QUESTION '+(state.index+1):'READY WHEN YOU ARE';
  $('phaseLabel').textContent=state.phase==='lobby'?'WAITING FOR THE HOST':state.phase==='ended'?'FINAL SCOREBOARD':revealed?'THE ANSWER IS IN':'THINK FAST. MAKE IT COUNT.';
- $('question').textContent=state.phase==='category'?(state.isFinal?'FINAL ROUND · ':'')+themes[theme][0]+' ROUND':q?.text||'Get your team together.';
- $('lobbyInvite').hidden=state.phase!=='lobby';
- if(state.phase==='lobby'){const qr=qrcode(0,'M');qr.addData(joinLink());qr.make();$('lobbyQR').innerHTML=qr.createSvgTag({cellSize:6,margin:20,scalable:true});$('lobbyCode').textContent=roomCode;$('lobbyCount').textContent=state.playerCount+' players / teams joined';}
+ $('question').textContent=state.phase==='category'?(state.isFinal?'FINAL ROUND · ':'')+themes[theme][0]+' ROUND':q?.text||(state.host?'Your room is ready.':'Waiting for host to start game');
+ $('invite').hidden=!state.host;
+ $('lobbyInvite').hidden=!state.host||state.phase!=='lobby';
+ document.querySelector('.stage').hidden=state.phase==='ended'||state.host&&state.phase==='lobby';
+ document.querySelector('#room>.standings').hidden=state.phase!=='ended';
+ $('triviaPartners').hidden=!['lobby','reveal','ended'].includes(state.phase);
+ const screenKey=state.game+':'+state.index+':'+state.phase;if(window.triviaScreenKey!==screenKey){window.triviaScreenKey=screenKey;window.scrollTo({top:0,behavior:'instant'})}
+ $('playerSummary').hidden=state.host;const me=state.leaders.find(p=>p.you);$('playerSummary').textContent=me?me.name+' · '+me.score.toLocaleString()+' points · Rank '+me.rank:'';
+ $('hostStep').textContent=({lobby:'1 · Invite your players, then start the game',category:'2 · Category ready — start when everyone is ready',question:'3 · Wait for answers, then reveal',reveal:'4 · Choose the next category or play the final round',ended:'Game complete · Show standings or play again'})[state.phase];
+ if(state.host&&state.phase==='lobby'){const qr=qrcode(0,'M');qr.addData(joinLink());qr.make();$('lobbyQR').innerHTML=qr.createSvgTag({cellSize:6,margin:20,scalable:true});$('lobbyCode').textContent=roomCode;$('lobbyCount').textContent=state.playerCount+' players / teams joined';$('lobbyRoster').textContent=state.leaders.map(p=>p.name).join(' · ');}
  $('answers').hidden=state.phase==='category';
  $('answers').innerHTML=q?q.answers.map((a,i)=>`<button data-choice="${i}" class="${state.choice===i?'selected ':''}${revealed?(q.correct===i?'correct':state.choice===i?'wrong':''):''}"><b>${'ABCD'[i]}</b><span>${esc(a)}${revealed&&q.correct===i?' ✓':''}${state.choice===i?' · Your answer':''}</span></button>`).join(''):'';
  $('source').textContent=revealed&&q?'Source: '+q.source+' · '+q.license:'';
- $('answerNote').textContent=state.phase==='category'?(state.isFinal?'One hard question. Double base and speed points. 20 seconds. Final scores appear after the host reveals.':'Get ready. The host starts the clock when everyone is ready.'):state.phase==='lobby'?'Invite friends with the room QR code. The host starts the first question.':state.phase==='ended'?'Thanks for playing! Stay here if the host starts another game.':revealed?'Scores are updated. The host will start the next question.':state.host?'Players answer on their phones. Reveal after the timer ends.':!state.eligible?'You’re in! Your first question is the next one.':state.choice!==null?'Answer saved. Wait for the host to reveal.':'Choose one answer. You cannot change it after submitting.';
- $('hostControls').hidden=!state.host;$('showStandings').hidden=!state.host;$('scoreboardTitle').textContent=state.phase==='ended'?'Final standings':'Live standings';$('answered').textContent=state.answered+' answers received · '+state.remaining+' questions remaining';
+ $('answerNote').textContent=state.phase==='category'?(state.isFinal?'One hard question. Double base and speed points. 20 seconds. Final scores appear after the host reveals.':'Get ready. The host starts the clock when everyone is ready.'):state.phase==='lobby'?(state.host?'Show the QR code so players can join.':'Waiting for host to start game.'):state.phase==='ended'?'Thanks for playing! Stay here if the host starts another game.':revealed?'Scores are updated. The host will start the next question.':state.host?'Players answer on their phones. Reveal after the timer ends.':!state.eligible?'You’re in! Your first question is the next one.':state.choice!==null?'Answer saved. Wait for the host to reveal.':'Choose one answer. You cannot change it after submitting.';
+ $('hostControls').hidden=!state.host;$('showStandings').hidden=!['lobby','reveal','ended'].includes(state.phase);$('scoreboardTitle').textContent=state.phase==='ended'?'Final standings':'Live standings';$('answered').textContent=state.answered+' answers received · '+state.remaining+' questions remaining';
  $('leaders').innerHTML=state.leaders.length?state.leaders.map(p=>`<li class="${p.you?'you':''}"><span>${p.rank}</span><span>${esc(p.name)}${p.you?' · You':''}</span><strong>${p.score.toLocaleString()}</strong></li>`).join(''):'<li>Waiting for the first player or team.</li>';
- if(state.host&&state.phase==='ended'&&window.triviaFinalShown!==state.game){window.triviaFinalShown=state.game;window.showTriviaStandings?.();}
+
  tick();
 }
 function tick(){
  if(!state)return;const seconds=Math.max(0,Math.ceil((state.deadline-Date.now()-offset)/1000));
- $('clock').textContent=state.phase==='question'?String(seconds).padStart(2,'0'):'—';
- document.querySelectorAll('[data-choice]').forEach(e=>{e.disabled=busy||state.host||state.phase!=='question'||seconds===0||!state.eligible||state.choice!==null});
+ const count=Math.max(0,Math.ceil(((state.startsAt||0)-Date.now()-offset)/1000)),waiting=state.phase==='question'&&!state.question;
+ document.body.dataset.view=waiting?'countdown':state.phase;
+ $('startCountdown').hidden=!waiting;document.querySelector('.question-area').hidden=waiting;
+ const number=count?String(count):'GO';if($('countdownNumber').textContent!==number){$('countdownNumber').textContent=number;const logo=document.querySelector('.countdown-logo');if(!matchMedia('(prefers-reduced-motion: reduce)').matches)logo.animate([{filter:'drop-shadow(0 0 10px #eac15d)'},{filter:'drop-shadow(0 0 50px #ffd67b)'},{filter:'drop-shadow(0 0 10px #eac15d)'}],{duration:650})}
+ $('clock').textContent=state.phase==='question'&&!waiting?String(seconds).padStart(2,'0'):'—';
+ document.querySelectorAll('[data-choice]').forEach(e=>{e.disabled=busy||waiting||state.host||state.phase!=='question'||seconds===0||!state.eligible||state.choice!==null});
  $('next').hidden=!['lobby','reveal'].includes(state.phase);$('next').disabled=busy||state.remaining===0;$('next').textContent=state.phase==='lobby'?'Start game':'Choose next category';
  $('startQuestion').hidden=state.phase!=='category';$('startQuestion').disabled=busy;
  $('finalRound').hidden=state.phase!=='reveal';$('finalRound').disabled=busy||!state.canFinal;
- $('reveal').hidden=state.phase!=='question';$('reveal').disabled=busy||seconds>0;
- $('end').hidden=state.phase==='ended';$('end').disabled=busy||(state.phase==='question'&&seconds>0);
+ $('reveal').hidden=state.phase!=='question';$('reveal').disabled=busy||seconds>0;$('reveal').textContent=seconds>0?'Answers open · '+seconds+'s':'Reveal answer';
+ $('end').hidden=!['reveal','lobby'].includes(state.phase);$('end').disabled=busy||(state.phase==='question'&&seconds>0);
  $('restart').hidden=state.phase!=='ended';$('restart').disabled=busy;
  if(state.phase==='question'&&seconds===0&&state.choice===null&&!state.host&&state.eligible)$('answerNote').textContent='Time is up. Waiting for the host to reveal the answer.';
 }
@@ -95,7 +107,7 @@ $('invite').onclick=()=>{const qr=qrcode(0,'M');qr.addData(joinLink());qr.make()
 $('copy').onclick=async()=>{try{await navigator.clipboard.writeText(joinLink());$('copyStatus').textContent='Join link copied.'}catch{$('copyStatus').textContent=joinLink()}};
 async function poll(){
  if(roomCode&&!busy&&$('setup').hidden&&!document.hidden&&(state||seat()||token())){const n=++sequence;try{const j=await api(null,'?code='+encodeURIComponent(roomCode));if(n===sequence){adopt(j);$('message').textContent=''}}catch(e){if(n===sequence)$('message').textContent=e.message}}
- setTimeout(poll,state?.phase==='question'?2500:5000);
+ setTimeout(poll,state?.countdown?250:state?.phase==='question'?1000:2000);
 }
 mountPartners($('triviaPartners'),{host:$('triviaPartners')});
 setInterval(tick,200);poll();

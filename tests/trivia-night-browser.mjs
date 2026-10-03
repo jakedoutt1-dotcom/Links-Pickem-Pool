@@ -37,6 +37,6 @@ try{
  const updated=JSON.parse(db.raw.prepare('SELECT state FROM links_trivia_night_rooms WHERE code=?').get(code).state);updated.deadline=Date.now()-1;db.raw.prepare('UPDATE links_trivia_night_rooms SET state=? WHERE code=?').run(JSON.stringify(updated),code);
  await host.waitForFunction(()=>!document.getElementById('reveal').disabled);await host.getByRole('button',{name:'Reveal answer',exact:true}).click();await phone.locator('.answers .correct').waitFor();
  assert.ok(Number((await phone.locator('#leaders strong').innerText()).replace(/,/g,''))>=1500);
- await phone.reload();await phone.locator('.answers .correct').waitFor();assert.ok(await phone.locator('#leaders').getByText('Phone Team · You').isVisible());
+ await phone.reload();await phone.locator('.answers .correct').waitFor();await phone.getByRole('button',{name:'Show leaderboard',exact:true}).click();assert.ok(await phone.locator('#triviaStandingsScreen').getByText('Phone Team · You').isVisible());await phone.getByRole('button',{name:'Back to game',exact:true}).click();
  assert.deepEqual(errors,[]);console.log('PASS local desktop host + phone join, question manager, QR, answer/save/reveal, score, refresh resume, no overflow or browser errors.');
 }finally{await browser.close();db.raw.close()}

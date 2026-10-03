@@ -8,7 +8,7 @@ async function call(body=null,{admin='',guest='',badOrigin=false,query=''}={}){
  const request=new Request(origin+'/new-build/api/trivia-night'+(query||('?code='+(code||''))),{method:body?'POST':'GET',headers:{Origin:badOrigin?'https://wrong.invalid':origin,Authorization:'Bearer '+admin,'x-trivia-token':guest,'Content-Type':'application/json'},...(body?{body:JSON.stringify({code,...body})}:{})});
  const r=await onRequest({request,env:{DB:db}});return {status:r.status,...await r.json()};
 }
-async function host(action,extra={}){const j=await call({action,gameNumber:hostState.game,index:hostState.index,phase:hostState.phase,...extra},{admin:'admin'});if(j.status===200)hostState=j;if(action==='next'&&j.status===200){assert.equal(j.phase,'category');assert.equal(j.question,null);return host('start-question')}return j}
+async function host(action,extra={}){const j=await call({action,gameNumber:hostState.game,index:hostState.index,phase:hostState.phase,...extra},{admin:'admin'});if(j.status===200)hostState=j;if(action==='next'&&j.status===200){assert.equal(j.phase,'category');assert.equal(j.question,null);const started=await host('start-question');assert.equal(started.countdown,true);assert.equal(started.question,null);edit(s=>{s.startsAt=Date.now()-1;s.deadline=s.startsAt+20000});hostState=await call(null,{admin:'admin'});return hostState}return j}
 function raw(){return JSON.parse(db.raw.prepare('SELECT state FROM links_trivia_night_rooms WHERE code=?').get(code).state)}
 function edit(f){const s=raw();f(s);db.raw.prepare('UPDATE links_trivia_night_rooms SET state=? WHERE code=?').run(JSON.stringify(s),code)}
 try{
@@ -54,7 +54,7 @@ try{
  assert.equal((await call({action:'answer',gameNumber:2,index:0,choice:0},{guest:alice.token})).status,200);db.prepare=old;
  await call({action:'import',questions:STARTER},{admin:'admin'});
  edit(s=>{s.deadline=Date.now()-1});await host('end');await host('restart',{categories:['general'],difficulty:'mixed'});await host('next');edit(s=>{s.deadline=Date.now()-1});await host('reveal');
- await host('final');assert.equal(hostState.phase,'category');assert.equal(hostState.isFinal,true);assert.equal(hostState.question,null);await host('start-question');
+ await host('final');assert.equal(hostState.phase,'category');assert.equal(hostState.isFinal,true);assert.equal(hostState.question,null);await host('start-question');assert.equal((await call({action:'answer',gameNumber:hostState.game,index:hostState.index,choice:0},{guest:alice.token})).status,409);edit(s=>{s.startsAt=Date.now()-1;s.deadline=s.startsAt+20000});
  const fq=raw().deck[hostState.index];assert.equal(fq.difficulty,'hard');
  await call({action:'answer',gameNumber:hostState.game,index:hostState.index,choice:fq.correct},{guest:alice.token});
  const beforeFinal=hostState.leaders.find(p=>p.name==='Alice').score;

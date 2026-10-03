@@ -59,7 +59,7 @@ export async function onRequest({request,env}){
     if(action==='state')return json(view(s,seat,host,now));
     if(action==='answer'){
      const p=s.players[seat];
-     if(!p||s.phase!=='question'||b.gameNumber!==s.game||b.index!==s.index||now>=s.deadline||p.eligible>s.index||p.answer?.index===s.index)return json({error:'Answer locked. Wait for the next question.'},409);
+     if(!p||s.phase!=='question'||now<(s.startsAt||0)||b.gameNumber!==s.game||b.index!==s.index||now>=s.deadline||p.eligible>s.index||p.answer?.index===s.index)return json({error:'Answer locked. Wait for the next question.'},409);
      if(!Number.isInteger(b.choice)||b.choice<0||b.choice>3)return json({error:'Choose an answer.'},400);
      p.answer={index:s.index,choice:b.choice,elapsed:Math.max(0,now-(s.deadline-SECONDS[s.deck[s.index].difficulty]*1000))};
     }else{
@@ -73,7 +73,7 @@ export async function onRequest({request,env}){
       [s.deck[s.index+1],s.deck[at]]=[s.deck[at],s.deck[s.index+1]];s.phase='category';s.deadline=0;
      }else if(action==='start-question'){
       if(s.phase!=='category')return json({error:'Choose a category first.'},409);
-      s.index++;s.phase='question';s.deadline=now+SECONDS[s.deck[s.index].difficulty]*1000;
+      s.index++;s.phase='question';s.startsAt=now+3000;s.deadline=s.startsAt+SECONDS[s.deck[s.index].difficulty]*1000;
      }else if(action==='final'){
       if(s.phase!=='reveal'||!s.finalQuestion||s.isFinal)return json({error:'Reveal a regular question first. A hard question must be available for the final.'},409);
       s.deck.splice(s.index+1,0,{...s.finalQuestion,final:true});s.isFinal=true;s.phase='category';s.deadline=0;

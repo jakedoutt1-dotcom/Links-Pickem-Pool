@@ -52,11 +52,12 @@ export function reveal(state){
  state.phase=q.final?'ended':'reveal';
 }
 export function view(state,seat,host,now=Date.now()){
- const q=state.phase==='category'?null:state.deck[state.index],revealed=['reveal','ended'].includes(state.phase);
+ const countdown=state.phase==='question'&&now<(state.startsAt||0);
+ const q=state.phase==='category'||countdown?null:state.deck[state.index],revealed=['reveal','ended'].includes(state.phase);
  const leaders=Object.entries(state.players).map(([id,p])=>({name:p.name,score:p.score,you:id===seat})).sort((a,b)=>b.score-a.score||a.name.localeCompare(b.name));
  leaders.forEach((p,i)=>{p.rank=i&&p.score===leaders[i-1].score?leaders[i-1].rank:i+1;});
  const p=state.players[seat];
- return {code:state.code,title:state.title,phase:state.phase,game:state.game,index:state.index,host,categories:state.categories,difficulty:state.difficulty,serverNow:now,deadline:state.deadline,isFinal:!!state.isFinal,categoryIntro:state.phase==='category'?state.deck[state.index+1]?.category:null,canFinal:!!state.finalQuestion&&!state.isFinal,availableCategories:[...new Set(state.deck.slice(state.index+1).map(q=>q.category))],remaining:state.deck.length-state.index-1,playerCount:leaders.length,leaders,
+ return {code:state.code,title:state.title,phase:state.phase,game:state.game,index:state.index,host,categories:state.categories,difficulty:state.difficulty,serverNow:now,deadline:state.deadline,startsAt:state.startsAt||0,countdown,isFinal:!!state.isFinal,categoryIntro:state.phase==='category'?state.deck[state.index+1]?.category:countdown?state.deck[state.index]?.category:null,canFinal:!!state.finalQuestion&&!state.isFinal,availableCategories:[...new Set(state.deck.slice(state.index+1).map(q=>q.category))],remaining:state.deck.length-state.index-1,playerCount:leaders.length,leaders,
   answered:Object.values(state.players).filter(p=>p.answer?.index===state.index).length,
   eligible:!!p&&p.eligible<=state.index,choice:p?.answer?.index===state.index?p.answer.choice:null,
   question:q?{text:q.text,answers:q.answers,category:q.category,difficulty:q.difficulty,...(revealed?{correct:q.correct,source:q.source,license:q.license}: {})}:null};
