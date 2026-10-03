@@ -1,0 +1,29 @@
+name: Scale readiness checks
+on:
+  pull_request:
+    paths: ['functions/**', 'tests/**', '.github/workflows/scale-readiness.yml']
+  workflow_dispatch:
+jobs:
+  correctness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node tests/shared-score-feed.mjs
+      - run: node tests/load-runner.mjs
+      - run: node tests/football-kickoff-locks.mjs
+      - run: node tests/nfl-feedback-credit.mjs
+      - run: node tests/nfl-standings.cjs
+      - run: node tests/season-standings.cjs
+      - run: node tests/commissioner-account.cjs
+      - run: node tests/load/local-benchmark.mjs
+        env:
+          LOAD_POOLS: '1000'
+          LOAD_PLAYERS: '20'
+          LOAD_SAMPLES: '50'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: local-synthetic-benchmark
+          path: output/scale-readiness/local-benchmark.json

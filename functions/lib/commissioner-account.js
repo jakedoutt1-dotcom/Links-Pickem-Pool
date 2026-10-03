@@ -15,7 +15,11 @@ export async function ensureAccounts(db){await db.batch([
  db.prepare('CREATE TABLE IF NOT EXISTS links_pool_slots(id TEXT PRIMARY KEY,email TEXT NOT NULL,pool_id INTEGER,game_type TEXT NOT NULL,active INTEGER NOT NULL DEFAULT 1,expires_at TEXT,UNIQUE(pool_id,game_type))'),
  db.prepare('CREATE TABLE IF NOT EXISTS links_account_purchases(id TEXT PRIMARY KEY,email TEXT NOT NULL,plan TEXT NOT NULL,amount_cents INTEGER NOT NULL,order_id TEXT UNIQUE,status TEXT NOT NULL,created_at TEXT NOT NULL,paid_at TEXT,expires_at TEXT)'),
  db.prepare('CREATE TABLE IF NOT EXISTS links_account_plans(email TEXT PRIMARY KEY,plan TEXT NOT NULL,expires_at TEXT NOT NULL,purchase_id TEXT NOT NULL)'),
- db.prepare('CREATE TABLE IF NOT EXISTS links_account_preferences(email TEXT PRIMARY KEY,free_slot_id TEXT NOT NULL)')
+ db.prepare('CREATE TABLE IF NOT EXISTS links_account_preferences(email TEXT PRIMARY KEY,free_slot_id TEXT NOT NULL)'),
+ db.prepare('CREATE INDEX IF NOT EXISTS links_owners_email ON links_pool_owners(email,pool_id)'),
+ db.prepare('CREATE INDEX IF NOT EXISTS links_slots_email_active ON links_pool_slots(email,active)'),
+ db.prepare('CREATE INDEX IF NOT EXISTS links_purchases_email_date ON links_account_purchases(email,created_at)'),
+ db.prepare('CREATE INDEX IF NOT EXISTS links_grants_email_expiry ON links_package_grants(email,expires_at)')
 ])}
 export async function accountSession(request,db){const token=request.headers.get('x-links-account')||'';if(!token)return null;await ensureAccounts(db);return db.prepare('SELECT email,expires_at FROM links_account_sessions WHERE token_hash=? AND expires_at>?').bind(await digest(token),new Date().toISOString()).first()}
 export async function importOwnedPools(db,email){

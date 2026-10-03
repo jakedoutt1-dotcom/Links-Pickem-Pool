@@ -1,0 +1,11 @@
+{
+  "environment": "staging",
+  "isolatedDatabase": false,
+  "origin": "https://REPLACE-WITH-ISOLATED-STAGING.pages.dev",
+  "count": 100,
+  "concurrency": 5,
+  "requests": [
+    {"path": "/new-build/api/standings-v649?pool=REPLACE_TEST_POOL&week=4", "expectedStatus": 200, "equals": {"success": true, "pool.id": "REPLACE_TEST_POOL"}},
+    {"path": "/new-build/api/compare-picks?pool=REPLACE_TEST_POOL&week=4", "expectedStatus": 200, "equals": {"success": true, "pool.id": "REPLACE_TEST_POOL"}}
+  ]
+}

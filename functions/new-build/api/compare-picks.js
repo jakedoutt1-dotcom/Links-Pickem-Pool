@@ -1,15 +1,17 @@
+import {sharedScoreFeed} from '../../lib/shared-score-feed.js';
 import {feedbackCredits,creditPicks,creditNotice} from '../../lib/nfl-feedback-credit.js';
 const json=(d,s=200)=>Response.json(d,{status:s,headers:{"Cache-Control":"no-store"}});
 const TEAM_ALIAS={WAS:"WSH",WSH:"WSH",JAX:"JAX",LV:"LV",LAC:"LAC",LAR:"LAR"};
 async function resolvePool(db,value){const raw=String(value||"").trim();if(!raw)return null;if(/^\d+$/.test(raw)){const p=await db.prepare("SELECT id,code,name FROM pools WHERE id=? LIMIT 1").bind(Number(raw)).first();if(p)return p}return await db.prepare("SELECT id,code,name FROM pools WHERE upper(code)=upper(?) OR lower(trim(name))=lower(trim(?)) LIMIT 1").bind(raw,raw).first()}
 async function currentNFLWeek(){try{const r=await fetch("https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?limit=100",{cache:"no-store"}),j=await r.json();return Number(j?.week?.number||1)||1}catch{return 1}}
 const norm=v=>({WAS:'WSH',JAC:'JAX',LA:'LAR'}[String(v||'').toUpperCase()]||String(v||'').toUpperCase());
-export async function weekGames(week){
+export async function weekGames(week,{shared=false}={}){
  const apiWeek=week<=18?week:({19:1,20:2,21:3,22:5}[week]);
  const now=new Date(),season=now.getUTCFullYear()-(now.getUTCMonth()<6?1:0);
  const query='dates='+season+'&seasontype='+(week<=18?2:3)+'&week='+apiWeek+'&limit=100&_='+Date.now();
  // Match the established legacy ESPN transport, including its CDN fallback.
  const urls=['https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?'+query,'https://cdn.espn.com/core/nfl/scoreboard?xhr=1&'+query];
+ const load=async()=>{
  let j;
  for(const url of urls){try{
   const r=await fetch(url,{headers:{accept:'application/json,text/plain,*/*','cache-control':'no-cache,no-store,max-age=0',pragma:'no-cache','user-agent':'Mozilla/5.0'},cf:{cacheTtl:0,cacheEverything:false},signal:AbortSignal.timeout(8000)});
@@ -18,6 +20,9 @@ export async function weekGames(week){
   if(Array.isArray(events)){j={events};if(events.length)break;}
  }catch{}}
  if(!j?.events?.length)throw Error('NFL schedule unavailable');
+ return j;
+ };
+ const j=shared?await sharedScoreFeed('nfl:'+season+':'+week,load):await load();
  return [...new Map((j.events||[]).map(e=>[e.id,e])).values()].map((e,i)=>{
   const c=e.competitions?.[0]||{},teams=c.competitors||[];
   const completed=!!(e.status?.type?.completed||c.status?.type?.completed);
@@ -33,7 +38,7 @@ export async function onRequestGet({request,env}){
  const db=env.DB;if(!db)return json({success:false,error:"Legacy LINKS database unavailable",build:"732"},503);
  const q=new URL(request.url).searchParams,p=await resolvePool(db,q.get("pool")),week=Math.max(1,Math.min(22,Number(q.get("week")||0)||await currentNFLWeek()));
  if(!p)return json({success:false,error:"Pool not found"},404);
- let games;try{games=await weekGames(week)}catch(e){return json({success:false,error:'NFL schedule unavailable. Please try again.'},502)}
+ let games;try{games=await weekGames(week,{shared:true})}catch(e){return json({success:false,error:'NFL schedule unavailable. Please try again.'},502)}
  const first=games.map(g=>Date.parse(g.kickoff)).filter(Number.isFinite).sort((a,b)=>a-b)[0];
  if(!Number.isFinite(first))return json({success:false,error:'NFL kickoff unavailable. Please try again.'},502);
  // Shared picks open only at first kickoff, including for commissioners.

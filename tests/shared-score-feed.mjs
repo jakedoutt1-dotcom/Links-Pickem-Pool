@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {sharedScoreFeed} from '../functions/lib/shared-score-feed.js';
+let now=0,calls=0;const storage=new Map(),cache={async match(r){return storage.get(r.url)?.clone()},async put(r,v){storage.set(r.url,v.clone())}};
+const load=async()=>{calls++;await new Promise(r=>setTimeout(r,5));return {events:[{id:'one',winner:'CLE'}]}};
+const read=key=>sharedScoreFeed(key,load,{cache,now:()=>now});
+const burst=await Promise.all(Array.from({length:1000},()=>read('week4')));assert.equal(calls,1);burst[0].events[0].winner='PIT';assert.equal(burst[1].events[0].winner,'CLE');
+assert.equal((await read('week4')).events[0].winner,'CLE');assert.equal(calls,1);
+await read('week5');assert.equal(calls,2);now=15000;await read('week4');assert.equal(calls,3);
+now=30000;await assert.rejects(sharedScoreFeed('week4',async()=>{throw Error('provider down')},{cache,now:()=>now}),/provider down/);
+await read('week4');assert.equal(calls,4);
+const broken={async match(){throw Error('cache down')},async put(){throw Error('cache down')}};assert.equal((await sharedScoreFeed('x',load,{cache:broken})).events.length,1);
+let empty=0;for(let i=0;i<2;i++)await sharedScoreFeed('empty',async()=>{empty++;return {events:[]}},{cache});assert.equal(empty,2);
+console.log('PASS 1,000 concurrent reads coalesced, clone isolation, expiry, key separation, provider failures, cache failures, and no empty feed caching');
