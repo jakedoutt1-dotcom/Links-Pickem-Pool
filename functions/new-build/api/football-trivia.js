@@ -1,8 +1,9 @@
+import {withTriviaSession} from '../../lib/trivia-sessions.js';
 import {loadGameQuestions,completeQuestionBank} from '../../lib/trivia-provider.js';
 import {ensureAccounts,digest} from '../../lib/commissioner-account.js';
 import {QUESTIONS,POINTS,SECONDS,shuffled,weekKey,publicAttempt,grade} from '../../lib/football-trivia.js';
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
-export async function onRequest({request,env}){try{
+async function handleRequest({request,env}){try{
  const db=env.DB;if(!db)return json({error:'Trivia is temporarily unavailable.'},503);
  const token=(request.headers.get('authorization')||'').replace(/^Bearer /,'');
  const session=await db.prepare('SELECT * FROM pool_sessions WHERE token=? AND expires_at>?').bind(token,new Date().toISOString()).first();if(!session)return json({error:'Sign in to your pool to play.'},401);
@@ -28,7 +29,7 @@ export async function onRequest({request,env}){try{
  if(b.action==='start'){
  if(!a){if(!Object.hasOwn(POINTS,b.difficulty))return json({error:'Choose a difficulty.'},400);const display=String(b.name||session.player_name).trim().slice(0,40);if(!display)return json({error:'Choose a leaderboard name.'},400);
  const backup=QUESTIONS.filter(q=>q.difficulty===b.difficulty).map(q=>({...q,category:'football',correct:0}));
- const loaded=await loadGameQuestions({env,categories:['football'],difficulties:[b.difficulty],tags:['american_football'],backup,perGroup:12});
+ const loaded=await loadGameQuestions({env,sessionScope:'player:'+identity,categories:['football'],difficulties:[b.difficulty],tags:['american_football'],backup,perGroup:12});
  const bank=completeQuestionBank(loaded.questions,backup,{minimum:10});
  const deck=shuffled(bank).slice(0,10).map(q=>({id:q.id,question:q,order:shuffled([0,1,2,3])}));
  await db.prepare('INSERT OR IGNORE INTO links_football_trivia(id,owner,week,season,difficulty,display_name,deck,deadline) VALUES(?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(),identity,week,season,b.difficulty,display,JSON.stringify(deck),Date.now()+SECONDS[b.difficulty]*1000).run();
@@ -46,3 +47,5 @@ export async function onRequest({request,env}){try{
  const poolSeasonal=(await db.prepare('SELECT MAX(t.display_name) AS name,SUM(t.score) AS score,SUM(CASE WHEN t.correct>=8 THEN 1 ELSE 0 END) AS touchdowns,MAX(t.score) AS best FROM links_football_trivia t JOIN links_trivia_pools p ON p.owner=t.owner WHERE p.pool_id=? AND t.season=? AND t.status=\'complete\' GROUP BY t.owner ORDER BY score DESC LIMIT 100').bind(session.pool_id,season).all()).results;
  return json({poolName:currentPool?.name||'Your Pool',poolWeekly,poolSeasonal,week,season,attempt:a?publicAttempt(a):null,feedback,weekly,seasonal});
  }catch{return json({error:'Trivia could not be loaded. Your saved attempt is preserved; please retry.'},503)}}
+
+export const onRequest=context=>withTriviaSession(context,"football-trivia",handleRequest);

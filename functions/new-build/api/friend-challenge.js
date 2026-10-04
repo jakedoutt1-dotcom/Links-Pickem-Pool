@@ -1,3 +1,4 @@
+import {withTriviaSession} from '../../lib/trivia-sessions.js';
 import {partyFinish,savePartyRoom} from '../../lib/party-scoreboard.js';
 import {requirePartyPass} from '../../lib/party-access.js';
 import {CATEGORIES,STARTER} from '../../lib/trivia-night.js';
@@ -5,7 +6,7 @@ import {loadGameQuestions,completeQuestionBank} from '../../lib/trivia-provider.
 import {challengeDeck,begin,advance,challengeView} from '../../lib/friend-challenge.js';
 const json=(value,status=200)=>Response.json(value,{status,headers:{'Cache-Control':'no-store'}});
 const hash=async text=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text)))).map(x=>x.toString(16).padStart(2,'0')).join('');
-export async function onRequest({request,env}){
+async function handleRequest({request,env}){
  try{
   if(!['GET','POST'].includes(request.method))return json({error:'Method not allowed.'},405);
   const url=new URL(request.url);if(request.method==='POST'&&request.headers.get('Origin')!==url.origin)return json({error:'Open Challenge a Friend on LINKS first.'},403);
@@ -52,3 +53,5 @@ export async function onRequest({request,env}){
   }return json({error:'The room is busy. Please try again.'},409);
  }catch{return json({error:'Challenge could not complete that request. Please try again.'},503)}
 }
+
+export const onRequest=context=>withTriviaSession(context,"friend-challenge",handleRequest);

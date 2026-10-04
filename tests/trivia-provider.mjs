@@ -1,3 +1,4 @@
+import {grantTestHost} from './helpers/trivia-host-access.mjs';
 import assert from 'node:assert/strict';
 import {loadGameQuestions,normalizeQuestions} from '../functions/lib/trivia-provider.js';
 import {STARTER} from '../functions/lib/trivia-night.js';
@@ -6,7 +7,7 @@ import {fixture} from './helpers/pool-format-fixture.mjs';
 const sample=(difficulty='easy',category='science',id=difficulty)=>({id,category,difficulty,type:'text_choice',question:{text:'Sample '+id+' question?'},correctAnswer:'Correct',incorrectAnswers:['Wrong A','Wrong B','Wrong C']});
 assert.equal(normalizeQuestions([sample(),sample(),{...sample(),id:'bad',incorrectAnswers:[]},{...sample(),id:'adult',adultContent:true}],'science','easy').length,1);
 let calls=0;
-const fetcher=async(url,options)=>{calls++;assert.equal(options.headers['X-API-Key'],'test-secret');assert.equal(options.redirect,'error');const u=new URL(url);assert.equal(u.origin,'https://the-trivia-api.com');assert.equal(u.searchParams.get('contentFilter'),'family');assert.equal(u.searchParams.get('types'),'text_choice');assert(!url.includes('test-secret'));const d=u.searchParams.get('difficulties'),c=u.searchParams.get('categories').split(',')[0];return Response.json([sample(d,c,c+'-'+d)])};
+const fetcher=async(url,options)=>{if(new URL(url).pathname==='/v2/session')return Response.json({id:'mock-session'});calls++;assert.equal(options.headers['X-API-Key'],'test-secret');assert.equal(options.redirect,'error');const u=new URL(url);assert.equal(u.origin,'https://the-trivia-api.com');assert.equal(u.searchParams.get('contentFilter'),'family');assert.equal(u.searchParams.get('types'),'text_choice');assert(!url.includes('test-secret'));const d=u.searchParams.get('difficulties'),c=u.searchParams.get('categories').split(',')[0];return Response.json([sample(d,c,c+'-'+d)])};
 const args={env:{TRIVIA_API_KEY:'test-secret'},categories:['science'],backup:STARTER,fetcher};
 let result=await loadGameQuestions(args);assert.equal(calls,3);assert.equal(result.questions.length,3);assert.equal(result.source,'The Trivia API');assert.equal(result.notice,'');
 result=await loadGameQuestions({...args,exclude:['trivia-science-easy']});assert(!result.questions.some(q=>q.id==='trivia-science-easy'));assert(result.notice);
@@ -14,7 +15,7 @@ result=await loadGameQuestions({...args,fetcher:async()=>new Response('secret pr
 result=await loadGameQuestions({...args,fetcher:async()=>{throw Error('network timeout test-secret')}});assert(result.questions.length);
 result=await loadGameQuestions({...args,env:{},fetcher:()=>{throw Error('Must not fetch')}});assert.equal(result.questions,STARTER);
 await assert.rejects(loadGameQuestions({...args,categories:['bad']}),/Choose categories/);
-const {db}=fixture(),original=globalThis.fetch;globalThis.fetch=fetcher;
+const {db}=fixture(),original=globalThis.fetch;await grantTestHost(db);globalThis.fetch=fetcher;
 async function api(body,token='admin',query=''){const r=await onRequest({request:new Request('https://local.invalid/new-build/api/trivia-night'+query,{method:body?'POST':'GET',headers:{Origin:'https://local.invalid',Authorization:'Bearer '+token,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})}),env:{DB:db,TRIVIA_API_KEY:'test-secret'}});return {status:r.status,...await r.json()}}
 try{
  calls=0;assert.equal((await api({action:'create',categories:['science'],difficulty:'mixed'},'')).status,403);assert.equal(calls,0);

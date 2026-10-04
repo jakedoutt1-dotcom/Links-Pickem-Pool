@@ -1,9 +1,10 @@
+import {withTriviaSession} from '../../lib/trivia-sessions.js';
 import {partyFinish,savePartyRoom} from '../../lib/party-scoreboard.js';
 import {requirePartyPass} from '../../lib/party-access.js';
 import {loadBank,prepareTurn,prepareDuel,advance,act,view} from '../../lib/million-point.js';
 const json=(v,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store'}});
 const hash=async t=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t)))).map(n=>n.toString(16).padStart(2,'0')).join('');
-export async function onRequest({request,env}){try{
+async function handleRequest({request,env}){try{
  const u=new URL(request.url),db=env.DB,now=Date.now();if(!db)return json({error:'Game temporarily unavailable.'},503);if(!['GET','POST'].includes(request.method))return json({error:'Method not allowed.'},405);if(request.method==='POST'&&request.headers.get('Origin')!==u.origin)return json({error:'Open this game on LINKS first.'},403);
  let b={};if(request.method==='POST'){if(Number(request.headers.get('Content-Length'))>4000)return json({error:'Request too large.'},413);const text=await request.text();if(text.length>4000)return json({error:'Request too large.'},413);try{b=JSON.parse(text)}catch{return json({error:'Invalid request.'},400)}}const action=b.action||'state';const remembered=(request.headers.get('Cookie')||'').match(/(?:^|;\s*)links_million_history=([a-f0-9]{32})(?:;|$)/)?.[1];
  await db.batch([db.prepare('CREATE TABLE IF NOT EXISTS links_million_rooms(code TEXT PRIMARY KEY,state TEXT NOT NULL,version INTEGER NOT NULL DEFAULT 0,expires INTEGER NOT NULL)'),db.prepare('CREATE TABLE IF NOT EXISTS links_million_limits(id TEXT PRIMARY KEY,starts INTEGER NOT NULL,hits INTEGER NOT NULL)')]);
@@ -25,3 +26,5 @@ export async function onRequest({request,env}){try{
  if(changed){const r=await savePartyRoom(db,'million-point',code,row.version,s,completed);if(!r.meta?.changes)continue;if(s.historyId&&s.seen?.length){const row=await db.prepare('SELECT history FROM links_million_history WHERE id=?').bind(s.historyId).first();const old=row?JSON.parse(row.history):{};const ids=[...(old.ids||[]).filter(id=>!s.seen.includes(id)),...s.seen].slice(-1500),texts=[...(old.texts||[]).filter(t=>!s.seenTexts?.includes(t)),...(s.seenTexts||[])].slice(-1500);await db.prepare('INSERT INTO links_million_history(id,history,expires) VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET history=excluded.history,expires=excluded.expires').bind(s.historyId,JSON.stringify({ids,texts}),Date.now()+2592000000).run()}}return json({...view(s,current,Date.now(),display),...(issued?{token:issued}:{})});
  }return json({error:'Room busy. Please try again.'},409);
  }catch{return json({error:'Unable to complete the request. Your room is saved; please retry.'},503)}}
+
+export const onRequest=context=>withTriviaSession(context,"million-point",handleRequest);

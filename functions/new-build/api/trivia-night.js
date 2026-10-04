@@ -1,3 +1,4 @@
+import {withTriviaSession} from '../../lib/trivia-sessions.js';
 import {ensureVenue,venueStatements} from '../../lib/venue-scoreboard.js';
 import {hostAccess} from '../../lib/trivia-host-billing.js';
 import {paypal} from './party-pack.js';
@@ -7,7 +8,7 @@ import {ownerSession} from '../../lib/owner-auth.js';
 import {STARTER,validateBank,makeDeck,answerSeconds,reveal,view} from '../../lib/trivia-night.js';
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
 const hash=async value=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)))).map(x=>x.toString(16).padStart(2,'0')).join('');
-export async function onRequest({request,env}){
+async function handleRequest({request,env}){
  try{
   if(!['GET','POST'].includes(request.method))return json({error:'Method not allowed.'},405);
   const url=new URL(request.url);
@@ -62,7 +63,7 @@ export async function onRequest({request,env}){
    if(active.length>=plan.slots)return json({error:plan.label+' has no available trivia rooms. Reopen a room or choose a larger package.'},402);
    await db.prepare('DELETE FROM links_trivia_night_rooms WHERE expires<=?').bind(Date.now()).run();
    const hostHistoryKey=await historyKey(admin.pool_id),recent=await history(hostHistoryKey);
-   const loaded=await loadFreshGameQuestions({env,categories:b.categories,backup:await bank(),exclude:recent.ids,excludeTexts:recent.texts}),full=loaded.questions,deck=makeDeck(full,b.categories,'mixed');
+   const loaded=await loadFreshGameQuestions({env,sessionScope:"host:"+hostHistoryKey,categories:b.categories,backup:await bank(),exclude:recent.ids,excludeTexts:recent.texts}),full=loaded.questions,deck=makeDeck(full,b.categories,'mixed');
    const finals=makeDeck(full,[...new Set(full.map(q=>q.category))],'mixed').filter(q=>q.difficulty==='hard');
    const finalQuestion=finals.find(q=>!deck.some(d=>d.id===q.id))||(deck.length>1?finals[0]:null)||null;
    if(finalQuestion){const at=deck.findIndex(q=>q.id===finalQuestion.id);if(at>=0)deck.splice(at,1);}
@@ -128,7 +129,7 @@ export async function onRequest({request,env}){
       if(!['easy','medium','hard','mixed'].includes(b.difficulty))return json({error:'Choose a valid difficulty.'},400);
       s.hostHistoryKey ||= await historyKey(row.pool_id);const recent=await history(s.hostHistoryKey);
       const seen=[...new Set([...recent.ids,...(s.seenQuestions||[]),...s.deck.slice(0,s.index+1).map(q=>q.id)])].slice(-1500),seenTexts=[...new Set([...recent.texts,...(s.seenTexts||[]),...s.deck.slice(0,s.index+1).map(normalizedQuestionText)])].slice(-1500);
-      restartQuestions ||= loadFreshGameQuestions({env,categories:b.categories,backup:await bank(),exclude:seen,excludeTexts:seenTexts});const loaded=await restartQuestions,full=loaded.questions;s.questionSource=loaded.source;s.questionNotice=loaded.notice;s.seenQuestions=seen;s.seenTexts=seenTexts;s.deck=makeDeck(full,b.categories,'mixed');const finals=makeDeck(full,[...new Set(full.map(q=>q.category))],'mixed').filter(q=>q.difficulty==='hard');s.finalQuestion=finals.find(q=>!s.deck.some(d=>d.id===q.id))||(s.deck.length>1?finals[0]:null)||null;if(s.finalQuestion)s.deck=s.deck.filter(q=>q.id!==s.finalQuestion.id);s.isFinal=false;s.categories=b.categories;s.difficulty=b.difficulty;s.game++;s.index=-1;s.phase='lobby';s.deadline=0;
+      restartQuestions ||= loadFreshGameQuestions({env,sessionScope:"host:"+s.hostHistoryKey,categories:b.categories,backup:await bank(),exclude:seen,excludeTexts:seenTexts});const loaded=await restartQuestions,full=loaded.questions;s.questionSource=loaded.source;s.questionNotice=loaded.notice;s.seenQuestions=seen;s.seenTexts=seenTexts;s.deck=makeDeck(full,b.categories,'mixed');const finals=makeDeck(full,[...new Set(full.map(q=>q.category))],'mixed').filter(q=>q.difficulty==='hard');s.finalQuestion=finals.find(q=>!s.deck.some(d=>d.id===q.id))||(s.deck.length>1?finals[0]:null)||null;if(s.finalQuestion)s.deck=s.deck.filter(q=>q.id!==s.finalQuestion.id);s.isFinal=false;s.categories=b.categories;s.difficulty=b.difficulty;s.game++;s.index=-1;s.phase='lobby';s.deadline=0;
       for(const p of Object.values(s.players)){p.score=0;p.answer=null;p.eligible=0;}
      }else return json({error:'Unknown action.'},400);
     }
@@ -139,3 +140,5 @@ export async function onRequest({request,env}){
   return json({error:'The room is busy. Please try again.'},409);
  }catch(error){return json({error:error.message?.startsWith('Question ')||/^(Upload|Choose categories|No questions)/.test(error.message||'')?error.message:'Trivia could not complete that request. Try again.'},400)}
 }
+
+export const onRequest=context=>withTriviaSession(context,"trivia-night",handleRequest);

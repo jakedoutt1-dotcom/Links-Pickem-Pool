@@ -6,7 +6,7 @@ import {publicAttempt,grade} from '../functions/lib/football-trivia.js';
 const originalFetch=globalThis.fetch;let calls=0,generation=0;
 const sample=(category,difficulty,id,tags=[])=>({id,category,difficulty,tags,type:'text_choice',question:{text:'Provider question '+id+'?'},correctAnswer:'Right',incorrectAnswers:['Wrong A','Wrong B','Wrong C']});
 try{
- globalThis.fetch=async(url,options)=>{calls++;assert.equal(options.headers['X-API-Key'],'mock-only');const u=new URL(url);return Response.json(Array.from({length:Number(u.searchParams.get('limit'))},(_,i)=>sample(u.searchParams.get('categories').split(',')[0],u.searchParams.get('difficulties'),generation+'-'+calls+'-'+i)))};
+ globalThis.fetch=async(url,options)=>{if(new URL(url).pathname==='/v2/session')return Response.json({id:'mock-session'});calls++;assert.equal(options.headers['X-API-Key'],'mock-only');const u=new URL(url);return Response.json(Array.from({length:Number(u.searchParams.get('limit'))},(_,i)=>sample(u.searchParams.get('categories').split(',')[0],u.searchParams.get('difficulties'),generation+'-'+calls+'-'+i)))};
  const {db}=fixture();let code;
  async function call(body={},token=''){const r=await onRequest({env:{DB:db,TRIVIA_API_KEY:'mock-only'},request:new Request('https://test.local/api?code='+code,{method:body.action?'POST':'GET',headers:{Origin:'https://test.local','x-dead-air-token':token},...(body.action?{body:JSON.stringify({...body,code})}:{})})});return {status:r.status,...await r.json()}}
  const host=await call({action:'create',name:'Host'});code=host.code;const player=await call({action:'join',name:'Player'});assert.equal(calls,0);

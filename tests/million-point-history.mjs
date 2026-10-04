@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import {fixture} from './helpers/pool-format-fixture.mjs';
 import {onRequest} from '../functions/new-build/api/million-point.js';
 import {loadBank,questionText} from '../functions/lib/million-point.js';
-const {db}=fixture();let cookie='',code;
-async function call(body={},token=''){const r=await onRequest({env:{DB:db},request:new Request('https://test.local/new-build/api/million-point?code='+code,{method:body.action?'POST':'GET',headers:{Origin:'https://test.local',Cookie:cookie,'x-million-token':token},...(body.action?{body:JSON.stringify({code,...body})}:{})})});const set=r.headers.get('set-cookie');if(set){assert(set.includes('HttpOnly'));assert(set.includes('Secure'));cookie=set.split(';')[0]}const j=await r.json();assert.equal(r.status,200,JSON.stringify(j));return j}
+const {db}=fixture();let cookie='',code;const cookies=new Map();
+async function call(body={},token=''){const r=await onRequest({env:{DB:db},request:new Request('https://test.local/new-build/api/million-point?code='+code,{method:body.action?'POST':'GET',headers:{Origin:'https://test.local',Cookie:cookie,'x-million-token':token},...(body.action?{body:JSON.stringify({code,...body})}:{})})});for(const set of r.headers.getSetCookie()){assert(set.includes('HttpOnly'));assert(set.includes('Secure'));const pair=set.split(';')[0];cookies.set(pair.split('=')[0],pair)}cookie=[...cookies.values()].join('; ');const j=await r.json();assert.equal(r.status,200,JSON.stringify(j));return j}
 const raw=()=>JSON.parse(db.raw.prepare('SELECT state FROM links_million_rooms WHERE code=?').get(code).state);
 const shown=[];
 for(let game=0;game<4;game++){

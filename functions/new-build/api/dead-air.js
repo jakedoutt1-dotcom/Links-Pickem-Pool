@@ -1,3 +1,4 @@
+import {withTriviaSession} from '../../lib/trivia-sessions.js';
 import {partyFinish,savePartyRoom} from '../../lib/party-scoreboard.js';
 import {requirePartyPass} from '../../lib/party-access.js';
 import {loadGameQuestions,completeQuestionBank} from '../../lib/trivia-provider.js';
@@ -5,7 +6,7 @@ import {CATEGORIES} from '../../lib/trivia-night.js';
 import {QUESTIONS,AVATARS,start,advance,view,respond} from '../../lib/dead-air.js';
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
 const hash=async t=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t)))).map(n=>n.toString(16).padStart(2,'0')).join('');
-export async function onRequest({request,env}){try{
+async function handleRequest({request,env}){try{
  const u=new URL(request.url),db=env.DB,now=Date.now();if(!db)return json({error:'Game unavailable.'},503);
  if(!['GET','POST'].includes(request.method))return json({error:'Method not allowed.'},405);
  if(request.method==='POST'&&request.headers.get('Origin')!==u.origin)return json({error:'Open the game on LINKS first.'},403);
@@ -54,3 +55,5 @@ export async function onRequest({request,env}){try{
  return json({...view(s,current,time,display),...(issued?{token:issued}:{})});
  }return json({error:'Room busy. Please try again.'},409);
  }catch{return json({error:'Unable to complete that request. Please try again.'},503)}}
+
+export const onRequest=context=>withTriviaSession(context,"dead-air",handleRequest);
