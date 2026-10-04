@@ -1,6 +1,7 @@
 // Legacy rows use numbered slots. Never derive a writable slot from feed order.
 const norm=v=>({WAS:'WSH',JAC:'JAX',LA:'LAR'}[String(v||'').toUpperCase()]||String(v||'').toUpperCase());
 export async function saveNFLPick(db,{pool,player,week,event,team}){
+ await ensurePickHistory(db);
  const teams=event.teams.map(norm),selected=norm(team);
  if(!event.eventId||!teams.includes(selected))throw Error('Invalid matchup.');
  for(let attempt=0;attempt<4;attempt++){
@@ -17,4 +18,13 @@ export async function saveNFLPick(db,{pool,player,week,event,team}){
   if(norm(saved?.team)===selected)return {gameIndex:index,eventId:event.eventId,selection:selected};
  }
  throw Error('Could not confirm your saved pick. Refresh and try again.');
+}
+
+// Private history catches changes from both current and legacy writers after activation.
+async function ensurePickHistory(db){
+ await db.prepare("CREATE TABLE IF NOT EXISTS links_nfl_pick_history(id INTEGER PRIMARY KEY AUTOINCREMENT,pool_id INTEGER,player_name TEXT,week INTEGER,game_index INTEGER,old_team TEXT,new_team TEXT,operation TEXT,recorded_at TEXT)").run();
+ for(const operation of ['INSERT','UPDATE','DELETE']){
+  const row=operation==='DELETE'?'OLD':'NEW',before=operation==='INSERT'?'NULL':'OLD.team',after=operation==='DELETE'?'NULL':'NEW.team';
+  await db.prepare(`CREATE TRIGGER IF NOT EXISTS links_nfl_pick_history_${operation.toLowerCase()} AFTER ${operation} ON pool_picks WHEN ${row}.sport='nfl' ${operation==='UPDATE'?'AND OLD.team IS NOT NEW.team':''} BEGIN INSERT INTO links_nfl_pick_history(pool_id,player_name,week,game_index,old_team,new_team,operation,recorded_at) VALUES(${row}.pool_id,${row}.player_name,${row}.week,${row}.game_index,${before},${after},'${operation}',strftime('%Y-%m-%dT%H:%M:%fZ','now')); END`).run();
+ }
 }
