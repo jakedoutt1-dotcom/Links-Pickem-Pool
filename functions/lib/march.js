@@ -10,7 +10,7 @@ async function day(date) {
 }
 export function parseEvent(event) {
   const competition=event.competitions?.[0], note=(competition?.notes||[]).map(n=>n.headline||'').join(' ');
-  if(!/NCAA Men.s Basketball Championship/i.test(note)||/First Four|play.in/i.test(note)) return null;
+  if(!/\b(?:NCAA )?Men[’']s Basketball Championship\b/i.test(note)||/First Four|play.in/i.test(note)) return null;
   const region=REGIONS.find(r=>new RegExp('\\b'+r+' Region','i').test(note))||'Final Four';
   const round=/1st Round|First Round|Round of 64/i.test(note)?1:/2nd Round|Second Round|Round of 32/i.test(note)?2:/Sweet 16|Regional Semifinal/i.test(note)?3:/Elite (8|Eight)|Regional Final/i.test(note)?4:/Final Four|National Semifinal/i.test(note)?5:/National Championship/i.test(note)?6:0;
   if(!round) return null;
