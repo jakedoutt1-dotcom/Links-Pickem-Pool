@@ -1,3 +1,4 @@
+import {mountInviteShare} from './invite-share.mjs';
 import {rememberPartySeat} from './party-score-link.mjs';
 import qrcode from './vendor/qrcode.mjs';
 import {mountTriviaSound} from './trivia-sound.mjs';
@@ -15,3 +16,5 @@ function tick(){document.querySelectorAll('#entry button').forEach(b=>b.disabled
 $('createForm').onsubmit=e=>{e.preventDefault();act('create',{name:$('createName').value.trim()})};$('joinForm').onsubmit=e=>{e.preventDefault();code=$('code').value.trim().toUpperCase();act('join',{name:$('joinName').value.trim()})};$('playForm').onsubmit=e=>{e.preventDefault();act(state.isGiver?'clue':'guess',{text:$('text').value.trim()})};$('ready').onclick=()=>act('ready');$('start').onclick=()=>act('start');$('again').onclick=()=>act('again');$('copy').onclick=async()=>{try{await navigator.clipboard.writeText(link());$('message').textContent='Invitation copied.'}catch{$('message').textContent=link()}};$('tvButton').onclick=()=>window.open(link()+'#display='+state.displayKey,'_blank','noopener');$('fullscreen').onclick=async()=>{try{await document.documentElement.requestFullscreen()}catch{$('message').textContent='Mirror your browser window to your TV, or use full screen on a computer.'}};
 async function poll(){if(code&&(display||token())&&!busy&&!document.hidden){const rev=revision;try{const j=await api();if(rev===revision&&!busy)adopt(j)}catch(e){$('message').textContent=e.message}}setTimeout(poll,state?.phase==='question'?1000:2000)}
 if(code){$('code').value=code;$('createForm').hidden=true;document.querySelector('.hero').hidden=true}if(display){$('entry').hidden=true;$('message').textContent='Connecting TV…'}setInterval(tick,200);poll();
+
+mountInviteShare({anchor:document.getElementById('copy'),getUrl:link,title:'Say What?!'});

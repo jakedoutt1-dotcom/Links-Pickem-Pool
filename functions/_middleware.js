@@ -1,3 +1,4 @@
+import {invitePreview} from './lib/invite-preview.js';
 import {comingSoonPage,comingSoonResponse} from './lib/game-availability.js';
 // LINKS v665 — legacy production middleware. New Build is isolated and must not receive legacy HTML/CSS/JS injections.
 export async function onRequest(context){
@@ -23,7 +24,7 @@ export async function onRequest(context){
   return new Response(html,{status:response.status,headers});
  }
 
- if(url.pathname==='/new-build'||url.pathname.startsWith('/new-build/'))return context.next();
+ if(url.pathname==='/new-build'||url.pathname.startsWith('/new-build/'))return invitePreview(context.request,await context.next());
  if(context.request.method!=="GET")return context.next();const response=await context.next();const ct=response.headers.get("content-type")||"";if(!ct.includes("text/html"))return response;let html=await response.text();
  const isHome=url.pathname==="/"||url.pathname==="/index.html";
  html=html.replace(/<link rel="icon"[^>]*>/gi,'').replace(/<link rel="shortcut icon"[^>]*>/gi,'').replace(/<link rel="apple-touch-icon"[^>]*>/gi,'');

@@ -1,3 +1,4 @@
+import {mountInviteShare} from './invite-share.mjs';
 import {mountTriviaSound} from './trivia-sound.mjs';
 import qrcode from './vendor/qrcode.mjs';
 const sounds=mountTriviaSound({button:document.getElementById('soundToggle')});
@@ -139,3 +140,5 @@ setInterval(tick,200);openQRJoin().finally(poll);
 if(new URL(location.href).searchParams.get('host')==='1'||new URL(location.href).searchParams.get('step')==='setup')$('hostOpen').click();
 
 $('playMode').onchange=()=>{const team=$('playMode').value==='teams',times=team?[20,30,45]:[10,15,20];$('modeHelp').textContent=team?'Use one phone per team. Discuss together and submit one answer. Easy 20s · Medium 30s · Hard 45s. Up to 250 speed points.':'Answer on your own. Easy 10s · Medium 15s · Hard 20s. Up to 500 speed points.';['easy','medium','hard'].forEach((level,i)=>{$('difficulty').querySelector('[value='+level+']').textContent=level[0].toUpperCase()+level.slice(1)+' · '+times[i]+' seconds · '+[500,1000,1500][i].toLocaleString()+' + speed'})};
+
+mountInviteShare({anchor:document.getElementById('copy'),getUrl:joinLink,title:'Trivia Night'});

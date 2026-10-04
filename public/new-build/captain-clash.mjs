@@ -1,3 +1,4 @@
+import {mountInviteShare} from './invite-share.mjs';
 import {rememberPartySeat} from './party-score-link.mjs';
 import qrcode from './vendor/qrcode.mjs';
 import {mountTriviaSound} from './trivia-sound.mjs';
@@ -44,3 +45,5 @@ $('photoFile').onchange=async()=>{const file=$('photoFile').files[0];if(!file)re
  }catch(e){$('uploadMessage').textContent=e.message}finally{$('photoFile').value=''}};
 async function poll(){if(code&&(displayKey||token())&&!busy&&!document.hidden){const gen=++generation;try{const j=await api();if(gen===generation){adopt(j);$('message').textContent=''}}catch(e){if(gen===generation)$('message').textContent=e.message}}setTimeout(poll,state&&['write','vote','reveal'].includes(state.phase)?700:2000)}
 if(code){$('code').value=code;$('createForm').hidden=true;document.querySelector('.hero').hidden=true;document.querySelector('.steps').hidden=true;$('joinName').focus()}$('fullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen()}catch{$('message').textContent='Use your browser’s full screen option or mirror this window to your TV.'}};if(displayKey){$('fullscreen').hidden=false;$('entry').hidden=true;$('message').textContent='Connecting display…'}setInterval(tick,200);poll();
+
+mountInviteShare({anchor:document.getElementById('copy'),getUrl:inviteLink,title:'Captain Clash'});

@@ -1,3 +1,4 @@
+import {mountInviteShare} from './invite-share.mjs';
 import {rememberPartySeat} from './party-score-link.mjs';
 import qrcode from './vendor/qrcode.mjs';
 const $=id=>document.getElementById(id),fmt=n=>Number(n||0).toLocaleString('en-US');
@@ -37,3 +38,5 @@ for(const id of ['ready','start','continue','next','again'])$(id).onclick=()=>ac
 $('invite').onclick=()=>{qr('inviteQr');$('inviteCode').textContent='ROOM '+code;$('inviteDialog').showModal()};$('tv').onclick=()=>{$('tvLink').href=link()+'#display='+state.displayKey;$('tvDialog').showModal()};for(const b of document.querySelectorAll('[data-close]'))b.onclick=()=>$(b.dataset.close).close();async function copy(text){try{await navigator.clipboard.writeText(text);$('message').textContent='Link copied.'}catch{$('message').textContent='Copy this link: '+text}}$('copy').onclick=()=>copy(link());$('copyTv').onclick=()=>copy($('tvLink').href);
 if(code){$('joinCode').value=code;$('create').hidden=true;if(displayKey||token()){api().then(adopt).catch(e=>{$('message').textContent=e.message})}else{$('join').scrollIntoView({block:'center'});$('joinName').focus({preventScroll:true})}}
 let polling=false;setInterval(async()=>{if(!state||busy||polling||document.hidden)return;polling=true;const rev=revision;try{const j=await api();if(rev===revision&&!busy)adopt(j)}catch(e){$('message').textContent=e.message}finally{polling=false}},1500);setInterval(tick,250);
+
+mountInviteShare({anchor:document.getElementById('copy'),getUrl:link,title:'Million Point Challenge'});

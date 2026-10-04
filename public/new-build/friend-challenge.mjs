@@ -1,3 +1,4 @@
+import {mountInviteShare} from './invite-share.mjs';
 import {rememberPartySeat} from './party-score-link.mjs';
 import {mountTriviaSound} from './trivia-sound.mjs';
 import qrcode from './vendor/qrcode.mjs';
@@ -21,3 +22,5 @@ $('leave').onclick=async()=>{if(!confirm('Leave this challenge?'))return;if(['lo
 async function poll(){if(code&&token()&&!busy&&!document.hidden){const n=++generation;try{const j=await api();if(n===generation){adopt(j);$('message').textContent=''}}catch(e){if(n===generation)$('message').textContent=e.message}}setTimeout(poll,state?.countdown?250:state?.phase==='question'||state?.phase==='reveal'?1000:2000)}
 if(code){$('code').value=code;$('createForm').hidden=true;document.querySelector('.challenge-art').hidden=true;$('joinName').focus()}
 setInterval(tick,200);poll();
+
+mountInviteShare({anchor:document.getElementById('copy'),getUrl:link,title:'Challenge a Friend Trivia'});

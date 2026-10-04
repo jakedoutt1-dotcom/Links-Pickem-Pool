@@ -1,3 +1,4 @@
+import {mountInviteShare} from './invite-share.mjs';
 import {rememberPartySeat} from './party-score-link.mjs';
 import qrcode from './vendor/qrcode.mjs';import {mountMysteryAudio} from './last-alibi-audio.mjs';
 const $=id=>document.getElementById(id),sound=mountMysteryAudio($('soundToggle'));let code=new URL(location.href).searchParams.get('room')||'',displayKey=new URLSearchParams(location.hash.slice(1)).get('display')||'',state=null,busy=false,offset=0,signature='',generation=0,tab='story',selectedRoom='study',zoom=1,inspectId='',pinned=[],lastPhase='',lastGame=0,boardIndex=-1;
@@ -34,3 +35,5 @@ $('saveNotes').onclick=async()=>{if(await act('notes',{text:$('notes').value}))$
 async function copy(value,id){try{await navigator.clipboard.writeText(value);$(id).textContent='Link copied.'}catch{$(id).textContent=value}}$('copy').onclick=()=>copy(inviteLink(),'copyMessage');$('inviteButton').onclick=()=>{qr('inviteQr');$('inviteLink').textContent=inviteLink();$('invite').showModal()};$('tvButton').onclick=()=>{$('tvLink').href=tvLink();$('tv').showModal()};$('copyTv').onclick=()=>copy(tvLink(),'tvMessage');$('full').onclick=async()=>{try{await document.documentElement.requestFullscreen()}catch{$('message').textContent='Use your browser’s full screen option.'}};
 async function poll(){if(code&&(displayKey||token())&&!busy&&!document.hidden){const gen=++generation;try{const j=await api();if(gen===generation){adopt(j);$('message').textContent=''}}catch(e){if(gen===generation)$('message').textContent=e.message}}setTimeout(poll,2000)}
 if(code){$('code').value=code;$('createForm').hidden=true;document.querySelector('.cover').hidden=true;$('joinName').focus()}if(displayKey){$('entry').hidden=true;$('full').hidden=false;$('message').textContent='Opening the crime board…'}setInterval(tick,250);poll();
+
+mountInviteShare({anchor:document.getElementById('copy'),getUrl:inviteLink,title:'Last Alibi'});

@@ -1,3 +1,4 @@
+import {mountInviteShare} from './invite-share.mjs';
 import {rememberPartySeat} from './party-score-link.mjs';
 import qrcode from './vendor/qrcode.mjs';
 import {mountDeadAirAudio} from './dead-air-audio.mjs';
@@ -43,3 +44,5 @@ async function copy(value,id){try{await navigator.clipboard.writeText(value);$(i
 $('copy').onclick=()=>copy(link(),'message');$('inviteButton').onclick=()=>{qr('inviteQr');$('inviteLink').textContent=link();$('invite').showModal()};$('closeInvite').onclick=()=>$('invite').close();$('tvButton').onclick=()=>{$('tvLink').href=link()+'#display='+state.displayKey;$('tv').showModal()};$('closeTv').onclick=()=>$('tv').close();$('copyTv').onclick=()=>copy(link()+'#display='+state.displayKey,'tvMessage');$('fullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen()}catch{$('message').textContent='Use full screen on your computer, or mirror the display to your TV.'}};
 async function poll(){if(code&&(displayKey||token())&&!busy&&!document.hidden){const rev=revision;try{const j=await api();if(rev===revision&&!busy)adopt(j)}catch(e){$('message').textContent=e.message}}setTimeout(poll,state&&state.phase!=='lobby'&&state.phase!=='ended'?1000:2000)}
 if(code){$('code').value=code;$('createForm').hidden=true;document.querySelector('.hero').hidden=true;document.querySelector('.rules').hidden=true}if(displayKey){$('entry').hidden=true;$('message').textContent='Connecting display…'}setInterval(tick,200);poll();
+
+mountInviteShare({anchor:document.getElementById('copy'),getUrl:link,title:'Dead Air'});
