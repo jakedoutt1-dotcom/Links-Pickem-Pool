@@ -49,3 +49,19 @@ export function completeQuestionBank(fresh,backup,{exclude=[],minimum=1}={}){
  if(out.length<minimum)for(const q of [...fresh,...backup])if(out.length<minimum)add(q);
  return out;
 }
+
+// Host games retain IDs and wording across rooms; unchanged wording with a new
+// provider/import ID must not bypass recent-question protection.
+export const normalizedQuestionText=q=>q.text.trim().toLowerCase().replace(/\s+/g,' ');
+export async function loadFreshGameQuestions(args){
+ const loaded=await loadGameQuestions(args),ids=args.exclude||[],texts=args.excludeTexts||[],usedIds=new Set(ids),usedTexts=new Set(texts),questions=[],keys=new Set();let recycled=false,local=false;
+ const unused=q=>!usedIds.has(q.id)&&!usedTexts.has(normalizedQuestionText(q));
+ for(const category of [...new Set(args.categories)])for(const difficulty of args.difficulties||Object.keys(SECONDS)){
+  const matches=q=>q.category===category&&q.difficulty===difficulty;
+  let rows=loaded.questions.filter(q=>matches(q)&&unused(q));
+  if(!rows.length){rows=args.backup.filter(q=>matches(q)&&unused(q));if(rows.length)local=true}
+  if(!rows.length){rows=[...loaded.questions,...args.backup].filter(matches).sort((a,b)=>Math.max(ids.indexOf(a.id),texts.indexOf(normalizedQuestionText(a)))-Math.max(ids.indexOf(b.id),texts.indexOf(normalizedQuestionText(b)))).slice(0,args.perGroup||6);if(rows.length)recycled=true}
+  for(const q of rows){const key=normalizedQuestionText(q);if(!keys.has(key)){keys.add(key);questions.push(q)}}
+ }
+ return {questions,source:questions.some(q=>q.id.startsWith('trivia-'))?'The Trivia API':'LINKS question library',notice:recycled?'No unused questions remain in some categories or levels. Older questions may return.':local?'Some questions use the backup library to avoid recent repeats.':loaded.notice||(!args.env.TRIVIA_API_KEY?'Using the backup question library.':'')};
+}

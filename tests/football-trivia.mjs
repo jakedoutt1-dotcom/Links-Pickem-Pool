@@ -8,7 +8,7 @@ sql.exec("CREATE TABLE pools(id INTEGER,name TEXT);INSERT INTO pools VALUES(1,'B
 const db={prepare(q){let args=[];return{bind(...v){args=v;return this},async first(){return sql.prepare(q).get(...args)||null},async all(){return{results:sql.prepare(q).all(...args)}},async run(){return{meta:{changes:Number(sql.prepare(q).run(...args).changes)}}}}},async batch(statements){sql.exec('BEGIN');try{const out=[];for(const s of statements)out.push(await s.run());sql.exec('COMMIT');return out}catch(e){sql.exec('ROLLBACK');throw e}}};
 await ensureAccounts(db);sql.prepare('INSERT INTO links_account_sessions VALUES(?,?,?)').run(await digest('account'),'a@example.com','2099-01-01');
 async function call(body,token='one',account='account'){const r=await onRequest({env:{DB:db},request:new Request('https://test/api',{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token,'x-links-account':account},...(body?{body:JSON.stringify(body)}:{})})});return {status:r.status,data:await r.json()}}
-assert.equal((await call(null,'bad')).status,401);assert.equal((await call(null,'one','bad')).status,403);
+assert.equal((await call(null,'bad')).status,401);assert.equal((await call(null,'one','bad')).status,200);
 let j=await call({action:'start',difficulty:'hard',name:'Jake'});assert.equal(j.status,200);let a=j.data.attempt;assert.equal(a.question.choices.length,4);assert.equal('deck' in a,false);assert.equal('answers' in a.question,false);
 const again=await call({action:'start',difficulty:'easy'},'two');assert.equal(again.data.attempt.id,a.id);assert.equal(again.data.attempt.difficulty,'hard');
 let expected=0;
@@ -22,3 +22,11 @@ assert.ok(QUESTIONS.every(q=>new Set(q.answers).size===4&&q.source.startsWith('h
 console.log('PASS trivia server grading, private answers, weekly identity across pools, no duplicate scoring, expiry, both boards and question bank');
 
 for(const [level,cap,seconds] of [['easy',5,6],['medium',10,8],['hard',20,10]]){assert.equal(speedBonus(level,10000,10000-seconds*1000),cap);assert.equal(speedBonus(level,10000,10000-seconds*500),Math.floor(cap/2));assert.equal(speedBonus(level,10000,10000),0);assert.equal(speedBonus(level,10000,11000),0);}
+
+// An ordinary pool login needs no separate account session.
+sql.exec("INSERT INTO pool_players VALUES(1,'Guest'); INSERT INTO pool_sessions VALUES('guest',1,'Guest','player','2099-01-01');");
+const guest=await call({action:'start',difficulty:'easy'},'guest','');assert.equal(guest.status,200);assert.notEqual(guest.data.attempt.id,a.id);
+assert.equal((await call({action:'start',difficulty:'hard'},'guest','bad')).data.attempt.id,guest.data.attempt.id);
+assert.equal((await call(null,'one','')).data.attempt.id,a.id);
+sql.exec("DELETE FROM pool_players WHERE name='Guest'");assert.equal((await call(null,'guest','')).status,401);
+console.log('PASS pool-only login, stale account token, linked score preservation and removed-player denial');

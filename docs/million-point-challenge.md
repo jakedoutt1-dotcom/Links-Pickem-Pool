@@ -17,3 +17,7 @@ Host opens TV display or copies its private link. Prefer a TV browser/laptop ove
 `node tests/million-point.mjs` runs full ladders, guarantees, permissions, lifelines, head-to-head privacy, ties, rematch and expiry.
 `node tests/million-point-preview.mjs` starts an isolated in-memory preview at http://127.0.0.1:8776/new-build/million-point.html (no production DB or paid API).
 `node tests/million-point-browser.mjs` uses Playwright/Edge for two mobile sessions and private TV in both modes, answer confirmation, reveal, room voting, sound and reconnect. Screenshots under `output/million-point/`.
+
+Recent questions are remembered for 30 days on the creating browser through an anonymous HttpOnly cookie and `links_million_history`. Only question IDs and normalized text are retained (up to 1,500), not names or answers. A new room created in the same browser inherits this history. Different browsers or cleared cookies start a new history. Rooms also retain their own history across rematches. Unseen questions are preferred; when the available library is exhausted, older questions may return with a creator notice.
+
+In Head-to-Head, an eliminated or banked player sees a personal result panel instead of further questions. Their last missed answer and final points remain visible while the opponent finishes. Final results distinguish a win, loss, or tie. The creator can restart from this screen; the TV continues showing the live game.

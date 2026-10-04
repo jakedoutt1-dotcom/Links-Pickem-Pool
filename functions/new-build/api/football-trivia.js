@@ -1,19 +1,24 @@
 import {loadGameQuestions,completeQuestionBank} from '../../lib/trivia-provider.js';
-import {accountSession,digest} from '../../lib/commissioner-account.js';
+import {ensureAccounts,digest} from '../../lib/commissioner-account.js';
 import {QUESTIONS,POINTS,SECONDS,shuffled,weekKey,publicAttempt,grade} from '../../lib/football-trivia.js';
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
 export async function onRequest({request,env}){try{
  const db=env.DB;if(!db)return json({error:'Trivia is temporarily unavailable.'},503);
  const token=(request.headers.get('authorization')||'').replace(/^Bearer /,'');
  const session=await db.prepare('SELECT * FROM pool_sessions WHERE token=? AND expires_at>?').bind(token,new Date().toISOString()).first();if(!session)return json({error:'Sign in to your pool to play.'},401);
- const account=await accountSession(request,db);if(!account)return json({error:'Connect My Pools and verify your email to play the weekly challenge. Practice is always available.'},403);
+ await ensureAccounts(db);
  await db.prepare('CREATE TABLE IF NOT EXISTS links_player_memberships(pool_id INTEGER,player_name TEXT,email TEXT,PRIMARY KEY(pool_id,player_name))').run();
+ const player=await db.prepare('SELECT name FROM pool_players WHERE pool_id=? AND name=?').bind(session.pool_id,session.player_name).first();
+ if(!player)return json({error:'This player is no longer in the pool. Sign in again.'},401);
+ // Identity comes from the authenticated pool session and server-managed connections,
+ // never an email supplied by the browser or a separate, possibly stale account token.
  const link=await db.prepare('SELECT email FROM links_player_memberships WHERE pool_id=? AND player_name=?').bind(session.pool_id,session.player_name).first();
- const owner=await db.prepare('SELECT email FROM links_pool_owners WHERE pool_id=?').bind(session.pool_id).first();if(link?.email!==account.email&&!(session.role==='admin'&&owner?.email===account.email))return json({error:'Connect this player to your verified account first.'},403);
+ const owner=session.role==='admin'?await db.prepare('SELECT email FROM links_pool_owners WHERE pool_id=?').bind(session.pool_id).first():null;
+ const email=link?.email||owner?.email||null;
  await db.prepare('CREATE TABLE IF NOT EXISTS links_football_trivia(id TEXT PRIMARY KEY,owner TEXT NOT NULL,week TEXT NOT NULL,season TEXT NOT NULL,difficulty TEXT NOT NULL,display_name TEXT NOT NULL,deck TEXT NOT NULL,idx INTEGER NOT NULL DEFAULT 0,score INTEGER NOT NULL DEFAULT 0,correct INTEGER NOT NULL DEFAULT 0,misses INTEGER NOT NULL DEFAULT 0,deadline INTEGER NOT NULL,version INTEGER NOT NULL DEFAULT 0,status TEXT NOT NULL DEFAULT \'active\',UNIQUE(owner,week))').run();
- const identity=await digest(account.email),week=weekKey(),season=week.slice(0,4),now=Date.now();
+ const identity=await digest(email||JSON.stringify(['pool-player',session.pool_id,session.player_name])),week=weekKey(),season=week.slice(0,4),now=Date.now();
  await db.prepare('CREATE TABLE IF NOT EXISTS links_trivia_pools(owner TEXT,pool_id INTEGER,PRIMARY KEY(owner,pool_id))').run();
- const memberships=(await db.prepare('SELECT m.pool_id FROM links_player_memberships m JOIN pool_players p ON p.pool_id=m.pool_id AND p.name=m.player_name WHERE m.email=? UNION SELECT pool_id FROM links_pool_owners WHERE email=?').bind(account.email,account.email).all()).results;
+ const memberships=email?(await db.prepare('SELECT m.pool_id FROM links_player_memberships m JOIN pool_players p ON p.pool_id=m.pool_id AND p.name=m.player_name WHERE m.email=? UNION SELECT pool_id FROM links_pool_owners WHERE email=?').bind(email,email).all()).results:[];
  const poolIds=[...new Set([Number(session.pool_id),...memberships.map(m=>Number(m.pool_id))])];
  await db.batch([db.prepare('DELETE FROM links_trivia_pools WHERE owner=?').bind(identity),...poolIds.map(id=>db.prepare('INSERT INTO links_trivia_pools(owner,pool_id) VALUES(?,?)').bind(identity,id))]);
  const currentPool=await db.prepare('SELECT name FROM pools WHERE id=?').bind(session.pool_id).first();

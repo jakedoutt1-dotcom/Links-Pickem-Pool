@@ -20,7 +20,7 @@ try{
  assert.equal(points({difficulty:'hard'},0),2000);assert.equal(points({difficulty:'easy'},10000),500);
  assert.equal((await call({action:'create',categories:['general'],difficulty:'mixed'})).status,403);
  assert.equal((await call({action:'create'},{admin:'admin',badOrigin:true})).status,403);
- hostState=await call({action:'create',categories:['general'],difficulty:'mixed',title:'Local trivia test'},{admin:'admin'});assert.equal(hostState.status,200);code=hostState.code;
+ hostState=await call({action:'create',categories:['general'],difficulty:'mixed',title:'Local trivia test'},{admin:'admin'});assert.equal(hostState.status,200);code=hostState.code;const initialDeckLength=raw().deck.length;
  assert.equal((await call()).status,401);
  const display=await call({action:'display'});assert.equal(display.status,200);assert.equal(display.host,false);assert.equal(display.playerCount,0);assert.equal(display.token,undefined);assert.equal(display.question,null);
  assert.equal((await call(null,{admin:'admin'})).tvConnected,true);
@@ -47,7 +47,7 @@ try{
  const bank=await call(null,{admin:'admin',query:'?action=library'});assert.equal(bank.count,63);assert.equal(bank.questions,undefined);await ensureOwner(db);await db.prepare("INSERT INTO links_admin_sessions VALUES('owner','2099-01-01')").run();assert.equal((await call({action:'import',questions:STARTER},{admin:'admin'})).status,403);
  assert.equal((await call({action:'import',questions:[{...STARTER[0],answers:[]}]},{admin:'owner'})).status,400);
  const replacement=[{...STARTER.find(q=>q.category==='general'),text:'Replacement sample question?'}];
- assert.equal((await call({action:'import',questions:replacement},{admin:'owner'})).status,200);assert.equal(raw().deck.length,3);
+ assert.equal((await call({action:'import',questions:replacement},{admin:'owner'})).status,200);assert.equal(raw().deck.length,initialDeckLength);
  await host('next');assert.equal((await call(null,{guest:late.token})).eligible,true);
  assert.equal((await call({action:'answer',gameNumber:1,index:0,choice:0},{guest:late.token})).status,409);
  edit(s=>{s.deadline=Date.now()-1});assert.equal((await call({action:'answer',gameNumber:1,index:1,choice:0},{guest:late.token})).status,409);

@@ -1,4 +1,4 @@
-import {loadGameQuestions} from '../../lib/trivia-provider.js';
+import {loadFreshGameQuestions,normalizedQuestionText} from '../../lib/trivia-provider.js';
 import {ensureAccounts,allowance,emailKey} from '../../lib/commissioner-account.js';
 import {ownerSession} from '../../lib/owner-auth.js';
 import {STARTER,validateBank,makeDeck,answerSeconds,reveal,view} from '../../lib/trivia-night.js';
@@ -17,6 +17,7 @@ export async function onRequest({request,env}){
    db.prepare('CREATE TABLE IF NOT EXISTS links_trivia_night_rooms(code TEXT PRIMARY KEY,pool_id INTEGER NOT NULL,host_name TEXT NOT NULL,state TEXT NOT NULL,version INTEGER NOT NULL DEFAULT 0,expires INTEGER NOT NULL)'),
    db.prepare('CREATE TABLE IF NOT EXISTS links_trivia_night_banks(pool_id INTEGER PRIMARY KEY,questions TEXT NOT NULL,updated TEXT NOT NULL)'),
    db.prepare('CREATE TABLE IF NOT EXISTS links_trivia_night_displays(code TEXT PRIMARY KEY,seen INTEGER NOT NULL)'),
+   db.prepare('CREATE TABLE IF NOT EXISTS links_trivia_night_history(host_key TEXT NOT NULL,text_key TEXT NOT NULL,question_id TEXT NOT NULL,last_used INTEGER NOT NULL,PRIMARY KEY(host_key,text_key))'),
    db.prepare('CREATE TABLE IF NOT EXISTS links_trivia_night_limits(id TEXT PRIMARY KEY,starts INTEGER NOT NULL,hits INTEGER NOT NULL)')
   ]);
   if(['join','create','restart','import'].includes(action)){
@@ -28,6 +29,8 @@ export async function onRequest({request,env}){
   const bearer=(request.headers.get('Authorization')||'').replace(/^Bearer /,'');
   const admin=bearer?await db.prepare("SELECT * FROM pool_sessions WHERE token=? AND expires_at>? AND role='admin'").bind(bearer,new Date().toISOString()).first():null;
   const bank=async()=>{const row=await db.prepare('SELECT questions FROM links_trivia_night_banks WHERE pool_id=?').bind(0).first();return row?JSON.parse(row.questions):STARTER};
+  const historyKey=async pool=>{await ensureAccounts(db);const o=await db.prepare('SELECT email FROM links_pool_owners WHERE pool_id=?').bind(pool).first(),c=await db.prepare("SELECT value FROM pool_settings WHERE pool_id=? AND key='commissioner_email'").bind(pool).first();const email=emailKey(o?.email||c?.value||'');return hash(email?'commissioner:'+email:'pool:'+pool)};
+  const history=async key=>{const rows=(await db.prepare('SELECT question_id,text_key FROM links_trivia_night_history WHERE host_key=? AND last_used>? ORDER BY last_used DESC LIMIT 1500').bind(key,Date.now()-2592000000).all()).results||[];rows.reverse();return {ids:rows.map(r=>r.question_id),texts:rows.map(r=>r.text_key)}};
   if(['owner-library','import'].includes(action)){
    if(!await ownerSession(request,db))return json({error:'Only LINKS Admin can manage trivia questions.'},403);
    if(action==='owner-library')return json({questions:await bank()});
@@ -50,12 +53,13 @@ export async function onRequest({request,env}){
    if(!['easy','medium','hard','mixed'].includes(b.difficulty))return json({error:'Choose a valid difficulty.'},400);
    if(active.length>=plan.slots)return json({error:plan.label+' has no available trivia rooms. Reopen a room or choose a larger package.'},402);
    await db.prepare('DELETE FROM links_trivia_night_rooms WHERE expires<=?').bind(Date.now()).run();
-   const loaded=await loadGameQuestions({env,categories:b.categories,backup:await bank()}),full=loaded.questions,deck=makeDeck(full,b.categories,'mixed');
+   const hostHistoryKey=await historyKey(admin.pool_id),recent=await history(hostHistoryKey);
+   const loaded=await loadFreshGameQuestions({env,categories:b.categories,backup:await bank(),exclude:recent.ids,excludeTexts:recent.texts}),full=loaded.questions,deck=makeDeck(full,b.categories,'mixed');
    const finals=makeDeck(full,[...new Set(full.map(q=>q.category))],'mixed').filter(q=>q.difficulty==='hard');
    const finalQuestion=finals.find(q=>!deck.some(d=>d.id===q.id))||(deck.length>1?finals[0]:null)||null;
    if(finalQuestion){const at=deck.findIndex(q=>q.id===finalQuestion.id);if(at>=0)deck.splice(at,1);}
    const code=crypto.randomUUID().replace(/-/g,'').slice(0,10).toUpperCase();
-   const state={code,mode:b.mode||'individual',title:String(b.title||'LINKS Trivia Night').trim().slice(0,70),categories:b.categories,difficulty:b.difficulty,game:1,phase:'lobby',index:-1,deadline:0,questionSource:loaded.source,questionNotice:loaded.notice,seenQuestions:[],deck,finalQuestion,isFinal:false,players:{}};
+   const state={code,hostHistoryKey,mode:b.mode||'individual',title:String(b.title||'LINKS Trivia Night').trim().slice(0,70),categories:b.categories,difficulty:b.difficulty,game:1,phase:'lobby',index:-1,deadline:0,questionSource:loaded.source,questionNotice:loaded.notice,seenQuestions:recent.ids,seenTexts:recent.texts,deck,finalQuestion,isFinal:false,players:{}};
    const inserted=await db.prepare(`INSERT INTO links_trivia_night_rooms(code,pool_id,host_name,state,expires) SELECT ?,?,?,?,? WHERE (SELECT COUNT(*) FROM links_trivia_night_rooms WHERE pool_id IN (${placeholders}) AND expires>?)<?`).bind(code,admin.pool_id,admin.player_name,JSON.stringify(state),Date.now()+86400000,...pools,Date.now(),plan.slots).run();
    if(!inserted.meta?.changes)return json({error:plan.label+' allows '+plan.slots+' active trivia room'+(plan.slots===1?'':'s')+'. Reopen your existing room to play again, or choose a larger package. Rooms expire after 24 hours.'},402);
    return json(view(state,'',true));
@@ -113,14 +117,15 @@ export async function onRequest({request,env}){
      }else if(action==='restart'){
       if(s.phase!=='ended')return json({error:'End this game first.'},409);
       if(!['easy','medium','hard','mixed'].includes(b.difficulty))return json({error:'Choose a valid difficulty.'},400);
-      const seen=[...new Set([...(s.seenQuestions||[]),...s.deck.slice(0,s.index+1).map(q=>q.id)])].slice(-1500);
-      restartQuestions ||= loadGameQuestions({env,categories:b.categories,backup:await bank(),exclude:seen});const loaded=await restartQuestions,full=loaded.questions;s.questionSource=loaded.source;s.questionNotice=loaded.notice;s.seenQuestions=seen;s.deck=makeDeck(full,b.categories,'mixed');const finals=makeDeck(full,[...new Set(full.map(q=>q.category))],'mixed').filter(q=>q.difficulty==='hard');s.finalQuestion=finals.find(q=>!s.deck.some(d=>d.id===q.id))||(s.deck.length>1?finals[0]:null)||null;if(s.finalQuestion)s.deck=s.deck.filter(q=>q.id!==s.finalQuestion.id);s.isFinal=false;s.categories=b.categories;s.difficulty=b.difficulty;s.game++;s.index=-1;s.phase='lobby';s.deadline=0;
+      s.hostHistoryKey ||= await historyKey(row.pool_id);const recent=await history(s.hostHistoryKey);
+      const seen=[...new Set([...recent.ids,...(s.seenQuestions||[]),...s.deck.slice(0,s.index+1).map(q=>q.id)])].slice(-1500),seenTexts=[...new Set([...recent.texts,...(s.seenTexts||[]),...s.deck.slice(0,s.index+1).map(normalizedQuestionText)])].slice(-1500);
+      restartQuestions ||= loadFreshGameQuestions({env,categories:b.categories,backup:await bank(),exclude:seen,excludeTexts:seenTexts});const loaded=await restartQuestions,full=loaded.questions;s.questionSource=loaded.source;s.questionNotice=loaded.notice;s.seenQuestions=seen;s.seenTexts=seenTexts;s.deck=makeDeck(full,b.categories,'mixed');const finals=makeDeck(full,[...new Set(full.map(q=>q.category))],'mixed').filter(q=>q.difficulty==='hard');s.finalQuestion=finals.find(q=>!s.deck.some(d=>d.id===q.id))||(s.deck.length>1?finals[0]:null)||null;if(s.finalQuestion)s.deck=s.deck.filter(q=>q.id!==s.finalQuestion.id);s.isFinal=false;s.categories=b.categories;s.difficulty=b.difficulty;s.game++;s.index=-1;s.phase='lobby';s.deadline=0;
       for(const p of Object.values(s.players)){p.score=0;p.answer=null;p.eligible=0;}
      }else return json({error:'Unknown action.'},400);
     }
    }
    const result=await db.prepare('UPDATE links_trivia_night_rooms SET state=?,version=version+1 WHERE code=? AND version=?').bind(JSON.stringify(s),code,row.version).run();
-   if(result.meta?.changes)return json({...view(s,issued?await hash(issued):seat,host),...(issued?{token:issued}:{})});
+   if(result.meta?.changes){if(host&&action==='start-question'){const key=s.hostHistoryKey||await historyKey(row.pool_id),q=s.deck[s.index];await db.prepare('INSERT INTO links_trivia_night_history(host_key,text_key,question_id,last_used) VALUES(?,?,?,?) ON CONFLICT(host_key,text_key) DO UPDATE SET question_id=excluded.question_id,last_used=excluded.last_used').bind(key,normalizedQuestionText(q),q.id,Date.now()).run();await db.prepare('DELETE FROM links_trivia_night_history WHERE last_used<?').bind(Date.now()-2592000000).run()}return json({...view(s,issued?await hash(issued):seat,host),...(issued?{token:issued}:{})});}
   }
   return json({error:'The room is busy. Please try again.'},409);
  }catch(error){return json({error:error.message?.startsWith('Question ')||/^(Upload|Choose categories|No questions)/.test(error.message||'')?error.message:'Trivia could not complete that request. Try again.'},400)}
