@@ -49,7 +49,7 @@ function render(){
  $('questionNumber').textContent=state.isFinal?'FINAL ROUND · DOUBLE POINTS':q?'QUESTION '+(state.index+1):'READY WHEN YOU ARE';
  $('phaseLabel').textContent=state.phase==='lobby'?'WAITING FOR THE HOST':state.phase==='ended'?'FINAL SCOREBOARD':revealed?'THE ANSWER IS IN':'THINK FAST. MAKE IT COUNT.';
  $('question').textContent=state.phase==='category'?(state.isFinal?'FINAL ROUND · ':'')+themes[theme][0]+' ROUND':q?.text||(state.host?'Your room is ready.':'Waiting for host to start game');
- $('invite').hidden=!state.host||state.phase!=='lobby';$('screen').hidden=!state.host||!['lobby','ended'].includes(state.phase);
+ $('screen').hidden=!state.host||!['lobby','ended'].includes(state.phase);
  $('lobbyInvite').hidden=!state.host||state.phase!=='lobby';
  document.querySelector('.stage').hidden=state.phase==='ended'||state.host&&state.phase==='lobby';
  document.querySelector('#room>.standings').hidden=state.phase!=='ended';
@@ -118,7 +118,7 @@ $('tvCopy').onclick=async()=>{try{await navigator.clipboard.writeText(tvLink());
 
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).close());
 function joinLink(){const u=new URL('./trivia-night.html',location.href);u.searchParams.set('room',roomCode);return u.href}
-$('invite').onclick=()=>{const qr=qrcode(0,'M');qr.addData(joinLink());qr.make();$('qr').innerHTML=qr.createSvgTag({cellSize:5,margin:20,scalable:true});$('qr').querySelector('svg').setAttribute('aria-label','Scan to join trivia');$('inviteCode').textContent=roomCode;$('copyStatus').textContent='';$('invitation').showModal()};
+
 $('copy').onclick=async()=>{try{await navigator.clipboard.writeText(joinLink());$('copyStatus').textContent='Join link copied.'}catch{$('copyStatus').textContent=joinLink()}};
 async function poll(){
  if(roomCode&&!busy&&!$('quickJoin').open&&$('setup').hidden&&!document.hidden&&(state||seat()||token())){const n=++sequence;try{const j=await api(null,'?code='+encodeURIComponent(roomCode));if(n===sequence){adopt(j);$('message').textContent=''}}catch(e){if(n===sequence)$('message').textContent=e.message}}
@@ -141,4 +141,4 @@ if(new URL(location.href).searchParams.get('host')==='1'||new URL(location.href)
 
 $('playMode').onchange=()=>{const team=$('playMode').value==='teams',times=team?[20,30,45]:[10,15,20];$('modeHelp').textContent=team?'Use one phone per team. Discuss together and submit one answer. Easy 20s · Medium 30s · Hard 45s. Up to 250 speed points.':'Answer on your own. Easy 10s · Medium 15s · Hard 20s. Up to 500 speed points.';['easy','medium','hard'].forEach((level,i)=>{$('difficulty').querySelector('[value='+level+']').textContent=level[0].toUpperCase()+level.slice(1)+' · '+times[i]+' seconds · '+[500,1000,1500][i].toLocaleString()+' + speed'})};
 
-mountInviteShare({anchor:document.getElementById('copy'),getUrl:joinLink,title:'Trivia Night'});
+mountInviteShare({anchor:document.getElementById('copy'),getUrl:joinLink,title:'Trivia Night',status:document.getElementById('copyStatus')});
