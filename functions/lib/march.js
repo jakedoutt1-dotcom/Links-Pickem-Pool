@@ -17,7 +17,9 @@ export function parseEvent(event) {
   const teams=(competition.competitors||[]).map(c=>({id:String(c.team?.id||''),name:c.team?.shortDisplayName||c.team?.displayName||'TBD',seed:Number(c.curatedRank?.current),logo:c.team?.logo||'',score:c.score==null||c.score===''?null:Number(c.score),winner:c.winner===true}));
   if(teams.length!==2) return null;
   const status=event.status?.type||competition.status?.type||{}, completed=status.completed===true;
-  return {eventId:String(event.id),region,round,date:event.date||competition.date,teams,completed,winner:completed?(teams.find(t=>t.winner)?.id||''):'',detail:status.shortDetail||status.description||'Scheduled'};
+  const flagged=teams.filter(t=>t.winner),scored=teams.every(t=>Number.isFinite(t.score))&&teams[0].score!==teams[1].score;
+  const winner=completed?(flagged.length===1?flagged[0].id:scored?teams[teams[0].score>teams[1].score?0:1].id:''):'';
+  return {eventId:String(event.id),region,round,date:event.date||competition.date,teams,completed,winner,detail:status.shortDetail||status.description||'Scheduled'};
 }
 export async function tournamentFeed(season) {
   const old=cache.get(season);
