@@ -16,7 +16,11 @@ for(let i=0;i<10;i++){const saved=sql.prepare('SELECT * FROM links_football_triv
 assert.equal(a.score,expected);assert.equal(a.status,'complete');assert.equal(j.data.weekly[0].score,expected);assert.equal(j.data.poolWeekly[0].score,expected);assert.equal((await call(null,'two')).data.poolWeekly[0].score,expected);
 assert.equal((await call({action:'start',difficulty:'easy'})).data.attempt.status,'complete');
 const saved=sql.prepare('SELECT * FROM links_football_trivia').get();const expired={...saved,idx:0,deadline:0,score:0,correct:0,misses:3};assert.equal(grade(expired,JSON.parse(saved.deck)[0].order.indexOf(0),Date.now()).status,'complete');assert.equal(grade(expired,0,Date.now()).score,0);
-assert.equal(weekKey(Date.parse('2026-10-04T23:59:59Z')),'2026-09-28');assert.equal(weekKey(Date.parse('2026-10-05T00:00:00Z')),'2026-10-05');
+assert.equal(weekKey(Date.parse('2026-10-04T23:59:59Z')),'2026-09-28');assert.equal(weekKey(Date.parse('2026-10-05T00:00:00Z')),'2026-09-28');
+assert.equal(weekKey(Date.parse('2026-10-05T04:59:59Z')),'2026-09-28');
+assert.equal(weekKey(Date.parse('2026-10-05T05:00:00Z')),'2026-10-05');
+assert.equal(weekKey(Date.parse('2026-11-02T05:59:59Z')),'2026-10-26');
+assert.equal(weekKey(Date.parse('2026-11-02T06:00:00Z')),'2026-11-02');
 for(const d of ['easy','medium','hard'])assert.ok(QUESTIONS.filter(q=>q.difficulty===d).length>=10);
 assert.ok(QUESTIONS.every(q=>new Set(q.answers).size===4&&q.source.startsWith('https://')));
 console.log('PASS trivia server grading, private answers, weekly identity across pools, no duplicate scoring, expiry, both boards and question bank');

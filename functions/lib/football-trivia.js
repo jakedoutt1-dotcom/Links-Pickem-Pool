@@ -46,7 +46,9 @@ export const QUESTIONS=rows.map((r,i)=>({id:'f'+i,difficulty:r[0],text:r[1],answ
 export const SECONDS={easy:6,medium:8,hard:10};
 export const POINTS={easy:10,medium:20,hard:40};
 export function shuffled(values){return [...values].map(v=>({v,n:crypto.getRandomValues(new Uint32Array(1))[0]})).sort((a,b)=>a.n-b.n).map(x=>x.v)}
-export function weekKey(now=Date.now()){const d=new Date(now);d.setUTCHours(0,0,0,0);d.setUTCDate(d.getUTCDate()-((d.getUTCDay()+6)%7));return d.toISOString().slice(0,10)}
+// Derive the calendar date in Central time before finding Monday (DST safe).
+export function weekKey(now=Date.now()){const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(now));const part=t=>parts.find(p=>p.type===t).value;const d=new Date(`${part('year')}-${part('month')}-${part('day')}T00:00:00Z`);d.setUTCDate(d.getUTCDate()-((d.getUTCDay()+6)%7));return d.toISOString().slice(0,10)}
+
 export function publicAttempt(a){const deck=JSON.parse(a.deck),item=deck[a.idx],q=item&&(item.question||QUESTIONS.find(q=>q.id===item.id));return {id:a.id,week:a.week,difficulty:a.difficulty,score:a.score,correct:a.correct,misses:a.misses,play:a.idx+1,status:a.status,version:a.version,deadline:a.deadline,serverNow:Date.now(),question:a.status==='active'&&q?{text:q.text,choices:item.order.map(i=>q.answers[i])}:null};}
 export function speedBonus(difficulty,deadline,now){return Math.floor((POINTS[difficulty]/2)*Math.max(0,Math.min(1,(deadline-now)/(SECONDS[difficulty]*1000))));}
 export function grade(a,choice,now){const deck=JSON.parse(a.deck),item=deck[a.idx],q=item.question||QUESTIONS.find(q=>q.id===item.id);const correct=now<=a.deadline&&Number.isInteger(choice)&&choice>=0&&choice<4&&item.order[choice]===0;const bonus=correct?speedBonus(a.difficulty,a.deadline,now):0,earned=correct?POINTS[a.difficulty]+bonus:0;const idx=a.idx+1,misses=correct?0:a.misses+1;return {idx,score:a.score+earned,correct:a.correct+(correct?1:0),misses,status:idx===10||misses>=4?'complete':'active',feedback:{correct,earned,bonus,answer:q.answers[0],source:q.source,timedOut:now>a.deadline}};}

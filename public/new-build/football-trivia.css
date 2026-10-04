@@ -54,3 +54,9 @@ main>.scoreboard:not(.final-scoreboard){width:100%;max-width:100%;margin:0 0 12p
 .stadium .primary{background:linear-gradient(135deg,#ffe091,#d5a844)!important;color:#17140c!important}
 .stadium input{background:#10120ff2;border-color:#a98b4f80}
 .stadium .turf,.stadium .ribbon{background:#101510d9;border-color:#b79a554d}
+
+/* A lingering hover must not make the next answer look selected. */
+.stadium .answers button:hover:not(:disabled){transform:none;background:linear-gradient(145deg,#292a24ed,#10120fed);border-color:#b79a555c;box-shadow:none}
+.answers button{touch-action:manipulation}
+.question:focus{outline:none}
+#feedback:not(:empty){border-top:1px solid #b79a555c;padding-top:10px;font-size:.9rem}

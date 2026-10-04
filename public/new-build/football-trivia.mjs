@@ -16,7 +16,7 @@ function showStartError(error){
  $('message').scrollIntoView({block:'nearest'});
 }
 async function resume(){if(busy)return;busy=true;setLoading(true);try{practice=false;adopt(await api());$('message').textContent=''}catch(e){if(!a)render();showStartError(e)}finally{busy=false;setLoading(false)}}
-function feedback(f){showPlay(f.correct ? 'gain' : 'miss');$('feedback').replaceChildren();const span=document.createElement('span');span.textContent=(f.correct?'FIRST DOWN! ':f.timedOut?'TIME EXPIRED. ':'INCOMPLETE. ')+(f.correct?'+'+f.earned+' points ('+f.bonus+' speed bonus). ':'')+'Answer: '+f.answer;$('feedback').append(span);if(f.source){const link=document.createElement('a');link.href=f.source;link.target='_blank';link.rel='noopener';link.textContent='Check source';$('feedback').append(link)}tone(f.correct?'correct':'wrong')}
+function feedback(f){showPlay(f.correct ? 'gain' : 'miss');$('feedback').replaceChildren();const span=document.createElement('span');span.textContent='Previous play · '+(f.correct?'FIRST DOWN! ':f.timedOut?'TIME EXPIRED. ':'INCOMPLETE. ')+(f.correct?'+'+f.earned+' points ('+f.bonus+' speed bonus). ':'')+'Answer: '+f.answer;$('feedback').append(span);if(f.source){const link=document.createElement('a');link.href=f.source;link.target='_blank';link.rel='noopener';link.textContent='Check source';$('feedback').append(link)}tone(f.correct?'correct':'wrong')}
 const playNames=['Deep in your own territory','The snap · Own 30','Take the handoff · Own 40','Break through · Midfield','Air it out · Opponent 40','Make the catch · Opponent 30','Into the red zone · Opponent 20','Goal-line push · Opponent 10','Touchdown · LINKS!'];
 // Each frame in the 3 x 3 sheet is 512 x 341.33. Scale uniformly like
 // background-size: cover, then position the selected frame inside the viewport.
@@ -36,7 +36,7 @@ function showPlay(outcome){
  scene.setAttribute('aria-label',miss?'LINKS receiver misses a pass. No yards gained.':playNames[stage]);
  $('sceneCaption').textContent=miss?(stage===8?'No extra points this play · Touchdown secured':'Incomplete · Hold your field position'):playNames[stage];
 }
-function render(){showPlay();
+function render(){$('feedback').replaceChildren();showPlay();
  const stadium=document.querySelector('.stadium'),scoreboard=document.querySelector('.scoreboard'),finished=a?.status==='complete';
  scoreboard.classList.toggle('final-scoreboard',finished);
  const consolePanel=document.querySelector('.console');stadium.prepend(consolePanel);stadium.prepend(scoreboard);
@@ -46,7 +46,7 @@ function render(){showPlay();
  if(!a){$('clock').textContent=String(secondsPerPlay[difficulty]).padStart(2,'0');$('game').innerHTML='<p class="mode">NFL football · Choose your challenge</p><h2>How deep is your playbook?</h2><div class="difficulty">'+Object.entries(points).map(([d,p])=>'<button data-difficulty="'+d+'" aria-pressed="'+(d===difficulty)+'" class="'+(d===difficulty?'active':'')+'"><strong>'+d.toUpperCase()+'</strong><small>'+p+' pts + up to '+(p/2)+' speed · '+secondsPerPlay[d]+' sec</small><small>'+(d==='easy'?'The fundamentals':d==='medium'?'Know your football':'Expert history')+'</small></button>').join('')+'</div><label>Your leaderboard name<input id="alias" maxlength="40" value="'+esc(localStorage.getItem('links-player-name')||'Player')+'"></label><p>Easy: 6 seconds · Medium: 8 seconds · Hard: 10 seconds. One scored drive each week, across every pool. Your name and score appear on the LINKS trivia leaderboard.</p><div class="setup-actions"><button id="start" class="primary">Start weekly drive</button><button id="practice">Try practice</button></div>';
  $('game').querySelectorAll('[data-difficulty]').forEach(b=>b.onclick=()=>{difficulty=b.dataset.difficulty;render()});$('start').onclick=start;$('practice').onclick=startPractice;return}
  if(a.status==='complete'){$('clock').textContent='FINAL';$('game').innerHTML='<p class="mode">'+(practice?'PRACTICE · NOT RANKED':'WEEKLY DRIVE COMPLETE')+'</p><h2>'+(correct>=8?'You found the end zone!':'That’s your drive!')+'</h2><div class="result-score">'+a.score+' <small>PTS</small></div><p>'+correct+' correct · '+a.difficulty.toUpperCase()+' · '+(correct>=8?'1 touchdown':'Keep studying your playbook')+'</p><p>'+(practice?'Practice never changes your weekly score.':'Your score is saved. Come back next Monday for a fresh challenge.')+'</p><button id="again">Play practice</button>'; $('again').onclick=startPractice;return}
- $('game').innerHTML='<p class="mode">'+(practice?'PRACTICE · SAMPLE QUESTIONS':a.difficulty+' · '+points[a.difficulty]+' POINTS + UP TO '+(points[a.difficulty]/2)+' SPEED BONUS')+'</p><h2 class="question">'+esc(a.question.text)+'</h2><div class="answers">'+a.question.choices.map((c,i)=>'<button data-answer="'+i+'">'+String.fromCharCode(65+i)+'. '+esc(c)+'</button>').join('')+'</div>';$('game').querySelectorAll('[data-answer]').forEach(b=>b.onclick=()=>answer(Number(b.dataset.answer)));keepQuestionVisible();tick();
+ $('game').innerHTML='<p class="mode">'+(practice?'PRACTICE · SAMPLE QUESTIONS':a.difficulty+' · '+points[a.difficulty]+' POINTS + UP TO '+(points[a.difficulty]/2)+' SPEED BONUS')+'</p><h2 class="question" tabindex="-1">'+esc(a.question.text)+'</h2><div class="answers">'+a.question.choices.map((c,i)=>'<button data-answer="'+i+'">'+String.fromCharCode(65+i)+'. '+esc(c)+'</button>').join('')+'</div>';$('game').querySelectorAll('[data-answer]').forEach(b=>b.onclick=()=>answer(Number(b.dataset.answer)));$('game').querySelector('.question').focus({preventScroll:true});keepQuestionVisible();tick();
 }
 async function start(){if(busy){$('message').textContent='Checking your account—please wait a moment.';return;}if(!localStorage.getItem('links-legacy-token')&&!localStorage.getItem('links-token')){showStartError({status:401,message:'Sign in to your pool before starting your weekly drive.'});return;}if(!confirm('Start your one scored football drive for this week? The clock starts immediately, and refreshing will not restart it.'))return;busy=true;$('start').disabled=true;try{practice=false;lastTD=false;adopt(await api({action:'start',difficulty,name:$('alias').value}));$('message').textContent=''}catch(e){render();showStartError(e)}finally{busy=false;setLoading(false)}}
 function startPractice(){if(busy)return;practice=true;lastTD=false;offset=0;practiceDeck=samples.map(q=>({text:q[0],answer:q[1],choices:q.slice(1).sort(()=>Math.random()-.5)})).sort(()=>Math.random()-.5);a={score:0,correct:0,misses:0,play:1,status:'active',difficulty,deadline:Date.now()+secondsPerPlay[difficulty]*1000,question:practiceDeck[0]};$('feedback').replaceChildren();$('message').textContent='Practice uses sample questions. Scores are not ranked.';render()}
@@ -68,3 +68,13 @@ function leaderboard(){
 
 $('weekly').onclick=()=>{board='weekly';leaderboard()};$('season').onclick=()=>{board='seasonal';leaderboard()};$('refresh').onclick=()=>{if(a?.status==='active'&&practice&&!confirm('Leave this practice drive?'))return;resume()};
 render();leaderboard();if(localStorage.getItem('links-token')||localStorage.getItem('links-legacy-token'))resume();else $('message').textContent='Try practice, or sign in to your pool for the weekly leaderboard.';
+
+// Refresh standings without replacing the question or its running clock.
+let refreshingBoards=false;
+async function refreshBoards(){
+ if(refreshingBoards||busy||document.hidden||(!localStorage.getItem('links-token')&&!localStorage.getItem('links-legacy-token')))return;
+ refreshingBoards=true;
+ try{const fresh=await api();for(const key of ['weekly','seasonal','poolWeekly','poolSeasonal','poolName','week','season'])data[key]=fresh[key];leaderboard();}catch{/* Keep the last standings on a temporary connection failure. */}finally{refreshingBoards=false;}
+}
+setInterval(refreshBoards,30000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshBoards()});
