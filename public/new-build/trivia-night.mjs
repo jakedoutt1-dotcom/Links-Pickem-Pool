@@ -1,3 +1,4 @@
+import {updateVenueRoom} from './venue-link.mjs';
 import {mountInviteShare} from './invite-share.mjs';
 import {mountTriviaSound} from './trivia-sound.mjs';
 import qrcode from './vendor/qrcode.mjs';
@@ -21,6 +22,7 @@ function adopt(j){
  if($('quickJoin').open)$('quickJoin').close();document.body.classList.remove('qr-joining');
  offset=j.serverNow-Date.now();state=j;roomCode=j.code;sessionStorage.setItem('trivia-night-room',roomCode);
  if(j.token)localStorage.setItem('trivia-night-seat-'+roomCode,j.token);
+ updateVenueRoom('trivia-night',roomCode,seat(),token());
  document.body.classList.add('in-room');document.body.dataset.role=j.host?'host':'player';$('screen').hidden=!j.host||!['lobby','ended'].includes(j.phase);
  showScreen(j.phase==='lobby'?'waiting':j.phase==='ended'?'results':'game');
  const u=new URL(location.href);u.searchParams.set('room',roomCode);u.searchParams.delete('step');u.searchParams.delete('host');history.replaceState(null,'',u);

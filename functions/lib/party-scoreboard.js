@@ -1,3 +1,4 @@
+import {ensureVenue,venueStatements} from './venue-scoreboard.js';
 // Add future games here with an explicit outcome rule; raw points never cross games.
 export const SCORE_GAMES={
  'trivia-rally':{name:'Trivia Rally',table:'links_rally_rooms',storage:'links-rally-seat-'},
@@ -32,16 +33,16 @@ export function partyResultStatements(db,game,code,version,encoded,snapshots){
  }}return out;
 }
 export async function savePartyRoom(db,game,code,version,s,completed){
- if(completed||s.phase==='ended')await ensureScoreboard(db);
+ if(completed||s.phase==='ended'){await ensureScoreboard(db);await ensureVenue(db);}
  const encoded=JSON.stringify(s),table=SCORE_GAMES[game].table;
- const rows=await db.batch([db.prepare(`UPDATE ${table} SET state=?,version=version+1 WHERE code=? AND version=?`).bind(encoded,code,version),...partyResultStatements(db,game,code,version,encoded,[completed,s])]);return rows[0];
+ const rows=await db.batch([db.prepare(`UPDATE ${table} SET state=?,version=version+1 WHERE code=? AND version=?`).bind(encoded,code,version),...partyResultStatements(db,game,code,version,encoded,[completed,s]),...((completed||s.phase==='ended')?venueStatements(db,game,table,code,version,encoded,[completed,s]):[])]);return rows[0];
 }
 // Calendar periods follow LINKS' Central time, including daylight-saving changes.
 export function periodStart(period,now=Date.now()){
  if(period==='all')return 0;
  const parts=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now).map(p=>[p.type,p.value]));
  let d=new Date(Date.UTC(+parts.year,+parts.month-1,+parts.day));
- if(period==='year')d=new Date(Date.UTC(+parts.year,0,1));else d.setUTCDate(d.getUTCDate()-(d.getUTCDay()+6)%7);
+ if(period==='month')d=new Date(Date.UTC(+parts.year,+parts.month-1,1));else if(period==='tonight'){}else if(period==='year')d=new Date(Date.UTC(+parts.year,0,1));else d.setUTCDate(d.getUTCDate()-(d.getUTCDay()+6)%7);
  let t=d.getTime()+6*3600000;
  const hour=Number(new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',hourCycle:'h23'}).format(t));if(hour===1)t-=3600000;
  return t;

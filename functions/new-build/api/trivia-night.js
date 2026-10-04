@@ -1,3 +1,4 @@
+import {ensureVenue,venueStatements} from '../../lib/venue-scoreboard.js';
 import {hostAccess} from '../../lib/trivia-host-billing.js';
 import {paypal} from './party-pack.js';
 import {loadFreshGameQuestions,normalizedQuestionText} from '../../lib/trivia-provider.js';
@@ -132,7 +133,7 @@ export async function onRequest({request,env}){
      }else return json({error:'Unknown action.'},400);
     }
    }
-   const result=await db.prepare('UPDATE links_trivia_night_rooms SET state=?,version=version+1 WHERE code=? AND version=?').bind(JSON.stringify(s),code,row.version).run();
+   const encoded=JSON.stringify(s);if(s.phase==='ended')await ensureVenue(db);const writes=await db.batch([db.prepare('UPDATE links_trivia_night_rooms SET state=?,version=version+1 WHERE code=? AND version=?').bind(encoded,code,row.version),...(s.phase==='ended'?venueStatements(db,'trivia-night','links_trivia_night_rooms',code,row.version,encoded,[s]):[])]);const result=writes[0];
    if(result.meta?.changes){if(host&&action==='start-question'){const key=s.hostHistoryKey||await historyKey(row.pool_id),q=s.deck[s.index];await db.prepare('INSERT INTO links_trivia_night_history(host_key,text_key,question_id,last_used) VALUES(?,?,?,?) ON CONFLICT(host_key,text_key) DO UPDATE SET question_id=excluded.question_id,last_used=excluded.last_used').bind(key,normalizedQuestionText(q),q.id,Date.now()).run();await db.prepare('DELETE FROM links_trivia_night_history WHERE last_used<?').bind(Date.now()-2592000000).run()}return json({...view(s,issued?await hash(issued):seat,host),...(issued?{token:issued}:{})});}
   }
   return json({error:'The room is busy. Please try again.'},409);
