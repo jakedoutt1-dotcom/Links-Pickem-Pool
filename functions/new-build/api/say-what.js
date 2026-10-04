@@ -1,3 +1,4 @@
+import {requirePartyPass} from '../../lib/party-access.js';
 import {BANK,normalize,blocked,shuffle,start,advance,view} from '../../lib/say-what.js';
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
 const hash=async t=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t)))).map(n=>n.toString(16).padStart(2,'0')).join('');
@@ -12,7 +13,7 @@ export async function onRequest({request,env}){try{
  await db.batch([db.prepare('DELETE FROM links_word_rooms WHERE expires<=?').bind(now),db.prepare('DELETE FROM links_word_limits WHERE starts<?').bind(now-78000)]);
  if(request.method==='POST'){const window=action==='create'?3600000:60000,limit=action==='create'?10:120,id=await hash((request.headers.get('CF-Connecting-IP')||'local')+':'+(action==='create'?'create':'action'));await db.prepare('INSERT INTO links_word_limits(id,starts,hits) VALUES(?,?,1) ON CONFLICT(id) DO UPDATE SET hits=CASE WHEN starts<? THEN 1 ELSE hits+1 END,starts=CASE WHEN starts<? THEN excluded.starts ELSE starts END').bind(id,now,now-window,now-window).run();if((await db.prepare('SELECT hits FROM links_word_limits WHERE id=?').bind(id).first()).hits>limit)return json({error:'Please wait before trying again.'},429)}
  const name=String(b.name||'').trim(),validName=name.length>0&&name.length<=32;
- if(action==='create'){
+ if(action==='create'){const paymentGate=await requirePartyPass(request,env);if(paymentGate)return paymentGate;
  if(!validName)return json({error:'Enter a name up to 32 characters.'},400);
  const code=crypto.randomUUID().replace(/-/g,'').slice(0,10).toUpperCase(),token=crypto.randomUUID()+crypto.randomUUID(),seat=await hash(token);
  const s={code,game:1,index:-1,phase:'lobby',owner:seat,displayKey:crypto.randomUUID()+crypto.randomUUID(),players:{[seat]:{name,score:0,ready:false}}};await db.prepare('INSERT INTO links_word_rooms(code,state,expires) VALUES(?,?,?)').bind(code,JSON.stringify(s),now+7200000).run();return json({...view(s,seat,now),token});}

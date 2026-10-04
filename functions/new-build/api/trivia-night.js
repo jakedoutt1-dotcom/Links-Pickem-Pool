@@ -1,3 +1,5 @@
+import {hostBillingEnabled,hostAccess} from '../../lib/trivia-host-billing.js';
+import {paypal} from './party-pack.js';
 import {loadFreshGameQuestions,normalizedQuestionText} from '../../lib/trivia-provider.js';
 import {ensureAccounts,allowance,emailKey} from '../../lib/commissioner-account.js';
 import {ownerSession} from '../../lib/owner-auth.js';
@@ -42,7 +44,10 @@ export async function onRequest({request,env}){
    const owner=await db.prepare('SELECT email FROM links_pool_owners WHERE pool_id=?').bind(admin.pool_id).first();
    const contact=await db.prepare("SELECT value FROM pool_settings WHERE pool_id=? AND key='commissioner_email'").bind(admin.pool_id).first();
    const email=emailKey(owner?.email||contact?.value||'');
-   const plan=owner?await allowance(db,email):{label:'Free',slots:1};
+   const billing=hostBillingEnabled(env);
+   const subscription=billing&&email?await hostAccess(env,email,paypal):null;
+   if(billing&&!subscription)return json({error:'Hosted Trivia Night requires its own $29.99 monthly subscription, using your commissioner email. Players join free.',code:'TRIVIA_HOST_REQUIRED'},402);
+   const plan=billing?{label:'Trivia Night',slots:1}:owner?await allowance(db,email):{label:'Free',slots:1};
    const ownership=(await db.prepare('SELECT pool_id,email FROM links_pool_owners').all()).results||[];
    const contacts=(await db.prepare("SELECT pool_id,value FROM pool_settings WHERE key='commissioner_email'").all()).results||[];
    const pools=[...new Set([admin.pool_id,...(email?ownership.filter(p=>emailKey(p.email)===email).map(p=>p.pool_id):[]),...(email?contacts.filter(p=>emailKey(p.value)===email&&!ownership.some(o=>o.pool_id===p.pool_id&&emailKey(o.email)!==email)).map(p=>p.pool_id):[])])];

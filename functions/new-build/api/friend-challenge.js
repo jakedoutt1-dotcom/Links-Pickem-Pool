@@ -1,3 +1,4 @@
+import {requirePartyPass} from '../../lib/party-access.js';
 import {CATEGORIES,STARTER} from '../../lib/trivia-night.js';
 import {loadGameQuestions,completeQuestionBank} from '../../lib/trivia-provider.js';
 import {challengeDeck,begin,advance,challengeView} from '../../lib/friend-challenge.js';
@@ -14,7 +15,7 @@ export async function onRequest({request,env}){
   const now=Date.now();
   if(['create','join','ready'].includes(action)){const id=await hash((request.headers.get('CF-Connecting-IP')||'local')+':'+action),window=action==='create'?3600000:60000,limit=action==='create'?10:120;await db.prepare('INSERT INTO links_friend_limits(id,starts,hits) VALUES(?,?,1) ON CONFLICT(id) DO UPDATE SET hits=CASE WHEN starts<? THEN 1 ELSE hits+1 END,starts=CASE WHEN starts<? THEN excluded.starts ELSE starts END').bind(id,now,now-window,now-window).run();const rate=await db.prepare('SELECT hits FROM links_friend_limits WHERE id=?').bind(id).first();if(rate.hits>limit)return json({error:'Too many requests. Please try again later.'},429)}
   const name=String(b.name||'').trim(),validName=()=>name.length>0&&name.length<=32;
-  if(action==='create'){
+  if(action==='create'){const paymentGate=await requirePartyPass(request,env);if(paymentGate)return paymentGate;
    if(!validName())return json({error:'Enter your name (up to 32 characters).'},400);
    if(!['mixed',...CATEGORIES].includes(b.category)||!['mixed','easy','medium','hard'].includes(b.difficulty))return json({error:'Choose a category and difficulty.'},400);
    const categories=b.category==='mixed'?CATEGORIES:[b.category];const loaded=await loadGameQuestions({env,categories,backup:STARTER,perGroup:20,difficulties:b.difficulty==='mixed'?['easy','medium','hard']:[b.difficulty]});let deck;try{deck=challengeDeck(completeQuestionBank(loaded.questions,STARTER.filter(q=>categories.includes(q.category)&&(b.difficulty==='mixed'||q.difficulty===b.difficulty)),{minimum:30}),categories,b.difficulty)}catch(e){return json({error:e.message},400)}
