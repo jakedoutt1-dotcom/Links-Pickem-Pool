@@ -1,3 +1,4 @@
+import {rememberPartySeat} from './party-score-link.mjs';
 import {mountTriviaSound} from './trivia-sound.mjs';
 import qrcode from './vendor/qrcode.mjs';
 const displayKey=new URL(location.href).searchParams.get('display')||'';if(displayKey)document.body.classList.add('tv-mode');
@@ -6,7 +7,7 @@ const $=id=>document.getElementById(id),themes={football:'Sports',music:'Music',
 let code=new URL(location.href).searchParams.get('room')||'',state=null,busy=false,offset=0,signature='',generation=0;
 const token=()=>localStorage.getItem('links-rally-seat-'+code)||'';
 async function api(body){const r=await fetch('./api/trivia-rally'+(body?'':'?code='+encodeURIComponent(code)),{method:body?'POST':'GET',headers:{'Content-Type':'application/json','x-rally-token':token(),'x-rally-display':displayKey},cache:'no-store',signal:AbortSignal.timeout(14000),...(body?{body:JSON.stringify({code,...body})}:{})});const j=await r.json();if(!r.ok){const e=Error(j.error||'Unable to connect.');e.status=r.status;throw e}return j}
-function adopt(j){state=j;code=j.code;offset=j.serverNow-Date.now();if(j.token)localStorage.setItem('links-rally-seat-'+code,j.token);const u=new URL(location.href);u.searchParams.set('room',code);history.replaceState(null,'',u);$('entry').hidden=true;$('room').hidden=false;const next=JSON.stringify({...j,serverNow:0,token:undefined});if(signature!==next){signature=next;render()}tick()}
+function adopt(j){if(!displayKey)rememberPartySeat('trivia-rally',j.code,j.token||localStorage.getItem('links-rally-seat-'+j.code));state=j;code=j.code;offset=j.serverNow-Date.now();if(j.token)localStorage.setItem('links-rally-seat-'+code,j.token);const u=new URL(location.href);u.searchParams.set('room',code);history.replaceState(null,'',u);$('entry').hidden=true;$('room').hidden=false;const next=JSON.stringify({...j,serverNow:0,token:undefined});if(signature!==next){signature=next;render()}tick()}
 async function act(action,extra={}){if(busy)return;busy=true;++generation;$('message').textContent=action==='create'?'Getting your questions ready…':'';tick();document.querySelectorAll('form button').forEach(b=>b.disabled=true);try{adopt(await api({action,game:state?.game,index:state?.index,...extra}));$('message').textContent=''}catch(e){$('message').textContent=e.message;$('message').scrollIntoView({block:'nearest'})}finally{busy=false;document.querySelectorAll('form button').forEach(b=>b.disabled=false);tick()}}
 function link(){const u=new URL('./trivia-rally.html',location.href);u.searchParams.set('room',code);return u.href}
 function render(){

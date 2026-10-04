@@ -1,3 +1,4 @@
+import {partyFinish,savePartyRoom} from '../../lib/party-scoreboard.js';
 import {requirePartyPass} from '../../lib/party-access.js';
 import {CATEGORIES,STARTER} from '../../lib/trivia-night.js';
 import {loadGameQuestions,completeQuestionBank} from '../../lib/trivia-provider.js';
@@ -27,7 +28,7 @@ export async function onRequest({request,env}){
   let rematchQuestions;
   for(let attempt=0;attempt<5;attempt++){
    const row=await db.prepare('SELECT * FROM links_rally_rooms WHERE code=? AND expires>?').bind(code,Date.now()).first();if(!row)return json({error:'Challenge expired or not found. Ask your friend for a new link.'},404);
-   const s=JSON.parse(row.state),time=Date.now();const display=request.method==='GET'&&request.headers.get('x-rally-display')===s.displayKey;let changed=advance(s,time),issued,newSeat=display?'':seat;
+   const s=JSON.parse(row.state),time=Date.now();const display=request.method==='GET'&&request.headers.get('x-rally-display')===s.displayKey;let changed=advance(s,time),issued,newSeat=display?'':seat;const completed=partyFinish(s);
    if(action==='join'){
     if(!s.players[seat]){if(s.phase!=='lobby')return json({error:'This challenge has started. Join a new challenge with your friends.'},409);if(Object.keys(s.players).length>=8)return json({error:'This challenge is full (8 players).'},409);if(!validName())return json({error:'Enter your name (up to 32 characters).'},400);if(Object.values(s.players).some(p=>p.name.toLowerCase()===name.toLowerCase()))return json({error:'That name is already in use.'},409);issued=crypto.randomUUID()+crypto.randomUUID();newSeat=await hash(issued);s.players[newSeat]={name,score:0,ready:false,answer:null};changed=true}
    }else{
@@ -46,7 +47,7 @@ export async function onRequest({request,env}){
      if(!['lobby','ended'].includes(s.phase))return json({error:'You can close this page now. Your result stays in this game.'},409);delete s.players[seat];for(const p of Object.values(s.players))p.ready=false;changed=true;
     }else if(action!=='state')return json({error:'Unknown action.'},400);
    }
-   if(changed){const update=await db.prepare('UPDATE links_rally_rooms SET state=?,version=version+1 WHERE code=? AND version=?').bind(JSON.stringify(s),code,row.version).run();if(!update.meta?.changes)continue}
+   if(changed){const update=await savePartyRoom(db,'trivia-rally',code,row.version,s,completed);if(!update.meta?.changes)continue}
    return json({...challengeView(s,newSeat,time),...(!display?{displayKey:s.displayKey}:{}),...(issued?{token:issued}:{})});
   }return json({error:'The room is busy. Please try again.'},409);
  }catch{return json({error:'Challenge could not complete that request. Please try again.'},503)}

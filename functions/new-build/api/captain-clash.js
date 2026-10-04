@@ -1,3 +1,4 @@
+import {ensureScoreboard,partyFinish,partyResultStatements} from '../../lib/party-scoreboard.js';
 import {requirePartyPass} from '../../lib/party-access.js';
 import {LIBRARY,shuffle,startRound,advance,view} from '../../lib/captain-clash.js';
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
@@ -21,7 +22,7 @@ export async function onRequest({request,env}){try{
  const token=request.headers.get('x-captain-token')||'',seat=token?await hash(token):'',displayKey=request.headers.get('x-captain-display')||'';
  for(let n=0;n<5;n++){
  const row=await db.prepare('SELECT * FROM links_caption_rooms WHERE code=? AND expires>?').bind(code,Date.now()).first();if(!row)return json({error:'Room expired or not found. Start a new clash.'},404);
- const s=JSON.parse(row.state),time=Date.now(),display=!!displayKey&&displayKey===s.displayKey;let changed=advance(s,time),issued,current=seat,photoInsert=null;
+ const s=JSON.parse(row.state),time=Date.now(),display=!!displayKey&&displayKey===s.displayKey;let changed=advance(s,time),issued,current=seat,photoInsert=null;const completed=partyFinish(s);
  if(action==='join'){
  if(!s.players[seat]){if(s.phase!=='lobby'||Object.keys(s.players).length>=8)return json({error:'Room started or full. Join the next game.'},409);if(!validName)return json({error:'Enter a name (up to 32 characters).'},400);if(Object.values(s.players).some(p=>p.name.toLowerCase()===name.toLowerCase()))return json({error:'That name is already taken.'},409);issued=crypto.randomUUID()+crypto.randomUUID();current=await hash(issued);s.players[current]={name,score:0,ready:false};changed=true}
  }else{
@@ -54,7 +55,7 @@ export async function onRequest({request,env}){try{
  if(seat!==s.owner||s.phase!=='ended')return json({error:'Only the creator can restart after the final results.'},403);s.phase='lobby';s.game++;s.index=-1;s.deck=[];delete s.options;for(const p of Object.values(s.players)){p.score=0;p.roundPoints=0;p.ready=false;p.caption='';p.vote=null}changed=true;
  }else if(action!=='state')return json({error:'Unknown action.'},400);
  }
- if(changed){const encoded=JSON.stringify(s),statements=[db.prepare('UPDATE links_caption_rooms SET state=?,version=version+1 WHERE code=? AND version=?').bind(encoded,code,row.version)];if(photoInsert)statements.push(db.prepare('INSERT INTO links_caption_photos(id,code,data,expires) SELECT ?,?,?,? WHERE EXISTS(SELECT 1 FROM links_caption_rooms WHERE code=? AND version=? AND state=?)').bind(photoInsert.id,code,photoInsert.data,row.expires,code,row.version+1,encoded));if(action==='reject')statements.push(db.prepare('DELETE FROM links_caption_photos WHERE id=? AND code=? AND EXISTS(SELECT 1 FROM links_caption_rooms WHERE code=? AND version=? AND state=?)').bind(b.id,code,code,row.version+1,encoded));const updates=await db.batch(statements);if(!updates[0].meta?.changes)continue}
+ if(changed){const encoded=JSON.stringify(s),statements=[db.prepare('UPDATE links_caption_rooms SET state=?,version=version+1 WHERE code=? AND version=?').bind(encoded,code,row.version)];if(photoInsert)statements.push(db.prepare('INSERT INTO links_caption_photos(id,code,data,expires) SELECT ?,?,?,? WHERE EXISTS(SELECT 1 FROM links_caption_rooms WHERE code=? AND version=? AND state=?)').bind(photoInsert.id,code,photoInsert.data,row.expires,code,row.version+1,encoded));if(action==='reject')statements.push(db.prepare('DELETE FROM links_caption_photos WHERE id=? AND code=? AND EXISTS(SELECT 1 FROM links_caption_rooms WHERE code=? AND version=? AND state=?)').bind(b.id,code,code,row.version+1,encoded));if(completed||s.phase==='ended')await ensureScoreboard(db);statements.push(...partyResultStatements(db,'captain-clash',code,row.version,encoded,[completed,s]));const updates=await db.batch(statements);if(!updates[0].meta?.changes)continue}
  return json({...view(s,current,time,display),...(issued?{token:issued}:{})});
  }return json({error:'Room busy. Please try again.'},409);
  }catch{return json({error:'Unable to complete that request. Please try again.'},503)}}

@@ -1,3 +1,4 @@
+import {partyFinish,savePartyRoom} from '../../lib/party-scoreboard.js';
 import {requirePartyPass} from '../../lib/party-access.js';
 import {BANK,normalize,blocked,shuffle,start,advance,view} from '../../lib/say-what.js';
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
@@ -21,7 +22,7 @@ export async function onRequest({request,env}){try{
  const token=request.headers.get('x-say-token')||'',seat=token?await hash(token):'',displayKey=request.headers.get('x-say-display')||'';
  for(let n=0;n<5;n++){
  const row=await db.prepare('SELECT * FROM links_word_rooms WHERE code=? AND expires>?').bind(code,Date.now()).first();if(!row)return json({error:'Room expired or not found.'},404);
- const s=JSON.parse(row.state),time=Date.now(),display=!!displayKey&&displayKey===s.displayKey;let changed=advance(s,time),issued,current=seat;
+ const s=JSON.parse(row.state),time=Date.now(),display=!!displayKey&&displayKey===s.displayKey;let changed=advance(s,time),issued,current=seat;const completed=partyFinish(s);
  if(action==='join'){
  if(display)return json({error:'Join on your phone.'},403);
  if(!s.players[seat]){if(s.phase!=='lobby'||Object.keys(s.players).length>=8)return json({error:'Room started or full. Join the next game.'},409);if(!validName)return json({error:'Enter a name up to 32 characters.'},400);if(Object.values(s.players).some(p=>p.name.toLowerCase()===name.toLowerCase()))return json({error:'That name is taken.'},409);issued=crypto.randomUUID()+crypto.randomUUID();current=await hash(issued);s.players[current]={name,score:0,ready:false};changed=true}
@@ -57,7 +58,7 @@ export async function onRequest({request,env}){try{
  s.phase='lobby';s.game++;s.index=-1;s.order=[];s.deck=[];s.clues=[];s.solved={};s.lastGuess={};for(const p of Object.values(s.players)){p.score=0;p.roundPoints=0;p.ready=false}changed=true;
  }else if(action!=='state')return json({error:'Unknown action.'},400);
  }
- if(changed){const update=await db.prepare('UPDATE links_word_rooms SET state=?,version=version+1 WHERE code=? AND version=?').bind(JSON.stringify(s),code,row.version).run();if(!update.meta?.changes)continue}
+ if(changed){const update=await savePartyRoom(db,'say-what',code,row.version,s,completed);if(!update.meta?.changes)continue}
  return json({...view(s,current,time,display),...(issued?{token:issued}:{})});
  }return json({error:'Room busy. Please try again.'},409);
  }catch{return json({error:'Unable to complete that request. Please try again.'},503)}}

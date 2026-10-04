@@ -1,3 +1,4 @@
+import {partyFinish,savePartyRoom} from '../../lib/party-scoreboard.js';
 import {requirePartyPass} from '../../lib/party-access.js';
 import {loadGameQuestions,completeQuestionBank} from '../../lib/trivia-provider.js';
 import {CATEGORIES} from '../../lib/trivia-night.js';
@@ -24,7 +25,7 @@ export async function onRequest({request,env}){try{
  let questionLoad;
  for(let n=0;n<5;n++){
  const row=await db.prepare('SELECT * FROM links_dead_air_rooms WHERE code=? AND expires>?').bind(code,Date.now()).first();if(!row)return json({error:'Room expired or not found.'},404);
- const s=JSON.parse(row.state),time=Date.now(),display=!!displayKey&&displayKey===s.displayKey;let changed=advance(s,time),issued,current=seat;
+ const s=JSON.parse(row.state),time=Date.now(),display=!!displayKey&&displayKey===s.displayKey;let changed=advance(s,time),issued,current=seat;const completed=partyFinish(s);
  if(action==='join'){
  if(display)return json({error:'Join on your phone.'},403);
  if(!s.players[seat]){if(s.phase!=='lobby'||Object.keys(s.players).length>=8)return json({error:'Room started or full. Join the next game.'},409);if(!validName)return json({error:'Enter a name up to 32 characters.'},400);if(Object.values(s.players).some(p=>p.name.toLowerCase()===name.toLowerCase()))return json({error:'That name is taken.'},409);issued=crypto.randomUUID()+crypto.randomUUID();current=await hash(issued);s.players[current]={name,avatar,score:0,ready:false,lives:3,echoCharge:0,progress:0};changed=true}
@@ -49,7 +50,7 @@ export async function onRequest({request,env}){try{
  s.phase='lobby';s.game++;s.phaseId=0;s.deadline=0;s.responses={};s.results=[];delete s.question;delete s.challenge;delete s.challengeOutcome;for(const p of Object.values(s.players)){p.score=0;p.ready=false;p.lives=3;p.echoCharge=0;p.progress=0;p.atRisk=false}changed=true;
  }else if(action!=='state')return json({error:'Unknown action.'},400);
  }
- if(changed){const update=await db.prepare('UPDATE links_dead_air_rooms SET state=?,version=version+1 WHERE code=? AND version=?').bind(JSON.stringify(s),code,row.version).run();if(!update.meta?.changes)continue}
+ if(changed){const update=await savePartyRoom(db,'dead-air',code,row.version,s,completed);if(!update.meta?.changes)continue}
  return json({...view(s,current,time,display),...(issued?{token:issued}:{})});
  }return json({error:'Room busy. Please try again.'},409);
  }catch{return json({error:'Unable to complete that request. Please try again.'},503)}}

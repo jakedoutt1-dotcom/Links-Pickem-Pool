@@ -1,3 +1,4 @@
+import {rememberPartySeat} from './party-score-link.mjs';
 import qrcode from './vendor/qrcode.mjs';
 import {mountTriviaSound} from './trivia-sound.mjs';
 const $=id=>document.getElementById(id),sound=mountTriviaSound({button:$('soundToggle')});
@@ -5,7 +6,7 @@ let code=new URL(location.href).searchParams.get('room')||'',display=new URLSear
 const token=()=>localStorage.getItem('links-say-'+code)||'';
 async function api(body){const r=await fetch('./api/say-what'+(body?'':'?code='+encodeURIComponent(code)),{method:body?'POST':'GET',headers:{'Content-Type':'application/json','x-say-token':display?'':token(),'x-say-display':display},cache:'no-store',signal:AbortSignal.timeout(15000),...(body?{body:JSON.stringify({code,...body})}:{})});const j=await r.json();if(!r.ok)throw Error(j.error||'Please try again.');return j}
 function link(){const u=new URL('./say-what.html',location.href);u.searchParams.set('room',code);return u.href}
-function adopt(j){state=j;code=j.code;offset=j.serverNow-Date.now();if(j.token)localStorage.setItem('links-say-'+code,j.token);const u=new URL(location.href);u.searchParams.set('room',code);history.replaceState(null,'',u);render();tick()}
+function adopt(j){if(!display)rememberPartySeat('say-what',j.code,j.token||localStorage.getItem('links-say-'+j.code));state=j;code=j.code;offset=j.serverNow-Date.now();if(j.token)localStorage.setItem('links-say-'+code,j.token);const u=new URL(location.href);u.searchParams.set('room',code);history.replaceState(null,'',u);render();tick()}
 async function act(action,extra={}){if(busy)return;busy=true;revision++;$('message').textContent='';tick();try{adopt(await api({action,game:state?.game,index:state?.index,...extra}));if(action==='clue'||action==='guess')$('text').value=''}catch(e){$('message').textContent=e.message}finally{busy=false;tick()}}
 function render(){document.body.dataset.display=state.display;$('entry').hidden=true;$('room').hidden=false;$('roomCode').textContent='ROOM '+code+' · '+state.players.length+' / 8';$('title').textContent=state.phase==='lobby'?'The crew is gathering':state.phase==='ended'?'That’s the show!':'Say What?!';$('lobby').hidden=state.phase!=='lobby';$('stage').hidden=!['question','reveal'].includes(state.phase);$('scores').hidden=!['reveal','ended'].includes(state.phase);$('start').hidden=!state.host;$('again').hidden=!state.host||state.phase!=='ended';$('tvButton').hidden=!state.host;
 if(state.phase==='lobby'){const q=qrcode(0,'M');q.addData(link());q.make();$('qr').innerHTML=q.createSvgTag({cellSize:4,margin:8,scalable:true});$('roster').replaceChildren();for(const p of state.players){const li=document.createElement('li');li.textContent=p.name+(p.you?' · You':'')+(p.ready?' ✓ Ready':' · Joining');$('roster').append(li)}}

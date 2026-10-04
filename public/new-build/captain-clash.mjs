@@ -1,3 +1,4 @@
+import {rememberPartySeat} from './party-score-link.mjs';
 import qrcode from './vendor/qrcode.mjs';
 import {mountTriviaSound} from './trivia-sound.mjs';
 const $=id=>document.getElementById(id),sounds=mountTriviaSound({button:$('soundToggle')});
@@ -7,7 +8,7 @@ async function api(body){const r=await fetch('./api/captain-clash'+(body?'':'?co
 function inviteLink(){const u=new URL('./captain-clash.html',location.href);u.searchParams.set('room',code);return u.href}
 function tvLink(){return inviteLink()+'#display='+state.displayKey}
 function qr(id){const q=qrcode(0,'M');q.addData(inviteLink());q.make();$(id).innerHTML=q.createSvgTag({cellSize:5,margin:12,scalable:true})}
-function adopt(j){state=j;code=j.code;offset=j.serverNow-Date.now();if(j.token)localStorage.setItem('links-captain-'+code,j.token);const u=new URL(location.href);u.searchParams.set('room',code);history.replaceState(null,'',u);$('entry').hidden=true;$('room').hidden=false;const next=JSON.stringify({...j,serverNow:0,token:undefined});if(signature!==next){signature=next;render()}tick()}
+function adopt(j){if(!displayKey)rememberPartySeat('captain-clash',j.code,j.token||localStorage.getItem('links-captain-'+j.code));state=j;code=j.code;offset=j.serverNow-Date.now();if(j.token)localStorage.setItem('links-captain-'+code,j.token);const u=new URL(location.href);u.searchParams.set('room',code);history.replaceState(null,'',u);$('entry').hidden=true;$('room').hidden=false;const next=JSON.stringify({...j,serverNow:0,token:undefined});if(signature!==next){signature=next;render()}tick()}
 async function act(action,extra={}){if(busy)return;busy=true;++generation;tick();$('message').textContent='';document.querySelectorAll('#entry button').forEach(b=>b.disabled=true);try{adopt(await api({action,game:state?.game,index:state?.index,...extra}));return true}catch(e){$('message').textContent=e.message;return false}finally{busy=false;document.querySelectorAll('#entry button').forEach(b=>b.disabled=false);tick()}}
 const photoCache=new Map();async function photoUrl(id){if(!photoCache.has(id))photoCache.set(id,fetch('./api/captain-clash?'+new URLSearchParams({code,photo:id}),{headers:headers(),cache:'no-store'}).then(async r=>{if(!r.ok)throw Error('Photo unavailable.');return URL.createObjectURL(await r.blob())}).catch(e=>{photoCache.delete(id);throw e}));return photoCache.get(id)}
 function setPhoto(img,p){if(!p)return;img.alt=p.label||'Room photo';if(!p.upload){img.src=p.url;return}img.removeAttribute('src');photoUrl(p.id).then(url=>{if(img.isConnected)img.src=url}).catch(()=>{$('message').textContent='Photo could not load. Reconnect and refresh to try again.'})}
