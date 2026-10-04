@@ -1,8 +1,9 @@
+import {grantTestHost} from './helpers/trivia-host-access.mjs';
 import assert from 'node:assert/strict';
 import {fixture} from './helpers/pool-format-fixture.mjs';
 import {onRequest} from '../functions/new-build/api/trivia-night.js';
 import {points,answerSeconds} from '../functions/lib/trivia-night.js';
-const {db}=fixture();let s,code,guest;
+const {db}=fixture();await grantTestHost(db);let s,code,guest;
 async function call(body,admin=true,query=''){const r=await onRequest({request:new Request('https://local.invalid/api/trivia-night'+query,{method:body?'POST':'GET',headers:{Origin:'https://local.invalid',Authorization:admin?'Bearer admin':'','x-trivia-token':admin?'':guest||'','Content-Type':'application/json'},...(body?{body:JSON.stringify({code,...body})}:{})}),env:{DB:db}});return {status:r.status,...await r.json()}}
 async function host(action,extra={}){s=await call({action,gameNumber:s.game,index:s.index,phase:s.phase,...extra});assert.equal(s.status,200);return s}
 try{

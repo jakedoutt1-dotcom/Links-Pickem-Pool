@@ -1,9 +1,10 @@
+import {grantTestHost} from './helpers/trivia-host-access.mjs';
 import {ensureOwner} from '../functions/lib/owner-auth.js';
 import assert from 'node:assert/strict';
 import {fixture} from './helpers/pool-format-fixture.mjs';
 import {onRequest} from '../functions/new-build/api/trivia-night.js';
 import {STARTER,validateBank,points} from '../functions/lib/trivia-night.js';
-const {db}=fixture(),origin='https://local.invalid';
+const {db}=fixture(),origin='https://local.invalid';await grantTestHost(db);
 let code,hostState;
 async function call(body=null,{admin='',guest='',badOrigin=false,query=''}={}){
  const request=new Request(origin+'/new-build/api/trivia-night'+(query||('?code='+(code||''))),{method:body?'POST':'GET',headers:{Origin:badOrigin?'https://wrong.invalid':origin,Authorization:'Bearer '+admin,'x-trivia-token':guest,'Content-Type':'application/json'},...(body?{body:JSON.stringify({code,...body})}:{})});
@@ -67,13 +68,12 @@ try{
  db.raw.prepare('UPDATE links_trivia_night_rooms SET expires=0 WHERE code=?').run(code);assert.equal((await call(null,{guest:alice.token})).status,404);
  const create={action:'create',categories:['football'],difficulty:'mixed'};
  assert.equal((await call(create,{admin:'admin'})).status,200);
- assert.equal((await call(create,{admin:'admin'})).status,402,'Free host gets one room');
+ assert.equal((await call(create,{admin:'admin'})).status,402,'Host access allows one active room');
  db.raw.exec("INSERT INTO links_pool_owners VALUES(1,'host@example.com'),(2,'host@example.com')");
  assert.equal((await call(create,{admin:'outsider'})).status,402,'A second owned pool shares the limit');
  db.raw.exec("INSERT INTO links_account_plans VALUES('host@example.com','plus','2099-01-01','purchase')");
- assert.equal((await call(create,{admin:'outsider'})).status,200);
- assert.equal((await call(create,{admin:'admin'})).status,200);
- assert.equal((await call(create,{admin:'admin'})).status,402,'Plus allows three rooms');
+ assert.equal((await call(create,{admin:'outsider'})).status,402,'Pool packages do not add hosted rooms');
+ assert.equal((await call(create,{admin:'admin'})).status,402,'Pool Plus does not bypass the host room limit');
  db.raw.exec("UPDATE links_account_plans SET expires_at='2000-01-01'");
  assert.equal((await call(create,{admin:'admin'})).status,402,'Expired package cannot create extra rooms');
  assert.equal((await call(null,{admin:'admin',query:'?action=library'})).roomLimit,1);

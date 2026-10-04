@@ -1,3 +1,4 @@
+import {grantTestHost} from './helpers/trivia-host-access.mjs';
 import {createRequire} from 'node:module';
 const {chromium}=createRequire(import.meta.url)('playwright');
 import fs from 'node:fs';
@@ -5,7 +6,7 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 import {fixture} from './helpers/pool-format-fixture.mjs';
 import {onRequest} from '../functions/new-build/api/trivia-night.js';
-const {db}=fixture(),browser=await chromium.launch({headless:true,channel:'msedge'}),errors=[];
+const {db}=fixture(),browser=await chromium.launch({headless:true,channel:'msedge'}),errors=[];await grantTestHost(db);
 let queue=Promise.resolve();
 async function page(width,admin=false){
  const context=await browser.newContext({viewport:{width,height:900}}),p=await context.newPage();p.on('pageerror',e=>errors.push(e.message));

@@ -14,7 +14,7 @@ $('code').value=roomCode;
 $('hostAccountChoices').hidden=!!token();$('hostAccountHelp').hidden=!!token();$('hostOpen').hidden=!token();
 async function api(body,query=''){
  const r=await fetch('./api/trivia-night'+query,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token(),'x-trivia-token':seat(),'Content-Type':'application/json'},cache:'no-store',signal:AbortSignal.timeout(12000),...(body?{body:JSON.stringify(body)}:{})});
- const j=await r.json();if(!r.ok){const e=Error(j.error||'Unable to reach trivia.');e.status=r.status;throw e}return j;
+ const j=await r.json();if(!r.ok){if(r.status===402&&j.code==='TRIVIA_HOST_REQUIRED'){if(roomCode)sessionStorage.setItem('links-trivia-host-return',roomCode);location.assign('./trivia-host-pass.html')}const e=Error(j.error||'Unable to reach trivia.');e.status=r.status;throw e}return j;
 }
 function adopt(j){
  if($('quickJoin').open)$('quickJoin').close();document.body.classList.remove('qr-joining');

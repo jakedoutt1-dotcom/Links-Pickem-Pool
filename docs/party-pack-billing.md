@@ -1,11 +1,12 @@
 # Party Room billing
 
-All purchasing UI is in `public/new-build/party-room.html`. `party-pack.html` redirects there and preserves return parameters. No new player login rollout is included. Purchasers use the existing email-code account service; guests never need to purchase or authenticate with that account service.
+Party Pack purchasing UI is in `public/new-build/party-room.html`. Dedicated hosted pass choices and recovery are in `trivia-host-pass.html`. `party-pack.html` redirects there and preserves return parameters. No new player login rollout is included. Purchasers use the existing email-code account service; guests never need to purchase or authenticate with that account service.
 
 ## Products
 
 - Party Pass: USD 4.99, 24 hours beginning at confirmed capture.
 - Annual Party Pack: USD 39.99, 365 days, one-time purchase, no automatic renewal.
+- Hosted Trivia Night Day Pass: USD 4.99, 24 hours from payment confirmation; independent of Party Pack.
 - Hosted Trivia Night: USD 29.99 per calendar month, recurring PayPal subscription, separate from Party Pack and pool packages. One active room per commissioner account; existing room restart remains available. Guests join free. Use the existing commissioner email.
 - No single-game USD 1 option (user deferred it).
 - Local three-question solo demo is free and makes no question-provider calls.
@@ -20,14 +21,14 @@ Grants are saved separately in `links_party_grants`, with creation time, expirat
 
 ## Activation
 
-Billing defaults OFF. Do not enable on production until sandbox checkout has been exercised with a real PayPal sandbox buyer. Local tests mock PayPal, email delivery, and purchases. No paid provider calls or production transactions were used in validation.
+Party Pack billing defaults OFF. Hosted Trivia Night always requires separate paid or complimentary host access, even when its checkout is not configured. Do not enable on production until sandbox checkout has been exercised with a real PayPal sandbox buyer. Local tests mock PayPal, email delivery, and purchases. No paid provider calls or production transactions were used in validation.
 
 Existing configuration: `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, and `PAYPAL_ENV` (`sandbox` for sandbox; otherwise live).
 
 New configuration:
 
 - `PARTY_PACK_ENABLED=true`: requires passes for creation of the seven included games and enables pass checkout.
-- `TRIVIA_HOST_BILLING_ENABLED=true`: replaces the old pool-package/free-room allowance for new hosted Trivia Night rooms with the separate monthly subscription. Can be activated independently.
+- `TRIVIA_HOST_BILLING_ENABLED=true`: opens hosted day-pass and monthly checkout. It does not control the hosted access gate: new hosted rooms, question starts, and restarts always require host access. Existing answer reveals and final standings can finish after expiry.
 - `PAYPAL_TRIVIA_MONTHLY_PLAN_ID`: an ACTIVE plan belonging to the same PayPal merchant/environment. USD 29.99, MONTH interval 1, REGULAR tenure, unlimited cycles, no trial, no setup fee, no added tax. Checkout fetches and validates these details before creating a subscription. Do not point this at a pool package plan.
 
 The database tables are created by the helpers. `links_party_purchases` is independent of pool purchases and plans. `links_trivia_subscriptions` stores the PayPal subscription mapping. Subscriptions are reverified against PayPal when access is checked; there is no recurring-charge cron job in LINKS. PayPal performs recurring billing. Cancellation retains an already-confirmed paid period; suspension stops new room creation. Hosts cancel recurring billing in PayPal. The production site and test environment must retain separate databases and merchant environments.
@@ -45,3 +46,5 @@ Operational limitation: one-time pass refunds/reversals are not yet synchronized
 - Existing `trivia-rally.mjs`, `trivia-night.mjs`, and `million-point.mjs` gameplay tests passed with billing off.
 
 Do not stage the entire working tree. It contains unrelated work and a deliberately unreleased login. Release only these changes plus the seven game API imports/create guards and their HTML script tags, the Trivia Night subscription guard/HTML tag, Party Room markup, new billing/UI helpers, and tests.
+
+Hosted access regression: `node tests/trivia-host-gate.mjs`. Covers disabled-checkout bypass, pool/party isolation, pending/day/expired/granted/revoked access, question starts, restart, free guests, and unchanged free Party Room testing. Party games list their individual player limits; hosted Trivia Night supports 200 players or teams per room.
