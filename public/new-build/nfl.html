@@ -57,4 +57,4 @@ document.getElementById('savePicksBtn').onclick=async()=>{if(historicalView||doc
 load();
 try{const cp=JSON.parse(localStorage.getItem('links-current-pool')||'null'),line=document.getElementById('gameStatusLine');if(cp&&String(cp.id)===String(poolId)){line.textContent='NFL PICK’EM · '+(cp.name||cp.code||'ACTIVE POOL')+' · PICKS LOCK INDIVIDUALLY AT KICKOFF'}}catch{}
 
-})();</script><script src="./my-profile.js?v=1"></script></body></html>
+})();</script><script src="./my-profile.js?v=1"></script><script type="module" src="./my-nfl-projection.mjs"></script></body></html>
