@@ -18,9 +18,8 @@ try{for(const width of [390,1440]){
  await p.locator('#passes').screenshot({path:'output/party-pack/pricing-'+width+'.png'});
  await p.locator('[data-plan="day"]').click();await p.locator('#email').fill('host@example.com');await p.locator('#emailForm button').click();await p.locator('#code').fill('12345678');await p.locator('#codeForm button').click();await p.getByText('Email verified. Choose your pass again to continue to PayPal.').waitFor();
  await p.locator('[data-plan="day"]').click();await p.waitForFunction(()=>document.getElementById('accessText').textContent.includes('Party Pack active'));assert(requests.some(x=>x?.action==='capture'));assert(await p.locator('[data-plan="annual"]').isDisabled());
- await p.locator('#demoNext').click();await p.locator('#demoAnswers button').nth(1).click();await p.locator('#demoNext').click();await p.locator('#demoAnswers button').nth(1).click();await p.locator('#demoNext').click();await p.locator('#demoAnswers button').nth(0).click();assert((await p.locator('#demoResult').innerText()).includes('3 of 3'));
  await p.locator('#hosted').screenshot({path:'output/party-pack/hosted-'+width+'.png'});
- enabled=false;await p.reload();await p.getByText('Free preview is open. Paid Party Pack checkout is not live yet.').waitFor();assert(await p.locator('[data-plan="day"]').isDisabled());
+ enabled=false;await p.reload();await p.getByText('A paid pass is required to host. Checkout is temporarily unavailable. Guests with an invitation can still join.').waitFor();assert(await p.locator('[data-plan="day"]').isDisabled());
  await p.close();
- }assert.deepEqual(errors,[]);console.log('PASS phone/desktop layout, separate venue pricing, email checkout return, active access, free demo and launch-off state.');
+ }assert.deepEqual(errors,[]);console.log('PASS phone/desktop layout, separate venue pricing, email checkout return, active access, paid-only hosting and checkout-off state.');
 }finally{await browser.close()}

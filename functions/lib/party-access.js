@@ -15,7 +15,7 @@ export async function partySession(request,db){
 export async function partyAccess(db,email){await ensureParty(db);const paid=await db.prepare("SELECT plan,expires_at FROM links_party_purchases WHERE email=? AND status='PAID' AND plan IN ('day','annual') AND expires_at>? ORDER BY expires_at DESC LIMIT 1").bind(email,new Date().toISOString()).first(),grant=await complimentaryAccess(db,email,'party');return grant&&(!paid||grant.expires_at>paid.expires_at)?grant:paid;}
 // Protect creation, not guest joins or play in an existing room. Room expiry still applies.
 export async function requirePartyPass(request,env){
- if(!partyEnabled(env))return null;
+ // Checkout configuration must never grant free room creation.
  const session=await partySession(request,env.DB);
  if(session&&await partyAccess(env.DB,session.email))return null;
  return Response.json({error:'The room creator needs a Party Pass. Friends join free.',code:'PARTY_PASS_REQUIRED',url:'/new-build/party-pack.html'},{status:402,headers:{'Cache-Control':'no-store'}});

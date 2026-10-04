@@ -13,7 +13,7 @@ function render(){
  $('emailForm').hidden=signed;$('codeForm').hidden=signed||!email;$('access').hidden=!signed;$('accountTitle').textContent=signed?'Your LINKS access':'Verify your email';
  $('accessText').textContent=signed?state.email+(active?' · Party Pack active until '+date(state.access.expires_at):' · Choose a pass to host. Guests join free.'):'';
  const next=sessionStorage.getItem('links-party-next');$('play').href=active&&games.has(next)&&next!=='trivia-night.html'?'./'+next:'./party-room.html#partyGames';$('play').hidden=!active&&!state?.enabled;
- $('launch').textContent=!state?'Unable to check availability. Refresh to try again.':state.enabled?'Only the room creator buys access. Guests join free.':'Free preview is open. Paid Party Pack checkout is not live yet.';
+ $('launch').textContent=!state?'Unable to check availability. Refresh to try again.':state.enabled?'Only the room creator buys access. Guests join free.':'A paid pass is required to host. Checkout is temporarily unavailable. Guests with an invitation can still join.';
  document.querySelectorAll('[data-plan]').forEach(b=>b.disabled=busy||!state?.checkoutReady||active);
  document.querySelectorAll('#account button').forEach(b=>b.disabled=busy);
  $('venueBuy').disabled=busy||!state?.venueReady||!!state?.venueAccess;
@@ -29,7 +29,3 @@ $('codeForm').onsubmit=e=>{e.preventDefault();run(async()=>{const j=await api({a
 $('signout').onclick=()=>run(async()=>{await api({action:'logout'});localStorage.removeItem(key);email='';$('code').value='';await refresh();message('Enter the email used for your purchase.');});
 if(query.get('checkout')==='canceled')message('Checkout canceled. No new access was activated.');
 await run(async()=>{await refresh();await finish();});
-// A fixed local sample: no provider calls, room creation, account, or score submission.
-const questions=[['Which planet is known as the Red Planet?',['Venus','Mars','Jupiter','Neptune'],1],['How many sides does a hexagon have?',['Five','Six','Seven','Eight'],1],['Which instrument usually has 88 keys?',['Piano','Violin','Trumpet','Flute'],0]];
-let index=-1,score=0;
-$('demoNext').onclick=()=>{index++;if(index>=questions.length){index=-1;score=0;$('demoAnswers').replaceChildren();$('demoQuestion').textContent='Ready for another try?';$('demoResult').textContent='';$('demoProgress').textContent='Three questions. Just for fun.';$('demoNext').textContent='Start free demo';return}const [text,answers,correct]=questions[index];$('demoProgress').textContent='Question '+(index+1)+' of 3';$('demoQuestion').textContent=text;$('demoResult').textContent='';$('demoNext').hidden=true;$('demoAnswers').replaceChildren();answers.forEach((answer,i)=>{const button=document.createElement('button');button.textContent=answer;button.onclick=()=>{if(i===correct)score++;$('demoAnswers').querySelectorAll('button').forEach(b=>b.disabled=true);$('demoResult').textContent=(i===correct?'Correct! ':'The answer is '+answers[correct]+'. ')+(index===2?'You scored '+score+' of 3. Invite your crew for a full game.':'');$('demoNext').textContent=index===2?'Play demo again':'Next question';$('demoNext').hidden=false;};$('demoAnswers').append(button)});};
