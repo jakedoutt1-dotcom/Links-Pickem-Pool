@@ -11,7 +11,7 @@ try{
  assert.equal(deadline('2026-07-06'),'2026-07-06T04:00:00.000Z');assert.equal(deadline('2026-12-07'),'2026-12-07T05:00:00.000Z');
  assert.equal((await call(null,'other')).status,401);assert.equal((await call(null,'bad')).status,401);assert.equal((await call(null,'alice','2026-02-31')).status,400);
  const start=await call();assert.equal(start.status,200);assert.equal(start.data.hitters.length,6);assert.equal(start.data.standings.length,3);assert.equal(start.data.locked,false);
- for(const bad of [{roster:roster.slice(0,5),active},{roster:['1','1','3','4','5','6'],active},{roster,active:['1','2','3','99']},{roster,active:['1','1','3','4']}])assert.equal((await call({action:'lineup',...bad})).status,400);
+ for(const bad of [{roster,active:roster.slice(0,5)},{roster,active:roster},{roster:roster.slice(0,5),active},{roster:['1','1','3','4','5','6'],active},{roster,active:['1','2','3','99']},{roster,active:['1','1','3','4']}])assert.equal((await call({action:'lineup',...bad})).status,400);
  assert.equal((await call({action:'lineup',roster,active,player:'Bob'})).status,200);assert.equal(sql.prepare('SELECT player FROM links_hr_lineups').get().player,'Alice');
  let j=(await call()).data;assert.deepEqual(j.lineup.active,active);assert.equal(j.shared.length,0);
  assert.equal((await call({action:'lineup',roster,active},'alice',past)).status,403);
