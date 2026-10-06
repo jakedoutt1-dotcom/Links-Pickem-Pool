@@ -1,3 +1,4 @@
+window.LINKS_IDENTITY_TEST=location.hostname==='links-pickem-test.pages.dev'||location.hostname.endsWith('.links-pickem-test.pages.dev');
 // Keep existing page code compatible while routing only authentication keys to tab storage.
 (()=>{
  if(window.LINKS_REMEMBER)return;

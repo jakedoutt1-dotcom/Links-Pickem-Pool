@@ -8,7 +8,7 @@ export async function slotWriteGuard(request,env){
  // LINKS owner operations enforce their own owner session and password checks.
  // They must work even when a pool is archived or its package has expired.
  if(path==='/new-build/api/links-admin')return null;
- if(/\/(account|pool-switcher|members|invites|join|pools|pool-games|home-session)$/.test(path)||/\/(login|logout|session|pool\/create|commissioner\/|commissioner-service\/|service\/)/.test(path))return null;
+ if(/\/(player-account|login-transition|account|pool-switcher|members|invites|join|pools|pool-games|home-session)$/.test(path)||/\/(login|logout|session|pool\/create|commissioner\/|commissioner-service\/|service\/)/.test(path))return null;
  let b={};try{b=await request.clone().json()}catch{return null}
  const token=(request.headers.get('authorization')||'').replace(/^Bearer /,'');
  const s=token?await env.DB.prepare('SELECT pool_id FROM pool_sessions WHERE token=? AND expires_at>?').bind(token,new Date().toISOString()).first():null;
