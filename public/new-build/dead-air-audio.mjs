@@ -1,3 +1,4 @@
+import {automaticGameSound} from './automatic-game-sound.mjs';
 // Original procedural score and effects. No third-party music or audio requests.
 export function mountDeadAirAudio(button){
  let ctx,enabled=false,master,timer,step=0,last='',phase='lobby';const active=new Set();
@@ -10,6 +11,6 @@ export function mountDeadAirAudio(button){
  function score(){if(!enabled||document.hidden||ctx?.state!=='running')return;const chords=[[55,82.41,110],[51.91,77.78,103.83],[49,73.42,98],[58.27,87.31,116.54]],t=ctx.currentTime;chords[step%4].forEach((hz,i)=>tone(hz,t+i*.2,7,.022));if(step%4===0)noise(3,.1,100);if(phase!=='lobby'&&phase!=='ended')tone(293.66,t+3,1.4,.012);step++;timer=setTimeout(score,7500)}
  function draw(){button.textContent=enabled?'Sound On':'Sound Off';button.setAttribute('aria-pressed',String(enabled));button.title='Original broadcast ambience and effects. Enable on the TV only for shared room audio.'}
  button.onclick=async()=>{if(enabled){enabled=false;stop();draw();return}try{const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio)throw Error();ctx ||= new Audio();if(!master){master=ctx.createGain();master.gain.value=.55;master.connect(ctx.destination)}await ctx.resume();enabled=ctx.state==='running';draw();if(enabled){cue('chapter');score()}}catch{button.textContent='Sound unavailable'}};
- document.addEventListener('visibilitychange',()=>{stop();if(!document.hidden&&enabled)score()});window.addEventListener('pagehide',stop);draw();
+ document.addEventListener('visibilitychange',()=>{stop();if(!document.hidden&&enabled)score()});window.addEventListener('pagehide',stop);draw();automaticGameSound(button,()=>enabled);
  let tickKey='';return {cue,update(s,now){phase=s.phase;const key=s.game+':'+s.phase+':'+s.phaseId;if(key!==last){if(last)cue(s.phase==='ended'?'ending':'chapter');last=key}const remaining=Math.ceil((s.deadline-now)/1000);if(!s.paused&&remaining>0&&remaining<=15){const k=key+':'+remaining;if(tickKey!==k){tickKey=k;cue('tick')}}}};
 }

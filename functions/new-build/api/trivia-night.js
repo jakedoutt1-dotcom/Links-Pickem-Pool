@@ -1,3 +1,5 @@
+import {questionOwner} from './host-question-sets.js';
+import {questionSet,approvedQuestions,selectHostQuestions} from '../../lib/host-question-sets.js';
 import {withTriviaSession} from '../../lib/trivia-sessions.js';
 import {ensureVenue,venueStatements} from '../../lib/venue-scoreboard.js';
 import {hostAccess} from '../../lib/trivia-host-billing.js';
@@ -32,7 +34,7 @@ async function handleRequest({request,env}){
   }
   const bearer=(request.headers.get('Authorization')||'').replace(/^Bearer /,'');
   const admin=bearer?await db.prepare("SELECT * FROM pool_sessions WHERE token=? AND expires_at>? AND role='admin'").bind(bearer,new Date().toISOString()).first():null;
-  const bank=async()=>{const row=await db.prepare('SELECT questions FROM links_trivia_night_banks WHERE pool_id=?').bind(0).first();return row?JSON.parse(row.questions):STARTER};
+  const bank=async()=>{const row=await db.prepare('SELECT questions FROM links_trivia_night_banks WHERE pool_id=?').bind(0).first();return [...(row?JSON.parse(row.questions):STARTER),...await approvedQuestions(db)]};
   const hostEmail=async pool=>{await ensureAccounts(db);const owner=await db.prepare('SELECT email FROM links_pool_owners WHERE pool_id=?').bind(pool).first(),contact=await db.prepare("SELECT value FROM pool_settings WHERE pool_id=? AND key='commissioner_email'").bind(pool).first();return emailKey(owner?.email||contact?.value||'')};
   const hostRequired=()=>json({error:'Choose hosted Trivia Night access, or use a complimentary host grant from LINKS Admin. Players join free.',code:'TRIVIA_HOST_REQUIRED'},402);
   let accessChecked=false,hostSubscription;
@@ -63,12 +65,13 @@ async function handleRequest({request,env}){
    if(active.length>=plan.slots)return json({error:plan.label+' has no available trivia rooms. Reopen a room or choose a larger package.'},402);
    await db.prepare('DELETE FROM links_trivia_night_rooms WHERE expires<=?').bind(Date.now()).run();
    const hostHistoryKey=await historyKey(admin.pool_id),recent=await history(hostHistoryKey);
-   const loaded=await loadFreshGameQuestions({env,sessionScope:"host:"+hostHistoryKey,categories:b.categories,backup:await bank(),exclude:recent.ids,excludeTexts:recent.texts}),full=loaded.questions,deck=makeDeck(full,b.categories,'mixed');
+   const source=b.questionSource||'links',setId=source==='links'?null:b.questionSetId,custom=source==='links'?[]:await questionSet(db,await questionOwner(db,admin),setId);
+   const loaded=await selectHostQuestions({source,custom,load:async()=>loadFreshGameQuestions({env,sessionScope:"host:"+hostHistoryKey,categories:b.categories,backup:await bank(),exclude:recent.ids,excludeTexts:recent.texts})}),full=loaded.questions,deck=makeDeck(full,b.categories,'mixed');
    const finals=makeDeck(full,[...new Set(full.map(q=>q.category))],'mixed').filter(q=>q.difficulty==='hard');
    const finalQuestion=finals.find(q=>!deck.some(d=>d.id===q.id))||(deck.length>1?finals[0]:null)||null;
    if(finalQuestion){const at=deck.findIndex(q=>q.id===finalQuestion.id);if(at>=0)deck.splice(at,1);}
    const code=crypto.randomUUID().replace(/-/g,'').slice(0,10).toUpperCase();
-   const state={code,hostHistoryKey,mode:b.mode||'individual',title:String(b.title||'LINKS Trivia Night').trim().slice(0,70),categories:b.categories,difficulty:b.difficulty,game:1,phase:'lobby',index:-1,deadline:0,questionSource:loaded.source,questionNotice:loaded.notice,seenQuestions:recent.ids,seenTexts:recent.texts,deck,finalQuestion,isFinal:false,players:{}};
+   const state={code,hostHistoryKey,customQuestions:custom,hostQuestionSource:source,questionSetId:setId,mode:b.mode||'individual',title:String(b.title||'LINKS Trivia Night').trim().slice(0,70),categories:b.categories,difficulty:b.difficulty,game:1,phase:'lobby',index:-1,deadline:0,questionSource:loaded.source,questionNotice:loaded.notice,seenQuestions:recent.ids,seenTexts:recent.texts,deck,finalQuestion,isFinal:false,players:{}};
    const inserted=await db.prepare(`INSERT INTO links_trivia_night_rooms(code,pool_id,host_name,state,expires) SELECT ?,?,?,?,? WHERE (SELECT COUNT(*) FROM links_trivia_night_rooms WHERE pool_id IN (${placeholders}) AND expires>?)<?`).bind(code,admin.pool_id,admin.player_name,JSON.stringify(state),Date.now()+86400000,...pools,Date.now(),plan.slots).run();
    if(!inserted.meta?.changes)return json({error:plan.label+' allows '+plan.slots+' active trivia room'+(plan.slots===1?'':'s')+'. Reopen your existing room to play again, or choose a larger package. Rooms expire after 24 hours.'},402);
    return json(view(state,'',true));
@@ -129,7 +132,7 @@ async function handleRequest({request,env}){
       if(!['easy','medium','hard','mixed'].includes(b.difficulty))return json({error:'Choose a valid difficulty.'},400);
       s.hostHistoryKey ||= await historyKey(row.pool_id);const recent=await history(s.hostHistoryKey);
       const seen=[...new Set([...recent.ids,...(s.seenQuestions||[]),...s.deck.slice(0,s.index+1).map(q=>q.id)])].slice(-1500),seenTexts=[...new Set([...recent.texts,...(s.seenTexts||[]),...s.deck.slice(0,s.index+1).map(normalizedQuestionText)])].slice(-1500);
-      restartQuestions ||= loadFreshGameQuestions({env,sessionScope:"host:"+s.hostHistoryKey,categories:b.categories,backup:await bank(),exclude:seen,excludeTexts:seenTexts});const loaded=await restartQuestions,full=loaded.questions;s.questionSource=loaded.source;s.questionNotice=loaded.notice;s.seenQuestions=seen;s.seenTexts=seenTexts;s.deck=makeDeck(full,b.categories,'mixed');const finals=makeDeck(full,[...new Set(full.map(q=>q.category))],'mixed').filter(q=>q.difficulty==='hard');s.finalQuestion=finals.find(q=>!s.deck.some(d=>d.id===q.id))||(s.deck.length>1?finals[0]:null)||null;if(s.finalQuestion)s.deck=s.deck.filter(q=>q.id!==s.finalQuestion.id);s.isFinal=false;s.categories=b.categories;s.difficulty=b.difficulty;s.game++;s.index=-1;s.phase='lobby';s.deadline=0;
+      restartQuestions ||= selectHostQuestions({source:s.hostQuestionSource||'links',custom:s.customQuestions||[],load:async()=>loadFreshGameQuestions({env,sessionScope:"host:"+s.hostHistoryKey,categories:b.categories,backup:await bank(),exclude:seen,excludeTexts:seenTexts})});const loaded=await restartQuestions,full=loaded.questions;s.questionSource=loaded.source;s.questionNotice=loaded.notice;s.seenQuestions=seen;s.seenTexts=seenTexts;s.deck=makeDeck(full,b.categories,'mixed');const finals=makeDeck(full,[...new Set(full.map(q=>q.category))],'mixed').filter(q=>q.difficulty==='hard');s.finalQuestion=finals.find(q=>!s.deck.some(d=>d.id===q.id))||(s.deck.length>1?finals[0]:null)||null;if(s.finalQuestion)s.deck=s.deck.filter(q=>q.id!==s.finalQuestion.id);s.isFinal=false;s.categories=b.categories;s.difficulty=b.difficulty;s.game++;s.index=-1;s.phase='lobby';s.deadline=0;
       for(const p of Object.values(s.players)){p.score=0;p.answer=null;p.eligible=0;}
      }else return json({error:'Unknown action.'},400);
     }

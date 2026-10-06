@@ -1,3 +1,5 @@
+import {automaticGameSound} from './automatic-game-sound.mjs';
+import {createCorrectSound} from './correct-sound.mjs';
 import {createLossSound} from './loss-sound.mjs';
 // Original synthesized game cues and the supplied LINKS waiting-room soundtrack.
 export function createCueTracker(){
@@ -18,10 +20,10 @@ export function createCueTracker(){
  };
 }
 export function mountTriviaSound({button,lobbyMusic=false}){
- let context,enabled=false,state=null,clockOffset=0,musicSource=null,musicGain=null,musicKey=null;const buffers=new Map(),loading=new Map(),failed=new Set();const loss=createLossSound();const sources=new Set(),track=createCueTracker();
+ let context,enabled=false,state=null,clockOffset=0,musicSource=null,musicGain=null,musicKey=null;const buffers=new Map(),loading=new Map(),failed=new Set();const correct=createCorrectSound();const loss=createLossSound();const sources=new Set(),track=createCueTracker();
  const draw=()=>{button.textContent=enabled?'Sound On':'Sound Off';button.setAttribute('aria-pressed',String(enabled));button.title='Sound plays on this device only. Use the TV or host for room audio to avoid echo.'};
  const stopMusic=()=>{if(musicSource){try{musicSource.stop()}catch{}musicSource.disconnect();musicSource=null}musicGain?.disconnect();musicGain=null;musicKey=null};
- const stop=()=>{loss.stop();stopMusic();for(const oscillator of sources){try{oscillator.stop()}catch{}}sources.clear()};
+ const stop=()=>{correct.stop();loss.stop();stopMusic();for(const oscillator of sources){try{oscillator.stop()}catch{}}sources.clear()};
  function tone(frequency,at,duration=.12,volume=.05){const oscillator=context.createOscillator(),gain=context.createGain();oscillator.type='sine';oscillator.frequency.value=frequency;gain.gain.setValueAtTime(0,at);gain.gain.linearRampToValueAtTime(volume,at+.012);gain.gain.exponentialRampToValueAtTime(.0001,at+duration);oscillator.connect(gain);gain.connect(context.destination);sources.add(oscillator);oscillator.onended=()=>{sources.delete(oscillator);oscillator.disconnect();gain.disconnect()};oscillator.start(at);oscillator.stop(at+duration+.02)}
  // Both supplied tracks share the same opt-in as game cues. Cache decoded audio per page.
  function syncMusic(){
@@ -47,9 +49,9 @@ export function mountTriviaSound({button,lobbyMusic=false}){
   // Audio-clock deadline also stops music if a screen update is delayed.
   if(answering)musicSource.stop(context.currentTime+Math.max(0,(state.deadline-now)/1000));
  }
- function play(cue){if(!enabled||document.hidden||context?.state!=='running')return;if(cue==='wrong'&&loss.play(context))return;const t=context.currentTime;const notes=({count:[660],go:[660,990],tick:[440],reveal:[523,659],correct:[659,880,1047],wrong:[330,262],finish:[523,659,784,1047]})[cue]||[];notes.forEach((hz,i)=>tone(hz,t+i*.13,cue==='finish'?.23:.12,cue==='tick'?.025:.05))}
- button.onclick=async()=>{if(enabled){enabled=false;stop();draw();return}try{const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio){button.textContent='Sound unavailable';button.disabled=true;return}failed.clear();context ||= new Audio();await context.resume();enabled=context.state==='running';draw();if(enabled){loss.load(context);play('correct');syncMusic()}else button.textContent='Tap to enable sound'}catch{enabled=false;button.textContent='Tap to retry sound'}};
- // Always require an explicit tap on this device, including after reload.
- document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();else syncMusic()});window.addEventListener('pagehide',stop);draw();
+ function play(cue){if(!enabled||document.hidden||context?.state!=='running')return;if(cue==='correct'&&lobbyMusic&&correct.play(context))return;if(cue==='wrong'&&loss.play(context))return;const t=context.currentTime;const notes=({count:[660],go:[660,990],tick:[440],reveal:[523,659],correct:[659,880,1047],wrong:[330,262],finish:[523,659,784,1047]})[cue]||[];notes.forEach((hz,i)=>tone(hz,t+i*.13,cue==='finish'?.23:.12,cue==='tick'?.025:.05))}
+ button.onclick=async()=>{if(enabled){enabled=false;stop();draw();return}try{const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio){button.textContent='Sound unavailable';button.disabled=true;return}failed.clear();context ||= new Audio();await context.resume();enabled=context.state==='running';draw();if(enabled){loss.load(context);if(lobbyMusic)correct.load(context);play('go');syncMusic()}else button.textContent='Tap to enable sound'}catch{enabled=false;button.textContent='Tap to retry sound'}};
+ // Pause audio when hidden; normal game interaction enables sound.
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();else syncMusic()});window.addEventListener('pagehide',stop);draw();automaticGameSound(button,()=>enabled);
  return {update(s,now){state=s;clockOffset=now-Date.now();syncMusic();for(const cue of track(s,now))play(cue)},stop};
 }

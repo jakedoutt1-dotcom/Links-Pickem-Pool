@@ -18,11 +18,12 @@ async function handleRequest({request,env}){
   if(['create','join','ready'].includes(action)){const id=await hash((request.headers.get('CF-Connecting-IP')||'local')+':'+action),window=action==='create'?3600000:60000,limit=action==='create'?10:120;await db.prepare('INSERT INTO links_friend_limits(id,starts,hits) VALUES(?,?,1) ON CONFLICT(id) DO UPDATE SET hits=CASE WHEN starts<? THEN 1 ELSE hits+1 END,starts=CASE WHEN starts<? THEN excluded.starts ELSE starts END').bind(id,now,now-window,now-window).run();const rate=await db.prepare('SELECT hits FROM links_friend_limits WHERE id=?').bind(id).first();if(rate.hits>limit)return json({error:'Too many requests. Please try again later.'},429)}
   const name=String(b.name||'').trim(),validName=()=>name.length>0&&name.length<=32;
   if(action==='create'){const paymentGate=await requirePartyPass(request,env);if(paymentGate)return paymentGate;
+   if(b.mode!==undefined&&!['solo','friends'].includes(b.mode))return json({error:'Choose Solo or Play with friends.'},400);
    if(!validName())return json({error:'Enter your name (up to 32 characters).'},400);
    if(!['mixed',...CATEGORIES].includes(b.category)||!['mixed','easy','medium','hard'].includes(b.difficulty))return json({error:'Choose a category and difficulty.'},400);
    const categories=b.category==='mixed'?CATEGORIES:[b.category];const loaded=await loadGameQuestions({env,categories,backup:STARTER,perGroup:20,difficulties:b.difficulty==='mixed'?['easy','medium','hard']:[b.difficulty]});let deck;try{deck=challengeDeck(completeQuestionBank(loaded.questions,STARTER.filter(q=>categories.includes(q.category)&&(b.difficulty==='mixed'||q.difficulty===b.difficulty)),{minimum:30}),categories,b.difficulty)}catch(e){return json({error:e.message},400)}
    const code=crypto.randomUUID().replace(/-/g,'').slice(0,10).toUpperCase(),token=crypto.randomUUID()+crypto.randomUUID(),seat=await hash(token);
-   const s={code,category:b.category,difficulty:b.difficulty,phase:'lobby',game:1,index:-1,deck,notice:loaded.notice,players:{[seat]:{name,score:0,ready:false,answer:null}}};await db.prepare('DELETE FROM links_friend_rooms WHERE expires<=?').bind(now).run();await db.prepare('INSERT INTO links_friend_rooms(code,state,expires) VALUES(?,?,?)').bind(code,JSON.stringify(s),now+7200000).run();return json({...challengeView(s,seat,now),token});
+   const s={code,mode:b.mode==='solo'?'solo':'friends',category:b.category,difficulty:b.difficulty,phase:'lobby',game:1,index:-1,deck,notice:loaded.notice,players:{[seat]:{name,score:0,ready:false,answer:null}}};if(s.mode==='solo')begin(s,now);await db.prepare('DELETE FROM links_friend_rooms WHERE expires<=?').bind(now).run();await db.prepare('INSERT INTO links_friend_rooms(code,state,expires) VALUES(?,?,?)').bind(code,JSON.stringify(s),now+7200000).run();return json({...challengeView(s,seat,now),token});
   }
   const code=String(b.code||url.searchParams.get('code')||'').trim().toUpperCase();if(!/^[A-F0-9]{10}$/.test(code))return json({error:'Enter a valid room code.'},400);
   const token=request.headers.get('x-challenge-token')||'',seat=token?await hash(token):'';
@@ -31,12 +32,12 @@ async function handleRequest({request,env}){
    const row=await db.prepare('SELECT * FROM links_friend_rooms WHERE code=? AND expires>?').bind(code,Date.now()).first();if(!row)return json({error:'Challenge expired or not found. Ask your friend for a new link.'},404);
    const s=JSON.parse(row.state),time=Date.now();let changed=advance(s,time),issued,newSeat=seat;const completed=partyFinish(s);
    if(action==='join'){
-    if(!s.players[seat]){if(s.phase!=='lobby')return json({error:'This challenge has started. Join a new challenge with your friends.'},409);if(Object.keys(s.players).length>=8)return json({error:'This challenge is full (8 players).'},409);if(!validName())return json({error:'Enter your name (up to 32 characters).'},400);if(Object.values(s.players).some(p=>p.name.toLowerCase()===name.toLowerCase()))return json({error:'That name is already in use.'},409);issued=crypto.randomUUID()+crypto.randomUUID();newSeat=await hash(issued);s.players[newSeat]={name,score:0,ready:false,answer:null};changed=true}
+    if(!s.players[seat]){if(s.mode==='solo')return json({error:'This is a solo game. Start your own solo run.'},403);if(s.phase!=='lobby')return json({error:'This challenge has started. Join a new challenge with your friends.'},409);if(Object.keys(s.players).length>=8)return json({error:'This challenge is full (8 players).'},409);if(!validName())return json({error:'Enter your name (up to 32 characters).'},400);if(Object.values(s.players).some(p=>p.name.toLowerCase()===name.toLowerCase()))return json({error:'That name is already in use.'},409);issued=crypto.randomUUID()+crypto.randomUUID();newSeat=await hash(issued);s.players[newSeat]={name,score:0,ready:false,answer:null};changed=true}
    }else{
     if(!s.players[seat])return json({error:'Join the challenge first.'},401);
     if(action==='ready'){
      if(!['lobby','ended'].includes(s.phase)||b.game!==s.game)return json({error:'The game has already moved on.'},409);s.players[seat].ready=true;changed=true;
-     if(Object.keys(s.players).length>=2&&Object.values(s.players).every(p=>p.ready)){if(s.phase==='ended'){const categories=s.category==='mixed'?CATEGORIES:[s.category];
+     if(Object.keys(s.players).length>=(s.mode==='solo'?1:2)&&Object.values(s.players).every(p=>p.ready)){if(s.phase==='ended'){const categories=s.category==='mixed'?CATEGORIES:[s.category];
       s.seenQuestions=[...new Set([...(s.seenQuestions||[]),...s.deck.map(q=>q.id)])].slice(-1500);
       rematchQuestions ||= loadGameQuestions({env,categories,backup:STARTER,exclude:s.seenQuestions,perGroup:20,difficulties:s.difficulty==='mixed'?['easy','medium','hard']:[s.difficulty]});
       const loaded=await rematchQuestions;
@@ -48,7 +49,7 @@ async function handleRequest({request,env}){
      if(!['lobby','ended'].includes(s.phase))return json({error:'You can close this page now. Your result stays in this game.'},409);delete s.players[seat];for(const p of Object.values(s.players))p.ready=false;changed=true;
     }else if(action!=='state')return json({error:'Unknown action.'},400);
    }
-   if(changed){const update=await savePartyRoom(db,'friend-challenge',code,row.version,s,completed);if(!update.meta?.changes)continue}
+   if(changed){const update=s.mode==='solo'?await db.prepare('UPDATE links_friend_rooms SET state=?,version=version+1 WHERE code=? AND version=?').bind(JSON.stringify(s),code,row.version).run():await savePartyRoom(db,'friend-challenge',code,row.version,s,completed);if(!update.meta?.changes)continue}
    return json({...challengeView(s,newSeat,time),...(issued?{token:issued}:{})});
   }return json({error:'The room is busy. Please try again.'},409);
  }catch{return json({error:'Challenge could not complete that request. Please try again.'},503)}

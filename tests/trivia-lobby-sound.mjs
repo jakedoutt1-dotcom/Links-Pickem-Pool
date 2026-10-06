@@ -2,12 +2,12 @@ import assert from 'node:assert/strict';
 import {mountTriviaSound} from '../public/new-build/trivia-sound.mjs';
 const events={},music=[];let fetches=0,resolveDownload;
 globalThis.document={hidden:false,addEventListener:(key,fn)=>events[key]=fn};
-globalThis.fetch=url=>{if(String(url).includes("whamp-whamp"))return Promise.resolve({ok:true,arrayBuffer:async()=>new ArrayBuffer(1)});fetches++;return new Promise(resolve=>resolveDownload=()=>resolve({ok:true,arrayBuffer:async()=>new ArrayBuffer(1)}))};
+globalThis.fetch=url=>{if(/whamp-whamp|nailed-it/.test(String(url)))return Promise.resolve({ok:true,arrayBuffer:async()=>new ArrayBuffer(1)});fetches++;return new Promise(resolve=>resolveDownload=()=>resolve({ok:true,arrayBuffer:async()=>new ArrayBuffer(1)}))};
 class Audio {state='running';currentTime=0;destination={};async resume(){}async decodeAudioData(){return {duration:180}}createBufferSource(){const source={connect(gain){this.output=gain},disconnect(){},start(){this.started=true},stop(at){if(at===undefined)this.stopped=true;else this.stopAt=at}};music.push(source);return source}createOscillator(){return {frequency:{},connect(){},disconnect(){},start(){},stop(){}}}createGain(){return {gain:{setValueAtTime(){},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){},disconnect(){}}}}
 globalThis.window={AudioContext:Audio,addEventListener:(key,fn)=>events[key]=fn};
 const button={setAttribute(){}};const sound=mountTriviaSound({button,lobbyMusic:true});
 const update=phase=>sound.update({phase,code:'TEST',game:1},0);
-update('lobby');assert.equal(fetches,0);await button.onclick();assert.equal(fetches,1);
+update('lobby');assert.equal(fetches,0);events.click({target:{}});await new Promise(r=>setImmediate(r));assert.equal(fetches,1);
 update('category');resolveDownload();await new Promise(resolve=>setImmediate(resolve));assert.equal(music.length,0,'late download must not play over game');
 update('lobby');assert.equal(music.length,1);assert.equal(music[0].loop,true);assert.equal(music[0].started,true);
 update('lobby');assert.equal(music.length,1,'no overlapping loops');

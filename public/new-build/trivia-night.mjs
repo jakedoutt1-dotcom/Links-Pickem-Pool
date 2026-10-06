@@ -1,3 +1,4 @@
+import {mountHostQuestions} from './host-question-sets.mjs';
 import {updateVenueRoom} from './venue-link.mjs';
 import {mountInviteShare} from './invite-share.mjs';
 import {mountTriviaSound} from './trivia-sound.mjs';
@@ -9,7 +10,8 @@ const themes={football:['SPORTS','🏆'],music:['MUSIC','♫'],movies:['MOVIES &
 let state=null,offset=0,busy=false,bank=[],pending=null,signature='',sequence=0,roomCode=new URL(location.href).searchParams.get('room')||sessionStorage.getItem('trivia-night-room')||'';
 const token=()=>localStorage.getItem('links-legacy-token')||localStorage.getItem('links-token')||'';
 const seat=()=>localStorage.getItem('trivia-night-seat-'+roomCode)||'';
-const selection=()=>({mode:$('playMode').value,categories:[...document.querySelectorAll('[name=category]:checked')].map(e=>e.value),difficulty:$('difficulty').value});
+const hostQuestions=mountHostQuestions({apiToken:token,anchor:$('categories')});
+const selection=()=>({...hostQuestions.selection(),mode:$('playMode').value,categories:[...document.querySelectorAll('[name=category]:checked')].map(e=>e.value),difficulty:$('difficulty').value});
 $('categories').innerHTML=Object.entries(themes).map(([key,[name,icon]])=>`<label><span>${icon}</span><input type="checkbox" name="category" value="${key}" checked> ${name}</label>`).join('');
 if(new URL(location.href).searchParams.get('host')==='1'||new URL(location.href).searchParams.get('step')==='setup')roomCode='';
 $('code').value=roomCode;
@@ -87,7 +89,7 @@ function tick(){
  if(state.phase==='question'&&seconds===0&&state.choice===null&&!state.host&&state.eligible)$('answerNote').textContent='Time is up. Waiting for the host to reveal the answer.';
 }
 $('joinForm').onsubmit=e=>{e.preventDefault();roomCode=$('code').value.trim().toUpperCase();act('join',{name:$('name').value.trim()})};
-async function loadBank(){const j=await api(null,'?action=library');$('bankCount').textContent=(j.providerConfigured?'Fresh questions load when you create a game. '+j.count+' backup questions':j.count+' questions')+' · '+j.plan+': '+j.activeRooms+' of '+j.roomLimit+' active trivia rooms. Reuse a room for more games. Rooms expire after 24 hours.';$('existingRooms').replaceChildren();for(const room of j.rooms){const a=document.createElement('a');a.href='./trivia-night.html?room='+room.code;a.textContent='Reopen room '+room.code;$('existingRooms').append(a)}$('create').disabled=j.activeRooms>=j.roomLimit;}
+async function loadBank(){const j=await api(null,'?action=library');await hostQuestions.load();$('bankCount').textContent=(j.providerConfigured?'Fresh questions load when you create a game. '+j.count+' backup questions':j.count+' questions')+' · '+j.plan+': '+j.activeRooms+' of '+j.roomLimit+' active trivia rooms. Reuse a room for more games. Rooms expire after 24 hours.';$('existingRooms').replaceChildren();for(const room of j.rooms){const a=document.createElement('a');a.href='./trivia-night.html?room='+room.code;a.textContent='Reopen room '+room.code;$('existingRooms').append(a)}$('create').disabled=j.activeRooms>=j.roomLimit;}
 async function hostPoolRequest(body){
  const r=await fetch('./api/pool-switcher',{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token(),'x-links-account':localStorage.getItem('links-account-token')||'','Content-Type':'application/json'},cache:'no-store',signal:AbortSignal.timeout(12000),...(body?{body:JSON.stringify(body)}:{})});const j=await r.json();if(!r.ok)throw Error(j.error||'Your connected pools could not be loaded.');return j;
 }
@@ -106,7 +108,7 @@ $('hostOpen').onclick=async()=>{
  catch(e){$('hostAccountChoices').hidden=false;$('hostAccountHelp').hidden=false;$('hostMessage').textContent=e.message;$('hostSignIn').hidden=![401,403].includes(e.status);if(e.status===403){try{await offerHostPools()}catch(problem){$('hostMessage').textContent=problem.message}}$('hostMessage').scrollIntoView({behavior:'smooth',block:'center'})}
  finally{button.disabled=false;button.textContent='Set up a game'}
 };
-$('create').onclick=()=>act('create',{title:$('title').value,...selection()});
+$('create').onclick=()=>{try{act('create',{title:$('title').value,...selection()})}catch(e){$('setStatus').textContent=e.message}};
 $('answers').onclick=e=>{const b=e.target.closest('[data-choice]');if(b&&!b.disabled)act('answer',{choice:Number(b.dataset.choice)})};
 function roundCategories(){const difficulty=document.querySelector('[name=roundLevel]:checked')?.value||'mixed';$('roundCategories').replaceChildren();for(const key of state.availableCategories){const b=document.createElement('button');b.textContent=themes[key][0];b.dataset.theme=key;b.disabled=difficulty!=='mixed'&&state.availableLevels&&!state.availableLevels[key]?.includes(difficulty);b.onclick=()=>{$('categoryPicker').close();act('next',{category:key,difficulty})};$('roundCategories').append(b)}}
 $('roundDifficulty').onchange=roundCategories;
