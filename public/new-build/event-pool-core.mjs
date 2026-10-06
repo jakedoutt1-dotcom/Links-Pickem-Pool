@@ -44,7 +44,7 @@ export function scoreCard(game,c,card,results){
  return {score:rows.reduce((sum,r)=>sum+Number(r.points),0),detail:'Verified race points · garage excluded',counted:card.picks};
 }
 export function rules(game,c){
- if(game==='golf')return c.format==='one'?'Choose one golfer per tournament. Each golfer may be used once per season. Verified tournament earnings become your points; the highest season total wins. Missed cuts and withdrawals earn zero.':
+ if(game==='golf')return c.format==='one'?'Choose one golfer per tournament. Each golfer may be used once per season. Verified tournament earnings become your points; the highest season total wins. Missed cuts and withdrawals earn zero. Save before the displayed event deadline; all selections lock together.':
   'Choose '+c.pickCount+' golfers'+(c.format==='tiers'?', one from each tier':'')+'. Your best '+c.countBest+' scores to par count; the lowest total wins. A missed cut or withdrawal is scored as +'+c.penalty+'. Equal totals share rank. Save before the event deadline.';
  const tie=c.tieRule==='best-finish'?' Ties compare each entry’s best finishing position, then the next best; identical finishes share rank.':' Equal totals share rank.';
  return (c.format==='simple'?'Choose '+c.pickCount+' drivers. Their verified finishing positions are added; the lowest total wins. Save before the race deadline.':

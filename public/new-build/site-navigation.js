@@ -1,6 +1,7 @@
 // Shared navigation never signs a player out or changes pool membership.
 (()=>{
  function mount(){
+  if(!document.getElementById('linksFeedbackScript')){const script=document.createElement('script');script.id='linksFeedbackScript';script.src='/new-build/game-feedback.js';document.head.append(script)}
   if(!document.getElementById('linksTestingNoticeScript')){const script=document.createElement('script');script.id='linksTestingNoticeScript';script.src='/new-build/testing-access.js';document.head.append(script)}
   if(document.getElementById('linksSiteNavigation'))return;
   const path=location.pathname.replace(/\/+$|\.html$/g,''),page=path.split('/').pop();
