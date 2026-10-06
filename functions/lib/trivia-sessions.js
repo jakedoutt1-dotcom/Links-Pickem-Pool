@@ -11,7 +11,7 @@ export async function withTriviaSession(context,game,handler){
  try{const v=await env.DB.prepare('SELECT partner FROM links_venue_rooms WHERE game=? AND room=?').bind(game,room).first();if(v)venue='venue:'+v.partner}catch{}
  }}catch{}
  }
- const response=await handler({...context,env:{...env,TRIVIA_SESSION_SCOPE:scope,TRIVIA_VENUE_SCOPE:venue}});
+ const response=await handler({...context,env:Object.assign(Object.create(env),{TRIVIA_SESSION_SCOPE:scope,TRIVIA_VENUE_SCOPE:venue})});
  if(env.DB&&response.ok&&action==='create'){try{const result=await response.clone().json();if(/^[A-F0-9]{10}$/.test(result.code))await env.DB.prepare('INSERT OR IGNORE INTO links_trivia_room_scopes VALUES(?,?,?)').bind(game,result.code,scope).run()}catch{}}
  const out=new Response(response.body,response);if(!match)out.headers.append('Set-Cookie','links_trivia_history='+id+'; Path=/new-build/api; Max-Age=31536000; HttpOnly; SameSite=Lax'+(new URL(request.url).protocol==='https:'?'; Secure':''));return out;
 }
