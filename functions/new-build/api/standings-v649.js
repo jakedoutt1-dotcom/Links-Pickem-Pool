@@ -1,4 +1,3 @@
-import {sharedScoreFeed} from '../../lib/shared-score-feed.js';
 import {feedbackCredits,creditPicks,creditNotice} from '../../lib/nfl-feedback-credit.js';
 const json=(d,s=200)=>Response.json(d,{status:s,headers:{'Cache-Control':'no-store'}});
 export async function resolvePool(db,value){const raw=String(value||'').trim();if(/^\d+$/.test(raw)){const p=await db.prepare('SELECT id,code,name FROM pools WHERE id=? LIMIT 1').bind(Number(raw)).first();if(p)return p}return raw?await db.prepare('SELECT id,code,name FROM pools WHERE upper(code)=upper(?) OR lower(trim(name))=lower(trim(?)) LIMIT 1').bind(raw,raw).first():null}
@@ -9,7 +8,6 @@ export async function nflWeek(week){
  const query='dates=2026&seasontype='+(week<=18?2:3)+'&week='+apiWeek+'&limit=100&_='+Date.now();
  // Match the established legacy ESPN transport, including its CDN fallback.
  const urls=['https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?'+query,'https://cdn.espn.com/core/nfl/scoreboard?xhr=1&'+query];
- const j=await sharedScoreFeed('nfl:2026:'+week,async()=>{
  let j;
  for(const url of urls){try{
   const r=await fetch(url,{headers:{accept:'application/json,text/plain,*/*','cache-control':'no-cache,no-store,max-age=0',pragma:'no-cache','user-agent':'Mozilla/5.0'},cf:{cacheTtl:0,cacheEverything:false},signal:AbortSignal.timeout(8000)});
@@ -18,8 +16,6 @@ export async function nflWeek(week){
   if(Array.isArray(events)){j={events};if(events.length)break;}
  }catch{}}
  if(!j)throw Error('NFL schedule unavailable');
- return j;
- });
  return [...new Map((j.events||[]).map(e=>[e.id,e])).values()].map((e,i)=>{
   const c=e.competitions?.[0]||{},teams=c.competitors||[];
   const completed=!!(e.status?.type?.completed||c.status?.type?.completed);
