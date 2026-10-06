@@ -15,6 +15,10 @@ result=await loadGameQuestions({...args,fetcher:async()=>new Response('secret pr
 result=await loadGameQuestions({...args,fetcher:async()=>{throw Error('network timeout test-secret')}});assert(result.questions.length);
 result=await loadGameQuestions({...args,env:{},fetcher:()=>{throw Error('Must not fetch')}});assert.equal(result.questions,STARTER);
 await assert.rejects(loadGameQuestions({...args,categories:['bad']}),/Choose categories/);
+const retryFixture=fixture();let sessionAttempts=0,randomAttempts=0;
+const recovered=await loadGameQuestions({...args,env:{...args.env,DB:retryFixture.db},sessionScope:'retry-test',fetcher:async url=>{const u=new URL(url);if(u.pathname==='/v2/session')return Response.json({id:'empty-session'});if(u.searchParams.has('session')){sessionAttempts++;return Response.json([])}randomAttempts++;const d=u.searchParams.get('difficulties');return Response.json([sample(d,'science','recovered-'+d)])}});
+assert.equal(sessionAttempts,3);assert.equal(randomAttempts,3);assert.equal(recovered.questions.length,3);assert(recovered.questions.every(q=>q.source==='The Trivia API'));assert.equal(recovered.notice,'');retryFixture.db.raw.close();
+
 const {db}=fixture(),original=globalThis.fetch;await grantTestHost(db);globalThis.fetch=fetcher;
 async function api(body,token='admin',query=''){const r=await onRequest({request:new Request('https://local.invalid/new-build/api/trivia-night'+query,{method:body?'POST':'GET',headers:{Origin:'https://local.invalid',Authorization:'Bearer '+token,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})}),env:{DB:db,TRIVIA_API_KEY:'test-secret'}});return {status:r.status,...await r.json()}}
 try{
@@ -29,6 +33,6 @@ try{
  const hidden=await api(null,'','?action=display&code='+code);assert.equal(hidden.question.correct,undefined);
  s=await api({action:'reveal',code,gameNumber:s.game,index:s.index,phase:s.phase});assert(Number.isInteger(s.question.correct));
  s=await api({action:'end',code,gameNumber:s.game,index:s.index,phase:s.phase});assert.equal(s.phase,'ended');
- s=await api({action:'restart',code,gameNumber:s.game,index:s.index,phase:s.phase,categories:['science'],difficulty:'mixed'});assert.equal(s.game,2);assert.equal(calls,before+3);const restarted=JSON.parse(db.raw.prepare('SELECT state FROM links_trivia_night_rooms WHERE code=?').get(code).state);assert(!restarted.deck.some(q=>q.id===row.deck[0].id));
+ s=await api({action:'restart',code,gameNumber:s.game,index:s.index,phase:s.phase,categories:['science'],difficulty:'mixed'});assert.equal(s.game,2);assert.equal(calls,before+6);const restarted=JSON.parse(db.raw.prepare('SELECT state FROM links_trivia_night_rooms WHERE code=?').get(code).state);assert(!restarted.deck.some(q=>q.id===row.deck[0].id));
  console.log('PASS provider mapping, validation, fallback, secret privacy, authorization, quotas, no poll fetches, hidden answers and restart repeat filtering.');
 }finally{globalThis.fetch=original;db.raw.close()}

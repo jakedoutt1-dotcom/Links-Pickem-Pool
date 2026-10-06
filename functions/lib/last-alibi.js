@@ -21,10 +21,10 @@ export const CHAPTERS=[
 export function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b}
 const names=ps=>ps.map(p=>p.character.name).join(', ');
 export function buildCase(s){
- if(s.mode==='together'||(!s.mode&&Object.keys(s.players).length<4)){
+ if(s.mode==='solo'||s.mode==='together'||(!s.mode&&Object.keys(s.players).length<4)){
   const cast={players:Object.fromEntries(Array.from({length:6},(_,i)=>['suspect'+i,{id:'suspect-'+i,name:'Case suspect'}])),previousCulprit:s.previousCulprit,previousMethod:s.previousMethod};
   buildCase(cast);s.cooperative=true;s.suspects=cast.players;s.case=cast.case;s.published=[];
-  for(const p of Object.values(s.players))Object.assign(p,{character:{name:p.name,title:'Investigator',intro:'You were asked to investigate Blackthorn Manor.',secret:'Your notebook is private. Share discoveries with your partner when you are ready.',motive:'Find the truth.'},alibi:'You are an investigator, not a suspect.',searched:{},shared:[],notes:'',accusation:null,score:0});
+  for(const p of Object.values(s.players))Object.assign(p,{character:{name:p.name,title:'Investigator',intro:'You were asked to investigate Blackthorn Manor.',secret:s.mode==='solo'?'Inspect every available clue. Share a record to add it to your evidence board and support your final accusation.':'Your notebook is private. Share discoveries with your partner when you are ready.',motive:'Find the truth.'},alibi:'You are an investigator, not a suspect.',searched:{},shared:[],notes:'',accusation:null,score:0});
   return;
  }
  s.cooperative=false;delete s.suspects;

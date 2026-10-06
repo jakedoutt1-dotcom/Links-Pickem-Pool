@@ -1,3 +1,4 @@
+import {balancedCategories} from './trivia-category-balance.js';
 import { QUESTIONS, shuffled } from './football-trivia.js';
 
 export const CATEGORIES = ['football','music','movies','history','science','general'];
@@ -55,7 +56,7 @@ export function validateBank(rows){
 }
 export function makeDeck(bank,categories,difficulty){
  if(!Array.isArray(categories)||!categories.length||categories.some(c=>!CATEGORIES.includes(c))||!['mixed',...Object.keys(SECONDS)].includes(difficulty))throw Error('Choose categories and a difficulty.');
- const deck=shuffled(bank.filter(q=>categories.includes(q.category)&&(difficulty==='mixed'||q.difficulty===difficulty))).map(q=>{
+ const deck=balancedCategories(bank.filter(q=>categories.includes(q.category)&&(difficulty==='mixed'||q.difficulty===difficulty))).map(q=>{
   const order=shuffled([0,1,2,3]);return {...q,answers:order.map(i=>q.answers[i]),correct:order.indexOf(q.correct)};
  });
  if(!deck.length)throw Error('No questions match these settings. Add questions or choose other categories.');return deck;

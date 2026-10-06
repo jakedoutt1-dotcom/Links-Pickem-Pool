@@ -35,11 +35,19 @@ export async function loadGameQuestions({env,categories,backup,exclude=[],fetche
    if(!response.ok){if(session?.id&&[400,404,410].includes(response.status))await session.invalidateIfMissing();throw Error('Provider unavailable');}
    const rows=await response.json();
    await triviaHealth(env,'questions-'+category+'-'+difficulty,response.status,Array.isArray(rows)?rows.length:0);
-   return normalizeQuestions(tags.length&&Array.isArray(rows)?rows.filter(row=>Array.isArray(row.tags)&&tags.some(tag=>row.tags.includes(tag))):rows,category,difficulty);
+   let normalized=normalizeQuestions(tags.length&&Array.isArray(rows)?rows.filter(row=>Array.isArray(row.tags)&&tags.some(tag=>row.tags.includes(tag))):rows,category,difficulty);
+   // An exhausted provider session must not force an immediate switch to backup.
+   // Keep local history filtering when requesting another API sample.
+   if(session?.id&&!normalized.some(unseen)){
+    url.searchParams.delete('session');
+    const retry=await triviaFetch(env,'retry-'+category+'-'+difficulty,fetcher,url.href,{headers:{'X-API-Key':key,Accept:'application/json'},signal:controller.signal,redirect:'manual'});
+    if(retry.ok){const more=await retry.json();normalized=normalizeQuestions(tags.length&&Array.isArray(more)?more.filter(row=>Array.isArray(row.tags)&&tags.some(tag=>row.tags.includes(tag))):more,category,difficulty)}
+   }
+   return normalized;
   }));
   for(let i=0;i<groups.length;i++){
    const group=groups[i],fresh=settled[i].status==='fulfilled'?settled[i].value.filter(unseen):[];
-   const rows=fresh.length?fresh:backup.filter(q=>q.category===group.category&&q.difficulty===group.difficulty&&unseen(q));
+   const rows=fresh.length?fresh:backup.filter(q=>q.category===group.category&&q.difficulty===group.difficulty&&unseen(q)).sort(()=>Math.random()-.5).slice(0,Math.max(1,Math.min(20,Number(perGroup)||6)));
    if(!fresh.length)fallback=true;
    for(const q of rows){const text=q.text.toLowerCase();if(ids.has(q.id)||texts.has(text))continue;ids.add(q.id);texts.add(text);questions.push(q)}
   }

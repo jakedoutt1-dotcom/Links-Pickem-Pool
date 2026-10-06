@@ -20,7 +20,7 @@ async function handleRequest({request,env}){try{
  if(action==='create'){const paymentGate=await requirePartyPass(request,env);if(paymentGate)return paymentGate;
  if(!validName)return json({error:'Enter a name up to 32 characters.'},400);
  const code=crypto.randomUUID().replace(/-/g,'').slice(0,10).toUpperCase(),token=crypto.randomUUID()+crypto.randomUUID(),seat=await hash(token);
- const s={code,game:1,index:-1,phase:'lobby',owner:seat,displayKey:crypto.randomUUID()+crypto.randomUUID(),players:{[seat]:{name,avatar,score:0,ready:false,lives:3,echoCharge:0,progress:0}}};await db.prepare('INSERT INTO links_dead_air_rooms(code,state,expires) VALUES(?,?,?)').bind(code,JSON.stringify(s),now+7200000).run();return json({...view(s,seat,now),token});}
+ const s={code,mode:b.mode==='solo'?'solo':'friends',game:1,index:-1,phase:'lobby',owner:seat,displayKey:crypto.randomUUID()+crypto.randomUUID(),players:{[seat]:{name,avatar,score:0,ready:false,lives:3,echoCharge:0,progress:0}}};await db.prepare('INSERT INTO links_dead_air_rooms(code,state,expires) VALUES(?,?,?)').bind(code,JSON.stringify(s),now+7200000).run();return json({...view(s,seat,now),token});}
  const code=String(b.code||u.searchParams.get('code')||'').toUpperCase();if(!/^[A-F0-9]{10}$/.test(code))return json({error:'Enter your room code.'},400);
  const token=request.headers.get('x-dead-air-token')||'',seat=token?await hash(token):'',displayKey=request.headers.get('x-dead-air-display')||'';
  let questionLoad;
@@ -29,7 +29,7 @@ async function handleRequest({request,env}){try{
  const s=JSON.parse(row.state),time=Date.now(),display=!!displayKey&&displayKey===s.displayKey;let changed=advance(s,time),issued,current=seat;const completed=partyFinish(s);
  if(action==='join'){
  if(display)return json({error:'Join on your phone.'},403);
- if(!s.players[seat]){if(s.phase!=='lobby'||Object.keys(s.players).length>=8)return json({error:'Room started or full. Join the next game.'},409);if(!validName)return json({error:'Enter a name up to 32 characters.'},400);if(Object.values(s.players).some(p=>p.name.toLowerCase()===name.toLowerCase()))return json({error:'That name is taken.'},409);issued=crypto.randomUUID()+crypto.randomUUID();current=await hash(issued);s.players[current]={name,avatar,score:0,ready:false,lives:3,echoCharge:0,progress:0};changed=true}
+ if(!s.players[seat]){if(s.mode==='solo'||s.phase!=='lobby'||Object.keys(s.players).length>=8)return json({error:'Room started or full. Join the next game.'},409);if(!validName)return json({error:'Enter a name up to 32 characters.'},400);if(Object.values(s.players).some(p=>p.name.toLowerCase()===name.toLowerCase()))return json({error:'That name is taken.'},409);issued=crypto.randomUUID()+crypto.randomUUID();current=await hash(issued);s.players[current]={name,avatar,score:0,ready:false,lives:3,echoCharge:0,progress:0};changed=true}
  }else{
  if(!s.players[seat]&&!display)return json({error:'Join this room first.'},401);
  if(display&&action!=='state')return json({error:'TV display is read only.'},403);
@@ -40,18 +40,18 @@ async function handleRequest({request,env}){try{
  }else if(action==='ready'){if(s.phase!=='lobby')return json({error:'Game already started.'},409);p.ready=!p.ready;changed=true}
  else if(action==='start'){
  if(seat!==s.owner)return json({error:'Only the creator can start.'},403);
- if(s.phase!=='lobby'||Object.keys(s.players).length<2||!Object.values(s.players).every(p=>p.ready))return json({error:'Need 2–8 players, all ready.'},409);
+ if(s.phase!=='lobby'||Object.keys(s.players).length<(s.mode==='solo'?1:2)||!Object.values(s.players).every(p=>p.ready))return json({error:'Need 2–8 players, all ready.'},409);
  const backup=QUESTIONS.map(q=>({id:'dead-air-'+q.id,category:'general',difficulty:'medium',text:q.text,answers:[q.correct,...q.wrong],correct:0,source:'LINKS'}));
  const seen=s.seenQuestions||[];
  questionLoad ||= loadGameQuestions({env,categories:CATEGORIES,backup,exclude:seen,perGroup:2});
- const loaded=await questionLoad,bank=completeQuestionBank(loaded.questions,backup,{exclude:seen,minimum:16}).map(q=>({id:q.id,text:q.text,correct:q.answers[q.correct],wrong:q.answers.filter((_,i)=>i!==q.correct)}));
+ const loaded=await questionLoad,bank=completeQuestionBank(loaded.questions,backup,{exclude:seen,minimum:16}).map(q=>({id:q.id,category:q.category,text:q.text,correct:q.answers[q.correct],wrong:q.answers.filter((_,i)=>i!==q.correct)}));
  start(s,Date.now(),bank);s.questionSource=loaded.source;s.questionNotice=loaded.notice;s.seenQuestions=[...new Set([...seen,...s.deck])].slice(-1500);changed=true;
  }else if(action==='again'){
  if(seat!==s.owner||s.phase!=='ended')return json({error:'Only the creator can restart after results.'},403);
  s.phase='lobby';s.game++;s.phaseId=0;s.deadline=0;s.responses={};s.results=[];delete s.question;delete s.challenge;delete s.challengeOutcome;for(const p of Object.values(s.players)){p.score=0;p.ready=false;p.lives=3;p.echoCharge=0;p.progress=0;p.atRisk=false}changed=true;
  }else if(action!=='state')return json({error:'Unknown action.'},400);
  }
- if(changed){const update=await savePartyRoom(db,'dead-air',code,row.version,s,completed);if(!update.meta?.changes)continue}
+ if(changed){const update=s.mode==='solo'?await db.prepare('UPDATE links_dead_air_rooms SET state=?,version=version+1 WHERE code=? AND version=?').bind(JSON.stringify(s),code,row.version).run():await savePartyRoom(db,'dead-air',code,row.version,s,completed);if(!update.meta?.changes)continue}
  return json({...view(s,current,time,display),...(issued?{token:issued}:{})});
  }return json({error:'Room busy. Please try again.'},409);
  }catch{return json({error:'Unable to complete that request. Please try again.'},503)}}
