@@ -1,3 +1,4 @@
+import {triviaHealth} from './trivia-health.js';
 // Provider sessions are private server records. The cookie is an anonymous browser
 // identity, not a login credential; room membership and purchases are unchanged.
 const digest=async t=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t)))).map(x=>x.toString(16).padStart(2,'0')).join('');
@@ -21,7 +22,7 @@ export async function openQuestionSession(env,scope,key,fetcher){
  await db.prepare('INSERT OR IGNORE INTO links_question_sessions(owner) VALUES(?)').bind(owner).run();
  let row=await db.prepare('SELECT session FROM links_question_sessions WHERE owner=?').bind(owner).first(),warning='';
  if(!row.session){const lease=crypto.randomUUID(),locked=await db.prepare('UPDATE links_question_sessions SET lease=?,until=? WHERE owner=? AND session IS NULL AND until<?').bind(lease,Date.now()+15000,owner,Date.now()).run();
- if(locked.meta?.changes){try{const r=await fetcher('https://the-trivia-api.com/v2/session',{method:'POST',headers:{'X-API-Key':key,Accept:'application/json'},signal:AbortSignal.timeout(5000),redirect:'error'});if(!r.ok)throw Error();const data=await r.json();if(typeof data.id!=='string'||!data.id||data.id.length>200)throw Error();await db.prepare('UPDATE links_question_sessions SET session=?,lease=NULL,until=0 WHERE owner=? AND lease=?').bind(data.id,owner,lease).run()}catch{warning='API repeat protection is temporarily unavailable; recent-question history is still checked.';await db.prepare('UPDATE links_question_sessions SET lease=NULL,until=0 WHERE owner=? AND lease=?').bind(owner,lease).run()}}
+ if(locked.meta?.changes){try{const r=await fetcher('https://the-trivia-api.com/v2/session',{method:'POST',headers:{'X-API-Key':key,Accept:'application/json'},signal:AbortSignal.timeout(5000),redirect:'error'});await triviaHealth(env,'session',r.status);if(!r.ok)throw Error();const data=await r.json();if(typeof data.id!=='string'||!data.id||data.id.length>200)throw Error();await db.prepare('UPDATE links_question_sessions SET session=?,lease=NULL,until=0 WHERE owner=? AND lease=?').bind(data.id,owner,lease).run()}catch{warning='API repeat protection is temporarily unavailable; recent-question history is still checked.';await db.prepare('UPDATE links_question_sessions SET lease=NULL,until=0 WHERE owner=? AND lease=?').bind(owner,lease).run()}}
  row=await db.prepare('SELECT session FROM links_question_sessions WHERE owner=?').bind(owner).first();
  }
  const history=(await db.prepare('SELECT id,text FROM links_question_history WHERE owner=? AND used>? ORDER BY used DESC LIMIT 6000').bind(owner,Date.now()-30*86400000).all()).results;

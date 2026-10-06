@@ -1,3 +1,4 @@
+import {triviaHealth} from './trivia-health.js';
 import {openQuestionSession} from './trivia-sessions.js';
 import {CATEGORIES,SECONDS,validateBank} from './trivia-night.js';
 // Keep provider credentials on the server. Questions are snapshots for one room,
@@ -30,8 +31,10 @@ export async function loadGameQuestions({env,categories,backup,exclude=[],fetche
    if(session?.id)url.searchParams.set('session',session.id);
    if(tags.length)url.searchParams.set('tags',tags.join(','));
    const response=await fetcher(url.href,{headers:{'X-API-Key':key,Accept:'application/json'},signal:controller.signal,redirect:'error'});
+   await triviaHealth(env,'questions-'+category+'-'+difficulty,response.status);
    if(!response.ok){if(session?.id&&[400,404,410].includes(response.status))await session.invalidateIfMissing();throw Error('Provider unavailable');}
    const rows=await response.json();
+   await triviaHealth(env,'questions-'+category+'-'+difficulty,response.status,Array.isArray(rows)?rows.length:0);
    return normalizeQuestions(tags.length&&Array.isArray(rows)?rows.filter(row=>Array.isArray(row.tags)&&tags.some(tag=>row.tags.includes(tag))):rows,category,difficulty);
   }));
   for(let i=0;i<groups.length;i++){
