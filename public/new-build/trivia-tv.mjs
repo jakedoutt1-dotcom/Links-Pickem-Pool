@@ -1,6 +1,6 @@
 import {mountTriviaSound} from './trivia-sound.mjs';
 import qrcode from './vendor/qrcode.mjs';
-const sounds=mountTriviaSound({button:document.getElementById('soundToggle')});
+const sounds=mountTriviaSound({button:document.getElementById('soundToggle'),lobbyMusic:true});
 const $=id=>document.getElementById(id),themes={football:'SPORTS',music:'MUSIC',movies:'MOVIES & TV',history:'HISTORY',science:'SCIENCE',general:'MIXED BAG'};
 let code='',state=null,offset=0,heartbeat=0,timer,version=0,signature='';
 function tick(){if(!state)return;sounds.update(state,Date.now()+offset);const now=Date.now()+offset,count=Math.max(0,Math.ceil((state.startsAt-now)/1000)),waiting=state.phase==='question'&&!state.question;$('countdown').hidden=!waiting;$('questionArea').hidden=waiting;$('countdownNumber').textContent=count||'GO';$('clock').textContent=state.phase==='question'&&!waiting?String(Math.max(0,Math.ceil((state.deadline-now)/1000))).padStart(2,'0'):'—';}

@@ -2,7 +2,7 @@ import {mountInviteShare} from './invite-share.mjs';
 import {rememberPartySeat} from './party-score-link.mjs';
 import {mountTriviaSound} from './trivia-sound.mjs';
 import qrcode from './vendor/qrcode.mjs';
-const sounds=mountTriviaSound({button:document.getElementById('soundToggle')});
+const sounds=mountTriviaSound({button:document.getElementById('soundToggle'),lobbyMusic:true});
 const $=id=>document.getElementById(id),themes={football:'Sports',music:'Music',movies:'Movies & TV',history:'History',science:'Science',general:'Mixed Bag'};
 let code=new URL(location.href).searchParams.get('room')||'',state=null,busy=false,offset=0,signature='',generation=0;
 const token=()=>localStorage.getItem('links-friend-seat-'+code)||'';

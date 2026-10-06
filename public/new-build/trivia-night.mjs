@@ -2,7 +2,7 @@ import {updateVenueRoom} from './venue-link.mjs';
 import {mountInviteShare} from './invite-share.mjs';
 import {mountTriviaSound} from './trivia-sound.mjs';
 import qrcode from './vendor/qrcode.mjs';
-const sounds=mountTriviaSound({button:document.getElementById('soundToggle')});
+const sounds=mountTriviaSound({button:document.getElementById('soundToggle'),lobbyMusic:true});
 import {mountPartners} from './partner-banner.mjs';
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const themes={football:['SPORTS','🏆'],music:['MUSIC','♫'],movies:['MOVIES & TV','▶'],history:['HISTORY','Ⅲ'],science:['SCIENCE','⚛'],general:['MIXED BAG','✦']};

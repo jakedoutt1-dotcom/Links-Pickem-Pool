@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import {mountTriviaSound} from '../public/new-build/trivia-sound.mjs';
+const events={},timers=new Map(),oscillators=[];let id=0;
+globalThis.document={hidden:false,addEventListener:(key,fn)=>events[key]=fn};
+globalThis.setInterval=fn=>{timers.set(++id,fn);return id};globalThis.clearInterval=id=>timers.delete(id);
+class Audio {state='running';currentTime=0;destination={};async resume(){}createOscillator(){const o={frequency:{},connect(){},disconnect(){},start(){},stop(at){if(at===undefined)this.cancelled=true}};oscillators.push(o);return o}createGain(){return {gain:{setValueAtTime(){},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){},disconnect(){}}}}
+globalThis.window={AudioContext:Audio,addEventListener:(key,fn)=>events[key]=fn};
+const button={setAttribute(){}};const sound=mountTriviaSound({button,lobbyMusic:true});
+sound.update({phase:'lobby',code:'TEST',game:1},0);assert.equal(timers.size,0);
+await button.onclick();assert.equal(timers.size,1);
+sound.update({phase:'lobby',code:'TEST',game:1},100);assert.equal(timers.size,1);
+const music=oscillators.slice(3);assert.ok(music.length>0);
+sound.update({phase:'category',code:'TEST',game:1},200);assert.equal(timers.size,0);assert.ok(music.every(o=>o.cancelled));
+sound.update({phase:'lobby',code:'TEST',game:2},300);assert.equal(timers.size,1);
+document.hidden=true;events.visibilitychange();assert.equal(timers.size,0);
+document.hidden=false;events.visibilitychange();assert.equal(timers.size,1);
+await button.onclick();assert.equal(timers.size,0);
+await button.onclick();assert.equal(timers.size,1);events.pagehide();assert.equal(timers.size,0);
+const other=mountTriviaSound({button:{setAttribute(){}}});other.update({phase:'lobby'},0);assert.equal(timers.size,0);
+console.log('PASS lobby opt-in, single loop, phase exit, rematch, visibility, mute and page cleanup.');
