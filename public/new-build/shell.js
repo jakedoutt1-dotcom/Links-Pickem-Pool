@@ -3,7 +3,7 @@ window.LINKS_API_FETCH=(input,options={})=>{const u=new URL(input,location.href)
 window.LINKS_GAME_KEY=base=>{let p={};try{p=JSON.parse(localStorage.getItem('links-current-pool')||'{}')}catch{}return base+':'+encodeURIComponent(new URLSearchParams(location.search).get('pool')||p.id||'demo')+':'+encodeURIComponent(localStorage.getItem('links-player-id')||'guest')};
 const LINKS_BUILD=window.LINKS_BUILD||'711';
 (async function(){
-  if(/control-center/.test(location.pathname)){try{window.LINKS_IDENTITY_TEST=(await import('./links-account-client.mjs')).enabled}catch{}}
+  if(/control-center/.test(location.pathname)){try{window.LINKS_IDENTITY_TEST=(await (await import('./links-account-client.mjs')).identityReady())}catch{}}
   const protectedPage=/\/(control-center|commissioner|nfl|nfl-scores|nfl-standings|compare-picks|pick-tools|college|survivor|confidence|game33|squares|props|playoff|march-madness|golf|nascar|fantasy|dynasty|custom)(?:\.html)?\/?$/i.test(location.pathname);
   let pool=null;try{pool=JSON.parse(localStorage.getItem('links-current-pool')||'null')}catch{}
   const player=localStorage.getItem('links-player-id')||'';

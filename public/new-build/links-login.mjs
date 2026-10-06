@@ -1,4 +1,5 @@
-import {enabled,rollout,accountApi,savePool,clearPool,legacyToken} from './links-account-client.mjs';
+import {identityReady,enabled,rollout,accountApi,savePool,clearPool,legacyToken} from './links-account-client.mjs';
+await identityReady();
 if(!enabled)location.replace('./pool-login.html');
 const box=document.getElementById('accountForm'),status=document.getElementById('accountStatus'),title=document.getElementById('accountTitle'),intro=document.getElementById('accountIntro'),params=new URLSearchParams(location.search);
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));let signed=null,poolProof='',pendingPool=false;
