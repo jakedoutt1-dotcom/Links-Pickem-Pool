@@ -2,7 +2,22 @@ export const rollout=await fetch('./api/login-transition',{cache:'no-store',sign
 export const enabled=rollout.phase!=='off';
 window.LINKS_IDENTITY_TEST=enabled;
 export const legacyToken=()=>localStorage.getItem('links-legacy-token')||localStorage.getItem('links-token')||'';
-export async function accountApi(body){const r=await fetch('./api/player-account',{method:body?'POST':'GET',credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(15000),headers:{'Content-Type':'application/json',Authorization:'Bearer '+legacyToken()},...(body?{body:JSON.stringify(body)}:{})});const j=await r.json();if(!r.ok)throw Object.assign(new Error(j.error||'Please try again.'),{status:r.status});return j}
+// Retry only loading and opening a pool; never replay passwords, profile edits or purchases.
+export async function accountApi(body){
+ const canRetry=!body||body.action==='open';
+ for(let attempt=0;;attempt++){
+  try{
+   const r=await fetch('./api/player-account',{method:body?'POST':'GET',credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(15000),headers:{'Content-Type':'application/json',Authorization:'Bearer '+legacyToken()},...(body?{body:JSON.stringify(body)}:{})});
+   let j;try{j=await r.json()}catch{throw Object.assign(new Error('Account service returned an incomplete response.'),{status:r.status,retryable:r.ok||r.status>=500})}
+   if(!r.ok)throw Object.assign(new Error(j.error||'Please try again.'),{status:r.status,retryable:r.status>=500});return j;
+  }catch(e){
+   const temporary=e.retryable||e.name==='TypeError'||e.name==='TimeoutError'||e.name==='AbortError';
+   if(!canRetry||!temporary||attempt>=2)throw e;
+   await new Promise(resolve=>setTimeout(resolve,500*(attempt+1)));
+  }
+ }
+}
+
 export function savePool(j){localStorage.setItem('links-legacy-token',j.token);localStorage.setItem('links-token',j.token);localStorage.setItem('links-current-pool',JSON.stringify(j.pool));localStorage.setItem('links-player-id',j.playerId);localStorage.setItem('links-player-name',j.playerId);localStorage.setItem('links-player-role',j.pool.role);localStorage.setItem('links-current-role',j.pool.role);sessionStorage.removeItem('links-signed-out')}
 export function clearPool(){for(const key of ['links-token','links-legacy-token','links-current-pool','links-player-id','links-player-name','links-player-role','links-current-role','links-account-token'])localStorage.removeItem(key)}
 export async function bootLocker(){if(!enabled)return;try{const state=await accountApi();window.LINKS_IDENTITY_ACCOUNT=state.account;window.LINKS_IDENTITY_MODE=true;mountAccount(state.account);const title=document.getElementById('controlTitle');if(title)title.textContent=state.account.displayName+'’s Locker Room';let current;try{current=JSON.parse(localStorage.getItem('links-current-pool')||'{}').id}catch{}const pool=state.pools.find(p=>p.id===String(current))||state.pools[0];if(pool)savePool(await accountApi({action:'open',pool:pool.id}));else clearPool();}catch(e){if(e.status===401){location.replace('./links-login.html'+(legacyToken()?'?setup=1':''));await new Promise(()=>{})}throw e}}
