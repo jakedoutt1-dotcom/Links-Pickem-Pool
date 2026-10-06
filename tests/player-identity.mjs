@@ -20,7 +20,7 @@ try{
  assert.equal((await call({action:'open',pool:2})).status,403);
  const opened=await call({action:'open',pool:1});assert.equal(opened.pool.role,'player');assert.ok(db.raw.prepare('SELECT * FROM pool_sessions WHERE token=?').get(opened.token));
  assert.equal((await call({action:'connect',poolPassword:'pool-pass'},'alice2')).status,200);assert.equal((await call(null)).pools.length,2);
- const updated=await call({action:'profile',username:'changed-name',displayName:'Updated Player',currentPassword:'strong-pass-123'});assert.equal(updated.account.id,accountId);assert.equal((await call(null)).pools.length,2);assert.equal(db.raw.prepare('SELECT count(*) n FROM pool_picks').get().n,1);
+ const updated=await call({action:'profile',username:'changed-name',displayName:'Updated Player',currentPassword:'strong-pass-123'});assert.equal(updated.account.id,accountId);assert.equal(db.raw.prepare("SELECT count(*) n FROM pool_display_names WHERE player_name='Alice' AND display_name='Updated Player'").get().n,2);assert.equal((await call(null)).pools.length,2);assert.equal(db.raw.prepare('SELECT count(*) n FROM pool_picks').get().n,1);
  db.raw.exec("UPDATE pool_players SET name='Renamed' WHERE pool_id=1 AND name='Alice'");me=await call(null);assert.equal(me.pools.find(p=>p.id==='1').membershipId,memberId);assert.equal(me.pools.find(p=>p.id==='1').playerName,'Renamed');
  const other=await call({...input,username:'other-player',email:'other@example.invalid',connect:false});await call({action:'confirm',challenge:other.challenge,code:other.testCode});assert.equal((await call({action:'connect',poolPassword:'pool-pass'},'alice2')).status,409);
  await call({action:'logout'});assert.equal((await call(null)).status,401);
