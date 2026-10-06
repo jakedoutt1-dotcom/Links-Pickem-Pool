@@ -3,3 +3,5 @@
 .result-panel{text-align:center;padding:45px 22px;border:1px solid #987a3f;border-radius:22px;background:linear-gradient(#0b1016c9,#0b0e13f2),url('./assets/million-point-studio-v1.png') center/cover;min-height:430px}.result-panel h1{font-size:clamp(38px,6vw,65px);letter-spacing:-2px;margin:20px 0}.result-panel>strong{font-size:30px;color:var(--gold)}.result-panel p{color:var(--muted)}.result-panel .eyebrow{color:var(--gold)}.result-emblem{color:var(--gold);font-size:54px;text-shadow:0 0 40px #ebc96f77}.result-panel .button,.result-panel button{margin:12px 4px}#resultAnswer{font-size:14px}
 
 #lobbyInvites{max-width:460px;margin:16px auto 0}#lobbyInvites .links-invite-share{justify-content:center}#lobbyInvites [role="status"]{font-size:13px;overflow-wrap:anywhere}body[data-display="true"] #lobbyInvites{display:none}
+
+.spotlight-ring img{display:block;width:88%;height:auto;max-height:80%;object-fit:contain;filter:drop-shadow(0 3px 8px #0008)}
