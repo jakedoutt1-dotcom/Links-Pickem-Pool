@@ -1,3 +1,4 @@
+import {FREE_GAME_TESTING} from '../../lib/testing-access.js';
 import {referralPartner} from '../../lib/partners.js';
 import {poolGameKeys} from '../../lib/pool-games.js';
 import {recordAccountLogin} from '../../lib/login-activity.js';
@@ -113,6 +114,7 @@ export async function onRequest({request,env}){
   const token=crypto.randomUUID()+crypto.randomUUID();await db.prepare("INSERT INTO pool_sessions(token,pool_id,player_name,role,expires_at) VALUES(?,?,?,'admin',?)").bind(token,p.id,r.value,account.expires_at).run();return json({token,playerId:r.value,pool:{...p,id:String(p.id),role:'commissioner',games:games.map(g=>GAMES[g.game_type]||g.game_type)}});
  }
  if(b.action==='checkout'){
+ if(FREE_GAME_TESTING)throw fail('Pool hosting is free during testing. No package purchase is needed.',409);
   const plan=PLANS[b.plan];if(!plan?.amount)throw fail('Choose a paid package.');
   const current=await allowance(db,email);if(current.amount>plan.amount)throw fail('Your current package has more slots. Choose a different package after it expires.');
   const id=crypto.randomUUID(),origin=new URL(request.url).origin;

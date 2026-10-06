@@ -10,10 +10,11 @@ function message(text){$('status').textContent=text;}
 async function run(task){if(busy)return;busy=true;document.querySelectorAll('#account button,[data-plan],#venueBuy').forEach(b=>b.disabled=true);try{await task()}catch(e){message(e.message);$('status').scrollIntoView({block:'center',behavior:'smooth'})}finally{busy=false;render();}}
 function render(){
  const signed=!!state?.email,active=!!state?.access;
+ if(state?.freeTesting){$('passes').innerHTML='<p class="eyebrow">FREE DURING TESTING</p><h2>Bring your friends. Play for free.</h2><p>Pool and party games are free to host while we test. Hosted Trivia Night requires separate paid access.</p><a class="button gold" href="./party-room.html#partyGames">Choose a party game →</a>';}
  $('emailForm').hidden=signed;$('codeForm').hidden=signed||!email;$('access').hidden=!signed;$('accountTitle').textContent=signed?'Your LINKS access':'Verify your email';
  $('accessText').textContent=signed?state.email+(active?' · Party Pack active until '+date(state.access.expires_at):' · Choose a pass to host. Guests join free.'):'';
  const next=sessionStorage.getItem('links-party-next');$('play').href=active&&games.has(next)&&next!=='trivia-night.html'?'./'+next:'./party-room.html#partyGames';$('play').hidden=!active&&!state?.enabled;
- $('launch').textContent=!state?'Unable to check availability. Refresh to try again.':state.enabled?'Only the room creator buys access. Guests join free.':'A paid pass is required to host. Checkout is temporarily unavailable. Guests with an invitation can still join.';
+ $('launch').textContent=!state?'Unable to check availability. Refresh to try again.':state.freeTesting?'Party games are free during testing. Hosted Trivia Night is sold separately.':state.enabled?'Only the room creator buys access. Guests join free.':'A paid pass is required to host. Checkout is temporarily unavailable. Guests with an invitation can still join.';
  document.querySelectorAll('[data-plan]').forEach(b=>b.disabled=busy||!state?.checkoutReady||active);
  document.querySelectorAll('#account button').forEach(b=>b.disabled=busy);
  $('venueBuy').disabled=busy||!state?.venueReady||!!state?.venueAccess;

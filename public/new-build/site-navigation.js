@@ -1,6 +1,7 @@
 // Shared navigation never signs a player out or changes pool membership.
 (()=>{
  function mount(){
+  if(!document.getElementById('linksTestingNoticeScript')){const script=document.createElement('script');script.id='linksTestingNoticeScript';script.src='/new-build/testing-access.js';document.head.append(script)}
   if(document.getElementById('linksSiteNavigation'))return;
   const path=location.pathname.replace(/\/+$|\.html$/g,''),page=path.split('/').pop();
   if(path===''||path==='/index'||path==='/new-build'||path==='/new-build/index')return;
@@ -11,6 +12,23 @@
   link('← Back to Home','/new-build/index.html');
   if(poolPages.has(page)||new URLSearchParams(location.search).has('pool')||path.includes('/nfl-rewrite/'))link('Back to Locker Room','/new-build/control-center.html');
   document.body.prepend(nav);
+  // Keep the shared Home control; preserve clickable logos and game-specific exits.
+  function removeDuplicateHome(){
+   for(const control of document.querySelectorAll('a[href],button[data-nav],button[data-go]')){
+    if(nav.contains(control)||control.querySelector('img,svg'))continue;
+    const label=control.textContent.trim().replace(/[←→‹›↩🏠]/gu,'').trim();
+    if(!/^(?:back\s+to\s+)?home(?:\s+page)?$/i.test(label))continue;
+    const target=control.getAttribute('href')||control.dataset.nav;
+    let home=control.dataset.go==='home';
+    if(target){try{const u=new URL(target,location.href);home=u.origin===location.origin&&['/','/index.html','/index','/new-build/','/new-build/index.html','/new-build/index'].includes(u.pathname)}catch{}}
+    if(home&&!control.hasAttribute('data-links-duplicate-home')){control.setAttribute('data-links-duplicate-home','');control.hidden=true;}
+   }
+  }
+  style.textContent+='[data-links-duplicate-home]{display:none!important}';
+  removeDuplicateHome();
+  const observer=new MutationObserver(removeDuplicateHome);
+  observer.observe(document.body,{childList:true,subtree:true});
+  window.addEventListener('pagehide',()=>observer.disconnect(),{once:true});
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
 })();

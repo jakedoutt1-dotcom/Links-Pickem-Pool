@@ -1,3 +1,4 @@
+import {FREE_GAME_TESTING} from './testing-access.js';
 import {allowance,ensureAccounts,emailKey} from './commissioner-account.js';
 // Archived slots remain readable for history but cannot accept game mutations.
 export async function slotWriteGuard(request,env){
@@ -25,6 +26,7 @@ export async function slotWriteGuard(request,env){
  await ensureAccounts(env.DB);
  const rows=(await env.DB.prepare('SELECT id,email,game_type,active FROM links_pool_slots WHERE pool_id=?').bind(pool.id).all()).results||[];
  if(rows.length&&(game?!rows.some(r=>r.game_type===game&&r.active):rows.every(r=>!r.active)))return Response.json({error:'This game is archived or not enabled. Ask your commissioner to add or restore it before making changes.'},{status:403,headers:{'Cache-Control':'no-store'}});
+ if(FREE_GAME_TESTING)return null;
  const owner=await env.DB.prepare('SELECT email FROM links_pool_owners WHERE pool_id=?').bind(pool.id).first();
  const contact=(!owner&&!rows.length)?await env.DB.prepare("SELECT value FROM pool_settings WHERE pool_id=? AND key='commissioner_email'").bind(pool.id).first():null;
  const email=emailKey(owner?.email||rows[0]?.email||contact?.value||'');

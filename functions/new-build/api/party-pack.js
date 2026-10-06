@@ -1,3 +1,4 @@
+import {FREE_GAME_TESTING} from '../../lib/testing-access.js';
 import {PARTY_PLANS,partyEnabled,partySession,ensureParty,partyAccess} from '../../lib/party-access.js';
 import {hostBillingEnabled,ensureHostBilling,validateHostPlan,refreshHostSubscription,hostAccess} from '../../lib/trivia-host-billing.js';
 const fail=(message,status=400)=>Object.assign(new Error(message),{status});
@@ -21,7 +22,7 @@ export async function onRequest({request,env}){try{
   const purchases=session?(await db.prepare('SELECT id,plan,status,created_at,expires_at FROM links_party_purchases WHERE email=? ORDER BY created_at DESC LIMIT 10').bind(session.email).all()).results:[];
   const venueEnabled=hostBillingEnabled(env),venueReady=venueEnabled&&!!env.PAYPAL_TRIVIA_MONTHLY_PLAN_ID&&!!env.PAYPAL_CLIENT_ID&&!!env.PAYPAL_CLIENT_SECRET;
   const venueAccess=session?await hostAccess(env,session.email,paypal):null;
-  const response=json({enabled,checkoutReady:enabled&&!!env.PAYPAL_CLIENT_ID&&!!env.PAYPAL_CLIENT_SECRET,plans:PARTY_PLANS,email:session?.email||null,access,purchases,venueEnabled,venueReady,venueDayReady:venueEnabled&&!!env.PAYPAL_CLIENT_ID&&!!env.PAYPAL_CLIENT_SECRET,venueAccess});
+  const response=json({freeTesting:FREE_GAME_TESTING,enabled,checkoutReady:!FREE_GAME_TESTING&&enabled&&!!env.PAYPAL_CLIENT_ID&&!!env.PAYPAL_CLIENT_SECRET,plans:PARTY_PLANS,email:session?.email||null,access,purchases,venueEnabled,venueReady,venueDayReady:venueEnabled&&!!env.PAYPAL_CLIENT_ID&&!!env.PAYPAL_CLIENT_SECRET,venueAccess});
   const token=request.headers.get('x-links-account');if(session&&/^[a-f0-9-]{72}$/.test(token||''))response.headers.set('Set-Cookie','links_party_session='+token+'; Path=/new-build/; HttpOnly; SameSite=Lax; Max-Age='+Math.max(0,Math.floor((Date.parse(session.expires_at)-Date.now())/1000))+(url.protocol==='https:'?'; Secure':''));
   return response;
  }
@@ -46,6 +47,7 @@ export async function onRequest({request,env}){try{
   const access=await refreshHostSubscription(env,row,paypal);if(!access.active)throw fail('Payment is still pending. Check again after PayPal confirms it.',409);return json({ok:true});
  }
  if(b.action==='checkout'){
+ if(FREE_GAME_TESTING&&b.plan!=='host_day')throw fail('Party games are free during testing. No Party Pass is needed.',409);
   if(b.plan==='host_day'?!hostBillingEnabled(env):!enabled)throw fail('Checkout is not available yet. Please try again later.',503);
   const plan=Object.hasOwn(PARTY_PLANS,b.plan)?PARTY_PLANS[b.plan]:null;if(!plan)throw fail('Choose a Party Pass.');
   if(b.plan==='host_day'){const {importOwnedPools}=await import('../../lib/commissioner-account.js');await importOwnedPools(db,session.email);if(!await db.prepare('SELECT pool_id FROM links_pool_owners WHERE email=? LIMIT 1').bind(session.email).first())throw fail('Use your commissioner email, or create your commissioner account first.',409);if(await hostAccess(env,session.email,paypal))throw fail('Your hosted Trivia Night access is already active.',409)}else if(await partyAccess(db,session.email))throw fail('You already have active party access. Enjoy your games!',409);
