@@ -1,20 +1,30 @@
 import assert from 'node:assert/strict';
 import {mountTriviaSound} from '../public/new-build/trivia-sound.mjs';
-const events={},timers=new Map(),oscillators=[];let id=0;
+const events={},music=[];let fetches=0,resolveDownload;
 globalThis.document={hidden:false,addEventListener:(key,fn)=>events[key]=fn};
-globalThis.setInterval=fn=>{timers.set(++id,fn);return id};globalThis.clearInterval=id=>timers.delete(id);
-class Audio {state='running';currentTime=0;destination={};async resume(){}createOscillator(){const o={frequency:{},connect(){},disconnect(){},start(){},stop(at){if(at===undefined)this.cancelled=true}};oscillators.push(o);return o}createGain(){return {gain:{setValueAtTime(){},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){},disconnect(){}}}}
+globalThis.fetch=url=>{if(String(url).includes("whamp-whamp"))return Promise.resolve({ok:true,arrayBuffer:async()=>new ArrayBuffer(1)});fetches++;return new Promise(resolve=>resolveDownload=()=>resolve({ok:true,arrayBuffer:async()=>new ArrayBuffer(1)}))};
+class Audio {state='running';currentTime=0;destination={};async resume(){}async decodeAudioData(){return {duration:180}}createBufferSource(){const source={connect(gain){this.output=gain},disconnect(){},start(){this.started=true},stop(at){if(at===undefined)this.stopped=true;else this.stopAt=at}};music.push(source);return source}createOscillator(){return {frequency:{},connect(){},disconnect(){},start(){},stop(){}}}createGain(){return {gain:{setValueAtTime(){},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){},disconnect(){}}}}
 globalThis.window={AudioContext:Audio,addEventListener:(key,fn)=>events[key]=fn};
 const button={setAttribute(){}};const sound=mountTriviaSound({button,lobbyMusic:true});
-sound.update({phase:'lobby',code:'TEST',game:1},0);assert.equal(timers.size,0);
-await button.onclick();assert.equal(timers.size,1);
-sound.update({phase:'lobby',code:'TEST',game:1},100);assert.equal(timers.size,1);
-const music=oscillators.slice(3);assert.ok(music.length>0);
-sound.update({phase:'category',code:'TEST',game:1},200);assert.equal(timers.size,0);assert.ok(music.every(o=>o.cancelled));
-sound.update({phase:'lobby',code:'TEST',game:2},300);assert.equal(timers.size,1);
-document.hidden=true;events.visibilitychange();assert.equal(timers.size,0);
-document.hidden=false;events.visibilitychange();assert.equal(timers.size,1);
-await button.onclick();assert.equal(timers.size,0);
-await button.onclick();assert.equal(timers.size,1);events.pagehide();assert.equal(timers.size,0);
-const other=mountTriviaSound({button:{setAttribute(){}}});other.update({phase:'lobby'},0);assert.equal(timers.size,0);
-console.log('PASS lobby opt-in, single loop, phase exit, rematch, visibility, mute and page cleanup.');
+const update=phase=>sound.update({phase,code:'TEST',game:1},0);
+update('lobby');assert.equal(fetches,0);await button.onclick();assert.equal(fetches,1);
+update('category');resolveDownload();await new Promise(resolve=>setImmediate(resolve));assert.equal(music.length,0,'late download must not play over game');
+update('lobby');assert.equal(music.length,1);assert.equal(music[0].loop,true);assert.equal(music[0].started,true);
+update('lobby');assert.equal(music.length,1,'no overlapping loops');
+update('question');assert.equal(music[0].stopped,true);
+update('lobby');assert.equal(music.length,2);assert.equal(fetches,1,'reuse decoded song');
+document.hidden=true;events.visibilitychange();assert.equal(music.at(-1).stopped,true);
+document.hidden=false;events.visibilitychange();assert.equal(music.length,3);
+await button.onclick();assert.equal(music.at(-1).stopped,true);
+await button.onclick();assert.equal(music.length,4);events.pagehide();assert.equal(music.at(-1).stopped,true);
+console.log('PASS soundtrack looping, opt-in, late-download race, no overlap, phase stop, cached replay, visibility and mute.');
+
+const question={phase:'question',code:'TEST',game:1,index:1,startsAt:1000,deadline:11000};
+sound.update(question,1000);assert.equal(fetches,2);resolveDownload();await new Promise(resolve=>setImmediate(resolve));
+const answerMusic=music.at(-1);assert.equal(answerMusic.loop,true);assert.equal(answerMusic.output.gain.value,.20);assert.ok(answerMusic.stopAt>0);
+sound.update(question,8200);assert.equal(answerMusic.output.gain.value,.035,'duck music during final beeps');
+sound.update(question,11000);assert.equal(answerMusic.stopped,true,'stop at deadline before reveal');
+sound.update({...question,index:2,startsAt:12000,deadline:22000},12000);assert.equal(fetches,2);
+const nextMusic=music.at(-1);assert.notEqual(nextMusic,answerMusic);
+sound.update({...question,phase:'reveal'},13000);assert.equal(nextMusic.stopped,true);
+console.log('PASS answer soundtrack, final-three-second ducking, deadline stop, next question and reveal stop.');

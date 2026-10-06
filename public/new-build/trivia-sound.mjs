@@ -1,4 +1,5 @@
-// Original synthesized cues; no audio downloads or third-party recordings.
+import {createLossSound} from './loss-sound.mjs';
+// Original synthesized game cues and the supplied LINKS waiting-room soundtrack.
 export function createCueTracker(){
  let room='',seen=new Set(),previous=null,last=0;
  return (s,now)=>{
@@ -17,31 +18,38 @@ export function createCueTracker(){
  };
 }
 export function mountTriviaSound({button,lobbyMusic=false}){
- let context,enabled=false,phase=null,musicTimer=null,nextBeat=0,beat=0;const sources=new Set(),track=createCueTracker();
+ let context,enabled=false,state=null,clockOffset=0,musicSource=null,musicGain=null,musicKey=null;const buffers=new Map(),loading=new Map(),failed=new Set();const loss=createLossSound();const sources=new Set(),track=createCueTracker();
  const draw=()=>{button.textContent=enabled?'Sound On':'Sound Off';button.setAttribute('aria-pressed',String(enabled));button.title='Sound plays on this device only. Use the TV or host for room audio to avoid echo.'};
- const musicSources=new Set();
- const stopMusic=()=>{clearInterval(musicTimer);musicTimer=null;for(const source of musicSources){try{source.stop()}catch{}}musicSources.clear()};
- const stop=()=>{stopMusic();for(const oscillator of sources){try{oscillator.stop()}catch{}}sources.clear()};
- function tone(frequency,at,duration=.12,volume=.05,music=false){const oscillator=context.createOscillator(),gain=context.createGain();oscillator.type='sine';oscillator.frequency.value=frequency;gain.gain.setValueAtTime(0,at);gain.gain.linearRampToValueAtTime(volume,at+.012);gain.gain.exponentialRampToValueAtTime(.0001,at+duration);oscillator.connect(gain);gain.connect(context.destination);sources.add(oscillator);if(music)musicSources.add(oscillator);oscillator.onended=()=>{sources.delete(oscillator);musicSources.delete(oscillator);oscillator.disconnect();gain.disconnect()};oscillator.start(at);oscillator.stop(at+duration+.02)}
- // Original 32-beat lounge loop, shared by both trivia waiting rooms.
+ const stopMusic=()=>{if(musicSource){try{musicSource.stop()}catch{}musicSource.disconnect();musicSource=null}musicGain?.disconnect();musicGain=null;musicKey=null};
+ const stop=()=>{loss.stop();stopMusic();for(const oscillator of sources){try{oscillator.stop()}catch{}}sources.clear()};
+ function tone(frequency,at,duration=.12,volume=.05){const oscillator=context.createOscillator(),gain=context.createGain();oscillator.type='sine';oscillator.frequency.value=frequency;gain.gain.setValueAtTime(0,at);gain.gain.linearRampToValueAtTime(volume,at+.012);gain.gain.exponentialRampToValueAtTime(.0001,at+duration);oscillator.connect(gain);gain.connect(context.destination);sources.add(oscillator);oscillator.onended=()=>{sources.delete(oscillator);oscillator.disconnect();gain.disconnect()};oscillator.start(at);oscillator.stop(at+duration+.02)}
+ // Both supplied tracks share the same opt-in as game cues. Cache decoded audio per page.
  function syncMusic(){
-  if(!lobbyMusic||phase!=='lobby'||!enabled||document.hidden||context?.state!=='running'){stopMusic();return}
-  if(musicTimer!==null)return;
-  beat=0;nextBeat=context.currentTime+.04;
-  const schedule=()=>{
-   if(context.state!=='running'){stopMusic();return}
-   while(nextBeat<context.currentTime+.18){
-    const chords=[[130.81,164.81,196,246.94],[110,130.81,164.81,196],[87.31,110,130.81,164.81],[98,123.47,146.83,196]],chord=chords[Math.floor(beat/8)%4];
-    if(beat%4===0){tone(chord[0]/2,nextBeat,.55,.024,true);chord.slice(1).forEach(hz=>tone(hz,nextBeat,1.15,.009,true))}
-    if(beat%2===0)tone(chord[[2,3,1,2][Math.floor(beat/2)%4]]*2,nextBeat,.38,.013,true);
-    nextBeat+=60/96;beat=(beat+1)%32;
-   }
-  };
-  schedule();musicTimer=setInterval(schedule,80);
+  const now=Date.now()+clockOffset;
+  const answering=state?.phase==='question'&&now>=(state.startsAt||0)&&now<state.deadline;
+  const key=state?.phase==='lobby'?'the-night-starts-here':answering?'think-fast':null;
+  if(!lobbyMusic||!key||!enabled||document.hidden||context?.state!=='running'){stopMusic();return}
+  if(musicKey!==key)stopMusic();
+  if(musicSource){musicGain.gain.value=answering?(state.deadline-now<=3000?.035:.20):.55;return}
+  if(loading.has(key)||failed.has(key))return;
+  if(!buffers.has(key)){
+   loading.set(key,fetch(new URL('./audio/'+key+'.mp3',import.meta.url))
+    .then(response=>{if(!response.ok)throw new Error('Music unavailable');return response.arrayBuffer()})
+    .then(bytes=>context.decodeAudioData(bytes))
+    .then(buffer=>{buffers.set(key,buffer)})
+    .catch(()=>{failed.add(key);button.title='Music could not load. Turn sound off and on to retry.'})
+    .finally(()=>{loading.delete(key);syncMusic()}));
+   return;
+  }
+  musicKey=key;musicSource=context.createBufferSource();musicSource.buffer=buffers.get(key);musicSource.loop=true;
+  musicGain=context.createGain();musicGain.gain.value=answering?(state.deadline-now<=3000?.035:.20):.55;
+  musicSource.connect(musicGain);musicGain.connect(context.destination);musicSource.start();
+  // Audio-clock deadline also stops music if a screen update is delayed.
+  if(answering)musicSource.stop(context.currentTime+Math.max(0,(state.deadline-now)/1000));
  }
- function play(cue){if(!enabled||document.hidden||context?.state!=='running')return;const t=context.currentTime;const notes=({count:[660],go:[660,990],tick:[440],reveal:[523,659],correct:[659,880,1047],wrong:[330,262],finish:[523,659,784,1047]})[cue]||[];notes.forEach((hz,i)=>tone(hz,t+i*.13,cue==='finish'?.23:.12,cue==='tick'?.025:.05))}
- button.onclick=async()=>{if(enabled){enabled=false;stop();draw();return}try{const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio){button.textContent='Sound unavailable';button.disabled=true;return}context ||= new Audio();await context.resume();enabled=context.state==='running';draw();if(enabled){play('correct');syncMusic()}else button.textContent='Tap to enable sound'}catch{enabled=false;button.textContent='Tap to retry sound'}};
+ function play(cue){if(!enabled||document.hidden||context?.state!=='running')return;if(cue==='wrong'&&loss.play(context))return;const t=context.currentTime;const notes=({count:[660],go:[660,990],tick:[440],reveal:[523,659],correct:[659,880,1047],wrong:[330,262],finish:[523,659,784,1047]})[cue]||[];notes.forEach((hz,i)=>tone(hz,t+i*.13,cue==='finish'?.23:.12,cue==='tick'?.025:.05))}
+ button.onclick=async()=>{if(enabled){enabled=false;stop();draw();return}try{const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio){button.textContent='Sound unavailable';button.disabled=true;return}failed.clear();context ||= new Audio();await context.resume();enabled=context.state==='running';draw();if(enabled){loss.load(context);play('correct');syncMusic()}else button.textContent='Tap to enable sound'}catch{enabled=false;button.textContent='Tap to retry sound'}};
  // Always require an explicit tap on this device, including after reload.
  document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();else syncMusic()});window.addEventListener('pagehide',stop);draw();
- return {update(s,now){phase=s?.phase;syncMusic();for(const cue of track(s,now))play(cue)},stop};
+ return {update(s,now){state=s;clockOffset=now-Date.now();syncMusic();for(const cue of track(s,now))play(cue)},stop};
 }
