@@ -8,7 +8,20 @@ export async function triviaHealth(env,stage,status,count=0){
 }
 
 export async function triviaFetch(env,stage,fetcher,url,options){
- try{return await fetcher(url,options)}catch(error){
+ try{
+  let current=new URL(url);
+  const trusted=new Set(['the-trivia-api.com','thetriviaapi.com']);
+  for(let redirects=0;redirects<4;redirects++){
+   if(current.protocol!=='https:'||!trusted.has(current.hostname)||current.port||current.username||current.password)throw Error('Untrusted provider redirect');
+   const response=await fetcher(current.href,{...options,redirect:'manual'});
+   if(![301,302,307,308].includes(response.status))return response;
+   const location=response.headers.get('Location');if(!location)throw Error('Missing provider redirect');
+   const target=new URL(location,current);
+   if(target.pathname!==current.pathname)throw Error('Unexpected provider redirect path');
+   current=target;
+  }
+  throw Error('Too many provider redirects');
+ }catch(error){
  const message=String(error?.message||'').toLowerCase();
  const kind=/header|bytestring|character|string.*valid/.test(message)?'invalid-header':/redirect/.test(message)?'redirect-blocked':/abort|timeout/.test(message)?'timeout':'network-error';
  await triviaHealth(env,stage,kind);throw error;
