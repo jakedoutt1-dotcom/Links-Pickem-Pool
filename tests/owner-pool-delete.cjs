@@ -24,7 +24,8 @@ const assert=require('node:assert/strict'),{DatabaseSync}=require('node:sqlite')
  const call=async(b,token='owner')=>{const request=new Request('https://test/new-build/api/links-admin',{method:'POST',headers:{authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(b)});return await slotWriteGuard(request,{DB:db})||ownerPoolDelete(request,db,b)};
  sql.exec("UPDATE links_pool_slots SET active=0 WHERE pool_id=1");
  assert.equal((await call({action:'delete-preview',pool:1},'player')).status,401);
- assert.equal((await call({action:'delete-preview',pool:3})).status,403);
+ assert.equal((await call({action:'delete-preview',pool:3})).status,200);
+ assert.ok(sql.prepare('SELECT id FROM pools WHERE id=3').get(),'Preview must not delete Barnes');
  queryCount=0;assert.equal((await (await call({action:'delete-preview',pool:1})).json()).counts.pool_players,1);assert.ok(queryCount<20,'Preview chunks counts below D1 limits without one query per table');
  const body={action:'delete-pool',pool:1,confirmName:'Test Pool',confirmCode:'TEST',acknowledge:true,password:'owner-password'};
  assert.equal((await call({...body,confirmCode:'LIVE'})).status,400);assert.equal((await call({...body,password:'bad'})).status,401);
@@ -34,5 +35,11 @@ const assert=require('node:assert/strict'),{DatabaseSync}=require('node:sqlite')
  assert.deepEqual(sql.prepare('SELECT board_id FROM squares_claims').all().map(r=>r.board_id),[2]);
  assert.equal(sql.prepare('SELECT COUNT(*) n FROM game_fixture_119 WHERE pool_id=1').get().n,0);assert.equal(sql.prepare('SELECT COUNT(*) n FROM game_fixture_119 WHERE pool_id=2').get().n,1);
  assert.equal(sql.prepare('SELECT COUNT(*) n FROM quoted_scope WHERE pool_id=1').get().n,0);assert.equal(sql.prepare('SELECT COUNT(*) n FROM quoted_scope WHERE pool_id=2').get().n,1);
- console.log('PASS restricted-schema preview, quoted pool columns, owner-only deletion, protected pool, preview, password/code checks, rollback, slot cleanup, audit, preserved other pool and ledger');
+ const barnes={action:'delete-pool',pool:3,confirmName:'Barnes Family',confirmCode:'LINKS',acknowledge:true,password:'owner-password'};
+ assert.equal((await call({...barnes,acknowledge:false})).status,400);
+ assert.equal((await call(barnes,'player')).status,401);
+ assert.equal((await call(barnes)).status,200);
+ assert.equal(sql.prepare('SELECT id FROM pools WHERE id=3').get(),undefined);
+ assert.equal(sql.prepare('SELECT COUNT(*) n FROM pool_picks WHERE pool_id=2').get().n,1);
+ console.log('PASS restricted-schema preview, quoted pool columns, owner-only deletion, Barnes review and confirmed deletion, preview, password/code checks, rollback, slot cleanup, audit, preserved other pool and ledger');
 })().catch(e=>{console.error(e);process.exitCode=1});

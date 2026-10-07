@@ -11,7 +11,6 @@ async function scopedTables(db){
 export async function ownerPoolDelete(request,db,b){
  if(!await ownerSession(request,db))return json({error:'Owner sign-in required.'},401);
  const pool=await db.prepare('SELECT id,code,name FROM pools WHERE id=?').bind(Number(b.pool)).first();if(!pool)return json({error:'Pool not found.'},404);
- if(String(pool.code).toUpperCase()==='LINKS')return json({error:'Barnes Family / LINKS is protected from deletion.'},403);
  const tables=await scopedTables(db);
  if(b.action==='delete-preview'){
  const counts={};
