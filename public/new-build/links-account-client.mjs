@@ -2,10 +2,16 @@ export let rollout={phase:'off'},enabled=false;
 let readiness;
 // Explicit readiness avoids top-level-await initialization races on Safari.
 export function identityReady(){
- return readiness ||= fetch('./api/login-transition',{cache:'no-store',signal:AbortSignal.timeout(15000)})
-  .then(r=>r.ok?r.json():{phase:'off'}).catch(()=>({phase:'off'}))
-  .then(state=>{rollout=state;enabled=state.phase!=='off';window.LINKS_IDENTITY_TEST=enabled;return enabled});
+ if(readiness)return readiness;
+ readiness=(async()=>{
+  for(let attempt=0;attempt<3;attempt++){
+   try{const r=await fetch('./api/login-transition',{cache:'no-store',signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error();const state=await r.json();if(!['off','transition','new'].includes(state.phase))throw Error();rollout=state;enabled=state.phase!=='off';window.LINKS_IDENTITY_TEST=enabled;return enabled}
+   catch{if(attempt===2)throw Error('Unable to check sign-in right now. Please try again.');await new Promise(resolve=>setTimeout(resolve,500*(attempt+1)))}
+  }
+ })().catch(e=>{readiness=null;throw e});
+ return readiness;
 }
+
 export const legacyToken=()=>localStorage.getItem('links-legacy-token')||localStorage.getItem('links-token')||'';
 // Retry only loading and opening a pool; never replay passwords, profile edits or purchases.
 export async function accountApi(body){
