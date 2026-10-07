@@ -10,6 +10,11 @@ try{
  await ensureOwner(db);db.raw.exec("INSERT INTO links_admin_sessions VALUES('owner','2099-01-01');INSERT INTO pool_picks VALUES(1,'nfl','Alice',1,0,'BUF');INSERT INTO pool_settings VALUES(1,'commissioner_player_name','Owner');");
  assert.equal((await call(setupAdmin,null,{owner:false})).status,401);
  assert.equal((await call(setupAdmin,{action:'create'},{otherOrigin:true})).status,403);
+ await call(setupAdmin,null,{query:'?pool=1'});
+ db.raw.exec("INSERT INTO pool_player_contacts VALUES(1,'alice','pool-alice@example.invalid','');INSERT INTO pool_player_contacts VALUES(2,'Bob','other-pool@example.invalid','');INSERT INTO links_player_memberships VALUES(1,'Bob','member-bob@example.invalid');");
+ const roster=(await call(setupAdmin,null,{query:'?pool=1'})).players;
+ assert.equal(roster.find(p=>p.name==='Alice').savedEmail,'pool-alice@example.invalid');assert.equal(roster.find(p=>p.name==='Alice').emailSource,'Pool player contact');
+ assert.equal(roster.find(p=>p.name==='Bob').savedEmail,'member-bob@example.invalid');assert.equal(roster.find(p=>p.name==='Owner').savedEmail,'');
  const first=await create();assert.equal(first.status,200);assert.match(emailBody.subject,/Create your new LINKS username and password/);assert.match(emailBody.text,/Do not use the old pool login again/);
  const replaced=await create();const token=new URL(replaced.url).hash.slice(1);assert.equal((await call(setupPlayer,{action:'inspect',token:new URL(first.url).hash.slice(1)})).status,410);
  assert.equal((await call(setupPlayer,{action:'inspect',token})).player,'Alice');
