@@ -15,8 +15,8 @@ export async function ownerPoolDelete(request,db,b){
  const tables=await scopedTables(db);
  if(b.action==='delete-preview'){
  const counts={};
- // One bound query returns all counts, avoiding a round trip for every game table.
- if(tables.length){const query=tables.map(table=>`SELECT '${table}' AS name,COUNT(*) AS count FROM "${table}" WHERE pool_id=(SELECT id FROM target)`).join(' UNION ALL ');const rows=(await db.prepare('WITH target AS (SELECT ? AS id) '+query).bind(pool.id).all()).results||[];for(const row of rows)counts[row.name]=row.count}
+ // Use scalar counts instead of compound SELECTs rejected by production D1.
+ for(let offset=0;offset<tables.length;offset+=20){const query=tables.slice(offset,offset+20).map(table=>`(SELECT COUNT(*) FROM "${table}" WHERE pool_id=(SELECT id FROM target)) AS "${table}"`).join(',');const row=await db.prepare('WITH target AS (SELECT ? AS id) SELECT '+query).bind(pool.id).first();Object.assign(counts,row||{})}
  return json({pool,counts});
  }
  if(b.confirmCode!==pool.code||b.confirmName!==pool.name||b.acknowledge!==true)return json({error:'Confirm the pool code and permanent deletion.'},400);

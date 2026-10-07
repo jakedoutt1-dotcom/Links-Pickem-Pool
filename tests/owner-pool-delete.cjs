@@ -10,7 +10,7 @@ const assert=require('node:assert/strict'),{DatabaseSync}=require('node:sqlite')
  `);
  sql.exec('CREATE TABLE quoted_scope("pool_id" INTEGER,value TEXT); INSERT INTO quoted_scope VALUES(1,"remove"),(2,"keep");'.replaceAll('"remove"',"'remove'").replaceAll('"keep"',"'keep'"));
  let failBatch=false,queryCount=0;
- const db={prepare(text){if(/pragma_table_info/i.test(text))throw Error("not authorized to use function: pragma_table_info");queryCount++;let args=[];return {bind(...v){args=v;return this},async first(){return sql.prepare(text).get(...args)||null},async all(){return {results:sql.prepare(text).all(...args)}},async run(){if(failBatch&&text.startsWith('INSERT INTO pool_players'))throw Error('test failure');const r=sql.prepare(text).run(...args);return {meta:{changes:Number(r.changes),last_row_id:Number(r.lastInsertRowid)}}}}},async batch(statements){sql.exec('BEGIN');try{const out=[];for(const s of statements)out.push(await s.run());sql.exec('COMMIT');return out}catch(e){sql.exec('ROLLBACK');throw e}}};
+ const db={prepare(text){if(/UNION ALL/i.test(text))throw Error("too many terms in compound SELECT: SQLITE_ERROR");if(/pragma_table_info/i.test(text))throw Error("not authorized to use function: pragma_table_info");queryCount++;let args=[];return {bind(...v){args=v;return this},async first(){return sql.prepare(text).get(...args)||null},async all(){return {results:sql.prepare(text).all(...args)}},async run(){if(failBatch&&text.startsWith('INSERT INTO pool_players'))throw Error('test failure');const r=sql.prepare(text).run(...args);return {meta:{changes:Number(r.changes),last_row_id:Number(r.lastInsertRowid)}}}}},async batch(statements){sql.exec('BEGIN');try{const out=[];for(const s of statements)out.push(await s.run());sql.exec('COMMIT');return out}catch(e){sql.exec('ROLLBACK');throw e}}};
 
 
 
@@ -25,7 +25,7 @@ const assert=require('node:assert/strict'),{DatabaseSync}=require('node:sqlite')
  sql.exec("UPDATE links_pool_slots SET active=0 WHERE pool_id=1");
  assert.equal((await call({action:'delete-preview',pool:1},'player')).status,401);
  assert.equal((await call({action:'delete-preview',pool:3})).status,403);
- queryCount=0;assert.equal((await (await call({action:'delete-preview',pool:1})).json()).counts.pool_players,1);assert.ok(queryCount<10,'Preview uses a bounded number of queries, not one per table');
+ queryCount=0;assert.equal((await (await call({action:'delete-preview',pool:1})).json()).counts.pool_players,1);assert.ok(queryCount<20,'Preview chunks counts below D1 limits without one query per table');
  const body={action:'delete-pool',pool:1,confirmName:'Test Pool',confirmCode:'TEST',acknowledge:true,password:'owner-password'};
  assert.equal((await call({...body,confirmCode:'LIVE'})).status,400);assert.equal((await call({...body,password:'bad'})).status,401);
  const batch=db.batch;db.batch=async statements=>{if(statements.some(s=>false))return batch(statements);sql.exec('BEGIN');try{await statements[0].run();throw Error('simulated failure')}catch(e){sql.exec('ROLLBACK');throw e}};
