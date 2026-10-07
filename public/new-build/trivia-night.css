@@ -44,3 +44,5 @@ body[data-screen=setup] #triviaPartners{display:none!important}body[data-screen=
 #soundToggle{font-size:12px;padding:8px 10px;min-height:44px;white-space:nowrap}header{flex-wrap:wrap}#soundToggle[aria-pressed=true]{border-color:#f4ce76;color:#f4ce76}
 @media(max-width:650px){body.in-room>header{display:grid;grid-template-columns:minmax(0,1fr) 64px auto;column-gap:6px;row-gap:0;padding:8px 12px}body.in-room>header>a{font-size:12px}body.in-room>header img{width:64px}body.in-room #screen{grid-column:1/-1;grid-row:2}body.in-room #soundToggle{grid-column:3;grid-row:1;font-size:11px;padding:6px 8px}}
 @media(max-width:650px){body.in-room #screenStep{margin-top:4px}}
+
+.entry:has(#joinForm[hidden]){grid-template-columns:1fr}

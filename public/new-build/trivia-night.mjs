@@ -1,3 +1,4 @@
+import {verifiedHostPools,saveHostSession} from './trivia-host-session.mjs';
 import {mountHostQuestions} from './host-question-sets.mjs';
 import {updateVenueRoom} from './venue-link.mjs';
 import {mountInviteShare} from './invite-share.mjs';
@@ -15,7 +16,8 @@ const selection=()=>({...hostQuestions.selection(),mode:$('playMode').value,cate
 $('categories').innerHTML=Object.entries(themes).map(([key,[name,icon]])=>`<label><span>${icon}</span><input type="checkbox" name="category" value="${key}" checked> ${name}</label>`).join('');
 if(new URL(location.href).searchParams.get('host')==='1'||new URL(location.href).searchParams.get('step')==='setup')roomCode='';
 $('code').value=roomCode;
-$('hostAccountChoices').hidden=!!token();$('hostAccountHelp').hidden=!!token();$('hostOpen').hidden=!token();
+const hasHostSession=()=>!!(token()||localStorage.getItem('links-account-token'));
+$('hostAccountChoices').hidden=hasHostSession();$('hostAccountHelp').hidden=hasHostSession();$('hostOpen').hidden=!hasHostSession();
 async function api(body,query=''){
  const r=await fetch('./api/trivia-night'+query,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token(),'x-trivia-token':seat(),'Content-Type':'application/json'},cache:'no-store',signal:AbortSignal.timeout(12000),...(body?{body:JSON.stringify(body)}:{})});
  const j=await r.json();if(!r.ok){if(r.status===402&&j.code==='TRIVIA_HOST_REQUIRED'){if(roomCode)sessionStorage.setItem('links-trivia-host-return',roomCode);location.assign('./trivia-host-pass.html')}const e=Error(j.error||'Unable to reach trivia.');e.status=r.status;throw e}return j;
@@ -102,9 +104,18 @@ async function offerHostPools(){
 }
 $('hostOpen').onclick=async()=>{
  ++sequence;roomCode='';
- if(!token()){$('hostAccountChoices').hidden=false;$('hostAccountHelp').hidden=false;return}
+ if(!hasHostSession()){$('hostAccountChoices').hidden=false;$('hostAccountHelp').hidden=false;return}
  const button=$('hostOpen');button.disabled=true;button.textContent='Checking host access…';$('hostMessage').textContent='Checking your commissioner sign-in…';$('hostSignIn').hidden=true;
- try{await loadBank();openSetup();$('hostMessage').textContent='Ready to create your room.';$('message').textContent=''}
+ try{
+ const accountToken=localStorage.getItem('links-account-token');
+ if(accountToken){
+  const verified=await verifiedHostPools(accountToken);
+  if(!verified.pools.length)throw Error('Your email is verified, but no commissioner pool is connected to it. Contact LINKS Admin to connect your hosted trivia access.');
+  const enter=async pool=>{saveHostSession(await verified.open(pool.id));await loadBank();openSetup();$('hostPools').replaceChildren();$('hostMessage').textContent='Ready to create your room.'};
+  if(verified.pools.length>1){$('hostPools').replaceChildren();$('hostMessage').textContent='Email verified. Choose the pool you want to host with:';for(const pool of verified.pools){const choice=document.createElement('button');choice.textContent='Host with '+pool.name;choice.onclick=async()=>{choice.disabled=true;try{await enter(pool)}catch(error){$('hostMessage').textContent=error.message}finally{choice.disabled=false}};$('hostPools').append(choice)}return}
+  await enter(verified.pools[0]);
+ }else{await loadBank();openSetup()}
+ $('hostMessage').textContent='Ready to create your room.';$('message').textContent=''}
  catch(e){$('hostAccountChoices').hidden=false;$('hostAccountHelp').hidden=false;$('hostMessage').textContent=e.message;$('hostSignIn').hidden=![401,403].includes(e.status);if(e.status===403){try{await offerHostPools()}catch(problem){$('hostMessage').textContent=problem.message}}$('hostMessage').scrollIntoView({behavior:'smooth',block:'center'})}
  finally{button.disabled=false;button.textContent='Set up a game'}
 };
