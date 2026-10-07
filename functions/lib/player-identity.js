@@ -111,3 +111,7 @@ export async function identityRequest({request,env}){
  }catch(e){if(e.status)return reply({error:e.message},e.status);if(/UNIQUE constraint/i.test(String(e)))return reply({error:'That account name, email, or pool membership is already connected. No changes were saved.'},409);console.error('identity request failed',e.message);return reply({error:'Account service is temporarily unavailable. Please try again.'},500)}
 }
 export async function identitySwitcher(context){if(!(context.request.headers.get('cookie')||'').includes(cookieName+'='))return null;if(!identityTestHost(new URL(context.request.url).hostname)&&await loginPhase(context.env.DB)==='off')return null;return identityRequest(context)}
+
+export {rate as identityRate,challenge as identityChallenge,consume as consumeIdentityChallenge};
+
+export {issue as issueIdentitySession};
