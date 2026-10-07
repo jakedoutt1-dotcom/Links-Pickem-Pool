@@ -3,9 +3,10 @@ const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control
 // Financial ledgers remain intact; their old pool IDs are historical references.
 const ledgers=new Set(['payment_orders','service_purchases','commissioner_service_purchases','commissioner_game_additions']);
 async function scopedTables(db){
- // Discover scoped tables in one query rather than one PRAGMA request per table.
- const rows=(await db.prepare("SELECT DISTINCT m.name FROM sqlite_master AS m JOIN pragma_table_info(m.name) AS c WHERE m.type='table' AND c.name='pool_id'").all()).results||[];
- return rows.map(r=>r.name).filter(name=>/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)&&!ledgers.has(name));
+ // Read declared columns without table-valued PRAGMA functions, which may be
+ // restricted by the hosted database authorizer. Keep this to one schema query.
+ const rows=(await db.prepare("SELECT name,sql FROM sqlite_master WHERE type='table' AND sql IS NOT NULL").all()).results||[];
+ return rows.filter(row=>/(?:\(|,)\s*(?:pool_id|"pool_id"|`pool_id`|\[pool_id\])\s+/i.test(row.sql||'')).map(r=>r.name).filter(name=>/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)&&!ledgers.has(name));
 }
 export async function ownerPoolDelete(request,db,b){
  if(!await ownerSession(request,db))return json({error:'Owner sign-in required.'},401);

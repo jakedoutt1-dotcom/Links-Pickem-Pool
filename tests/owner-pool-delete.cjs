@@ -8,8 +8,9 @@ const assert=require('node:assert/strict'),{DatabaseSync}=require('node:sqlite')
  CREATE TABLE pool_sessions(token TEXT PRIMARY KEY,pool_id INTEGER,player_name TEXT,role TEXT,expires_at TEXT);
  CREATE TABLE pool_picks(pool_id INTEGER,team TEXT);
  `);
+ sql.exec('CREATE TABLE quoted_scope("pool_id" INTEGER,value TEXT); INSERT INTO quoted_scope VALUES(1,"remove"),(2,"keep");'.replaceAll('"remove"',"'remove'").replaceAll('"keep"',"'keep'"));
  let failBatch=false,queryCount=0;
- const db={prepare(text){queryCount++;let args=[];return {bind(...v){args=v;return this},async first(){return sql.prepare(text).get(...args)||null},async all(){return {results:sql.prepare(text).all(...args)}},async run(){if(failBatch&&text.startsWith('INSERT INTO pool_players'))throw Error('test failure');const r=sql.prepare(text).run(...args);return {meta:{changes:Number(r.changes),last_row_id:Number(r.lastInsertRowid)}}}}},async batch(statements){sql.exec('BEGIN');try{const out=[];for(const s of statements)out.push(await s.run());sql.exec('COMMIT');return out}catch(e){sql.exec('ROLLBACK');throw e}}};
+ const db={prepare(text){if(/pragma_table_info/i.test(text))throw Error("not authorized to use function: pragma_table_info");queryCount++;let args=[];return {bind(...v){args=v;return this},async first(){return sql.prepare(text).get(...args)||null},async all(){return {results:sql.prepare(text).all(...args)}},async run(){if(failBatch&&text.startsWith('INSERT INTO pool_players'))throw Error('test failure');const r=sql.prepare(text).run(...args);return {meta:{changes:Number(r.changes),last_row_id:Number(r.lastInsertRowid)}}}}},async batch(statements){sql.exec('BEGIN');try{const out=[];for(const s of statements)out.push(await s.run());sql.exec('COMMIT');return out}catch(e){sql.exec('ROLLBACK');throw e}}};
 
 
 
@@ -32,5 +33,6 @@ const assert=require('node:assert/strict'),{DatabaseSync}=require('node:sqlite')
  assert.equal((await call(body)).status,200);assert.equal(sql.prepare('SELECT id FROM pools WHERE id=1').get(),undefined);assert.equal(sql.prepare('SELECT COUNT(*) n FROM pool_picks WHERE pool_id=1').get().n,0);assert.equal(sql.prepare('SELECT COUNT(*) n FROM pool_sessions').get().n,0);assert.equal(sql.prepare('SELECT COUNT(*) n FROM links_pool_slots').get().n,0);assert.equal(sql.prepare('SELECT COUNT(*) n FROM links_account_preferences').get().n,0);assert.equal(sql.prepare('SELECT COUNT(*) n FROM payment_orders').get().n,1);assert.equal(sql.prepare('SELECT COUNT(*) n FROM pool_picks WHERE pool_id=2').get().n,1);assert.equal(sql.prepare('SELECT COUNT(*) n FROM links_owner_deletions').get().n,1);assert.equal((await call(body)).status,404);
  assert.deepEqual(sql.prepare('SELECT board_id FROM squares_claims').all().map(r=>r.board_id),[2]);
  assert.equal(sql.prepare('SELECT COUNT(*) n FROM game_fixture_119 WHERE pool_id=1').get().n,0);assert.equal(sql.prepare('SELECT COUNT(*) n FROM game_fixture_119 WHERE pool_id=2').get().n,1);
- console.log('PASS owner-only deletion, protected pool, preview, password/code checks, rollback, slot cleanup, audit, preserved other pool and ledger');
+ assert.equal(sql.prepare('SELECT COUNT(*) n FROM quoted_scope WHERE pool_id=1').get().n,0);assert.equal(sql.prepare('SELECT COUNT(*) n FROM quoted_scope WHERE pool_id=2').get().n,1);
+ console.log('PASS restricted-schema preview, quoted pool columns, owner-only deletion, protected pool, preview, password/code checks, rollback, slot cleanup, audit, preserved other pool and ledger');
 })().catch(e=>{console.error(e);process.exitCode=1});
