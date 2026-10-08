@@ -11,7 +11,7 @@ export async function ensureParty(db){await db.batch([
 export async function partySession(request,db){
  const cookie=(request.headers.get('Cookie')||'').match(/(?:^|;\s*)links_party_session=([a-f0-9-]{72})(?:;|$)/)?.[1];
  const headers=new Headers(request.headers);if(!headers.get('x-links-account')&&cookie)headers.set('x-links-account',cookie);
- return accountSession(new Request(request.url,{headers}),db);
+ return accountSession(new Request(request.url,{method:request.method,headers}),db);
 }
 export async function partyAccess(db,email){await ensureParty(db);const paid=await db.prepare("SELECT plan,expires_at FROM links_party_purchases WHERE email=? AND status='PAID' AND plan IN ('day','annual') AND expires_at>? ORDER BY expires_at DESC LIMIT 1").bind(email,new Date().toISOString()).first(),grant=await complimentaryAccess(db,email,'party');return grant&&(!paid||grant.expires_at>paid.expires_at)?grant:paid;}
 // Protect creation, not guest joins or play in an existing room. Room expiry still applies.

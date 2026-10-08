@@ -1,4 +1,3 @@
-import {verifiedHostPools,saveHostSession} from './trivia-host-session.mjs';
 import {mountHostQuestions} from './host-question-sets.mjs';
 import {updateVenueRoom} from './venue-link.mjs';
 import {mountInviteShare} from './invite-share.mjs';
@@ -16,10 +15,11 @@ const selection=()=>({...hostQuestions.selection(),mode:$('playMode').value,cate
 $('categories').innerHTML=Object.entries(themes).map(([key,[name,icon]])=>`<label><span>${icon}</span><input type="checkbox" name="category" value="${key}" checked> ${name}</label>`).join('');
 if(new URL(location.href).searchParams.get('host')==='1'||new URL(location.href).searchParams.get('step')==='setup')roomCode='';
 $('code').value=roomCode;
-const hasHostSession=()=>!!(token()||localStorage.getItem('links-account-token'));
+let accountKnown=false;
+const hasHostSession=()=>!!(accountKnown||token()||localStorage.getItem('links-account-token'));
 $('hostAccountChoices').hidden=hasHostSession();$('hostAccountHelp').hidden=hasHostSession();$('hostOpen').hidden=!hasHostSession();
 async function api(body,query=''){
- const r=await fetch('./api/trivia-night'+query,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token(),'x-trivia-token':seat(),'Content-Type':'application/json'},cache:'no-store',signal:AbortSignal.timeout(12000),...(body?{body:JSON.stringify(body)}:{})});
+ const r=await fetch('./api/trivia-night'+query,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token(),'x-links-account':localStorage.getItem('links-account-token')||'','x-trivia-token':seat(),'Content-Type':'application/json'},cache:'no-store',signal:AbortSignal.timeout(12000),...(body?{body:JSON.stringify(body)}:{})});
  const j=await r.json();if(!r.ok){if(r.status===402&&j.code==='TRIVIA_HOST_REQUIRED'){if(roomCode)sessionStorage.setItem('links-trivia-host-return',roomCode);location.assign('./trivia-host-pass.html')}const e=Error(j.error||'Unable to reach trivia.');e.status=r.status;throw e}return j;
 }
 function adopt(j){
@@ -106,16 +106,7 @@ $('hostOpen').onclick=async()=>{
  ++sequence;roomCode='';
  if(!hasHostSession()){$('hostAccountChoices').hidden=false;$('hostAccountHelp').hidden=false;return}
  const button=$('hostOpen');button.disabled=true;button.textContent='Checking host access…';$('hostMessage').textContent='Checking your commissioner sign-in…';$('hostSignIn').hidden=true;
- try{
- const accountToken=localStorage.getItem('links-account-token');
- if(accountToken){
-  const verified=await verifiedHostPools(accountToken);
-  if(!verified.pools.length)throw Error('Your email is verified, but no commissioner pool is connected to it. Contact LINKS Admin to connect your hosted trivia access.');
-  const enter=async pool=>{saveHostSession(await verified.open(pool.id));await loadBank();openSetup();$('hostPools').replaceChildren();$('hostMessage').textContent='Ready to create your room.'};
-  if(verified.pools.length>1){$('hostPools').replaceChildren();$('hostMessage').textContent='Email verified. Choose the pool you want to host with:';for(const pool of verified.pools){const choice=document.createElement('button');choice.textContent='Host with '+pool.name;choice.onclick=async()=>{choice.disabled=true;try{await enter(pool)}catch(error){$('hostMessage').textContent=error.message}finally{choice.disabled=false}};$('hostPools').append(choice)}return}
-  await enter(verified.pools[0]);
- }else{await loadBank();openSetup()}
- $('hostMessage').textContent='Ready to create your room.';$('message').textContent=''}
+ try{await loadBank();openSetup();$('hostMessage').textContent='Ready to create your room.';$('message').textContent=''}
  catch(e){$('hostAccountChoices').hidden=false;$('hostAccountHelp').hidden=false;$('hostMessage').textContent=e.message;$('hostSignIn').hidden=![401,403].includes(e.status);if(e.status===403){try{await offerHostPools()}catch(problem){$('hostMessage').textContent=problem.message}}$('hostMessage').scrollIntoView({behavior:'smooth',block:'center'})}
  finally{button.disabled=false;button.textContent='Set up a game'}
 };
@@ -136,7 +127,7 @@ function joinLink(){const u=new URL('./trivia-night.html',location.href);u.searc
 
 $('copy').onclick=async()=>{try{await navigator.clipboard.writeText(joinLink());$('copyStatus').textContent='Join link copied.'}catch{$('copyStatus').textContent=joinLink()}};
 async function poll(){
- if(roomCode&&!busy&&!$('quickJoin').open&&$('setup').hidden&&!document.hidden&&(state||seat()||token())){const n=++sequence;try{const j=await api(null,'?code='+encodeURIComponent(roomCode));if(n===sequence){adopt(j);$('message').textContent=''}}catch(e){if(n===sequence)$('message').textContent=e.message}}
+ if(roomCode&&!busy&&!$('quickJoin').open&&$('setup').hidden&&!document.hidden&&(state||seat()||hasHostSession())){const n=++sequence;try{const j=await api(null,'?code='+encodeURIComponent(roomCode));if(n===sequence){adopt(j);$('message').textContent=''}}catch(e){if(n===sequence)$('message').textContent=e.message}}
  setTimeout(poll,state?.countdown?250:state?.phase==='question'?1000:2000);
 }
 mountPartners($('triviaPartners'),{host:$('triviaPartners'),autoLocate:true});
@@ -144,14 +135,16 @@ async function openQRJoin(){
  const linkedCode=new URL(location.href).searchParams.get('room');
  if(!linkedCode||new URL(location.href).searchParams.get('host')==='1')return;
  document.body.classList.add('qr-joining');$('entry').hidden=true;
- if(seat()||token()){try{adopt(await api(null,'?code='+encodeURIComponent(roomCode)));return}catch(e){if(![401,403].includes(e.status)){$('quickJoinMessage').textContent=e.message}}}
+ if(seat()||hasHostSession()){try{adopt(await api(null,'?code='+encodeURIComponent(roomCode)));return}catch(e){if(![401,403].includes(e.status)){$('quickJoinMessage').textContent=e.message}}}
  try{const info=await api(null,'?action=info&code='+encodeURIComponent(roomCode));if(info.mode==='teams'){$('quickNameLabel').textContent='Team name';$('quickName').placeholder='Choose your team name';$('quickJoinHelp').textContent='Use one phone for your whole team. Talk through each question and submit one answer together.'}}catch{}
  $('quickJoin').showModal();$('quickName').focus();
 }
 $('quickJoinForm').onsubmit=async e=>{e.preventDefault();if(busy)return;busy=true;++sequence;$('quickJoinButton').disabled=true;$('quickJoinMessage').textContent='Joining…';try{adopt(await api({action:'join',code:roomCode,name:$('quickName').value.trim()}))}catch(error){$('quickJoinMessage').textContent=error.message}finally{busy=false;$('quickJoinButton').disabled=false}};
 $('quickJoinExit').onclick=()=>location.href='./trivia-night.html';
 $('quickJoin').addEventListener('cancel',e=>{e.preventDefault();location.href='./trivia-night.html'});
-setInterval(tick,200);openQRJoin().finally(poll);
+setInterval(tick,200);
+try{const r=await fetch('./api/game-room',{signal:AbortSignal.timeout(8000),headers:{'x-links-account':localStorage.getItem('links-account-token')||''},cache:'no-store'});if(r.ok){accountKnown=!!(await r.json()).signedIn;if(accountKnown){$('hostOpen').hidden=false;$('hostAccountChoices').hidden=true;$('hostAccountHelp').hidden=true}}}catch{}
+openQRJoin().finally(poll);
 if(new URL(location.href).searchParams.get('host')==='1'||new URL(location.href).searchParams.get('step')==='setup')$('hostOpen').click();
 
 $('playMode').onchange=()=>{const team=$('playMode').value==='teams',times=team?[20,30,45]:[10,15,20];$('modeHelp').textContent=team?'Use one phone per team. Discuss together and submit one answer. Easy 20s · Medium 30s · Hard 45s. Up to 250 speed points.':'Answer on your own. Easy 10s · Medium 15s · Hard 20s. Up to 500 speed points.';['easy','medium','hard'].forEach((level,i)=>{$('difficulty').querySelector('[value='+level+']').textContent=level[0].toUpperCase()+level.slice(1)+' · '+times[i]+' seconds · '+[500,1000,1500][i].toLocaleString()+' + speed'})};
