@@ -12,6 +12,7 @@ export const SCORE_GAMES={
 export async function ensureScoreboard(db){await db.batch([
  db.prepare('CREATE TABLE IF NOT EXISTS links_party_results(game TEXT NOT NULL,room TEXT NOT NULL,round INTEGER NOT NULL,seat TEXT NOT NULL,score INTEGER NOT NULL,win INTEGER NOT NULL,finished INTEGER NOT NULL,PRIMARY KEY(game,room,round,seat))'),
  db.prepare('CREATE INDEX IF NOT EXISTS links_party_results_period ON links_party_results(finished,game)'),
+ db.prepare('CREATE TABLE IF NOT EXISTS links_party_guest_names(game TEXT NOT NULL,room TEXT NOT NULL,round INTEGER NOT NULL,seat TEXT NOT NULL,name TEXT NOT NULL,PRIMARY KEY(game,room,round,seat))'),
  db.prepare('CREATE TABLE IF NOT EXISTS links_party_score_profiles(email TEXT PRIMARY KEY,id TEXT UNIQUE NOT NULL,name TEXT NOT NULL)'),
  db.prepare('CREATE TABLE IF NOT EXISTS links_party_score_seats(game TEXT NOT NULL,room TEXT NOT NULL,seat TEXT NOT NULL,email TEXT NOT NULL,PRIMARY KEY(game,room,seat),UNIQUE(game,room,email))')
 ]);}
@@ -29,6 +30,8 @@ export function partyResultStatements(db,game,code,version,encoded,snapshots){
  const table=SCORE_GAMES[game].table,seen=new Set(),out=[];
  for(const s of snapshots){if(!s)continue;for(const p of partyOutcomes(game,s)){
  const id=s.game+':'+p.seat;if(seen.has(id))continue;seen.add(id);
+ const player=s.players?.[p.seat];const guestName=String(player?.name||'Guest').trim().replace(/[<>\\x00-\\x1f]/g,'').slice(0,32)||'Guest';
+ out.push(db.prepare('INSERT OR IGNORE INTO links_party_guest_names(game,room,round,seat,name) SELECT ?,?,?,?,? WHERE EXISTS(SELECT 1 FROM '+table+' WHERE code=? AND version=? AND state=?)').bind(game,code,s.game,p.seat,guestName,code,version+1,encoded));
  out.push(db.prepare(`INSERT OR IGNORE INTO links_party_results(game,room,round,seat,score,win,finished) SELECT ?,?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM ${table} WHERE code=? AND version=? AND state=?)`).bind(game,code,s.game,p.seat,p.score,p.win,Date.now(),code,version+1,encoded));
  }}return out;
 }
