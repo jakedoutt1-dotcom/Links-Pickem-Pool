@@ -2,13 +2,14 @@ import {ensureVenue,venueStatements} from './venue-scoreboard.js';
 // Add future games here with an explicit outcome rule; raw points never cross games.
 export const SCORE_GAMES={
  'trivia-rally':{name:'Trivia Rally',table:'links_rally_rooms',storage:'links-rally-seat-'},
- 'friend-challenge':{name:'Head-to-Head Trivia',table:'links_friend_rooms',storage:'links-friend-seat-'},
+ 'friend-challenge':{name:'Challenge a Friend Trivia',table:'links_friend_rooms',storage:'links-friend-seat-'},
  'million-point':{name:'Million Point',table:'links_million_rooms',storage:'links-million-'},
  'dead-air':{name:'Dead Air',table:'links_dead_air_rooms',storage:'links-dead-air-'},
  'say-what':{name:'Say What',table:'links_word_rooms',storage:'links-say-'},
  'last-alibi':{name:'Last Alibi',table:'links_mystery_rooms',storage:'links-alibi-'},
  'captain-clash':{name:'Captain Clash',table:'links_caption_rooms',storage:'links-captain-'}
 };
+export const BOARD_GAMES={...Object.fromEntries(Object.entries(SCORE_GAMES).filter(([id])=>!['say-what','captain-clash'].includes(id))),'goal-line':{name:'Goal Line',solo:true}};
 export async function ensureScoreboard(db){await db.batch([
  db.prepare('CREATE TABLE IF NOT EXISTS links_party_results(game TEXT NOT NULL,room TEXT NOT NULL,round INTEGER NOT NULL,seat TEXT NOT NULL,score INTEGER NOT NULL,win INTEGER NOT NULL,finished INTEGER NOT NULL,PRIMARY KEY(game,room,round,seat))'),
  db.prepare('CREATE INDEX IF NOT EXISTS links_party_results_period ON links_party_results(finished,game)'),

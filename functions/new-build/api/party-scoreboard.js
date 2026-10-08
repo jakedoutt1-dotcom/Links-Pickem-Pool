@@ -1,4 +1,5 @@
-import {SCORE_GAMES,ensureScoreboard,periodStart} from '../../lib/party-scoreboard.js';
+import {goalLineBoard} from '../../lib/goal-line-scoreboard.js';
+import {SCORE_GAMES,BOARD_GAMES,ensureScoreboard,periodStart} from '../../lib/party-scoreboard.js';
 import {partySession} from '../../lib/party-access.js';
 import {ensureAccounts} from '../../lib/commissioner-account.js';
 const json=(v,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store'}});
@@ -48,16 +49,17 @@ export async function onRequest({request,env}){try{
    const r=await db.prepare('INSERT OR IGNORE INTO links_party_score_seats(game,room,seat,email) VALUES(?,?,?,?)').bind(input.game,room,seat,session.email).run();linked+=r.meta?.changes||0;
   }return json({ok:true,linked});
  }
- const period=u.searchParams.get('period')||'week',game=u.searchParams.get('game')||'all';if(!['week','year','all'].includes(period)||(game!=='all'&&!SCORE_GAMES[game]))return json({error:'Choose a valid scoreboard.'},400);
+ const period=u.searchParams.get('period')||'week',game=u.searchParams.get('game')||'all';if(!['week','year','all'].includes(period)||(game!=='all'&&!BOARD_GAMES[game]))return json({error:'Choose a valid scoreboard.'},400);
+ if(game==='goal-line')return json({...await goalLineBoard(db,period),games:Object.entries(BOARD_GAMES).map(([id,g])=>({id,...g})),game,period});
  const profile=session?await db.prepare('SELECT id,name FROM links_party_score_profiles WHERE email=?').bind(session.email).first():null;
- const base=`FROM links_party_results r JOIN links_party_score_seats s ON s.game=r.game AND s.room=r.room AND s.seat=r.seat JOIN links_party_score_profiles p ON p.email=s.email WHERE r.finished>=? AND (?='all' OR r.game=?)`;
+ const base=`FROM links_party_results r JOIN links_party_score_seats s ON s.game=r.game AND s.room=r.room AND s.seat=r.seat JOIN links_party_score_profiles p ON p.email=s.email WHERE r.game IN ('trivia-rally','friend-challenge','million-point','dead-air','last-alibi') AND r.finished>=? AND (?='all' OR r.game=?)`;
  const args=[periodStart(period),game,game];
  // Public guests appear without accounts. Claimed seats are shown only once.
- const guestBase=`FROM links_party_results r JOIN links_party_guest_names g ON g.game=r.game AND g.room=r.room AND g.round=r.round AND g.seat=r.seat WHERE r.finished>=? AND (?='all' OR r.game=?) AND NOT EXISTS(SELECT 1 FROM links_party_score_seats ss WHERE ss.game=r.game AND ss.room=r.room AND ss.seat=r.seat)`;
+ const guestBase=`FROM links_party_results r JOIN links_party_guest_names g ON g.game=r.game AND g.room=r.room AND g.round=r.round AND g.seat=r.seat WHERE r.game IN ('trivia-rally','friend-challenge','million-point','dead-air','last-alibi') AND r.finished>=? AND (?='all' OR r.game=?) AND NOT EXISTS(SELECT 1 FROM links_party_score_seats ss WHERE ss.game=r.game AND ss.room=r.room AND ss.seat=r.seat)`;
  const members=await db.prepare(`SELECT p.id,p.name,COUNT(*) AS played,SUM(r.win) AS wins,${game==='all'?'NULL':'MAX(r.score)'} AS best ${base} GROUP BY p.id,p.name`).bind(...args).all();
- const guests=await db.prepare(`SELECT COALESCE(gp.id,('guest:'||r.game||':'||r.room||':'||r.seat)) AS id,COALESCE(gp.name,MAX(g.name)) AS name,COUNT(*) AS played,SUM(r.win) AS wins,${game==='all'?'NULL':'MAX(r.score)'} AS best FROM links_party_results r JOIN links_party_guest_names g ON g.game=r.game AND g.room=r.room AND g.round=r.round AND g.seat=r.seat LEFT JOIN links_party_guest_seats gs ON gs.game=r.game AND gs.room=r.room AND gs.seat=r.seat LEFT JOIN links_party_guest_profiles gp ON gp.id=gs.guest_id WHERE r.finished>=? AND (?='all' OR r.game=?) AND NOT EXISTS(SELECT 1 FROM links_party_score_seats ss WHERE ss.game=r.game AND ss.room=r.room AND ss.seat=r.seat) GROUP BY COALESCE(gp.id,('guest:'||r.game||':'||r.room||':'||r.seat))`).bind(...args).all();
+ const guests=await db.prepare(`SELECT COALESCE(gp.id,('guest:'||r.game||':'||r.room||':'||r.seat)) AS id,COALESCE(gp.name,MAX(g.name)) AS name,COUNT(*) AS played,SUM(r.win) AS wins,${game==='all'?'NULL':'MAX(r.score)'} AS best FROM links_party_results r JOIN links_party_guest_names g ON g.game=r.game AND g.room=r.room AND g.round=r.round AND g.seat=r.seat LEFT JOIN links_party_guest_seats gs ON gs.game=r.game AND gs.room=r.room AND gs.seat=r.seat LEFT JOIN links_party_guest_profiles gp ON gp.id=gs.guest_id WHERE r.game IN ('trivia-rally','friend-challenge','million-point','dead-air','last-alibi') AND r.finished>=? AND (?='all' OR r.game=?) AND NOT EXISTS(SELECT 1 FROM links_party_score_seats ss WHERE ss.game=r.game AND ss.room=r.room AND ss.seat=r.seat) GROUP BY COALESCE(gp.id,('guest:'||r.game||':'||r.room||':'||r.seat))`).bind(...args).all();
  const rows={results:[...members.results,...guests.results].sort((a,b)=>Number(game==='all'?b.wins:b.best)-Number(game==='all'?a.wins:a.best)||a.played-b.played||String(a.id).localeCompare(String(b.id))).slice(0,100)};
  const best=game==='all'?null:await db.prepare('SELECT MAX(score) AS score FROM links_party_results WHERE finished>=? AND game=?').bind(periodStart(period),game).first();
  const mine=profile?await db.prepare(`SELECT COUNT(*) AS played,COALESCE(SUM(r.win),0) AS wins,${game==='all'?'NULL':'MAX(r.score)'} AS best ${base} AND p.id=?`).bind(...args,profile.id).first():null;
- return json({games:Object.entries(SCORE_GAMES).map(([id,g])=>({id,name:g.name,storage:g.storage})),period,game,profile,mine,signedIn:!!session,rows:rows.results,highScore:best?.score??null});
+ return json({games:Object.entries(BOARD_GAMES).map(([id,g])=>({id,name:g.name,storage:g.storage})),period,game,profile,mine,signedIn:!!session,rows:rows.results,highScore:best?.score??null});
  }catch{return json({error:'The scoreboard could not load. Please try again.'},503)}}

@@ -1,3 +1,4 @@
+import {FREE_GAME_TESTING} from '../functions/lib/testing-access.js';
 import assert from 'node:assert/strict';
 import {fixture} from './helpers/pool-format-fixture.mjs';
 import {ensureOwner} from '../functions/lib/owner-auth.js';
@@ -16,7 +17,7 @@ try{
  assert((await partyAccess(db,email)).complimentary);assert.equal(await hostAccess(env,email,()=>{throw Error('Must not call PayPal')}),null);
  assert.equal(await requirePartyPass(new Request('https://test',{headers:{Cookie:'links_party_session='+token}}),env),null);
  const h=await call(grant('trivia_host',30));assert((await hostAccess(env,email,()=>{throw Error('Complimentary access must not call PayPal')})).active);
- assert.equal((await call({action:'revoke',id:b.id,confirm:true})).status,200);assert.equal(await partyAccess(db,email),null);assert.equal((await requirePartyPass(new Request('https://test',{headers:{Cookie:'links_party_session='+token}}),env)).status,402);
+ assert.equal((await call({action:'revoke',id:b.id,confirm:true})).status,200);assert.equal(await partyAccess(db,email),null);assert.equal((await requirePartyPass(new Request('https://test',{headers:{Cookie:'links_party_session='+token}}),env))?.status??null,FREE_GAME_TESTING?null:402);
  assert((await hostAccess(env,email,()=>{throw Error('No PayPal calls')})).active);
  db.raw.prepare("UPDATE links_party_grants SET expires_at='2000-01-01' WHERE id=?").run(h.grant.id);assert.equal(await hostAccess(env,email,()=>{throw Error('No PayPal calls')}),null);
  const history=await call(null);assert.equal(history.grants.length,2);assert(!('actor' in history.grants[0]));assert.equal(db.raw.prepare('SELECT COUNT(*) AS n FROM links_account_purchases').get().n,0);

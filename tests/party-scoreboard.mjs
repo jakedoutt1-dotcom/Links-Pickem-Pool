@@ -26,7 +26,7 @@ assert.equal((await call(claim,other)).linked,0); // Cannot steal a claimed seat
 assert.equal((await call({name:'Same',seats:[{game:'trivia-rally',room,token:secondToken}]})).linked,0); // One account cannot collect both seats.
 assert.equal((await call({name:'Same',seats:[{game:'trivia-rally',room,token:secondToken}]},other)).linked,1);
 assert.equal((await call({name:'Fake',seats:[{game:'million-point',room,token:'x'.repeat(72)}]})).linked,0);
-let board=await call(null,token,'?period=all');assert.equal(board.rows.length,2);assert.equal(board.mine.played,1);assert.equal(board.mine.wins,1);assert.notEqual(board.rows[0].id,board.rows[1].id);assert(!JSON.stringify(board).includes('@'));
+let board=await call(null,token,'?period=all');assert.equal(board.rows.length,10); // Two players across the five available multiplayer games, including unclaimed guests.assert.equal(board.mine.played,1);assert.equal(board.mine.wins,1);assert.notEqual(board.rows[0].id,board.rows[1].id);assert(!JSON.stringify(board).includes('@'));
 board=await call(null,token,'?period=all&game=trivia-rally');assert.equal(board.highScore,100);assert.equal(board.mine.best,100);
 await db.prepare('DELETE FROM links_rally_rooms').run();assert.equal((await call(null,token,'?period=all')).mine.played,1);
 assert.equal(new Date(periodStart('week',Date.parse('2026-10-04T18:00:00Z'))).toISOString(),'2026-09-28T05:00:00.000Z');

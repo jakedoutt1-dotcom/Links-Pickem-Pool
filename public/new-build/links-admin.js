@@ -1,6 +1,6 @@
 (()=>{'use strict';const $=id=>document.getElementById(id),key='links-owner-admin-token';let data;
 
-const screenNames={home:'LINKS Admin',pools:'Manage Pools',packages:'Commissioner Packages',access:'Party & Trivia Access',login:'Player Login Help',corrections:'Pick Corrections',partners:'Partners & Sponsors',promo:'Venue Promo Kit',questions:'Trivia Questions',feedback:'Game Feedback',activity:'Sign-in Activity',settings:'Admin Settings'};
+const screenNames={home:'LINKS Admin',pools:'Manage Pools',packages:'Commissioner Packages',access:'Grant Game Passes',login:'Player Login Help',corrections:'Pick Corrections',partners:'Partners & Sponsors',promo:'Venue Promo Kit',questions:'Trivia Questions',feedback:'Game Feedback',activity:'Sign-in Activity',settings:'Admin Settings'};
 const requestedScreen=new URLSearchParams(location.search).get('view')||'home',screen=Object.hasOwn(screenNames,requestedScreen)?requestedScreen:'home';
 $('adminTitle').textContent=screenNames[screen];document.title=screenNames[screen]+' | LINKS';
 for(const panel of document.querySelectorAll('[data-screen]'))panel.hidden=!panel.dataset.screen.split(' ').includes(screen);
