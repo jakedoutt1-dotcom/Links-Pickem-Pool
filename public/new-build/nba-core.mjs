@@ -1,0 +1,11 @@
+import {mlbDay,validDay,pickClosed,gradeRows} from './mlb-core.mjs';
+export {validDay,pickClosed,gradeRows};
+export const nbaDay=mlbDay;
+export function seasonRange(day){const year=Number(day.slice(0,4)),start=Number(day.slice(5,7))>=7?year:year-1;return [start+'-07-01',(start+1)+'-06-30'];}
+export function normalizeGame(event){
+ const c=event.competitions?.[0]||{},status=c.status||event.status||{},type=status.type||{},voided=/postpon|cancel/i.test(type.name+' '+type.description),final=!!type.completed&&!voided;
+ const team=side=>{const t=(c.competitors||[]).find(t=>t.homeAway===side)||{},id=String(t.team?.id||'');return {id,name:t.team?.displayName||'Team TBD',abbr:t.team?.abbreviation||'',record:t.records?.find(r=>r.type==='total'||r.name==='overall')?.summary||'Record unavailable',score:type.state==='pre'?null:(t.score??null),logo:/^\d+$/.test(id)?'https://a.espncdn.com/i/teamlogos/nba/500/'+id+'.png':''}};
+ const home=team('home'),away=team('away'),winner=(c.competitors||[]).find(t=>t.winner);
+ return {id:String(event.id),day:nbaDay(Date.parse(event.date)),start:event.date,home,away,venue:c.venue?.fullName||'',status:type.shortDetail||type.description||'Scheduled',live:type.state==='in',final,voided,tbd:c.timeValid===false||!home.id||!away.id,season:event.season?.year,winner:final?(winner?String(winner.team.id):Number(home.score)>Number(away.score)?home.id:Number(away.score)>Number(home.score)?away.id:null):null};
+}
+export const NBA_RULES='Pick one winner per matchup. A correct final pick earns 1 point; wrong or missing picks earn 0. Equal points share rank. Each game locks at its scheduled tip-off or when reported live, whichever happens first. A delayed game never reopens after locking. Your picks save when tapped and can be changed before lock. Opponents’ picks remain private until that game locks. Overtime counts. Postponed or canceled games are void; a rescheduled game requires a new pick on its new date. Suspended games remain locked pending a final result. Daily slates use Eastern Time; tip-off times display in your local time. Regular season and postseason games count; preseason and exhibitions do not. Season standings run July through June. Results refresh automatically while this page is open. No automatic wins for missed picks.';

@@ -1,3 +1,4 @@
+import {supportedGolfEvent} from './golf-event-support.mjs';
 export const FORMATS={golf:{best:'Pick golfers · best scores count',tiers:'Tiered golf · best scores count',one:'One-and-done'},nascar:{simple:'Race finish pool',fantasy:'Fantasy roster · five starters + garage'}};
 export function cleanConfig(game,input){
  const c={...input},n=Number;
@@ -12,6 +13,7 @@ export function cleanConfig(game,input){
  c.scoring=c.scoring==='automatic'?'automatic':'manual';
  if(game==='nascar'&&c.scoring==='automatic'&&(!/^nascar-\d+$/.test(c.raceId||'')||c.year!==2026))throw Error('Automatic scoring requires a 2026 race from the NASCAR schedule.');
  if(game==='golf'&&c.scoring==='automatic'&&!/^\d+$/.test(c.tournamentId||''))throw Error('Choose a PGA tournament for automatic scoring.');
+ if(game==='golf'&&!supportedGolfEvent(c.title))throw Error('Choose an individual stroke-play tournament. Team and match-play events are not supported.');
  c.phase=c.phase==='chase'?'chase':'regular';
  c.field=(c.field||[]).map(x=>({name:String(x.name||'').trim(),tier:n(x.tier)||1}));
  if(c.field.length<c.pickCount+(c.format==='fantasy'?1:0)||c.field.length>200||c.field.some(x=>!x.name||x.name.length>150)||new Set(c.field.map(x=>x.name.toLowerCase())).size!==c.field.length)throw Error('Enter a unique eligible field large enough for this format.');
@@ -42,7 +44,7 @@ export function scoreCard(game,c,card,results){
  return {score:rows.reduce((sum,r)=>sum+Number(r.points),0),detail:'Verified race points · garage excluded',counted:card.picks};
 }
 export function rules(game,c){
- if(game==='golf')return c.format==='one'?'Choose one golfer per tournament. Each golfer may be used once per season. Verified tournament earnings become your points; the highest season total wins. Missed cuts and withdrawals earn zero.':
+ if(game==='golf')return c.format==='one'?'Choose one golfer per tournament. Each golfer may be used once per season. Verified tournament earnings become your points; the highest season total wins. Missed cuts and withdrawals earn zero. Save before the displayed event deadline; all selections lock together.':
   'Choose '+c.pickCount+' golfers'+(c.format==='tiers'?', one from each tier':'')+'. Your best '+c.countBest+' scores to par count; the lowest total wins. A missed cut or withdrawal is scored as +'+c.penalty+'. Equal totals share rank. Save before the event deadline.';
  const tie=c.tieRule==='best-finish'?' Ties compare each entry’s best finishing position, then the next best; identical finishes share rank.':' Equal totals share rank.';
  return (c.format==='simple'?'Choose '+c.pickCount+' drivers. Their verified finishing positions are added; the lowest total wins. Save before the race deadline.':

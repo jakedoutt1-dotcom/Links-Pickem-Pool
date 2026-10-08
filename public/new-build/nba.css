@@ -1,0 +1,2 @@
+@import url('./mlb.css?v=nba1');
+.basketball-hero{min-height:300px;padding:36px;border:1px solid #b8964d;border-radius:18px;background:linear-gradient(90deg,#080e19ed,#080e1944),url('./assets/nba-pickem-card-v1.png') center/cover}.basketball-hero p{line-height:1.6}.matchup{background:linear-gradient(135deg,#152335,#0a1019)}@media(max-width:640px){.basketball-hero{padding:24px;min-height:250px}}

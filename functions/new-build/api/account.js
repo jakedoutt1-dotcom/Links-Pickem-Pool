@@ -1,7 +1,8 @@
+import {FREE_GAME_TESTING} from '../../lib/testing-access.js';
 import {referralPartner} from '../../lib/partners.js';
 import {poolGameKeys} from '../../lib/pool-games.js';
 import {recordAccountLogin} from '../../lib/login-activity.js';
-import {PLANS,GAMES,CREATABLE_GAMES,emailKey,digest,ensureAccounts,accountSession,importOwnedPools,allowance,reserveSlots,releaseSlots,ownedPool,retainedFreeSlot} from '../../lib/commissioner-account.js';
+import {PLANS,GAMES,CREATABLE_GAMES,emailKey,digest,ensureAccounts,accountSession,importOwnedPools,allowance,reserveSlots,releaseSlots,ownedPool} from '../../lib/commissioner-account.js';
 import {sendPoolEmail,poolEmail} from '../../lib/pool-email.js';
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
 const fail=(message,status=400)=>Object.assign(new Error(message),{status});
@@ -16,7 +17,7 @@ async function paypal(env,path,options={}){
 }
 async function snapshot(db,email){
  await importOwnedPools(db,email);const plan=await allowance(db,email);
- const expired=plan.plan==='free'&&!!plan.expiresAt&&Date.parse(plan.expiresAt)<=Date.now(),freeSlot=expired?await retainedFreeSlot(db,email):null;
+ const expired=plan.slots===0,freeSlot=null;
  const pools=(await db.prepare('SELECT p.id,p.code,p.name,s.id AS slot_id,s.game_type,s.active FROM links_pool_owners o JOIN pools p ON p.id=o.pool_id LEFT JOIN links_pool_slots s ON s.pool_id=p.id WHERE o.email=? ORDER BY p.id,s.game_type').bind(email).all()).results||[];
  const grouped=new Map();for(const r of pools){if(!grouped.has(r.id))grouped.set(r.id,{id:String(r.id),code:r.code,name:r.name,games:[]});if(r.game_type)grouped.get(r.id).games.push({key:r.game_type,name:GAMES[r.game_type]||r.game_type,active:!!r.active,readOnly:expired&&r.slot_id!==freeSlot,freeSlot:expired&&r.slot_id===freeSlot})}
  const used=pools.filter(p=>p.active&&p.game_type).length;
@@ -102,10 +103,7 @@ export async function onRequest({request,env}){
  if(b.action==='verify'){const response=json(await verifyFinish(db,b));if(b.remember===false)for(const part of (request.headers.get('cookie')||'').split(';')){const name=part.trim().split('=')[0];if(/^links_home_[a-zA-Z0-9_]+$/.test(name))response.headers.append('Set-Cookie',name+'=; Max-Age=0; Path=/new-build/; HttpOnly; Secure; SameSite=Lax')}return response;}
  const account=await accountSession(request,db);if(!account)throw fail('Verify your commissioner email to continue.',401);
  const email=account.email;
- if(b.action==='choose-free'){
-  const slot=await db.prepare('SELECT id FROM links_pool_slots WHERE email=? AND pool_id=? AND game_type=? AND active=1').bind(email,Number(b.pool),String(b.game)).first();if(!slot)throw fail('Choose an active game in your own account.',403);
-  await db.prepare('INSERT INTO links_account_preferences(email,free_slot_id) VALUES(?,?) ON CONFLICT(email) DO UPDATE SET free_slot_id=excluded.free_slot_id').bind(email,slot.id).run();return json({ok:true});
- }
+ if(b.action==='choose-free')throw fail('Free host pools are no longer available. Choose a package to activate your games.',402);
  if(b.action==='logout'){await db.prepare('DELETE FROM links_account_sessions WHERE token_hash=?').bind(await digest(request.headers.get('x-links-account'))).run();return json({ok:true})}
  if(b.action==='create')return json(await createPool(db,env,email,b,new URL(request.url).origin,account.expires_at));
  if(['archive','add-game'].includes(b.action))return json(await changeGame(db,email,b));
@@ -116,6 +114,7 @@ export async function onRequest({request,env}){
   const token=crypto.randomUUID()+crypto.randomUUID();await db.prepare("INSERT INTO pool_sessions(token,pool_id,player_name,role,expires_at) VALUES(?,?,?,'admin',?)").bind(token,p.id,r.value,account.expires_at).run();return json({token,playerId:r.value,pool:{...p,id:String(p.id),role:'commissioner',games:games.map(g=>GAMES[g.game_type]||g.game_type)}});
  }
  if(b.action==='checkout'){
+ if(FREE_GAME_TESTING)throw fail('Pool hosting is free during testing. No package purchase is needed.',409);
   const plan=PLANS[b.plan];if(!plan?.amount)throw fail('Choose a paid package.');
   const current=await allowance(db,email);if(current.amount>plan.amount)throw fail('Your current package has more slots. Choose a different package after it expires.');
   const id=crypto.randomUUID(),origin=new URL(request.url).origin;

@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import {fixture} from './helpers/pool-format-fixture.mjs';
+import {grantTestHost} from './helpers/trivia-host-access.mjs';
+import {onRequest} from '../functions/new-build/api/trivia-night.js';
+const {db}=fixture();await grantTestHost(db);
+async function call(body,token='admin',query='',origin='https://test'){const r=await onRequest({env:{DB:db},request:new Request('https://test/new-build/api/trivia-night'+query,{method:body?'POST':'GET',headers:{Origin:origin,Authorization:'Bearer '+token},...(body?{body:JSON.stringify(body)}:{})})});return {status:r.status,...await r.json()}}
+const options={action:'create',categories:['football'],difficulty:'easy'};
+const first=await call(options);assert.equal(first.status,200);const code=first.code;
+assert.equal((await call(options)).status,402);
+assert.equal((await call({action:'close-room',code,confirm:true},'alice')).status,403);
+assert.equal((await call({action:'close-room',code,confirm:true},'outsider')).status,403);
+assert.equal((await call({action:'close-room',code,confirm:true},'admin','','https://evil')).status,403);
+assert.equal((await call({action:'close-room',code})).status,400);
+assert.equal((await call({action:'close-room',code,confirm:true})).closed,true);
+assert.equal((await call(null,'admin','?action=library')).activeRooms,0);
+assert.equal((await call(null,'admin','?action=display&code='+code)).status,404);
+assert.equal((await call({action:'join',code,name:'Late guest'},'alice')).status,404);
+assert.equal((await call({action:'close-room',code,confirm:true})).status,404);
+const second=await call(options);assert.equal(second.status,200);assert.notEqual(second.code,code);
+console.log('PASS host-only close, confirmation, CSRF, immediate slot release, old QR/TV blocked, replacement room creation');

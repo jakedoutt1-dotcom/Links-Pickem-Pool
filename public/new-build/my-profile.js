@@ -1,4 +1,5 @@
-(()=>{
+(async()=>{
+ if(document.querySelector('#lockerAccount')&&(await (await import('./links-account-client.mjs')).identityReady()))return;
  if(document.documentElement.dataset.nflDemo==='true')return;
  const token=()=>localStorage.getItem('links-legacy-token')||localStorage.getItem('links-token')||'';if(!token())return;
  const host=document.querySelector('#lockerAccount');if(!host)return;

@@ -44,7 +44,7 @@ test('Playoffs select correct round, freeze weights, enforce kickoff and grade w
  assert.equal((await call('playoff','settings',{version:'',wildCardPoints:1,divisionalPoints:2,conferencePoints:4,superBowlPoints:8},'admin')).status,200);
  assert.equal((await call('playoff','entry',{entry:{week:1,picks:[]}})).status,400);
  assert.equal((await call('playoff','entry',{entry:{week:20,picks:[{eventId:'one',gameIndex:0,team:'BUF'}]}})).status,200);
- let state=await call('playoff','state',null,'alice',19);assert.deepEqual(state.myEntry,{});
+ let state=await call('playoff','state',null,'alice',19);assert.deepEqual(state.myEntry,{});assert.equal(state.mySubmittedAt,null);
  state=await call('playoff','state',null,'alice',20);assert.equal(state.myEntry.picks[0].team,'BUF');assert.equal(state.locked,false);
  assert.equal((await call('playoff','settings',{version:state.version,wildCardPoints:2,divisionalPoints:4,conferencePoints:8,superBowlPoints:16},'admin')).status,409);
  runtime.slate=[{...runtime.slate[0],kickoff:'2020-01-01',completed:true,winner:'BUF',awayScore:20,homeScore:10}];

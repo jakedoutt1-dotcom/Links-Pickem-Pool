@@ -1,6 +1,12 @@
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs');
-(async()=>{const browser=await chromium.launch({channel:'msedge',headless:true});try{for(const width of [390,1280]){const page=await browser.newPage({viewport:{width,height:900}});const errors=[];page.on('pageerror',e=>errors.push(e.message));let requests=0;await page.route('**/api/**',route=>{requests++;return route.abort()});await page.goto('http://127.0.0.1:8765/new-build/home-run.html?demo=1');await page.waitForSelector('[data-add]');
+(async()=>{const browser=await chromium.launch({channel:'msedge',headless:true});try{for(const width of [390,1280]){const page=await browser.newPage({viewport:{width,height:900}});const errors=[];page.on('pageerror',e=>errors.push(e.message));let requests=0;await page.route('**/api/**',route=>{requests++;return route.abort()});await page.route('http://127.0.0.1:8765/**',route=>{const u=new URL(route.request().url()),f=require('node:path').join(process.cwd(),'public',u.pathname);return route.fulfill({path:f,contentType:f.endsWith('.mjs')?'text/javascript':f.endsWith('.html')?'text/html':f.endsWith('.css')?'text/css':'image/png'})});await page.goto('http://127.0.0.1:8765/new-build/home-run.html?demo=1');await page.waitForSelector('[data-add]');
  for(let i=0;i<6;i++)await page.locator('[data-add]').nth(i).click();assert.match(await page.locator('#summary').innerText(),/6\/6/);assert.match(await page.locator('#summary').innerText(),/4\/4/);
+ assert.equal(await page.locator('[data-active]:disabled').count(),2);
+ await page.locator('[data-active]').nth(4).evaluate(b=>{b.disabled=false;b.click()});assert.match(await page.locator('#summary').innerText(),/4\/4/);
+ await page.locator('[data-active]').nth(0).click();assert.match(await page.locator('#summary').innerText(),/3\/4/);
+ await page.locator('[data-active]').nth(4).click();assert.match(await page.locator('#summary').innerText(),/4\/4/);
+ assert.equal(await page.locator('[data-active]:disabled').count(),2);
+ await page.locator('[data-active]').nth(4).click();await page.locator('[data-active]').nth(0).click();
  await page.locator('#saveLineup').click();await page.getByText('Your lineup is saved.',{exact:true}).waitFor();
  await page.locator('[data-view="results"]').click();assert.match(await page.locator('#content').innerText(),/appear after the deadline/);
  await page.locator('[data-view="lineup"]').click();await page.locator('#simulate').click();assert.match(await page.locator('#summary').innerText(),/10/);assert.equal(await page.locator('#saveLineup').isDisabled(),true);

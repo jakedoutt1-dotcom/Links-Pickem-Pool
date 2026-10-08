@@ -12,11 +12,12 @@ const canEdit=()=>!!data?.tournament&&!closed()&&!viewing&&!busy;
 const showMessage=(text,error=false)=>{$('message').textContent=text;$('message').className='message'+(error?' error':'');};
 const dateText=value=>value?new Date(value).toLocaleString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}):'Not set';
 async function api(options={}) {
-  const token=localStorage.getItem('links-legacy-token')||localStorage.getItem('links-token')||'';
-  const response=await fetch('./api/march?'+new URLSearchParams({pool,season,...(options.query||{})}),{
+  const tokens=[...new Set([localStorage.getItem('links-legacy-token'),localStorage.getItem('links-token')].filter(Boolean))];
+  let response;for(const token of tokens.length?tokens:['']){response=await fetch('./api/march?'+new URLSearchParams({pool,season,...(options.query||{})}),{
     method:options.body?'POST':'GET',cache:'no-store',headers:{Authorization:'Bearer '+token,...(options.body?{'Content-Type':'application/json'}:{})},
     ...(options.body?{body:JSON.stringify({pool,season,...options.body})}:{})
   });
+  if(response.status!==401)break;}
   const body=await response.json();
   if(!response.ok)throw Error(body.error||'The bracket service could not complete this request.');
   return body;
@@ -43,7 +44,7 @@ async function load() {
     if(view==='admin'&&data.role!=='admin')view='bracket';
     showMessage(data.warning||'');
   }catch(e){showMessage(e.message,true);if(!data)$('content').innerHTML='<section class="empty-panel"><h2>Unable to open this pool</h2><p>'+escape(e.message)+'</p><a href="./pool-login.html?code='+encodeURIComponent(pool)+'">Sign in to your pool</a></section>';}
-  finally{busy=false;$('refresh').disabled=false;if(data)render();}
+  finally{busy=false;$('refresh').disabled=false;$('season').disabled=demo;if(data)render();}
 }
 function navigation() {
   $('season').disabled=demo||busy;$('refresh').disabled=busy;

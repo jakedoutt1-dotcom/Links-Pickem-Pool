@@ -1,0 +1,13 @@
+{
+  "tool": "Built-in image_gen",
+  "coverPrompt": "Create a premium illustrated party game cover, landscape 3:2. LINKS black and metallic gold branding, rich teal and warm amber accents. A charismatic cartoon sea captain with gold trimmed black hat holding a smartphone, facing an expressive goose wearing sunglasses; floating blank speech bubbles and funny photo cards, dramatic studio spotlights, confetti, polished high-end 3D game illustration with excellent composition. Large beautifully legible exact title CAPTAIN CLASH centered, small LINKS above, subtitle WRITE. VOTE. LAUGH. and bottom 3–8 PLAYERS. Friendly all ages, no existing game characters, no third party logos. This is cover art for a funny photo caption party game, highly professional not cluttered. All text fully inside generous safe margins.",
+  "scenePromptPrefix": "Original family-friendly funny photo for a caption-writing party game. Landscape 3:2. Cinematic photorealistic comedy, clear readable situation, expressive subjects, vibrant lighting and excellent photographic quality.",
+  "scenes": [
+    "A baffled American football coach holding a clipboard on a sideline, confronted by a proud goose wearing a tiny referee shirt. Other players watch in disbelief.",
+    "A golden retriever in an oversized business suit earnestly leading a conference room meeting, pointing at a completely blank presentation board while adult coworkers listen seriously.",
+    "A surprised golfer watching a small squirrel drive away in his golf cart with a gigantic trophy in the passenger seat.",
+    "An adult backyard cook proudly lifting a barbecue lid to reveal a single tiny hot dog on an enormous grill, with impressed-looking adult guests holding huge empty plates.",
+    "A race car driver in a generic black and gold racing suit and helmet sitting seriously in a tiny grocery shopping cart at a supermarket checkout."
+  ],
+  "scenePromptSuffix": "No text, letters, captions, watermarks, recognizable celebrities or third-party brands. One single coherent photograph, not collage."
+}

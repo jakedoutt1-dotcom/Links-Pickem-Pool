@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {createCueTracker} from '../public/new-build/trivia-sound.mjs';
+let tick=createCueTracker(),s={code:'ROOM',game:1,index:0,phase:'question',startsAt:3000,deadline:13000,choice:null};
+assert.deepEqual(tick(s,0),['count']);assert.deepEqual(tick(s,200),[]);assert.deepEqual(tick(s,1000),['count']);assert.deepEqual(tick(s,2000),['count']);assert.deepEqual(tick(s,3000),['go']);assert.deepEqual(tick(s,3200),[]);
+assert.deepEqual(tick(s,10000),['tick']);assert.deepEqual(tick(s,10100),[]);assert.deepEqual(tick(s,11000),['tick']);assert.deepEqual(tick(s,12000),['tick']);
+s={...s,phase:'reveal',question:{correct:2},choice:2};assert.deepEqual(tick(s,13000),['correct']);assert.deepEqual(tick(s,13200),[]);s={...s,phase:'ended'};assert.deepEqual(tick(s,14000),['finish']);assert.deepEqual(tick(s,14200),[]);
+assert.deepEqual(createCueTracker()(s,14000),[]);assert.deepEqual(tick({...s,game:2},15000),[]);
+tick=createCueTracker();tick({...s,phase:'question'},12000);assert.deepEqual(tick({...s,phase:'reveal',choice:0},13000),['wrong']);
+tick=createCueTracker();tick({...s,phase:'question'},12000);assert.deepEqual(tick({...s,phase:'reveal',choice:null},13000),['reveal']);
+tick=createCueTracker();tick({...s,phase:'question'},12000);assert.deepEqual(tick({...s,phase:'ended'},30000),[]);
+console.log('PASS countdown/start/deadline cues, personal answers, room reveal, fanfare, deduplication and no replay on reconnect.');

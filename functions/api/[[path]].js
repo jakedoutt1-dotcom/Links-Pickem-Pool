@@ -2411,14 +2411,18 @@ export async function onRequest(context){
       const rows=(await DB.prepare("SELECT player_name,period_key,entry_json FROM special_game_period_entries WHERE pool_id=? AND game_type=? ORDER BY CAST(period_key AS INTEGER),player_name").bind(pid,gt).all()).results||[];
       if(!rows.length)return;
       const byPlayer=new Map(),weeks=[...new Set(rows.map(r=>Math.max(1,Math.min(22,Number(r.period_key||1)))))],feeds=new Map();
-      for(const w of weeks)feeds.set(w,await fetchNFLWeek(w));
+      for(const w of weeks){const games=await fetchNFLWeek(w);if(gt==='playoff'&&!games.length)throw Error('Playoff results temporarily unavailable.');feeds.set(w,games)}
+      // Match permanent event IDs first. Never substitute a different game at the
+      // old array index when a provider removes or reorders an event.
+      const playoffMatch=(games,pick)=>pick.eventId?games.find(g=>String(g.eventId||g.id)===String(pick.eventId)):games.find(g=>g.away===pick.team||g.home===pick.team);
+      if(gt==='playoff')for(const row of rows){const entry=JSON.parse(row.entry_json||'{}');for(const pick of entry.picks||[]){const match=playoffMatch(feeds.get(Number(row.period_key))||[],pick);if(!match||![match.away,match.home].includes(pick.team)||match.completed&&!match.winner&&!(Number.isFinite(Number(match.awayScore))&&Number.isFinite(Number(match.homeScore))&&Number(match.awayScore)===Number(match.homeScore)))throw Error('Some playoff results are unavailable.')}}
       for(const r of rows){let e={};try{e=JSON.parse(r.entry_json||"{}")||{}}catch(x){}if(!byPlayer.has(r.player_name))byPlayer.set(r.player_name,[]);byPlayer.get(r.player_name).push({week:Number(r.period_key),entry:e})}
       const now=new Date().toISOString(),lives=Math.max(1,Number(settings.lives||1));
       for(const [player,periods] of byPlayer){
         let score=0,status="OPEN",losses=0,graded=0,total=0,detail={periods:[]};
         for(const p of periods){const games=feeds.get(p.week)||[],finals=games.filter(g=>g.completed&&g.winner),byId=new Map(finals.map((g,i)=>[String(g.eventId||g.id||(g.gameIndex??games.indexOf(g))),g.winner])),byIndex=new Map(finals.map((g,i)=>[Number(g.gameIndex??games.indexOf(g)),g.winner]));
           if(gt==="survivor"){const team=String(p.entry.team||""),game=games.find(g=>g.away===team||g.home===team);let result="PENDING";if(game?.completed){graded++;if(game.winner===team){score++;result="WIN"}else{losses++;result="LOSS"}}detail.periods.push({week:p.week,team,result})}
-          else{const picks=Array.isArray(p.entry.picks)?p.entry.picks:[];let periodScore=0,periodGraded=0;total+=picks.length;for(const x of picks){const win=byId.get(String(x.eventId||""))||byIndex.get(Number(x.gameIndex));if(!win)continue;periodGraded++;graded++;if(String(x.team)===String(win))periodScore+=gt==="confidence"?Math.max(0,Number(x.confidence||0)):Math.max(1,Number(settings[p.week===19?"wildCardPoints":p.week===20?"divisionalPoints":p.week===21?"conferencePoints":"superBowlPoints"]||1))}score+=periodScore;detail.periods.push({week:p.week,score:periodScore,graded:periodGraded,picks:picks.length})}
+          else{const picks=Array.isArray(p.entry.picks)?p.entry.picks:[];let periodScore=0,periodGraded=0;total+=picks.length;for(const x of picks){const match=gt==="playoff"?playoffMatch(games,x):null,win=gt==="playoff"?(match?.completed?match.winner:null):byId.get(String(x.eventId||""))||byIndex.get(Number(x.gameIndex));if(gt==="playoff"?!match?.completed:!win)continue;periodGraded++;graded++;if(String(x.team)===String(win))periodScore+=gt==="confidence"?Math.max(0,Number(x.confidence||0)):Math.max(1,Number(settings[p.week===19?"wildCardPoints":p.week===20?"divisionalPoints":p.week===21?"conferencePoints":"superBowlPoints"]||1))}score+=periodScore;detail.periods.push({week:p.week,score:periodScore,graded:periodGraded,picks:picks.length})}
         }
         if(gt==="survivor"){status=losses>=lives?"ELIMINATED":"ALIVE";detail.losses=losses;detail.lives=lives}
         else status=total>0&&graded>=total?"FINAL":"OPEN";
@@ -2469,7 +2473,7 @@ export async function onRequest(context){
       const gt=String(url.searchParams.get("gameType")||"").trim().toLowerCase();
       if(!["survivor","confidence","props","playoff","masters","nascar"].includes(gt))return json({error:"Choose a supported game."},400);
       const raw=await getPoolSetting(DB,pid,`game_settings_${gt}`,"{}");let settings={};try{settings=JSON.parse(raw||"{}")||{}}catch(e){}
-      if(["survivor","confidence","playoff"].includes(gt)){try{await autoScoreSpecialNFLV394(gt,settings)}catch(e){}}
+      let scoringWarning="";if(["survivor","confidence","playoff"].includes(gt)){try{await autoScoreSpecialNFLV394(gt,settings)}catch(e){if(gt==="playoff")scoringWarning="Live playoff results are temporarily incomplete. Previously calculated scores are preserved; refresh to retry."}}
       if(gt==="props"){try{await autoScorePropsV386(settings)}catch(e){}}
       if(gt==="masters"){try{await autoScoreMastersV387(settings)}catch(e){}}
       if(gt==="nascar"){try{await autoScoreNascarV388(settings)}catch(e){}}
@@ -2480,7 +2484,7 @@ export async function onRequest(context){
       let myEntry={};try{myEntry=JSON.parse(mine?.entry_json||"{}")||{}}catch(e){}
       const publicEntries=entries.map(x=>{let entry={};try{entry=JSON.parse(x.entry_json||"{}")||{}}catch(e){}return {playerName:x.player_name,entry,submittedAt:x.submitted_at}});
       const visibleSettings={...settings};if(s.role!=="admin")delete visibleSettings.officialAnswers;
-      return json({gameType:gt,settings:visibleSettings,myEntry,mySubmittedAt:mine?.submitted_at||null,entries:s.role==="admin"||String(settings.revealPicks||"").toLowerCase()==="true"?publicEntries:[],entryCount:entries.length,history:history.filter(x=>x.player_name===s.player_name||String(settings.revealPicks).toLowerCase()==="true").map(x=>{let entry={};try{entry=JSON.parse(x.entry_json||"{}")||{}}catch(e){}return {playerName:x.player_name,periodKey:x.period_key,entry,submittedAt:x.submitted_at}}),scores:scores.map(x=>{let detail={};try{detail=JSON.parse(x.detail_json||"{}")||{}}catch(e){}return {playerName:x.player_name,score:Number(x.score||0),status:x.status,updatedAt:x.updated_at,manualOverride:!!detail.manualOverride}})});
+      return json({gameType:gt,scoringWarning,settings:visibleSettings,myEntry,mySubmittedAt:mine?.submitted_at||null,entries:gt==="playoff"?publicEntries.filter(x=>x.playerName===s.player_name):s.role==="admin"||String(settings.revealPicks||"").toLowerCase()==="true"?publicEntries:[],entryCount:entries.length,history:history.filter(x=>x.player_name===s.player_name||gt!=="playoff"&&String(settings.revealPicks).toLowerCase()==="true").map(x=>{let entry={};try{entry=JSON.parse(x.entry_json||"{}")||{}}catch(e){}return {playerName:x.player_name,periodKey:x.period_key,entry,submittedAt:x.submitted_at}}),scores:scores.map(x=>{let detail={};try{detail=JSON.parse(x.detail_json||"{}")||{}}catch(e){}return {playerName:x.player_name,score:Number(x.score||0),status:x.status,updatedAt:x.updated_at,manualOverride:!!detail.manualOverride,...(gt==="playoff"?{rounds:detail.periods||[]}:{})}})});
     }
     if(path==="special/entry"&&method==="POST"){
       const gt=String(body.gameType||"").trim().toLowerCase();
@@ -2490,7 +2494,7 @@ export async function onRequest(context){
       const rawSettings=await getPoolSetting(DB,pid,`game_settings_${gt}`,"{}");let gameSettings={};try{gameSettings=JSON.parse(rawSettings||"{}")||{}}catch(e){}
       if(["props","playoff"].includes(gt)&&gameSettings.linksFormat&&body.settingsRevision!==gameSettings.linksRevision)return json({error:"The game settings changed. Refresh the new game page before submitting."},409);
       const lockRaw=String(gameSettings.lockTime||gameSettings.deadline||gameSettings.eventDate||"").trim();
-      if(lockRaw&&Number.isFinite(Date.parse(lockRaw))&&Date.parse(lockRaw)<=Date.now())return json({error:"Entries are locked for this game."},409);
+      if(gt!=="playoff"&&lockRaw&&Number.isFinite(Date.parse(lockRaw))&&Date.parse(lockRaw)<=Date.now())return json({error:"Entries are locked for this game."},409);
       if(gt==="props"&&(!lockRaw||!Number.isFinite(Date.parse(lockRaw))))return json({error:"The commissioner must set a valid deadline before props open."},409);
       if(gt==="props"){const questions=String(gameSettings.propQuestions||"").split(/\r?\n/).map(x=>x.trim()).filter(Boolean),a=Array.isArray(entry.answers)?entry.answers:[];if(!questions.length||a.length!==questions.length||a.some(x=>typeof x!=="string"||!x.trim()||x.length>300))return json({error:"Answer every prop question before saving."},400)}
       if(gt==="masters"){const max=Math.max(1,Number(gameSettings.lineupSize||6)),a=Array.isArray(entry.golfers)?entry.golfers:[];if(a.length!==max)return json({error:`Choose exactly ${max} golfers.`},400)}
@@ -2520,6 +2524,7 @@ export async function onRequest(context){
             if(!match||seen.has(match)||![match.away,match.home].includes(String(pick.team)))return json({error:"Choose one valid team in each matchup."},400);seen.add(match);
           }
           if(seen.size!==slate.length)return json({error:"Pick every matchup before saving."},400);
+          if(gt==='playoff')entry.picks=picks.map(p=>{const match=p.eventId?slate.find(g=>String(g.eventId||g.id)===String(p.eventId)):slate[Number(p.gameIndex)];return {eventId:String(match.eventId||match.id),gameIndex:slate.indexOf(match),team:String(p.team)}});
         }
         if(gt==="survivor"&&String(gameSettings.noReuse||"true")!=="false"){
           const old=(await DB.prepare("SELECT entry_json FROM special_game_period_entries WHERE pool_id=? AND game_type='survivor' AND player_name=? AND period_key<>?").bind(pid,s.player_name,periodKey).all()).results||[];
@@ -2530,6 +2535,18 @@ export async function onRequest(context){
           const picks=Array.isArray(entry.picks)?entry.picks:[],games=await fetchNFLWeek(wk),vals=picks.map(x=>Number(x.confidence));
           if(picks.length!==games.length||picks.some(x=>!x.team))return json({error:"Pick every NFL game before saving your Confidence entry."},400);
           if(vals.some(x=>!Number.isInteger(x)||x<1||x>picks.length)||new Set(vals).size!==vals.length)return json({error:`Use each confidence number 1 through ${picks.length} exactly once.`},400);
+        }
+        if(gt==='playoff'){
+          const payload=JSON.stringify({week:wk,picks:entry.picks}),savedAt=new Date().toISOString();
+          if(Date.now()>=first)return json({error:'This round locked at its first kickoff.'},409);
+          // A settings change during the schedule fetch cannot silently change a card.
+          const guard="COALESCE((SELECT value FROM pool_settings WHERE pool_id=? AND key='game_settings_playoff'),'{}')=?";
+          const results=await DB.batch([
+            DB.prepare("INSERT INTO special_game_period_entries(pool_id,game_type,player_name,period_key,entry_json,submitted_at) SELECT ?,'playoff',?,?,?,? WHERE "+guard+" ON CONFLICT(pool_id,game_type,player_name,period_key) DO UPDATE SET entry_json=excluded.entry_json,submitted_at=excluded.submitted_at").bind(pid,s.player_name,periodKey,payload,savedAt,pid,rawSettings),
+            DB.prepare("INSERT INTO special_game_entries(pool_id,game_type,player_name,entry_json,submitted_at) SELECT ?,'playoff',?,?,? WHERE "+guard+" ON CONFLICT(pool_id,game_type,player_name) DO UPDATE SET entry_json=excluded.entry_json,submitted_at=excluded.submitted_at").bind(pid,s.player_name,payload,savedAt,pid,rawSettings)
+          ]);
+          if(!results[0].meta?.changes)return json({error:'Scoring changed while you were saving. Refresh and try again.'},409);
+          return json({ok:true,savedAt,week:wk});
         }
         await DB.prepare("INSERT INTO special_game_period_entries(pool_id,game_type,player_name,period_key,entry_json,submitted_at) VALUES(?,?,?,?,?,?) ON CONFLICT(pool_id,game_type,player_name,period_key) DO UPDATE SET entry_json=excluded.entry_json,submitted_at=excluded.submitted_at").bind(pid,gt,s.player_name,periodKey,JSON.stringify(entry),new Date().toISOString()).run();
       }

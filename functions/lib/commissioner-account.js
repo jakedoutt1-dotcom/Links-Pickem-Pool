@@ -1,8 +1,9 @@
+import {FREE_GAME_TESTING} from './testing-access.js';
 // Commissioner identity is verified separately from a player's pool session.
-export const PLANS={free:{label:'Free',amount:0,slots:1},plus:{label:'LINKS Plus',amount:1999,slots:3},nfl_package:{label:'LINKS Pro',amount:2999,slots:6},all_access:{label:'LINKS All Access',amount:4999,slots:10}};
-export const GAMES={homerun:'Home Run Club',mlb:'MLB Pick’em',nfl:'NFL Pick’em',college:'College Pick’em',survivor:'Survivor',confidence:'Confidence','33':'Game 33',squares:'Squares',march:'March Madness',masters:'Golf',nascar:'NASCAR',fantasy:'Fantasy',dynasty:'Dynasty',custom:'Custom',props:'Props',playoff:'Playoffs'};
+export const PLANS={free:{label:'No active package',amount:0,slots:0},plus:{label:'LINKS Plus',amount:1999,slots:3},nfl_package:{label:'LINKS Pro',amount:2999,slots:6},all_access:{label:'LINKS All Access',amount:4999,slots:10}};
+export const GAMES={nfl:'NFL Pick’em',college:'College Pick’em',homerun:'Home Run Club',nba:'NBA Pick’em',mlb:'MLB Pick’em',survivor:'Survivor',confidence:'Confidence','33':'Game 33',squares:'Squares',march:'March Madness',masters:'Golf',nascar:'NASCAR',fantasy:'Fantasy',dynasty:'Dynasty',custom:'Custom',props:'Props',playoff:'Playoffs'};
 // Only games with connected player and commissioner flows are available for creation.
-export const CREATABLE_GAMES=new Set(['nfl','college','squares','march','mlb','homerun']); // Other games are temporarily Coming Soon.
+export const CREATABLE_GAMES=new Set(['nfl','college','squares','march','nba','mlb','homerun','masters','nascar','playoff']); // Other games are temporarily Coming Soon.
 export function emailKey(value){let email=String(value||'').trim().toLowerCase();const [local,domain]=email.split('@');if(domain==='gmail.com'||domain==='googlemail.com')email=local.split('+')[0].replaceAll('.','')+'@gmail.com';return email}
 export async function digest(value){return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value))),x=>x.toString(16).padStart(2,'0')).join('')}
 export async function ensureAccounts(db){await db.batch([
@@ -21,7 +22,7 @@ export async function ensureAccounts(db){await db.batch([
  db.prepare('CREATE INDEX IF NOT EXISTS links_purchases_email_date ON links_account_purchases(email,created_at)'),
  db.prepare('CREATE INDEX IF NOT EXISTS links_grants_email_expiry ON links_package_grants(email,expires_at)')
 ])}
-export async function accountSession(request,db){const token=request.headers.get('x-links-account')||'';if(!token)return null;await ensureAccounts(db);return db.prepare('SELECT email,expires_at FROM links_account_sessions WHERE token_hash=? AND expires_at>?').bind(await digest(token),new Date().toISOString()).first()}
+export async function accountSession(request,db){if((request.headers.get('cookie')||'').includes('__Host-links_identity=')){const {ensureIdentity,identitySession}=await import('./player-identity.js');await ensureIdentity(db);const identity=await identitySession(request,db);if(identity){if(!['GET','HEAD'].includes(request.method)&&request.headers.get('Origin')!==new URL(request.url).origin)return null;return {email:emailKey(identity.email),expires_at:new Date(identity.expires_at).toISOString(),identity:true,displayName:identity.display_name}}}const token=request.headers.get('x-links-account')||'';if(!token)return null;await ensureAccounts(db);return db.prepare('SELECT email,expires_at FROM links_account_sessions WHERE token_hash=? AND expires_at>?').bind(await digest(token),new Date().toISOString()).first()}
 export async function importOwnedPools(db,email){
  // Only called after mailbox verification. Never reassign an already-owned pool.
  const rows=(await db.prepare("SELECT pool_id,value FROM pool_settings WHERE key='commissioner_email'").all()).results||[];
@@ -33,6 +34,7 @@ export async function importOwnedPools(db,email){
  }
 }
 export async function allowance(db,email){
+ if(FREE_GAME_TESTING)return {plan:'testing',label:'Free game testing',amount:0,slots:Number.MAX_SAFE_INTEGER,expiresAt:null,testing:true};
  let ent=await db.prepare('SELECT * FROM links_account_plans WHERE email=?').bind(email).first();
  // Preserve paid legacy purchases, including canonical Gmail aliases. Never infer payment from a pool's test-mode service flag.
  if(!ent){try{const rows=(await db.prepare("SELECT * FROM commissioner_entitlements WHERE status='ACTIVE'").all()).results||[];ent=rows.filter(x=>emailKey(x.email)===email&&PLANS[x.plan]).sort((a,b)=>Number(!b.expires_at||Date.parse(b.expires_at)>Date.now())-Number(!a.expires_at||Date.parse(a.expires_at)>Date.now())||PLANS[b.plan].slots-PLANS[a.plan].slots)[0]}catch(e){if(!/no such table/i.test(String(e)))throw e}}

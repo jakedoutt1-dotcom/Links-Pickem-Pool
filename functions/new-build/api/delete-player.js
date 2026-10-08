@@ -14,7 +14,7 @@ export async function onRequest({request,env}){
  const known=['pool_picks','pool_ties','pool_payments','pool_33_entries','pool_33_assignments','march_picks','march_ties','pool_sessions','pool_player_setup_invites','pool_player_contacts','pool_login_names','pool_display_names','links_player_memberships','newbuild_player_access'];
  const tables=(await db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all()).results.map(r=>r.name);
  const statements=known.filter(t=>tables.includes(t)).map(t=>db.prepare(`DELETE FROM "${t}" WHERE pool_id=? AND player_name=?`).bind(pool.id,name));
- for(const t of ['links_mlb_picks','links_mlb_access','links_hr_lineups','links_hr_access'])if(tables.includes(t))statements.push(db.prepare(`DELETE FROM "${t}" WHERE pool_id=? AND player=?`).bind(pool.id,name));
+ for(const t of ['links_nba_picks','links_nba_access','links_mlb_picks','links_mlb_access','links_hr_lineups','links_hr_access'])if(tables.includes(t))statements.push(db.prepare(`DELETE FROM "${t}" WHERE pool_id=? AND player=?`).bind(pool.id,name));
  statements.push(db.prepare('DELETE FROM pool_players WHERE pool_id=? AND name=?').bind(pool.id,name));
  try{await db.batch(statements);return reply({deleted:name})}catch(error){console.error('Player deletion failed',error);return reply({error:'Player could not be deleted. No changes were saved.'},503)}
 }

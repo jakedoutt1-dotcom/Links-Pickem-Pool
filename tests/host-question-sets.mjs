@@ -1,0 +1,28 @@
+import assert from 'node:assert/strict';
+import {fixture} from './helpers/pool-format-fixture.mjs';
+import {grantTestHost} from './helpers/trivia-host-access.mjs';
+import {ensureOwner} from '../functions/lib/owner-auth.js';
+import {onRequest as sets} from '../functions/new-build/api/host-question-sets.js';
+import {onRequest as game} from '../functions/new-build/api/trivia-night.js';
+import {approvedQuestions,selectHostQuestions} from '../functions/lib/host-question-sets.js';
+const {db}=fixture();await grantTestHost(db);await ensureOwner(db);db.raw.prepare('INSERT INTO links_admin_sessions VALUES(?,?)').run('owner','2099-01-01');
+const questions=['easy','medium','hard'].map((difficulty,i)=>({text:'Custom question '+i,category:'general',difficulty,answers:['One','Two','Three','Four'],correct:i}));
+async function call(fn,body,token='admin',query='',origin='https://test'){const r=await fn({env:{DB:db},request:new Request('https://test/new-build/api/test'+query,{method:body?'POST':'GET',headers:{Origin:origin,Authorization:'Bearer '+token},...(body?{body:JSON.stringify(body)}:{})})});return {status:r.status,...await r.json()}}
+const save={action:'save',title:'Private night',questions,shared:false};
+assert.equal((await call(sets,save,'alice')).status,403);assert.equal((await call(sets,save,'admin','','https://evil')).status,403);
+let set=await call(sets,save);assert.equal(set.status,'private');const id=set.id;
+assert.equal((await call(sets,null,'outsider')).sets.length,0);assert.equal((await call(sets,{...save,id},'outsider')).status,404);
+assert.equal((await approvedQuestions(db)).length,0);
+assert.equal((await call(sets,{...save,id,shared:true})).status,'pending');assert.equal((await approvedQuestions(db)).length,0);
+assert.equal((await call(sets,{action:'review',id,status:'approved'},'admin')).status,403);
+await call(sets,{action:'review',id,status:'approved'},'owner');assert.equal((await approvedQuestions(db)).length,3);
+await call(sets,{...save,id,shared:true});assert.equal((await approvedQuestions(db)).length,0,'edits require new approval');
+await call(sets,{...save,id});assert.equal((await call(sets,null,'owner','?review=1')).sets.length,0,'private sets not in submissions');
+let calls=0;const custom=await selectHostQuestions({source:'mine',custom:questions,load:()=>{calls++;throw Error('API must not run')}});assert.equal(custom.questions.length,3);assert.equal(calls,0);
+const mixed=await selectHostQuestions({source:'mixed',custom:questions,load:async()=>({questions:[...questions,{...questions[0],text:'API unique'}],source:'API'})});assert.equal(mixed.questions.length,4);
+const room=await call(game,{action:'create',categories:['general'],difficulty:'mixed',questionSource:'mine',questionSetId:id});assert.equal(room.status,200,JSON.stringify(room));assert.equal(room.question,null);
+let raw=JSON.parse(db.raw.prepare('SELECT state FROM links_trivia_night_rooms WHERE code=?').get(room.code).state);assert.equal(raw.customQuestions.length,3);assert.equal(raw.deck.length,2);assert.ok(raw.finalQuestion);assert.ok(raw.deck.every(q=>q.text.startsWith('Custom')));
+assert.equal((await call(game,null,'outsider','?code='+room.code)).status,401);
+await call(game,{action:'end',code:room.code,gameNumber:1,index:-1,phase:'lobby'});
+const restart=await call(game,{action:'restart',code:room.code,gameNumber:1,index:-1,phase:'ended',categories:['general'],difficulty:'mixed'});assert.equal(restart.status,200);assert.equal(restart.questionSource,'Host question set');
+console.log('PASS private sets, ownership, CSRF, review approval/reset, private withdrawal, source selection, custom room/final, answer privacy and restart.');db.raw.close();

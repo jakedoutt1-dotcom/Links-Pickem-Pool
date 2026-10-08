@@ -39,7 +39,7 @@ try{
  db.raw.exec("INSERT INTO pool_sessions VALUES('feedback-test',26,'Missing','player','2099-01-01')");
  db.raw.exec("INSERT INTO pool_picks VALUES(26,'nfl','Wrong',4,0,'PIT'),(26,'nfl','Right',4,0,'CLE');INSERT INTO pool_payments(pool_id,sport,player_name,week,paid) VALUES(26,'nfl','Wrong',4,1),(26,'nfl','Right',4,1)");
  assert.equal((await feedbackCredits(db,pool)).length,2);
- const w=await (await weekly({request,env:{DB:db}})).json();assert.equal(w.courtesy.count,2);assert.equal(w.rows.length,4);assert.equal(w.rows.find(r=>r.player==='Wrong').losses,1);assert.equal(w.rows.filter(r=>r.courtesyCredit).length,2);
+ const w=await (await weekly({request,env:{DB:db}})).json();assert.equal(w.courtesy,null);assert.equal(w.rows.length,4);assert.equal(w.rows.find(r=>r.player==='Wrong').losses,1);assert.equal(w.rows.filter(r=>r.courtesyCredit).length,2);
  const c=await (await compare({request,env:{DB:db}})).json();assert.equal(c.players.length,4);assert.equal(c.players.find(r=>r.player==='Wrong').picks[0],'PIT');assert.equal(c.players.find(r=>r.player==='Missing').picks[0],'CLE');
  const t=await (await season({request,env:{DB:db}})).json();assert.equal(t.rows.find(r=>r.name==='Missing').wins,1);assert.equal(t.rows.find(r=>r.name==='Late').wins,0);
  }finally{globalThis.fetch=oldFetch}

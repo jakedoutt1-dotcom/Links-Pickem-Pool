@@ -1,7 +1,8 @@
 // Shared pool tabs. The server, never a cached role or display name, grants access.
-(()=>{
+(async()=>{
  const locker=/\/control-center(?:\.html)?\/?$/i.test(location.pathname);
  const picksPage=/\/(nfl|college|survivor|confidence|game33|squares|props|playoff|march-madness|golf|nascar|fantasy|dynasty|custom)(?:\.html)?\/?$/i;
+ if(locker&&(await (await import('./links-account-client.mjs')).identityReady()))return;
  if(!locker&&!picksPage.test(location.pathname))return;
  if(document.getElementById('linksCommissionerEntryModule'))return;
  const marker=document.createElement('meta');marker.id='linksCommissionerEntryModule';document.head.append(marker);

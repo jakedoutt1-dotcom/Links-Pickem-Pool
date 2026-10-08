@@ -45,3 +45,20 @@ main>.scoreboard:not(.final-scoreboard){width:100%;max-width:100%;margin:0 0 12p
 /* Leather football artwork replaces the drawn marker and laces. */
 .stadium .ball{width:62px;height:42px;background:transparent url('./assets/trivia-football-v1.png') center/contain no-repeat;border:0;border-radius:0;box-shadow:none;transform:translate(-50%,-50%);filter:drop-shadow(0 3px 4px #0009);left:clamp(30px,20%,calc(100% - 30px))}
 .stadium .ball:before,.stadium .ball:after{display:none}
+/* Richer field color and LINKS black-and-gold broadcast controls. */
+.play-scene{filter:saturate(1.18) contrast(1.08)}
+.stadium:after{background:linear-gradient(180deg,#050606bd 0%,#05060670 38%,transparent 68%,#050606d9 100%)}
+.stadium .scoreboard,.stadium .final-scoreboard{background:#10110fea;border-color:#b38c465c;border-top-color:#f2c963}
+.stadium .difficulty button,.stadium .answers button{background:linear-gradient(145deg,#292a24ed,#10120fed);border-color:#b79a555c;color:#fff5db}
+.stadium .difficulty button.active{background:linear-gradient(135deg,#755321,#33270f);border-color:#ffd776;box-shadow:0 0 16px #efc36624}
+.stadium .primary{background:linear-gradient(135deg,#ffe091,#d5a844)!important;color:#17140c!important}
+.stadium input{background:#10120ff2;border-color:#a98b4f80}
+.stadium .turf,.stadium .ribbon{background:#101510d9;border-color:#b79a554d}
+
+/* A lingering hover must not make the next answer look selected. */
+.stadium .answers button:hover:not(:disabled){transform:none;background:linear-gradient(145deg,#292a24ed,#10120fed);border-color:#b79a555c;box-shadow:none}
+.answers button{touch-action:manipulation}
+.question:focus{outline:none}
+#feedback:not(:empty){border-top:1px solid #b79a555c;padding-top:10px;font-size:.9rem}
+
+.answers button.selected{background:#d4ad53;color:#101923;border-color:#ffe199;box-shadow:0 0 0 2px #ffe199}

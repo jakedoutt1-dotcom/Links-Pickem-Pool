@@ -1,0 +1,37 @@
+{
+  "tool": "Built-in image_gen",
+  "prompts": [
+    [
+      "cover",
+      "Premium cinematic murder mystery party game cover landscape 3:2 for LINKS. Exact elegant readable gold title LAST ALIBI, small LINKS above, subtitle THE LAST TOAST AT BLACKTHORN MANOR and 4–8 PLAYERS below. A grand English mansion at night in heavy rain, warm windows with ambiguous human silhouettes, open wrought iron gate, in foreground antique brass pocket watch and sealed burgundy envelope on dark stone, a tipped crystal glass. Rich midnight navy, antique gold, dark burgundy, sophisticated photoreal cinematic key art, atmospheric fog and amber lighting, compelling detective thriller. No gore, no weapons foreground, no copyrighted characters. Typography large safe margins readable as game tile."
+    ],
+    [
+      "manor",
+      "Landscape 16:9 cinematic photoreal establishing image of fictional Blackthorn Manor, grand English country estate at night in a thunderstorm, wet stone steps and open ornate doors glowing amber, distant silhouettes of dinner guests inside, dark pines, mist, dramatic rich navy and burgundy shadows, warm gold light. Premium whodunit game environment. No text, no logos, no people close up, no bodies or gore."
+    ],
+    [
+      "study",
+      "Landscape 16:9 cinematic photoreal murder mystery game environment, luxurious old English manor study at night, rain on tall windows, empty leather chair behind mahogany desk, antique brass lamp, unmarked sealed burgundy envelope, a pocket watch and tipped crystal glass, framed paintings and dark bookshelves. Suggestive scene of a mystery without a body or blood. Rich navy shadows, amber lights, highly detailed professional game background, no readable text or logos."
+    ],
+    [
+      "conservatory",
+      "Landscape 16:9 cinematic photoreal whodunit game environment: a grand Victorian manor glass conservatory at night in rain, tropical plants, marble floor with wet footprints, two empty velvet chairs, closed unmarked leather notebook on a small brass table, light through frosted glass, sophisticated deep green and antique gold palette. Atmospheric but readable, premium detective game art, no text no logos no bodies no gore."
+    ],
+    [
+      "gallery",
+      "Landscape 16:9 cinematic photoreal detective mystery game environment, grand English manor portrait gallery at night, a long corridor with original fictional old oil portraits, velvet ropes, empty display pedestal, rainlit windows, warm brass sconces and rich blue and burgundy shadows, a slightly open hidden panel in the wall. Premium sophisticated mystery, no text or logos, no bodies or gore."
+    ],
+    [
+      "dining",
+      "A formal candlelit dining room in a grand English manor at night, abandoned long dining table with crystal glasses and dinner plates, one chair pulled back, discreet small security camera near ceiling, rain outside tall windows, mysterious late evening atmosphere, navy shadows warm antique gold light, cinematic photoreal game environment landscape 16:9. No text, no logos, no bodies or blood."
+    ],
+    [
+      "gate",
+      "Interior of a small old stone estate gatehouse at night in a rainstorm, wooden desk with open blank ledger, old brass radio and small recording monitor, wet coats hanging by the door, locked iron estate gates visible through a rain-covered window, atmospheric amber light and deep navy shadows. Cinematic photoreal whodunit game environment landscape 16:9. No legible text, no logos, no bodies or gore."
+    ],
+    [
+      "music",
+      "A luxurious English manor music room at night, grand piano, vintage microphone and small video recording camera on tripod facing velvet chairs, unmarked music pages on a stand, rain against tall windows, warm brass lamps and rich burgundy curtains, deep navy shadows. Cinematic photoreal whodunit game environment landscape 16:9. No readable text, no logos, no bodies or gore."
+    ]
+  ]
+}

@@ -10,14 +10,16 @@ async function day(date) {
 }
 export function parseEvent(event) {
   const competition=event.competitions?.[0], note=(competition?.notes||[]).map(n=>n.headline||'').join(' ');
-  if(!/NCAA Men.s Basketball Championship/i.test(note)||/First Four|play.in/i.test(note)) return null;
+  if(!/\b(?:NCAA )?Men[’']s Basketball Championship\b/i.test(note)||/First Four|play.in/i.test(note)) return null;
   const region=REGIONS.find(r=>new RegExp('\\b'+r+' Region','i').test(note))||'Final Four';
   const round=/1st Round|First Round|Round of 64/i.test(note)?1:/2nd Round|Second Round|Round of 32/i.test(note)?2:/Sweet 16|Regional Semifinal/i.test(note)?3:/Elite (8|Eight)|Regional Final/i.test(note)?4:/Final Four|National Semifinal/i.test(note)?5:/National Championship/i.test(note)?6:0;
   if(!round) return null;
   const teams=(competition.competitors||[]).map(c=>({id:String(c.team?.id||''),name:c.team?.shortDisplayName||c.team?.displayName||'TBD',seed:Number(c.curatedRank?.current),logo:c.team?.logo||'',score:c.score==null||c.score===''?null:Number(c.score),winner:c.winner===true}));
   if(teams.length!==2) return null;
   const status=event.status?.type||competition.status?.type||{}, completed=status.completed===true;
-  return {eventId:String(event.id),region,round,date:event.date||competition.date,teams,completed,winner:completed?(teams.find(t=>t.winner)?.id||''):'',detail:status.shortDetail||status.description||'Scheduled'};
+  const flagged=teams.filter(t=>t.winner),scored=teams.every(t=>Number.isFinite(t.score))&&teams[0].score!==teams[1].score;
+  const winner=completed?(flagged.length===1?flagged[0].id:scored?teams[teams[0].score>teams[1].score?0:1].id:''):'';
+  return {eventId:String(event.id),region,round,date:event.date||competition.date,teams,completed,winner,detail:status.shortDetail||status.description||'Scheduled'};
 }
 export async function tournamentFeed(season) {
   const old=cache.get(season);

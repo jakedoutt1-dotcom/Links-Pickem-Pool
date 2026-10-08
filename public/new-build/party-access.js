@@ -1,0 +1,9 @@
+// Only payment responses from party creation open this prompt; guest joins remain untouched.
+(()=>{const games=new Set(['trivia-rally','million-point','dead-air','say-what','last-alibi','captain-clash','friend-challenge','trivia-night']),original=window.fetch;let dialog;
+ window.fetch=async function(...args){const response=await original.apply(this,args);const url=new URL(args[0] instanceof Request?args[0].url:String(args[0]),location.href);
+  if(response.status===402&&url.origin===location.origin&&games.has(url.pathname.split('/').pop())){let data;try{data=await response.clone().json()}catch{}if(['PARTY_PASS_REQUIRED','TRIVIA_HOST_REQUIRED'].includes(data?.code)){
+   if(!dialog){dialog=document.createElement('dialog');dialog.setAttribute('aria-label','Host access');dialog.style.cssText='max-width:420px;width:calc(100% - 48px);padding:28px;border:1px solid #d2ab55;border-radius:18px;background:#121311;color:#fff;font:18px/1.5 system-ui';document.body.append(dialog)}
+   dialog.replaceChildren();const title=document.createElement('h2'),copy=document.createElement('p'),link=document.createElement('a'),close=document.createElement('button');title.textContent=data.code==='TRIVIA_HOST_REQUIRED'?'Host Trivia Night':'Bring your crew';copy.textContent=data.error;link.textContent='See host options →';link.href=(data.code==='TRIVIA_HOST_REQUIRED'?'./trivia-host-pass.html':'./party-pack.html')+'?next='+encodeURIComponent(location.pathname.split('/').pop().replace(/\.html$/,'')+'.html')+'&returnTo='+encodeURIComponent(location.pathname+location.search+location.hash);link.style.cssText='display:block;background:#edc466;color:#17130b;padding:12px;border-radius:10px;font-weight:bold;text-align:center';close.textContent='Not now';close.style.cssText='margin-top:18px;padding:10px;font:inherit';close.onclick=()=>dialog.close();dialog.append(title,copy,link,close);if(!dialog.open)dialog.showModal();
+  }}return response;
+ };
+})();

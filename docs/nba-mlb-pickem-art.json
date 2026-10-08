@@ -1,0 +1,11 @@
+{
+  "tool": "Built-in image_gen",
+  "nba": {
+    "asset": "public/new-build/assets/nba-pickem-card-v1.png",
+    "prompt": "Premium LINKS NBA PICK\u2019EM cover, landscape 3:2, basketball and arena, black/navy/metallic gold, central safe typography, no players or team logos."
+  },
+  "mlb": {
+    "asset": "public/new-build/assets/mlb-pickem-card-v2.png",
+    "prompt": "Premium LINKS MLB PICK\u2019EM cover, landscape 3:2, baseball, bat and glove with night ballpark, black/navy/metallic gold, central safe typography, no players or team logos."
+  }
+}

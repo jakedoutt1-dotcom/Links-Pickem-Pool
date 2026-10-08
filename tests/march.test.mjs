@@ -84,3 +84,8 @@ test('authenticated API: complete entry lifecycle, privacy, revisions, field fre
     assert.equal((await call('admin',{action:'publish',pairing:PAIRINGS[0],revision:1})).status,403);
   }finally{globalThis.fetch=originalFetch;db.raw.close();}
 });
+
+test('final scores resolve a missing winner flag, but live and tied scores do not',()=>{
+ const raw={id:'final',date:'2027-04-05T20:00:00Z',status:{type:{completed:true}},competitions:[{notes:[{headline:"NCAA Men's Basketball Championship - National Championship"}],competitors:[{team:{id:'1'},score:'80'},{team:{id:'2'},score:'70'}]}]};
+ assert.equal(parseEvent(raw).winner,'1');raw.status.type.completed=false;assert.equal(parseEvent(raw).winner,'');raw.status.type.completed=true;raw.competitions[0].competitors[1].score='80';assert.equal(parseEvent(raw).winner,'');raw.competitions[0].competitors[1].score=null;assert.equal(parseEvent(raw).winner,'');
+});
