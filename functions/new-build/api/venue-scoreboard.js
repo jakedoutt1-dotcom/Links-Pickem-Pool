@@ -24,6 +24,7 @@ export async function onRequest({request,env}){try{
    if(venue)return json({venue,host,locked:true});
    if(s.phase!=='lobby')return json({error:'Choose the venue before starting the game.'},409);
    let p;if(b.ref)p=await db.prepare('SELECT p.* FROM links_partner_links l JOIN links_partners p ON p.id=l.partner_id WHERE l.token=? AND p.active=1').bind(String(b.ref)).first();
+   else if(b.confirmVenue===true){p=await db.prepare('SELECT * FROM links_partners WHERE id=? AND active=1').bind(String(b.partner||'')).first();}
    else{const c=b.coords;if(!c||![c.latitude,c.longitude,c.accuracy].every(Number.isFinite)||Math.abs(c.latitude)>90||Math.abs(c.longitude)>180||c.accuracy<0||c.accuracy>150)return json({error:'Location is not accurate enough. Try again or use the venue partner QR code.'},400);
     p=await db.prepare('SELECT * FROM links_partners WHERE id=? AND active=1').bind(String(b.partner||'')).first();if(p&&distance(c,p)>p.radius)p=null;
    }

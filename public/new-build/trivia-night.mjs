@@ -1,7 +1,7 @@
 import {mountHostQuestions} from './host-question-sets.mjs';
-import {updateVenueRoom} from './venue-link.mjs';
+import {updateVenueRoom} from './venue-link.mjs?v=venue-recovery2';
 import {mountInviteShare} from './invite-share.mjs';
-import {mountTriviaSound} from './trivia-sound.mjs';
+import {mountTriviaSound} from './trivia-sound.mjs?v=tv-audio2';
 import qrcode from './vendor/qrcode.mjs';
 const sounds=mountTriviaSound({button:document.getElementById('soundToggle'),lobbyMusic:true});
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -138,7 +138,7 @@ $('startQuestion').onclick=()=>act('start-question');$('finalRound').onclick=()=
 $('restart').onclick=()=>{if(confirm('Start another game in this room? Scores reset to zero and a new question set loads. Everyone stays joined.'))act('restart',{categories:state.categories,difficulty:state.difficulty})};
 $('leave').onclick=()=>{if(!confirm('Exit this room? Your score is saved, and you can return using this room code.'))return;sessionStorage.removeItem('trivia-night-room');location.href='./trivia-night.html'};
 function tvLink(){const u=new URL('./trivia-tv.html',location.href);u.searchParams.set('room',roomCode);return u.href}
-$('screen').onclick=()=>{const u=new URL('./trivia-tv.html',location.href);$('tvAddress').textContent=u.host+u.pathname;$('tvAddress').href=u.href;$('tvCode').textContent=roomCode;$('tvOpen').href=tvLink();$('tvCopyStatus').textContent='';$('tvConnect').showModal()};
+$('screen').onclick=()=>{void sounds.activate();const u=new URL('./trivia-tv.html',location.href);$('tvAddress').textContent=u.host+u.pathname;$('tvAddress').href=u.href;$('tvCode').textContent=roomCode;$('tvOpen').href=tvLink();$('tvCopyStatus').textContent='';$('tvConnect').showModal()};
 $('tvCopy').onclick=async()=>{try{await navigator.clipboard.writeText(tvLink());$('tvCopyStatus').textContent='Display link copied.'}catch{$('tvCopyStatus').textContent=tvLink()}};
 
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).close());

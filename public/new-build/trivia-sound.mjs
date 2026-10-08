@@ -1,4 +1,4 @@
-import {automaticGameSound} from './automatic-game-sound.mjs';
+import {automaticGameSound} from './automatic-game-sound.mjs?v=tv-audio2';
 import {createCorrectSound} from './correct-sound.mjs';
 import {createLossSound} from './loss-sound.mjs';
 // Original synthesized game cues and the supplied LINKS waiting-room soundtrack.
@@ -52,6 +52,6 @@ export function mountTriviaSound({button,lobbyMusic=false}){
  function play(cue){if(!enabled||document.hidden||context?.state!=='running')return;if(cue==='correct'&&lobbyMusic&&correct.play(context))return;if(cue==='wrong'&&loss.play(context))return;const t=context.currentTime;const notes=({count:[660],go:[660,990],tick:[440],reveal:[523,659],correct:[659,880,1047],wrong:[330,262],finish:[523,659,784,1047]})[cue]||[];notes.forEach((hz,i)=>tone(hz,t+i*.13,cue==='finish'?.23:.12,cue==='tick'?.025:.05))}
  button.onclick=async()=>{if(enabled){enabled=false;stop();draw();return}try{const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio){button.textContent='Sound unavailable';button.disabled=true;return}failed.clear();context ||= new Audio();await context.resume();enabled=context.state==='running';draw();if(enabled){loss.load(context);if(lobbyMusic)correct.load(context);play('go');syncMusic()}else button.textContent='Tap to enable sound'}catch{enabled=false;button.textContent='Tap to retry sound'}};
  // Pause audio when hidden; normal game interaction enables sound.
- document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();else syncMusic()});window.addEventListener('pagehide',stop);draw();automaticGameSound(button,()=>enabled);
- return {update(s,now){state=s;clockOffset=now-Date.now();syncMusic();for(const cue of track(s,now))play(cue)},stop};
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();else syncMusic()});window.addEventListener('pagehide',stop);draw();const automatic=automaticGameSound(button,()=>enabled);
+ return {activate:automatic.activate,update(s,now){state=s;clockOffset=now-Date.now();syncMusic();for(const cue of track(s,now))play(cue)},stop};
 }
