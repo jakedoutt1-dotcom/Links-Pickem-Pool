@@ -8,7 +8,13 @@ function clearInput(){keys.clear();axis={x:0,y:0};boost=false;$('stick').style.t
 function pause(){if(s.phase!=='play')return;paused=!paused;clearInput();sync()}
 $('pause').onclick=pause;document.addEventListener('visibilitychange',()=>{if(document.hidden&&s.phase==='play'){paused=true;clearInput();sync()}});window.addEventListener('blur',()=>{if(s.phase==='play'){paused=true;clearInput();sync()}});
 $('start').onclick=()=>{if(paused){paused=false;sync();return}if(s.phase==='ended')s=createGame();snap(s);clearInput();tone();sync();canvas.focus()};
-$('passA').onclick=()=>{if(!paused)pass(s,1)};$('passB').onclick=()=>{if(!paused)pass(s,2)};
+function throwTo(target){if(!paused)pass(s,target)}
+for(const [id,target] of [['passA',1],['passB',2]]){
+ const button=$(id);
+ // Throw on contact: mobile players may still be holding the run pad.
+ button.addEventListener('pointerdown',e=>{if(button.disabled)return;e.preventDefault();throwTo(target)});
+ button.addEventListener('click',e=>{if(e.detail===0)throwTo(target)});
+}
 window.addEventListener('keydown',e=>{if(/INPUT|TEXTAREA/.test(e.target.tagName))return;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();keys.add(e.key.toLowerCase());if(e.repeat)return;if(e.key==='1'&&!paused)pass(s,1);if(e.key==='2'&&!paused)pass(s,2);if(e.key.toLowerCase()==='p')pause()});window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
 let pointer=null;function padMove(e){if(pointer!==e.pointerId)return;const r=$('pad').getBoundingClientRect(),x=(e.clientX-r.left-r.width/2)/35,y=(e.clientY-r.top-r.height/2)/35,len=Math.max(1,Math.hypot(x,y));axis={x:x/len,y:y/len};$('stick').style.transform='translate('+axis.x*25+'px,'+axis.y*25+'px)'}
 $('pad').onpointerdown=e=>{if(pointer!==null)return;pointer=e.pointerId;$('pad').setPointerCapture(e.pointerId);padMove(e)};$('pad').onpointermove=padMove;for(const event of ['pointerup','pointercancel','lostpointercapture'])$('pad').addEventListener(event,e=>{if(pointer===e.pointerId){pointer=null;axis={x:0,y:0};$('stick').style.transform=''}});
