@@ -1,5 +1,5 @@
 import {ownerSession} from '../../lib/owner-auth.js';
-const games=new Set(['party-room','trivia-rally','million-point','dead-air','last-alibi','friend-challenge','football-trivia','trivia-night','nfl','college','golf','nascar','mlb','home-run','squares','playoff','march-madness','survivor','confidence','props','fantasy','dynasty','custom']);
+const games=new Set(['party-room','trivia-rally','million-point','dead-air','last-alibi','friend-challenge','football-trivia','trivia-night','nfl','college','golf','nascar','nba','mlb','home-run','squares','playoff','march-madness','survivor','confidence','props','fantasy','dynasty','custom']);
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
 export async function onRequest({request,env}){
  try{

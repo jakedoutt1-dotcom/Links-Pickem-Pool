@@ -1,5 +1,5 @@
 (()=>{
- const path=location.pathname;if(!/\/(home-run|mlb|nfl|college|survivor|confidence|game33|squares|props|playoff|march-madness|golf|nascar|fantasy|dynasty|custom|game-setup)(?:\.html)?\/?$/.test(path)||new URLSearchParams(location.search).get('demo'))return;
+ const path=location.pathname;if(!/\/(home-run|mlb|nba|nfl|college|survivor|confidence|game33|squares|props|playoff|march-madness|golf|nascar|fantasy|dynasty|custom|game-setup)(?:\.html)?\/?$/.test(path)||new URLSearchParams(location.search).get('demo'))return;
  const pool=new URLSearchParams(location.search).get('pool');if(!pool)return;
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  async function api(body){const request=window.LINKS_API_FETCH||((url,opts={})=>fetch(url,{...opts,headers:{...opts.headers,Authorization:'Bearer '+(localStorage.getItem('links-legacy-token')||localStorage.getItem('links-token')||'')}}));const r=await request('./api/game-invites?'+new URLSearchParams({pool}),body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pool,...body})}:{cache:'no-store'});const j=await r.json();if(!r.ok)throw Error(j.error||'Invitation request failed.');return j}
