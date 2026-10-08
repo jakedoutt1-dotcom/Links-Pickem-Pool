@@ -65,7 +65,7 @@ export function points(q,elapsed,mode='individual'){return BASE[q.difficulty]+Ma
 export function reveal(state){
  if(state.phase!=='question')throw Error('There is no question to reveal.');
  const q=state.deck[state.index];
- for(const p of Object.values(state.players)){const a=p.answer;if(a?.index===state.index&&a.choice===q.correct)p.score+=points(q,a.elapsed,state.mode)*(q.final?2:1);}
+ for(const p of Object.values(state.players)){const a=p.answer;if(a?.index===state.index&&a.choice===q.correct)p.score+=points(q,a.submitted===false?answerSeconds(q.difficulty,state.mode)*1000:a.elapsed,state.mode)*(q.final?2:1);}
  state.phase='reveal';
 }
 export function view(state,seat,host,now=Date.now()){
@@ -76,6 +76,6 @@ export function view(state,seat,host,now=Date.now()){
  const p=state.players[seat];
  return {...(host?{questionSource:state.questionSource||'LINKS question library',questionNotice:state.questionNotice||''}:{}),code:state.code,title:state.title,mode:state.mode||'individual',phase:state.phase,game:state.game,index:state.index,host,categories:state.categories,difficulty:state.difficulty,serverNow:now,deadline:state.deadline,startsAt:state.startsAt||0,countdown,isFinal:!!state.isFinal,categoryIntro:state.phase==='category'?state.deck[state.index+1]?.category:countdown?state.deck[state.index]?.category:null,canFinal:!!state.finalQuestion&&!state.isFinal,availableCategories:[...new Set(state.deck.slice(state.index+1).map(q=>q.category))],availableLevels:host?Object.fromEntries([...new Set(state.deck.slice(state.index+1).map(q=>q.category))].map(c=>[c,[...new Set(state.deck.slice(state.index+1).filter(q=>q.category===c).map(q=>q.difficulty))]])):undefined,remaining:state.deck.length-state.index-1,playerCount:leaders.length,leaders,
   answered:Object.values(state.players).filter(p=>p.answer?.index===state.index).length,
-  eligible:!!p&&p.eligible<=state.index,choice:p?.answer?.index===state.index?p.answer.choice:null,
+  submitted:p?.answer?.index===state.index&&p.answer.submitted===true,eligible:!!p&&p.eligible<=state.index,choice:p?.answer?.index===state.index?p.answer.choice:null,
   question:q?{text:q.text,answers:q.answers,category:q.category,difficulty:q.difficulty,...(revealed?{correct:q.correct,source:q.source,license:q.license}: {})}:null};
 }

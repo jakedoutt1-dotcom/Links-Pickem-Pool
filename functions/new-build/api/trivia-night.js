@@ -108,11 +108,12 @@ async function handleRequest({request,env}){
    }else{
     if(!host&&!s.players[seat])return json({error:'Join this room first.'},401);
     if(action==='state'){const display=host?await db.prepare('SELECT seen FROM links_trivia_night_displays WHERE code=?').bind(code).first():null;return json({...view(s,seat,host,now),...(host?{tvConnected:!!display&&display.seen>now-45000}:{})});}
-    if(action==='answer'){
+    if(action==='answer'||action==='submit-answer'){
      const p=s.players[seat];
-     if(!p||s.phase!=='question'||now<(s.startsAt||0)||b.gameNumber!==s.game||b.index!==s.index||now>=s.deadline||p.eligible>s.index)return json({error:'Answer locked. Wait for the next question.'},409);
+     if(!p||s.phase!=='question'||now<(s.startsAt||0)||b.gameNumber!==s.game||b.index!==s.index||now>=s.deadline||p.eligible>s.index||p.answer?.index===s.index&&p.answer.submitted)return json({error:'Answer locked. Wait for the next question.'},409);
+     if(action==='submit-answer'&&(p.answer?.index!==s.index||p.answer.choice!==b.choice))return json({error:'Choose your answer before submitting.'},409);
      if(!Number.isInteger(b.choice)||b.choice<0||b.choice>3)return json({error:'Choose an answer.'},400);
-     if(p.answer?.index!==s.index||p.answer.choice!==b.choice)p.answer={index:s.index,choice:b.choice,elapsed:Math.max(0,now-(s.startsAt||s.deadline-answerSeconds(s.deck[s.index].difficulty,s.mode)*1000))};
+     if(action==='submit-answer'||p.answer?.index!==s.index||p.answer.choice!==b.choice)p.answer={index:s.index,choice:b.choice,submitted:action==='submit-answer',elapsed:Math.max(0,now-(s.startsAt||s.deadline-answerSeconds(s.deck[s.index].difficulty,s.mode)*1000))};
     }else{
      if(!host)return json({error:'Only this room’s host can control the game.'},403);
      if(['next','start-question','restart','final'].includes(action)&&!await checkHost())return hostRequired();
