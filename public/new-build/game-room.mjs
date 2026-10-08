@@ -9,6 +9,21 @@ $('gameAccount').replaceChildren();const pools=document.createElement('a');pools
 try{const access=await get('party-pack');$('hostAccess').textContent=access.venueAccess?'Your hosted trivia access is active through '+new Date(access.venueAccess.paid_until).toLocaleDateString()+'.':'Choose a trivia host pass or use your admin-granted access. Guests join free.';if(access.venueAccess){const library=await get('trivia-night?action=library');for(const room of library.rooms||[])if(/^[A-F0-9]{10}$/.test(room.code))roomLink('Hosted Trivia · '+room.code,'./trivia-night.html?room='+room.code)}}catch(e){$('hostAccess').textContent='Could not check your trivia access. Open My trivia access to retry.'}
 }catch(e){$('accountMessage').textContent='Your account could not load. Refresh to retry. Games below remain available.'}}
 const carousel=$('gameCarousel');
+// Shuffle only the visual game cards once per page entry; keep game URLs and state intact.
+(function shuffleGameCards(){
+  const cards=Array.from(carousel.querySelectorAll(':scope > .game'));
+  if(cards.length<2)return;
+  const random=new Uint32Array(cards.length);
+  if(globalThis.crypto?.getRandomValues)crypto.getRandomValues(random);
+  else for(let i=0;i<random.length;i++)random[i]=Math.floor(Math.random()*4294967296);
+  for(let i=cards.length-1;i>0;i--){
+    const j=random[i]%(i+1);
+    [cards[i],cards[j]]=[cards[j],cards[i]];
+  }
+  carousel.replaceChildren(...cards);
+  carousel.scrollLeft=0;
+})();
+
 function shelfEdges(){$('gamePrev').disabled=carousel.scrollLeft<=5;$('gameNext').disabled=carousel.scrollLeft+carousel.clientWidth>=carousel.scrollWidth-3}
 function moveShelf(direction){const card=carousel.querySelector('.game');carousel.scrollBy({left:direction*(card.getBoundingClientRect().width+parseFloat(getComputedStyle(carousel).gap)),behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'})}
 $('gamePrev').onclick=()=>moveShelf(-1);$('gameNext').onclick=()=>moveShelf(1);
