@@ -38,8 +38,9 @@ try{
  assert.equal((await host('reveal')).status,409);
  const late=await call({action:'join',name:'Late arrival'});assert.equal(late.eligible,false);
  assert.equal((await call({action:'answer',gameNumber:1,index:0,choice:current.correct},{guest:late.token})).status,409);
+ await call({action:'answer',gameNumber:1,index:0,choice:(current.correct+1)%4},{guest:alice.token});
  let a=await call({action:'answer',gameNumber:1,index:0,choice:current.correct},{guest:alice.token});assert.equal(a.status,200);assert.equal(a.choice,current.correct);assert.equal(a.leaders.find(p=>p.you).score,0);
- assert.equal((await call({action:'answer',gameNumber:1,index:0,choice:current.correct},{guest:alice.token})).status,409);
+ assert.equal((await call({action:'answer',gameNumber:1,index:0,choice:current.correct},{guest:alice.token})).status,200);
  assert.equal((await call({action:'answer',gameNumber:1,index:0,choice:99},{guest:bob.token})).status,400);
  await call({action:'answer',gameNumber:1,index:0,choice:(current.correct+1)%4},{guest:bob.token});
  edit(s=>{s.deadline=Date.now()-1});await host('reveal');assert.equal(hostState.question.correct,current.correct);assert.equal((await call(null,{query:'?action=display&code='+code})).question.correct,current.correct);assert.ok(hostState.leaders.find(p=>p.name==='Alice').score>0);assert.equal(hostState.leaders.find(p=>p.name==='Bob').score,0);
@@ -88,5 +89,5 @@ try{
  assert.equal((await host('next',{difficulty:'medium'})).status,409,'Cannot change a running question');
  edit(s=>s.deadline=Date.now()-1);await host('reveal');
  await host('next',{category:'football',difficulty:'medium'});assert.equal(raw().deck[raw().index].difficulty,'medium');
- console.log('PASS: room authorization, CSRF, hidden answers, late joining, server deadlines, immutable answers, scoring/reveal, import validation/isolation, restart, stale requests, write-conflict retry, expiry.');
+ console.log('PASS: room authorization, CSRF, hidden answers, late joining, server deadlines, changeable answers until deadline, scoring/reveal, import validation/isolation, restart, stale requests, write-conflict retry, expiry.');
 }finally{db.raw.close()}

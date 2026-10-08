@@ -64,7 +64,7 @@ async function handleRequest({request,env}){
    if(action==='library')return json({providerConfigured:!!env.TRIVIA_API_KEY,count:(await bank()).length,roomLimit:plan.slots,plan:plan.label,activeRooms:active.length,rooms:active.filter(r=>admin.verifiedHost||r.pool_id===admin.pool_id&&r.host_name===admin.player_name).map(r=>({code:r.code}))});
    if(b.mode!==undefined&&!['individual','teams'].includes(b.mode))return json({error:'Choose Individual or Teams.'},400);
    if(!['easy','medium','hard','mixed'].includes(b.difficulty))return json({error:'Choose a valid difficulty.'},400);
-   if(active.length>=plan.slots)return json({error:plan.label+' has no available trivia rooms. Reopen a room or choose a larger package.'},402);
+   if(active.length>=plan.slots)return json({error:plan.label+' has no available trivia rooms. Reopen your existing room, or close it to free a slot.'},402);
    await db.prepare('DELETE FROM links_trivia_night_rooms WHERE expires<=?').bind(Date.now()).run();
    const hostHistoryKey=await historyKey(admin.pool_id),recent=await history(hostHistoryKey);
    const source=b.questionSource||'links',setId=source==='links'?null:b.questionSetId,custom=source==='links'?[]:await questionSet(db,await questionOwner(db,admin),setId);
@@ -75,7 +75,7 @@ async function handleRequest({request,env}){
    const code=crypto.randomUUID().replace(/-/g,'').slice(0,10).toUpperCase();
    const state={code,hostHistoryKey,customQuestions:custom,hostQuestionSource:source,questionSetId:setId,mode:b.mode||'individual',title:String(b.title||'LINKS Trivia Night').trim().slice(0,70),categories:b.categories,difficulty:b.difficulty,game:1,phase:'lobby',index:-1,deadline:0,questionSource:loaded.source,questionNotice:loaded.notice,seenQuestions:recent.ids,seenTexts:recent.texts,deck,finalQuestion,isFinal:false,players:{}};
    const inserted=await db.prepare(`INSERT INTO links_trivia_night_rooms(code,pool_id,host_name,state,expires) SELECT ?,?,?,?,? WHERE (SELECT COUNT(*) FROM links_trivia_night_rooms WHERE pool_id IN (${placeholders}) AND expires>?)<?`).bind(code,admin.pool_id,admin.player_name,JSON.stringify(state),Date.now()+86400000,...pools,Date.now(),plan.slots).run();
-   if(!inserted.meta?.changes)return json({error:plan.label+' allows '+plan.slots+' active trivia room'+(plan.slots===1?'':'s')+'. Reopen your existing room to play again, or choose a larger package. Rooms expire after 24 hours.'},402);
+   if(!inserted.meta?.changes)return json({error:plan.label+' allows '+plan.slots+' active trivia room'+(plan.slots===1?'':'s')+'. Reopen your existing room to play again, or close it to free a slot. Rooms expire after 24 hours.'},402);
    return json(view(state,'',true));
   }
   const code=String(b.code||url.searchParams.get('code')||'').toUpperCase();
@@ -86,6 +86,13 @@ async function handleRequest({request,env}){
    const row=await db.prepare('SELECT * FROM links_trivia_night_rooms WHERE code=? AND expires>?').bind(code,Date.now()).first();
    if(!row)return json({error:'Room not found or expired. Ask the host for a current code.'},404);
    const s=JSON.parse(row.state),host=!!admin&&(admin.pool_id===row.pool_id&&admin.player_name===row.host_name||admin.verifiedHost&&row.pool_id>0&&await hostEmail(row.pool_id)===admin.email),now=Date.now();let issued;
+   if(action==='close-room'){
+    if(!host)return json({error:'Only this room’s host can close it.'},403);
+    if(b.confirm!==true)return json({error:'Confirm closing this room first.'},400);
+    const closed=await db.prepare('UPDATE links_trivia_night_rooms SET expires=?,version=version+1 WHERE code=? AND version=? AND expires>?').bind(now,code,row.version,now).run();
+    if(closed.meta?.changes)return json({closed:true,code});
+    continue;
+   }
    if(action==='info')return json({code,title:s.title,mode:s.mode||'individual'});
    if(action==='display'){
     if(request.method==='POST')await db.prepare('INSERT INTO links_trivia_night_displays(code,seen) VALUES(?,?) ON CONFLICT(code) DO UPDATE SET seen=excluded.seen').bind(code,now).run();
@@ -103,9 +110,9 @@ async function handleRequest({request,env}){
     if(action==='state'){const display=host?await db.prepare('SELECT seen FROM links_trivia_night_displays WHERE code=?').bind(code).first():null;return json({...view(s,seat,host,now),...(host?{tvConnected:!!display&&display.seen>now-45000}:{})});}
     if(action==='answer'){
      const p=s.players[seat];
-     if(!p||s.phase!=='question'||now<(s.startsAt||0)||b.gameNumber!==s.game||b.index!==s.index||now>=s.deadline||p.eligible>s.index||p.answer?.index===s.index)return json({error:'Answer locked. Wait for the next question.'},409);
+     if(!p||s.phase!=='question'||now<(s.startsAt||0)||b.gameNumber!==s.game||b.index!==s.index||now>=s.deadline||p.eligible>s.index)return json({error:'Answer locked. Wait for the next question.'},409);
      if(!Number.isInteger(b.choice)||b.choice<0||b.choice>3)return json({error:'Choose an answer.'},400);
-     p.answer={index:s.index,choice:b.choice,elapsed:Math.max(0,now-(s.deadline-answerSeconds(s.deck[s.index].difficulty,s.mode)*1000))};
+     if(p.answer?.index!==s.index||p.answer.choice!==b.choice)p.answer={index:s.index,choice:b.choice,elapsed:Math.max(0,now-(s.startsAt||s.deadline-answerSeconds(s.deck[s.index].difficulty,s.mode)*1000))};
     }else{
      if(!host)return json({error:'Only this room’s host can control the game.'},403);
      if(['next','start-question','restart','final'].includes(action)&&!await checkHost())return hostRequired();
@@ -121,7 +128,7 @@ async function handleRequest({request,env}){
       [s.deck[s.index+1],s.deck[at]]=[s.deck[at],s.deck[s.index+1]];s.difficulty=difficulty;s.phase='category';s.deadline=0;
      }else if(action==='start-question'){
       if(s.phase!=='category')return json({error:'Choose a category first.'},409);
-      s.index++;s.phase='question';s.startsAt=now+3000;s.deadline=s.startsAt+answerSeconds(s.deck[s.index].difficulty,s.mode)*1000;
+      s.index++;s.phase='question';s.startsAt=now+8000;s.deadline=s.startsAt+answerSeconds(s.deck[s.index].difficulty,s.mode)*1000;
      }else if(action==='final'){
       if(s.phase!=='reveal'||!s.finalQuestion||s.isFinal)return json({error:'Reveal a regular question first. A hard question must be available for the final.'},409);
       s.deck.splice(s.index+1,0,{...s.finalQuestion,final:true});s.isFinal=true;s.phase='category';s.deadline=0;

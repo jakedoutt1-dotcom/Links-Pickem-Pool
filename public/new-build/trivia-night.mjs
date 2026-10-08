@@ -58,7 +58,7 @@ function render(){
  $('screen').hidden=!state.host||!['lobby','ended'].includes(state.phase);
  $('lobbyInvite').hidden=!state.host||state.phase!=='lobby';
  document.querySelector('.stage').hidden=state.phase==='ended'||state.host&&state.phase==='lobby';
- document.querySelector('#room>.standings').hidden=state.phase!=='ended';
+ document.querySelector('#room>.standings').hidden=state.host&&state.phase!=='ended';
  $('triviaPartners').hidden=!['lobby','reveal','ended'].includes(state.phase);
  const screenKey=state.game+':'+state.index+':'+state.phase;if(window.triviaScreenKey!==screenKey){window.triviaScreenKey=screenKey;window.scrollTo({top:0,behavior:'instant'})}
  $('playerSummary').hidden=state.host;const me=state.leaders.find(p=>p.you);$('playerSummary').textContent=me?me.name+' · '+me.score.toLocaleString()+' points · Rank '+me.rank:'';
@@ -68,8 +68,8 @@ function render(){
  $('answers').hidden=state.phase==='category';
  $('answers').innerHTML=q?q.answers.map((a,i)=>`<button data-choice="${i}" class="${state.choice===i?'selected ':''}${revealed?(q.correct===i?'correct':state.choice===i?'wrong':''):''}"><b>${'ABCD'[i]}</b><span>${esc(a)}${revealed&&q.correct===i?' ✓':''}${state.choice===i?' · Your answer':''}</span></button>`).join(''):'';
  $('source').textContent=revealed&&q?'Source: '+q.source+' · '+q.license:'';
- $('answerNote').textContent=state.phase==='category'?(state.isFinal?'One hard question. Double base and speed points. '+(state.mode==='teams'?45:20)+' seconds. Final scores appear after the host reveals.':'Get ready. The host starts the clock when everyone is ready.'):state.phase==='lobby'?(state.host?'Show the QR code so players can join.':'Waiting for host to start game.'):state.phase==='ended'?'Thanks for playing! Stay here if the host starts another game.':revealed?(state.isFinal?'Final answer revealed. The host will show final standings when everyone is ready.':'Scores are updated. The host will start the next question.'):state.host?(state.mode==='teams'?'Each team submits on one phone. Reveal after the timer ends.':'Players answer on their phones. Reveal after the timer ends.'):!state.eligible?'You’re in! Your first question is the next one.':state.choice!==null?'Answer saved. Wait for the host to reveal.':(state.mode==='teams'?'Discuss with your team, then submit one answer. You cannot change it.':'Choose one answer. You cannot change it after submitting.');
- $('hostControls').hidden=!state.host;$('showStandings').hidden=!['lobby','reveal'].includes(state.phase);$('scoreboardTitle').textContent=state.phase==='ended'?'Final standings':'Live standings';$('answered').textContent=state.answered+' answers received · '+state.remaining+' questions remaining';
+ $('answerNote').textContent=state.phase==='category'?(state.isFinal?'One hard question. Double base and speed points. '+(state.mode==='teams'?25:15)+' seconds. Final scores appear after the host reveals.':'Get ready. The host starts the clock when everyone is ready.'):state.phase==='lobby'?(state.host?'Show the QR code so players can join.':'Waiting for host to start game.'):state.phase==='ended'?'Thanks for playing! Stay here if the host starts another game.':revealed?(state.isFinal?'Final answer revealed. The host will show final standings when everyone is ready.':'Scores are updated. The host will start the next question.'):state.host?(state.mode==='teams'?'Each team submits on one phone. Reveal after the timer ends.':'Players answer on their phones. Reveal after the timer ends.'):!state.eligible?'You’re in! Your first question is the next one.':state.choice!==null?'Answer saved. You can change it until time runs out.':(state.mode==='teams'?'Discuss with your team, then submit one answer. You can change it until time runs out.':'Choose one answer. You can change it until time runs out.');
+ $('hostControls').hidden=!state.host;$('showStandings').hidden=false;$('scoreboardTitle').textContent=state.phase==='ended'?'Final standings':'Live standings';$('answered').textContent=state.answered+' answers received · '+state.remaining+' questions remaining';
  $('leaders').innerHTML=state.leaders.length?state.leaders.map(p=>`<li class="${p.you?'you':''}"><span>${p.rank}</span><span>${esc(p.name)}${p.you?' · You':''}</span><strong>${p.score.toLocaleString()}</strong></li>`).join(''):'<li>Waiting for the first player or team.</li>';
 
  tick();
@@ -81,7 +81,7 @@ function tick(){
  $('startCountdown').hidden=!waiting;document.querySelector('.question-area').hidden=waiting;
  const number=count?String(count):'GO';if($('countdownNumber').textContent!==number){$('countdownNumber').textContent=number;const logo=document.querySelector('.countdown-logo');if(!matchMedia('(prefers-reduced-motion: reduce)').matches)logo.animate([{filter:'drop-shadow(0 0 10px #eac15d)'},{filter:'drop-shadow(0 0 50px #ffd67b)'},{filter:'drop-shadow(0 0 10px #eac15d)'}],{duration:650})}
  $('clock').textContent=state.phase==='question'&&!waiting?String(seconds).padStart(2,'0'):'—';
- document.querySelectorAll('[data-choice]').forEach(e=>{e.disabled=busy||waiting||state.host||state.phase!=='question'||seconds===0||!state.eligible||state.choice!==null});
+ document.querySelectorAll('[data-choice]').forEach(e=>{e.disabled=busy||waiting||state.host||state.phase!=='question'||seconds===0||!state.eligible});
  $('next').hidden=state.isFinal||!['lobby','reveal'].includes(state.phase);$('next').disabled=busy||state.remaining===0;$('next').textContent=state.phase==='lobby'?'Start game':'Choose next category';
  $('startQuestion').hidden=state.phase!=='category';$('startQuestion').disabled=busy;
  $('finalRound').hidden=state.isFinal||state.phase!=='reveal';$('finalRound').disabled=busy||!state.canFinal;
@@ -91,7 +91,21 @@ function tick(){
  if(state.phase==='question'&&seconds===0&&state.choice===null&&!state.host&&state.eligible)$('answerNote').textContent='Time is up. Waiting for the host to reveal the answer.';
 }
 $('joinForm').onsubmit=e=>{e.preventDefault();roomCode=$('code').value.trim().toUpperCase();act('join',{name:$('name').value.trim()})};
-async function loadBank(){const j=await api(null,'?action=library');await hostQuestions.load();$('bankCount').textContent=(j.providerConfigured?'Fresh questions load when you create a game. '+j.count+' backup questions':j.count+' questions')+' · '+j.plan+': '+j.activeRooms+' of '+j.roomLimit+' active trivia rooms. Reuse a room for more games. Rooms expire after 24 hours.';$('existingRooms').replaceChildren();for(const room of j.rooms){const a=document.createElement('a');a.href='./trivia-night.html?room='+room.code;a.textContent='Reopen room '+room.code;$('existingRooms').append(a)}$('create').disabled=j.activeRooms>=j.roomLimit;}
+async function loadBank(){const j=await api(null,'?action=library');await hostQuestions.load();$('bankCount').textContent=(j.providerConfigured?'Fresh questions load when you create a game. '+j.count+' backup questions':j.count+' questions')+' · '+j.plan+': '+j.activeRooms+' of '+j.roomLimit+' active trivia rooms. Reopen your room to keep playing, or close it to create a new one. Rooms expire after 24 hours.';$('existingRooms').replaceChildren();for(const room of j.rooms){const a=document.createElement('a');a.href='./trivia-night.html?room='+room.code;a.textContent='Reopen room '+room.code;const row=document.createElement('div'),close=document.createElement('button');close.type='button';close.textContent='Close room';close.onclick=()=>closeRoom(room.code);row.append(a,document.createTextNode(' '),close);$('existingRooms').append(row)}$('create').disabled=j.activeRooms>=j.roomLimit;}
+
+async function closeRoom(code){
+ if(busy||!confirm('Close room '+code+'? This ends access for every player and the TV, and frees your room slot. To play again, create a new room and send its new invitation.'))return;
+ busy=true;++sequence;
+ try{
+  await api({action:'close-room',code,confirm:true});
+  if(sessionStorage.getItem('trivia-night-room')===code)sessionStorage.removeItem('trivia-night-room');
+  roomCode='';state=null;signature='';sounds.stop();document.body.classList.remove('in-room');
+  await loadBank();openSetup();$('setStatus').textContent='Room closed. Choose your settings and press Create room for a new invitation.';
+ }catch(e){$('setStatus').textContent=e.message;$('message').textContent=e.message}
+ finally{busy=false}
+}
+const closeRoomButton=document.createElement('button');closeRoomButton.type='button';closeRoomButton.textContent='Close room';closeRoomButton.onclick=()=>closeRoom(roomCode);$('hostControls').append(closeRoomButton);
+
 async function hostPoolRequest(body){
  const r=await fetch('./api/pool-switcher',{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token(),'x-links-account':localStorage.getItem('links-account-token')||'','Content-Type':'application/json'},cache:'no-store',signal:AbortSignal.timeout(12000),...(body?{body:JSON.stringify(body)}:{})});const j=await r.json();if(!r.ok)throw Error(j.error||'Your connected pools could not be loaded.');return j;
 }
@@ -112,9 +126,9 @@ $('hostOpen').onclick=async()=>{
 };
 $('create').onclick=()=>{try{act('create',{title:$('title').value,...selection()})}catch(e){$('setStatus').textContent=e.message}};
 $('answers').onclick=e=>{const b=e.target.closest('[data-choice]');if(b&&!b.disabled)act('answer',{choice:Number(b.dataset.choice)})};
-function roundCategories(){const difficulty=document.querySelector('[name=roundLevel]:checked')?.value||'mixed';$('roundCategories').replaceChildren();for(const key of state.availableCategories){const b=document.createElement('button');b.textContent=themes[key][0];b.dataset.theme=key;b.disabled=difficulty!=='mixed'&&state.availableLevels&&!state.availableLevels[key]?.includes(difficulty);b.onclick=()=>{$('categoryPicker').close();act('next',{category:key,difficulty})};$('roundCategories').append(b)}}
+function roundCategories(){const difficulty=document.querySelector('[name=roundLevel]:checked')?.value||'mixed';$('roundCategories').replaceChildren();for(const key of Object.keys(themes)){const b=document.createElement('button'),included=state.categories?.includes(key),remaining=state.availableCategories.includes(key),levelAvailable=difficulty==='mixed'||!state.availableLevels||state.availableLevels[key]?.includes(difficulty);const reason=!included?'Not selected for this room':!remaining?'No questions remaining':!levelAvailable?'Choose another difficulty':'';b.textContent=themes[key][0]+(reason?' · '+reason:'');b.title=reason;b.dataset.theme=key;b.disabled=!!reason;b.onclick=()=>{$('categoryPicker').close();act('next',{category:key,difficulty})};$('roundCategories').append(b)}}
 $('roundDifficulty').onchange=roundCategories;
-$('next').onclick=()=>{document.querySelectorAll('[name=roundLevel]').forEach(r=>{r.parentElement.lastChild.textContent=' '+r.value[0].toUpperCase()+r.value.slice(1)+(r.value==='mixed'?'':' · '+(state.mode==='teams'?{easy:20,medium:30,hard:45}:{easy:10,medium:15,hard:20})[r.value]+' sec')});document.querySelectorAll('[name=roundLevel]').forEach(r=>r.checked=r.value===(state.difficulty||'mixed'));roundCategories();$('categoryPicker').showModal()};
+$('next').onclick=()=>{document.querySelectorAll('[name=roundLevel]').forEach(r=>{r.parentElement.lastChild.textContent=' '+r.value[0].toUpperCase()+r.value.slice(1)+(r.value==='mixed'?'':' · '+(state.mode==='teams'?{easy:15,medium:20,hard:25}:{easy:10,medium:12,hard:15})[r.value]+' sec')});document.querySelectorAll('[name=roundLevel]').forEach(r=>r.checked=r.value===(state.difficulty||'mixed'));roundCategories();$('categoryPicker').showModal()};
 $('startQuestion').onclick=()=>act('start-question');$('finalRound').onclick=()=>act('final');$('reveal').onclick=()=>act('reveal');$('end').onclick=()=>{if(state.isFinal||confirm('End this game and show the final scoreboard?'))act('end')};
 $('restart').onclick=()=>{if(confirm('Start another game in this room? Scores reset to zero and a new question set loads. Everyone stays joined.'))act('restart',{categories:state.categories,difficulty:state.difficulty})};
 $('leave').onclick=()=>{if(!confirm('Exit this room? Your score is saved, and you can return using this room code.'))return;sessionStorage.removeItem('trivia-night-room');location.href='./trivia-night.html'};
@@ -147,6 +161,6 @@ try{const r=await fetch('./api/game-room',{signal:AbortSignal.timeout(8000),head
 openQRJoin().finally(poll);
 if(new URL(location.href).searchParams.get('host')==='1'||new URL(location.href).searchParams.get('step')==='setup')$('hostOpen').click();
 
-$('playMode').onchange=()=>{const team=$('playMode').value==='teams',times=team?[20,30,45]:[10,15,20];$('modeHelp').textContent=team?'Use one phone per team. Discuss together and submit one answer. Easy 20s · Medium 30s · Hard 45s. Up to 250 speed points.':'Answer on your own. Easy 10s · Medium 15s · Hard 20s. Up to 500 speed points.';['easy','medium','hard'].forEach((level,i)=>{$('difficulty').querySelector('[value='+level+']').textContent=level[0].toUpperCase()+level.slice(1)+' · '+times[i]+' seconds · '+[500,1000,1500][i].toLocaleString()+' + speed'})};
+$('playMode').onchange=()=>{const team=$('playMode').value==='teams',times=team?[15,20,25]:[10,12,15];$('modeHelp').textContent=team?'Use one phone per team. Discuss together and submit one answer. Easy 15s · Medium 20s · Hard 25s. Up to 250 speed points.':'Answer on your own. Easy 10s · Medium 12s · Hard 15s. Up to 500 speed points.';['easy','medium','hard'].forEach((level,i)=>{$('difficulty').querySelector('[value='+level+']').textContent=level[0].toUpperCase()+level.slice(1)+' · '+times[i]+' seconds · '+[500,1000,1500][i].toLocaleString()+' + speed'})};
 
 mountInviteShare({anchor:document.getElementById('copy'),getUrl:joinLink,title:'Trivia Night',status:document.getElementById('copyStatus')});

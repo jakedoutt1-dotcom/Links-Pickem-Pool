@@ -44,7 +44,7 @@ async function handleRequest({request,env}){
       s.deck=challengeDeck(completeQuestionBank(loaded.questions,STARTER.filter(q=>categories.includes(q.category)&&(s.difficulty==='mixed'||q.difficulty===s.difficulty)),{exclude:s.seenQuestions,minimum:10}),categories,s.difficulty);s.notice=loaded.notice;s.game++;delete s.winners;
      }begin(s,Date.now())}
     }else if(action==='answer'){
-     const p=s.players[seat];if(s.phase!=='question'||time<s.startsAt||time>=s.deadline||b.game!==s.game||b.index!==s.index||p.answer?.index===s.index||(s.contenders&&!s.contenders.includes(seat)))return json({error:'Answer locked. Wait for the next question.'},409);if(!Number.isInteger(b.choice)||b.choice<0||b.choice>3)return json({error:'Choose one answer.'},400);p.answer={index:s.index,choice:b.choice,elapsed:Math.max(0,time-s.startsAt)};changed=true;
+     const p=s.players[seat];if(s.phase!=='question'||time<s.startsAt||time>=s.deadline||b.game!==s.game||b.index!==s.index||(s.contenders&&!s.contenders.includes(seat)))return json({error:'Answer locked. Wait for the next question.'},409);if(!Number.isInteger(b.choice)||b.choice<0||b.choice>3)return json({error:'Choose one answer.'},400);if(p.answer?.index!==s.index||p.answer.choice!==b.choice)p.answer={index:s.index,choice:b.choice,elapsed:Math.max(0,time-s.startsAt)};changed=true;
     }else if(action==='leave'){
      if(!['lobby','ended'].includes(s.phase))return json({error:'You can close this page now. Your result stays in this game.'},409);delete s.players[seat];for(const p of Object.values(s.players))p.ready=false;changed=true;
     }else if(action!=='state')return json({error:'Unknown action.'},400);

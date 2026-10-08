@@ -2,8 +2,8 @@ import {balancedCategories} from './trivia-category-balance.js';
 import { QUESTIONS, shuffled } from './football-trivia.js';
 
 export const CATEGORIES = ['football','music','movies','history','science','general'];
-export const SECONDS = {easy:10,medium:15,hard:20};
-export const TEAM_SECONDS = {easy:20,medium:30,hard:45};
+export const SECONDS = {easy:10,medium:12,hard:15};
+export const TEAM_SECONDS = {easy:15,medium:20,hard:25};
 export const answerSeconds=(difficulty,mode)=>(mode==='teams'?TEAM_SECONDS:SECONDS)[difficulty];
 export const speedBonus=mode=>mode==='teams'?250:500;
 export const BASE = {easy:500,medium:1000,hard:1500};

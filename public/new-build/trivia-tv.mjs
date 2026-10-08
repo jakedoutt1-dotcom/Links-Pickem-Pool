@@ -4,14 +4,22 @@ const sounds=mountTriviaSound({button:document.getElementById('soundToggle'),lob
 const $=id=>document.getElementById(id),themes={football:'SPORTS',music:'MUSIC',movies:'MOVIES & TV',history:'HISTORY',science:'SCIENCE',general:'MIXED BAG'};
 let code='',state=null,offset=0,heartbeat=0,timer,version=0,signature='';
 function tick(){if(!state)return;sounds.update(state,Date.now()+offset);const now=Date.now()+offset,count=Math.max(0,Math.ceil((state.startsAt-now)/1000)),waiting=state.phase==='question'&&!state.question;$('countdown').hidden=!waiting;$('questionArea').hidden=waiting;$('countdownNumber').textContent=count||'GO';$('clock').textContent=state.phase==='question'&&!waiting?String(Math.max(0,Math.ceil((state.deadline-now)/1000))).padStart(2,'0'):'—';}
+function fitQuestion(){
+ const stage=$('stage');if(stage.hidden)return;
+ let question=Math.min(40,Math.max(24,innerWidth*.026)),answer=Math.min(30,Math.max(20,innerWidth*.019));
+ const apply=()=>{stage.style.setProperty('--tv-question-size',question+'px');stage.style.setProperty('--tv-answer-size',answer+'px')};apply();
+ while(stage.getBoundingClientRect().bottom>innerHeight-14&&(question>20||answer>16)){question=Math.max(20,question-1);answer=Math.max(16,answer-1);apply()}
+}
+window.addEventListener('resize',()=>requestAnimationFrame(fitQuestion));
+document.addEventListener('fullscreenchange',()=>requestAnimationFrame(fitQuestion));
 function render(){
  const q=state.question,phase=state.phase,theme=state.categoryIntro||q?.category||'general';document.body.dataset.category=theme;
- $('title').textContent=state.title;$('roomLabel').textContent='ROOM '+code;$('lobby').hidden=phase!=='lobby';$('stage').hidden=['lobby','ended'].includes(phase);$('standings').hidden=!['lobby','reveal','ended'].includes(phase);
+ $('title').textContent=state.title;$('roomLabel').textContent='ROOM '+code;$('lobby').hidden=phase!=='lobby';$('stage').hidden=phase==='lobby';
  $('category').textContent=themes[theme]+(q?' · '+q.difficulty.toUpperCase():'');$('number').textContent=state.isFinal?'FINAL ROUND · DOUBLE POINTS':'QUESTION '+(state.index+1);
- $('question').textContent=phase==='category'?themes[theme]+' · Get ready':q?.text||'';
+ $('question').textContent=phase==='category'?themes[theme]+' · Get ready':q?.text||(phase==='ended'?'Thanks for playing!':'');
  $('answers').replaceChildren();if(q)q.answers.forEach((text,i)=>{const row=document.createElement('div');row.className='tv-answer'+(q.correct===i?' correct':'');const letter=document.createElement('b');letter.textContent='ABCD'[i];const label=document.createElement('span');label.textContent=text+(q.correct===i?' ✓':'');row.append(letter,label);$('answers').append(row)});
- $('note').textContent=phase==='reveal'?'Answer revealed · Scores updated':phase==='category'?'The host will start the clock.':(state.mode==='teams'?'Discuss together. Submit one answer on your team’s phone.':'Answer on your phone. The host reveals after time is up.');$('source').textContent=q?.source?'Source: '+q.source+' · '+q.license:'';
- $('count').textContent=state.playerCount+(state.mode==='teams'?' teams joined':' players joined');$('standingsTitle').textContent=phase==='lobby'?'In the room':phase==='ended'?'Final standings':'Standings';$('leaders').replaceChildren();for(const p of state.leaders){const li=document.createElement('li');for(const value of [p.rank,p.name,p.score.toLocaleString()]){const span=document.createElement('span');span.textContent=value;li.append(span)}$('leaders').append(li)}tick();
+ $('note').textContent=phase==='ended'?'Game complete · Check your phone for final standings.':phase==='reveal'?'Answer revealed · Check your phone for standings':phase==='category'?'The host will start the clock.':(state.mode==='teams'?'Discuss together. Submit one answer on your team’s phone.':'Answer on your phone. The host reveals after time is up.');$('source').textContent=q?.source?'Source: '+q.source+' · '+q.license:'';
+ $('count').textContent=state.playerCount+(state.mode==='teams'?' teams joined':' players joined');tick();requestAnimationFrame(fitQuestion);
 }
 async function poll(n){if(n!==version||!code)return;try{
  const ping=Date.now()-heartbeat>15000;const r=await fetch('./api/trivia-night'+(ping?'':'?action=display&code='+encodeURIComponent(code)),{method:ping?'POST':'GET',cache:'no-store',headers:{'Content-Type':'application/json'},signal:AbortSignal.timeout(12000),...(ping?{body:JSON.stringify({action:'display',code})}:{})});const j=await r.json();if(n!==version)return;if(!r.ok){const error=Error(j.error||'Unable to connect.');error.status=r.status;throw error}if(ping)heartbeat=Date.now();state=j;offset=j.serverNow-Date.now();$('connect').hidden=true;$('display').hidden=false;$('status').textContent='';const next=JSON.stringify({...j,serverNow:0});if(signature!==next){signature=next;render()}else tick();

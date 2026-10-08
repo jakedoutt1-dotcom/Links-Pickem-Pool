@@ -60,3 +60,5 @@ main>.scoreboard:not(.final-scoreboard){width:100%;max-width:100%;margin:0 0 12p
 .answers button{touch-action:manipulation}
 .question:focus{outline:none}
 #feedback:not(:empty){border-top:1px solid #b79a555c;padding-top:10px;font-size:.9rem}
+
+.answers button.selected{background:#d4ad53;color:#101923;border-color:#ffe199;box-shadow:0 0 0 2px #ffe199}
