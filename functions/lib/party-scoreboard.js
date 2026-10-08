@@ -12,6 +12,8 @@ export const SCORE_GAMES={
 export async function ensureScoreboard(db){await db.batch([
  db.prepare('CREATE TABLE IF NOT EXISTS links_party_results(game TEXT NOT NULL,room TEXT NOT NULL,round INTEGER NOT NULL,seat TEXT NOT NULL,score INTEGER NOT NULL,win INTEGER NOT NULL,finished INTEGER NOT NULL,PRIMARY KEY(game,room,round,seat))'),
  db.prepare('CREATE INDEX IF NOT EXISTS links_party_results_period ON links_party_results(finished,game)'),
+ db.prepare('CREATE TABLE IF NOT EXISTS links_party_guest_profiles(id TEXT PRIMARY KEY, secret_hash TEXT UNIQUE NOT NULL, name TEXT NOT NULL)'),
+ db.prepare('CREATE TABLE IF NOT EXISTS links_party_guest_seats(game TEXT NOT NULL,room TEXT NOT NULL,seat TEXT NOT NULL,guest_id TEXT NOT NULL,PRIMARY KEY(game,room,seat))'),
  db.prepare('CREATE TABLE IF NOT EXISTS links_party_guest_names(game TEXT NOT NULL,room TEXT NOT NULL,round INTEGER NOT NULL,seat TEXT NOT NULL,name TEXT NOT NULL,PRIMARY KEY(game,room,round,seat))'),
  db.prepare('CREATE TABLE IF NOT EXISTS links_party_score_profiles(email TEXT PRIMARY KEY,id TEXT UNIQUE NOT NULL,name TEXT NOT NULL)'),
  db.prepare('CREATE TABLE IF NOT EXISTS links_party_score_seats(game TEXT NOT NULL,room TEXT NOT NULL,seat TEXT NOT NULL,email TEXT NOT NULL,PRIMARY KEY(game,room,seat),UNIQUE(game,room,email))')
