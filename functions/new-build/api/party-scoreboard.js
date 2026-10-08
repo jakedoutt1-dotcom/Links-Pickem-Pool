@@ -28,8 +28,12 @@ export async function onRequest({request,env}){try{
  const profile=session?await db.prepare('SELECT id,name FROM links_party_score_profiles WHERE email=?').bind(session.email).first():null;
  const base=`FROM links_party_results r JOIN links_party_score_seats s ON s.game=r.game AND s.room=r.room AND s.seat=r.seat JOIN links_party_score_profiles p ON p.email=s.email WHERE r.finished>=? AND (?='all' OR r.game=?)`;
  const args=[periodStart(period),game,game];
- const rows=await db.prepare(`SELECT p.id,p.name,COUNT(*) AS played,SUM(r.win) AS wins,${game==='all'?'NULL':'MAX(r.score)'} AS best ${base} GROUP BY p.id,p.name ORDER BY ${game==='all'?'wins':'best'} DESC,played ASC,p.id LIMIT 100`).bind(...args).all();
- const best=game==='all'?null:await db.prepare(`SELECT MAX(r.score) AS score ${base}`).bind(...args).first();
+ // Public guests appear without accounts. Claimed seats are shown only once.
+ const guestBase=`FROM links_party_results r JOIN links_party_guest_names g ON g.game=r.game AND g.room=r.room AND g.round=r.round AND g.seat=r.seat WHERE r.finished>=? AND (?='all' OR r.game=?) AND NOT EXISTS(SELECT 1 FROM links_party_score_seats ss WHERE ss.game=r.game AND ss.room=r.room AND ss.seat=r.seat)`;
+ const members=await db.prepare(`SELECT p.id,p.name,COUNT(*) AS played,SUM(r.win) AS wins,${game==='all'?'NULL':'MAX(r.score)'} AS best ${base} GROUP BY p.id,p.name`).bind(...args).all();
+ const guests=await db.prepare(`SELECT ('guest:'||r.game||':'||r.room||':'||r.seat) AS id,MAX(g.name) AS name,COUNT(*) AS played,SUM(r.win) AS wins,${game==='all'?'NULL':'MAX(r.score)'} AS best ${guestBase} GROUP BY r.game,r.room,r.seat`).bind(...args).all();
+ const rows={results:[...members.results,...guests.results].sort((a,b)=>Number(game==='all'?b.wins:b.best)-Number(game==='all'?a.wins:a.best)||a.played-b.played||String(a.id).localeCompare(String(b.id))).slice(0,100)};
+ const best=game==='all'?null:await db.prepare('SELECT MAX(score) AS score FROM links_party_results WHERE finished>=? AND game=?').bind(periodStart(period),game).first();
  const mine=profile?await db.prepare(`SELECT COUNT(*) AS played,COALESCE(SUM(r.win),0) AS wins,${game==='all'?'NULL':'MAX(r.score)'} AS best ${base} AND p.id=?`).bind(...args,profile.id).first():null;
  return json({games:Object.entries(SCORE_GAMES).map(([id,g])=>({id,name:g.name,storage:g.storage})),period,game,profile,mine,signedIn:!!session,rows:rows.results,highScore:best?.score??null});
  }catch{return json({error:'The scoreboard could not load. Please try again.'},503)}}
