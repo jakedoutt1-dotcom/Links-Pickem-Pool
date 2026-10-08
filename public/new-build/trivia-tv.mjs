@@ -5,15 +5,16 @@ const $=id=>document.getElementById(id),themes={football:'SPORTS',music:'MUSIC',
 let code='',state=null,offset=0,heartbeat=0,timer,version=0,signature='';
 function tick(){if(!state)return;sounds.update(state,Date.now()+offset);const now=Date.now()+offset,count=Math.max(0,Math.ceil((state.startsAt-now)/1000)),waiting=state.phase==='question'&&!state.question;$('countdown').hidden=!waiting;$('questionArea').hidden=waiting;$('countdownNumber').textContent=count||'GO';$('clock').textContent=state.phase==='question'&&!waiting?String(Math.max(0,Math.ceil((state.deadline-now)/1000))).padStart(2,'0'):'—';}
 function fitQuestion(){
- const stage=$('stage');if(stage.hidden)return;
+ const display=$('display');if(display.hidden)return;display.style.minHeight=Math.max(0,innerHeight-display.getBoundingClientRect().top-14)+'px';const stage=$('stage');if(stage.hidden)return;const bannerSpace=$('venueBanner').hidden?0:$('venueBanner').offsetHeight;
  let question=Math.min(40,Math.max(24,innerWidth*.026)),answer=Math.min(30,Math.max(20,innerWidth*.019));
  const apply=()=>{stage.style.setProperty('--tv-question-size',question+'px');stage.style.setProperty('--tv-answer-size',answer+'px')};apply();
- while(stage.getBoundingClientRect().bottom>innerHeight-14&&(question>20||answer>16)){question=Math.max(20,question-1);answer=Math.max(16,answer-1);apply()}
+ while(stage.getBoundingClientRect().bottom>innerHeight-14-bannerSpace&&(question>18||answer>15)){question=Math.max(18,question-1);answer=Math.max(15,answer-1);apply()}
 }
 window.addEventListener('resize',()=>requestAnimationFrame(fitQuestion));
 document.addEventListener('fullscreenchange',()=>requestAnimationFrame(fitQuestion));
 function render(){
  const q=state.question,phase=state.phase,theme=state.categoryIntro||q?.category||'general';document.body.dataset.category=theme;
+ const logo=$('venueLogo'),venue=state.venue;logo.hidden=!venue?.logo;$('venueBanner').hidden=!venue?.logo;logo.alt=venue?.name||'';logo.onerror=()=>{logo.hidden=true;$('venueBanner').hidden=true;requestAnimationFrame(fitQuestion)};logo.onload=()=>requestAnimationFrame(fitQuestion);if(venue?.logo&&logo.getAttribute('src')!==venue.logo)logo.src=venue.logo;
  $('title').textContent=state.title;$('roomLabel').textContent='ROOM '+code;$('lobby').hidden=phase!=='lobby';$('stage').hidden=phase==='lobby';
  $('category').textContent=themes[theme]+(q?' · '+q.difficulty.toUpperCase():'');$('number').textContent=state.isFinal?'FINAL ROUND · DOUBLE POINTS':'QUESTION '+(state.index+1);
  $('question').textContent=phase==='category'?themes[theme]+' · Get ready':q?.text||(phase==='ended'?'Thanks for playing!':'');

@@ -12,3 +12,9 @@ main{padding:8px 3vw 14px}.tv-heading{gap:12px;margin-bottom:8px}.tv-heading h1{
 .tv-answer span{min-width:0;overflow-wrap:anywhere}.tv-answer b{flex-basis:30px;width:30px;height:30px;font-size:20px}
 #note{font-size:14px;margin:8px 0 0}#source{font-size:11px;margin:4px 0 0;padding:4px 8px}#status:empty{display:none}
 @media(max-width:650px) and (orientation:portrait){#stage .answers{grid-template-columns:1fr}}
+
+#venueLogo{width:clamp(100px,12vw,190px);height:56px;object-fit:contain;flex-shrink:0}
+
+#display{display:flex;flex-direction:column}#venueBanner{margin-top:auto;padding-top:10px;display:flex;justify-content:center;flex-shrink:0}#venueLogo{display:block;width:min(400px,70vw);height:64px;object-fit:contain;object-position:center}
+
+@media(max-height:650px){header{padding-top:4px;padding-bottom:4px}header img{width:64px}.tv-heading{margin-bottom:5px}.tv-heading h1{font-size:22px}#stage{padding:8px 12px}#stage .stage-top{padding:4px 8px}#stage .clock strong{font-size:24px}#venueLogo{height:48px}#venueBanner{padding-top:8px}#stage .tv-answer{padding:8px 10px}#stage .question-area h2{padding:6px 8px}}

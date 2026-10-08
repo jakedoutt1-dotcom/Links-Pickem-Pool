@@ -1,3 +1,4 @@
+import {locateTriviaVenue} from './trivia-venue-logo.mjs';
 import {mountHostQuestions} from './host-question-sets.mjs';
 import {updateVenueRoom} from './venue-link.mjs';
 import {mountInviteShare} from './invite-share.mjs';
@@ -27,6 +28,7 @@ function adopt(j){
  offset=j.serverNow-Date.now();state=j;roomCode=j.code;sessionStorage.setItem('trivia-night-room',roomCode);
  if(j.token)localStorage.setItem('trivia-night-seat-'+roomCode,j.token);
  updateVenueRoom('trivia-night',roomCode,seat(),token());
+ if(j.host&&j.phase==='lobby')locateTriviaVenue(roomCode,token());
  document.body.classList.add('in-room');document.body.dataset.role=j.host?'host':'player';$('screen').hidden=!j.host||!['lobby','ended'].includes(j.phase);
  showScreen(j.phase==='lobby'?'waiting':j.phase==='ended'?'results':'game');
  const u=new URL(location.href);u.searchParams.set('room',roomCode);u.searchParams.delete('step');u.searchParams.delete('host');history.replaceState(null,'',u);

@@ -96,7 +96,8 @@ async function handleRequest({request,env}){
    if(action==='info')return json({code,title:s.title,mode:s.mode||'individual'});
    if(action==='display'){
     if(request.method==='POST')await db.prepare('INSERT INTO links_trivia_night_displays(code,seen) VALUES(?,?) ON CONFLICT(code) DO UPDATE SET seen=excluded.seen').bind(code,now).run();
-    return json(view(s,'',false,now));
+    await ensureVenue(db);const venue=await db.prepare("SELECT p.name,p.logo FROM links_venue_rooms v JOIN links_partners p ON p.id=v.partner WHERE v.game='trivia-night' AND v.room=? AND p.active=1").bind(code).first();
+    return json({...view(s,'',false,now),venue:venue||null});
    }
    if(action==='join'){
     if(s.players[seat])return json(view(s,seat,host));
@@ -129,7 +130,7 @@ async function handleRequest({request,env}){
       [s.deck[s.index+1],s.deck[at]]=[s.deck[at],s.deck[s.index+1]];s.difficulty=difficulty;s.phase='category';s.deadline=0;
      }else if(action==='start-question'){
       if(s.phase!=='category')return json({error:'Choose a category first.'},409);
-      s.index++;s.phase='question';s.startsAt=now+8000;s.deadline=s.startsAt+answerSeconds(s.deck[s.index].difficulty,s.mode)*1000;
+      s.index++;s.phase='question';s.startsAt=now+10000;s.deadline=s.startsAt+answerSeconds(s.deck[s.index].difficulty,s.mode)*1000;
      }else if(action==='final'){
       if(s.phase!=='reveal'||!s.finalQuestion||s.isFinal)return json({error:'Reveal a regular question first. A hard question must be available for the final.'},409);
       s.deck.splice(s.index+1,0,{...s.finalQuestion,final:true});s.isFinal=true;s.phase='category';s.deadline=0;

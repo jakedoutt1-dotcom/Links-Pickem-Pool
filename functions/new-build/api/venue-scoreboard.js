@@ -1,3 +1,4 @@
+import {triviaHostIdentity} from '../../lib/trivia-host-identity.js';
 import {SCORE_GAMES,ensureScoreboard,periodStart} from '../../lib/party-scoreboard.js';
 import {ensureVenue,distance} from '../../lib/venue-scoreboard.js';
 const games={...SCORE_GAMES,'trivia-night':{name:'Hosted Trivia Night',table:'links_trivia_night_rooms'}};
@@ -15,7 +16,7 @@ export async function onRequest({request,env}){try{
   if(!/^[A-F0-9]{10}$/.test(room))return json({error:'Choose a room.'},400);
   let row;try{row=await db.prepare(`SELECT * FROM ${cfg.table} WHERE code=? AND expires>?`).bind(room,Date.now()).first()}catch{return json({error:'Room not found.'},404)}if(!row)return json({error:'Room expired.'},404);
   const s=JSON.parse(row.state),token=request.headers.get('x-venue-token')||'',seat=token?await hash(token):'';let host=seat===(s.owner||Object.keys(s.players)[0]);
-  if(game==='trivia-night'){const bearer=(request.headers.get('Authorization')||'').replace(/^Bearer /,'');const admin=bearer?await db.prepare("SELECT pool_id,player_name FROM pool_sessions WHERE token=? AND expires_at>? AND role='admin'").bind(bearer,new Date().toISOString()).first():null;host=!!admin&&admin.pool_id===row.pool_id&&admin.player_name===row.host_name;}
+  if(game==='trivia-night'){const admin=await triviaHostIdentity(request,db);host=!!admin&&admin.pool_id===row.pool_id&&admin.player_name===row.host_name;if(!host&&admin?.verifiedHost&&row.pool_id>0){const owner=await db.prepare('SELECT email FROM links_pool_owners WHERE pool_id=?').bind(row.pool_id).first(),contact=await db.prepare("SELECT value FROM pool_settings WHERE pool_id=? AND key='commissioner_email'").bind(row.pool_id).first();host=String(owner?.email||contact?.value||'').trim().toLowerCase()===admin.email;}}
   if(!host&&!s.players[seat])return json({error:'Join this room first.'},401);
   let venue=await db.prepare('SELECT p.id,p.name,p.logo FROM links_venue_rooms v JOIN links_partners p ON p.id=v.partner WHERE v.game=? AND v.room=? AND p.active=1').bind(game,room).first();
   if(request.method==='POST'){
