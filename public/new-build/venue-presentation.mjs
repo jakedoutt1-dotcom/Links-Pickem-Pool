@@ -1,0 +1,18 @@
+const main=document.querySelector('main'),slides=[...main.children].filter(e=>e.tagName==='SECTION');
+const names=slides.map(s=>s.querySelector('h1,h2')?.textContent.replace(/\s+/g,' ').trim()||'LINKS');
+let index=0,playing=!matchMedia('(prefers-reduced-motion: reduce)').matches,all=false,timer;
+const nav=document.createElement('nav');nav.className='presentation-controls';nav.setAttribute('aria-label','Presentation controls');
+nav.innerHTML='<div class="presentation-progress" aria-hidden="true"><span></span></div><button type="button" data-prev>← Back</button><label><span class="fine">Page </span><select aria-label="Presentation page"></select></label><button type="button" data-next>Next →</button><button type="button" data-play></button><button type="button" data-all>Read all pages</button><small data-status role="status"></small>';
+document.body.append(nav);document.body.classList.add('presentation');main.tabIndex=-1;
+const select=nav.querySelector('select'),play=nav.querySelector('[data-play]'),status=nav.querySelector('[data-status]');names.forEach((n,i)=>select.add(new Option((i+1)+' · '+n,i)));
+function schedule(){clearTimeout(timer);if(playing&&!all&&!document.hidden&&!document.querySelector('dialog[open]'))timer=setTimeout(()=>{if(index<slides.length-1)show(index+1);else pause()},20000)}
+function draw(){slides.forEach((s,i)=>s.hidden=!all&&i!==index);select.value=index;nav.querySelector('[data-prev]').disabled=all||index===0;nav.querySelector('[data-next]').disabled=all||index===slides.length-1;select.disabled=all;play.disabled=all;play.textContent=playing?'Pause':'Play';play.setAttribute('aria-pressed',String(playing));nav.querySelector('[data-all]').textContent=all?'Return to presentation':'Read all pages';status.textContent=all?'Scroll to explore':(index+1)+' / '+slides.length+(playing?' · Advances every 20 seconds':' · Paused');nav.querySelector('.presentation-progress span').style.width=((index+1)/slides.length*100)+'%';schedule()}
+function show(i,manual=false){index=Math.max(0,Math.min(slides.length-1,i));if(manual)playing=false;draw();window.scrollTo({top:0,behavior:'instant'})}
+function pause(){playing=false;draw()}
+nav.querySelector('[data-prev]').onclick=()=>show(index-1,true);nav.querySelector('[data-next]').onclick=()=>show(index+1,true);select.onchange=()=>show(Number(select.value),true);play.onclick=()=>{playing=!playing;draw()};nav.querySelector('[data-all]').onclick=()=>{all=!all;playing=false;draw()};
+document.addEventListener('visibilitychange',schedule);document.getElementById('venueIntro')?.addEventListener('close',schedule);
+main.addEventListener('focusin',pause);main.addEventListener('pointerdown',pause);window.addEventListener('wheel',()=>{if(playing)pause()},{passive:true});
+main.addEventListener('click',e=>{const a=e.target.closest('a[href^="#"]');if(!a)return;const target=document.querySelector(a.getAttribute('href'));const n=slides.indexOf(target);if(n>=0){e.preventDefault();all=false;show(n,true);target.focus()}});
+document.addEventListener('keydown',e=>{if(e.target.closest('input,select,textarea,button,a,dialog'))return;if(e.key==='ArrowRight'){e.preventDefault();show(index+1,true)}if(e.key==='ArrowLeft'){e.preventDefault();show(index-1,true)}});
+let touch;main.addEventListener('touchstart',e=>{touch={x:e.changedTouches[0].clientX,y:e.changedTouches[0].clientY};pause()},{passive:true});main.addEventListener('touchend',e=>{if(!touch||all)return;const dx=e.changedTouches[0].clientX-touch.x,dy=e.changedTouches[0].clientY-touch.y;if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.5)show(index+(dx<0?1:-1),true);touch=null},{passive:true});
+draw();

@@ -1,3 +1,4 @@
+import {onRequest as poolSwitcher} from './pool-switcher.js';
 const reply=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
 async function schema(db){await db.batch([
  db.prepare('CREATE TABLE IF NOT EXISTS links_chat_messages(id INTEGER PRIMARY KEY AUTOINCREMENT,pool INTEGER NOT NULL,name TEXT NOT NULL,body TEXT NOT NULL,created INTEGER NOT NULL,deleted INTEGER NOT NULL DEFAULT 0,nonce TEXT NOT NULL,UNIQUE(pool,name,nonce))'),
@@ -13,6 +14,15 @@ export async function onRequest({request,env}){try{
  if(!['GET','POST'].includes(request.method))return reply({error:'Method not allowed.'},405);
  const u=new URL(request.url),db=env.DB;if(!db)return reply({error:'Chat is unavailable.'},503);
  if(request.method==='POST'&&request.headers.get('Origin')!==u.origin)return reply({error:'Open chat on LINKS first.'},403);
+ if(request.method==='GET'&&u.searchParams.get('action')==='unread-all'){
+  const result=await poolSwitcher({request:new Request(new URL('./pool-switcher',u),{headers:request.headers}),env});
+  if(!result.ok)return result;const membership=await result.json();await schema(db);
+  const pools=[];for(const p of membership.pools||[]){
+   if(!p.playerName||!await db.prepare('SELECT name FROM pool_players WHERE pool_id=? AND name=?').bind(p.id,p.playerName).first())continue;
+   const row=await db.prepare(`SELECT COUNT(*) n FROM links_chat_messages m WHERE pool=? AND deleted=0 AND name<>? AND id>COALESCE((SELECT last_id FROM links_chat_reads WHERE pool=? AND name=?),0) AND NOT EXISTS(SELECT 1 FROM links_chat_hidden h WHERE h.pool=m.pool AND h.name=? AND h.message=m.id)`).bind(p.id,p.playerName,p.id,p.playerName,p.playerName).first();
+   pools.push({pool:p.id,unread:row.n});
+  }return reply({pools});
+ }
  const token=(request.headers.get('Authorization')||'').replace(/^Bearer /,'');
  const s=await db.prepare('SELECT * FROM pool_sessions WHERE token=? AND expires_at>?').bind(token,new Date().toISOString()).first();
  if(!s)return reply({error:'Sign in to your pool to chat.'},401);
