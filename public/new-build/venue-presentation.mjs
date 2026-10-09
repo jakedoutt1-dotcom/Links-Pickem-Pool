@@ -20,3 +20,21 @@ document.addEventListener('keydown',e=>{if(e.target.closest('button,.game-reel')
 draw();setTimeout(()=>{intro.hidden=true;ready=true;schedule();syncMusic()},2200);
 
 for(const reel of document.querySelectorAll('.game-reel')){const pauseGallery=()=>{if(playing){playing=false;draw()}};reel.addEventListener('pointerdown',pauseGallery);reel.addEventListener('focusin',pauseGallery);reel.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();reel.scrollBy({left:reel.clientWidth*(e.key==='ArrowRight'?1:-1),behavior:'smooth'})}})}
+
+// Local examples only: no account, pool writes or game requests.
+for(const demo of document.querySelectorAll('.promo-demo')){
+ const pauseDemo=()=>{if(playing){playing=false;draw()}};
+ demo.addEventListener('pointerdown',pauseDemo);demo.addEventListener('focusin',pauseDemo);
+ demo.addEventListener('click',event=>{
+  const button=event.target.closest('button');if(!button)return;pauseDemo();
+  if(button.dataset.team){
+   for(const team of button.closest('.demo-matchup').querySelectorAll('button'))team.setAttribute('aria-pressed',String(team===button));
+   const count=demo.querySelectorAll('[aria-pressed="true"]').length;
+   demo.querySelector('.demo-result').textContent=count+' of 2 selected. Tap the other team to change your pick.';
+  }else if(button.dataset.answer){
+   for(const answer of demo.querySelectorAll('[data-answer]')){answer.disabled=true;if(answer.dataset.answer==='6')answer.classList.add('correct')}
+   const correct=button.dataset.answer==='6';if(!correct)button.classList.add('incorrect');
+   demo.querySelector('.demo-result').textContent=correct?'Correct! A touchdown is worth 6 points.':'The correct answer is 6 points. The extra point is a separate play.';
+  }
+ });
+}
