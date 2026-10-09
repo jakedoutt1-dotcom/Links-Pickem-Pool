@@ -32,9 +32,13 @@ for(const demo of document.querySelectorAll('.promo-demo')){
    const count=demo.querySelectorAll('[aria-pressed="true"]').length;
    demo.querySelector('.demo-result').textContent=count+' of 2 selected. Tap the other team to change your pick.';
   }else if(button.dataset.answer){
-   for(const answer of demo.querySelectorAll('[data-answer]')){answer.disabled=true;if(answer.dataset.answer==='6')answer.classList.add('correct')}
-   const correct=button.dataset.answer==='6';if(!correct)button.classList.add('incorrect');
-   demo.querySelector('.demo-result').textContent=correct?'Correct! A touchdown is worth 6 points.':'The correct answer is 6 points. The extra point is a separate play.';
+   for(const answer of demo.querySelectorAll('[data-answer]'))answer.setAttribute('aria-pressed',String(answer===button));
+   demo.dataset.choice=button.dataset.answer;
+   demo.querySelector('.demo-result').textContent='Answer selected. You can change it before revealing.';
+  }else if(button.hasAttribute('data-reveal')){
+   for(const answer of demo.querySelectorAll('[data-answer]')){answer.disabled=true;if(answer.dataset.answer==='6')answer.classList.add('correct');else if(answer.dataset.answer===demo.dataset.choice)answer.classList.add('incorrect')}
+   button.disabled=true;
+   demo.querySelector('.demo-result').textContent=demo.dataset.choice==='6'?'Correct! A touchdown is worth 6 points.':'The correct answer is 6 points. The extra point is a separate play.';
   }
  });
 }
