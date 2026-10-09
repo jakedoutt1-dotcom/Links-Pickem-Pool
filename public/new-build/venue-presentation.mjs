@@ -7,5 +7,7 @@ window.addEventListener('resize',fitSlide);window.visualViewport?.addEventListen
 function draw(){slides.forEach((s,i)=>s.hidden=i!==index);prev.disabled=index===0;next.disabled=index===slides.length-1;play.textContent=playing?'Pause':'Play';play.setAttribute('aria-pressed',String(playing));status.textContent=(index+1)+' / '+slides.length+(playing?'':' · Paused');fitSlide();schedule()}
 function show(i){index=Math.max(0,Math.min(slides.length-1,i));draw();window.scrollTo({top:0,behavior:'instant'})}
 prev.onclick=()=>show(index-1);next.onclick=()=>show(index+1);play.onclick=()=>{if(!playing&&index===slides.length-1)index=0;playing=!playing;draw()};document.addEventListener('visibilitychange',schedule);
-document.addEventListener('keydown',e=>{if(e.target.closest('button'))return;if(e.key==='ArrowRight'){e.preventDefault();show(index+1)}if(e.key==='ArrowLeft'){e.preventDefault();show(index-1)}});
+document.addEventListener('keydown',e=>{if(e.target.closest('button,.game-reel'))return;if(e.key==='ArrowRight'){e.preventDefault();show(index+1)}if(e.key==='ArrowLeft'){e.preventDefault();show(index-1)}});
 draw();setTimeout(()=>{intro.hidden=true;ready=true;schedule()},2200);
+
+for(const reel of document.querySelectorAll('.game-reel')){const pauseGallery=()=>{if(playing){playing=false;draw()}};reel.addEventListener('pointerdown',pauseGallery);reel.addEventListener('focusin',pauseGallery);reel.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();reel.scrollBy({left:reel.clientWidth*(e.key==='ArrowRight'?1:-1),behavior:'smooth'})}})}
