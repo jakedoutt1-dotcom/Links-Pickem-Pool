@@ -12,7 +12,7 @@
   const style=document.createElement('style');style.textContent='#linksSiteNavigation{box-sizing:border-box;display:flex;flex-wrap:wrap;gap:8px;padding:8px max(16px,env(safe-area-inset-left));background:#080c0f;border-bottom:1px solid #635330;font:600 14px/1.3 system-ui,sans-serif;position:relative;z-index:1}#linksSiteNavigation a{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-height:44px;padding:9px 14px;color:#f1d184;background:#14191b;border:1px solid #79643a;border-radius:9px;text-decoration:none}#linksSiteNavigation a:hover{background:#28251c}#linksSiteNavigation a:focus-visible{outline:3px solid #f1d184;outline-offset:2px}@media print{#linksSiteNavigation{display:none}}';document.head.append(style);
   function link(text,href){const a=document.createElement('a');a.textContent=text;a.href=href;nav.append(a)}
   if(!isHome)link('← Back to Home','/new-build/index.html');
-  link('Host Trivia','/new-build/trivia-night.html?host=1');
+  if(page!=='game-room')link('Game Room','/new-build/game-room.html');
   if(poolPages.has(page)||new URLSearchParams(location.search).has('pool')||path.includes('/nfl-rewrite/'))link('Back to Locker Room','/new-build/control-center.html');
   document.body.prepend(nav);
   // Keep the shared Home control; preserve clickable logos and game-specific exits.
