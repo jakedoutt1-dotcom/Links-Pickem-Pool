@@ -1,11 +1,11 @@
-import {connectRoom} from './mini-golf-room.mjs?v=1';
+import {connectRoom} from './mini-golf-room.mjs?v=2';
 import {tone,unlock,setupSound,bounce} from './mini-golf-sound.mjs?v=2';
 import * as T from './vendor/three/three.module.min.js';
-import {create,hit,step,blocks,cup,replayShots} from './mini-golf-core.mjs?v=controls5';
+import {create,hit,step,blocks,cup,replayShots,courses,gateAt} from './mini-golf-core.mjs?v=courses6';
 const $=id=>document.getElementById(id);let s=create(),overview=false,acc=0,last=0,swing=0,pendingShot=null;
-let shots=[],celebrationTimer;setupSound($('sound'));
-function resetGame(){s=create();shots=[];swing=0;pendingShot=null;acc=0;$('celebration').hidden=true;clearTimeout(celebrationTimer)}
-const room=connectRoom({reset:resetGame,restore(log){s=replayShots(log);shots=log;if(s.done||s.strokes>=10)room.finish(shots)}});
+let shots=[],celebrationTimer,loadCourse=()=>{};setupSound($('sound'));
+function resetGame(hole=s.hole){s=create(hole);loadCourse();shots=[];swing=0;pendingShot=null;acc=0;$('celebration').hidden=true;clearTimeout(celebrationTimer)}
+const room=connectRoom({reset:resetGame,restore(log){s=replayShots(log,s.hole);shots=log;if(s.done||s.strokes>=10)room.finish(shots)}});
 function finished(){const ace=s.done&&s.strokes===1;const box=$('celebration');box.replaceChildren();const title=document.createElement('strong');title.className='celebration-title';title.textContent=s.done?(ace?'HOLE IN ONE!':'NICE PUTT!'):'HOLE COMPLETE';box.append(title);const sub=document.createElement('small');sub.textContent=s.strokes+' strokes'+(room.active()?' · Waiting for the group':'');box.append(sub);if(s.done){tone(true,ace);for(let i=0;i<(ace?65:25);i++){const el=document.createElement('i');el.style.left=(i*37%100)+'%';el.style.animationDelay=(i%8)*.08+'s';box.append(el)}}box.hidden=false;clearTimeout(celebrationTimer);celebrationTimer=setTimeout(()=>box.hidden=true,ace?6500:4500);room.finish(shots)}
 try{
 const renderer=new T.WebGLRenderer({canvas:$('course'),antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
@@ -16,9 +16,19 @@ const turf=texture('turf'),stone=texture('stone');const stoneMat=new T.MeshStand
 function mesh(geo,mat,x,y,z){const m=new T.Mesh(geo,mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);return m}
 function box(w,h,d,mat,x,y,z){return mesh(new T.BoxGeometry(w,h,d),mat,x,y,z)}
 const land=new T.MeshStandardMaterial({color:'#567649',roughness:1});box(160,.5,160,land,0,-.65,0);const greenShape=new T.Shape();greenShape.moveTo(-3,-13);greenShape.lineTo(3,-13);greenShape.lineTo(3,13);greenShape.lineTo(-3,13);greenShape.closePath();const cutout=new T.Path();cutout.absarc(cup.x,-cup.z,.29,0,Math.PI*2,true);greenShape.holes.push(cutout);const green=mesh(new T.ShapeGeometry(greenShape,48),new T.MeshStandardMaterial({map:turf,roughness:.96,bumpMap:turf,bumpScale:.025}),0,0,0);green.rotation.x=-Math.PI/2;
-for(let i=0;i<13;i++)if(Math.abs(-12+i*2-cup.z)>.8)box(5.96,.002,1,new T.MeshStandardMaterial({color:i%2?'#88a962':'#345e35',transparent:true,opacity:.08}),0,.002,-12+i*2);
+const stripes=[];for(let i=0;i<13;i++)if(Math.abs(-12+i*2-cup.z)>.8)stripes.push(box(5.96,.002,1,new T.MeshStandardMaterial({color:i%2?'#88a962':'#345e35',transparent:true,opacity:.08}),0,.002,-12+i*2));
 box(.32,.48,26.6,stoneMat,-3.16,.1,0);box(.32,.48,26.6,stoneMat,3.16,.1,0);box(6.6,.48,.32,stoneMat,0,.1,-13.16);box(6.6,.48,.32,stoneMat,0,.1,13.16);
-for(const b of blocks)box(b.w,.4,b.d,stoneMat,b.x,.2,b.z);
+const obstacles=[];let movingGate,creek;
+loadCourse=()=>{
+ for(const m of obstacles){scene.remove(m);m.geometry.dispose()}obstacles.length=0;const course=courses[s.hole];
+ const shape=new T.Shape();shape.moveTo(-3,-13);shape.lineTo(3,-13);shape.lineTo(3,13);shape.lineTo(-3,13);shape.closePath();const hole=new T.Path();hole.absarc(cup.x,-cup.z,.29,0,Math.PI*2,true);shape.holes.push(hole);
+ if(course.water){const w=course.water,p=new T.Path();p.moveTo(w.x-w.w/2,-w.z-w.d/2);p.lineTo(w.x-w.w/2,-w.z+w.d/2);p.lineTo(w.x+w.w/2,-w.z+w.d/2);p.lineTo(w.x+w.w/2,-w.z-w.d/2);p.closePath();shape.holes.push(p);creek=mesh(new T.PlaneGeometry(w.w,w.d,12,12),new T.MeshPhysicalMaterial({color:'#318c9d',metalness:.35,roughness:.2,clearcoat:1}),w.x,-.08,w.z);creek.rotation.x=-Math.PI/2;obstacles.push(creek)}else creek=null;
+ green.geometry.dispose();green.geometry=new T.ShapeGeometry(shape,48);stripes.forEach(m=>m.visible=s.hole===0);
+ for(const b of course.blocks)obstacles.push(box(b.w,.4,b.d,stoneMat,b.x,.2,b.z));movingGate=null;
+ if(course.gate){const b=course.gate;movingGate=box(b.w,.5,b.d,stoneMat,b.x,.25,b.z);obstacles.push(movingGate)}
+ if(course.ramp){const r=course.ramp;const ramp=box(r.w,.08,.85,stoneMat,r.x,.14,r.z+.2);ramp.rotation.x=.3;obstacles.push(ramp)}
+ $('badge').textContent=course.name.toUpperCase()+' · PAR '+course.par;$('courseTitle').textContent=course.name.toUpperCase()+' · HOLE '+(s.hole+1)+' · PAR '+course.par;
+};loadCourse();
 // Dark recessed cup with a metal rim.
 const dark=new T.MeshStandardMaterial({color:'#03120a',roughness:1});mesh(new T.CylinderGeometry(.29,.29,.025,40),dark,cup.x,-.28,cup.z);const rim=mesh(new T.TorusGeometry(.295,.018,8,40),new T.MeshStandardMaterial({color:'#a7ab8e',metalness:.5,roughness:.4}),cup.x,.022,cup.z);rim.rotation.x=Math.PI/2;
 const pin=mesh(new T.CylinderGeometry(.025,.025,1.7,12),new T.MeshStandardMaterial({color:'#dedacc',metalness:.4,roughness:.4}),0,.86,-11);
@@ -38,9 +48,10 @@ const putter=new T.Group();const shaft=new T.Mesh(new T.CylinderGeometry(.018,.0
 const aim=new T.ArrowHelper(new T.Vector3(0,0,-1),new T.Vector3(0,.07,11),2.4,0xf0d384,.3,.15);scene.add(aim);
 const desired=new T.Vector3(),look=new T.Vector3();camera.position.set(0,6,20);look.set(0,0,6);
 function resize(){const r=$('stage').getBoundingClientRect();renderer.setSize(r.width,r.height,false);camera.aspect=r.width/r.height;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe($('stage'));resize();
-function controls(){for(const id of ['aim','power'])$(id).disabled=s.done||s.strokes>=10||swing>0||room.locked();$('putt').disabled=s.moving||s.done||s.strokes>=10||swing>0||room.locked();$('reset').hidden=room.active();$('score').textContent=s.strokes+' stroke'+(s.strokes===1?'':'s')}
-$('putt').onclick=()=>{if(s.moving||s.done||s.strokes>=10||swing||room.locked())return;unlock();pendingShot=[+$('aim').value*Math.PI/180,+$('power').value/100];swing=.38;drag=null;controls();$('status').textContent='Putting…'};
+function controls(){for(const id of ['aim','power'])$(id).disabled=s.done||s.strokes>=10||swing>0||room.locked();$('putt').disabled=s.moving||s.done||s.strokes>=10||swing>0||room.locked();$('reset').hidden=room.active();$('nextHole').hidden=room.active();$('score').textContent=s.strokes+' stroke'+(s.strokes===1?'':'s')}
+$('putt').onclick=()=>{if(s.moving||s.done||s.strokes>=10||swing||room.locked())return;unlock();pendingShot=[+$('aim').value*Math.PI/180,+$('power').value/100,(performance.now()/1000)%1000];swing=.38;drag=null;controls();$('status').textContent='Putting…'};
 $('reset').onclick=()=>{if(room.active())return;resetGame();$('status').textContent='New round. Aim, set power, and putt.';controls()};$('view').onclick=()=>{overview=!overview;$('view').textContent=overview?'Ball view':'Course view'};
+$('nextHole').onclick=()=>{if(!room.active())resetGame((s.hole+1)%courses.length)};
 $('power').oninput=()=>$('powerText').textContent=$('power').value+'%';
 let drag=null;
 function setAim(value){$('aim').value=((value+540)%360)-180;$('aimPad').setAttribute('aria-valuenow',String(Math.round(+$('aim').value)));$('aimStick').style.rotate=$('aim').value+'deg'}
@@ -53,12 +64,12 @@ for(const target of [$('course'),$('aimPad')]){
 $('aimPad').addEventListener('keydown',e=>{if(canAim()&&['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();setAim(+$('aim').value+(e.key==='ArrowRight'?3:-3))}});
 
 function frame(now){const dt=Math.min((now-last)/1000||0,.25);last=now;if(document.hidden){requestAnimationFrame(frame);return}if(swing>0){swing-=dt;if(swing<=0){swing=0;hit(s,...pendingShot);shots.push(pendingShot);room.save(shots);tone();pendingShot=null;$('status').textContent='Ball rolling. You can adjust aim and power for your next putt.';controls()}}
-const moving=s.moving;acc+=dt;while(acc>=1/120){step(s,1/120);if(s.bounced)bounce();acc-=1/120}if(moving&&!s.moving){$('status').textContent=s.done?'In the cup! Finished in '+s.strokes+' strokes. Restart to beat your score.':'Ball stopped. Line up your next putt.';if(s.done||s.strokes>=10)finished();controls()}
-ball.position.set(s.x,s.done?Math.max(-.3,ball.position.y-dt*.8):.17,s.z);ball.visible=!s.done||ball.position.y>-.29;pin.visible=flag.visible=Math.hypot(s.x-cup.x,s.z-cup.z)>3&&!s.done;ball.rotation.x+=s.vz*dt/.16;ball.rotation.z-=s.vx*dt/.16;
+const moving=s.moving;acc+=dt;while(acc>=1/120){step(s,1/120);if(s.bounced)bounce();acc-=1/120}if(moving&&!s.moving){$('status').textContent=s.done?'In the cup! Finished in '+s.strokes+' strokes. Restart to beat your score.':s.penalty?'Water! One penalty stroke. Back to your last safe shot.':'Ball stopped. Line up your next putt.';if(s.done||s.strokes>=10)finished();controls()}
+ball.position.set(s.x,s.done?Math.max(-.3,ball.position.y-dt*.8):.17+s.y,s.z);ball.visible=!s.done||ball.position.y>-.29;pin.visible=flag.visible=Math.hypot(s.x-cup.x,s.z-cup.z)>3&&!s.done;ball.rotation.x+=s.vz*dt/.16;ball.rotation.z-=s.vx*dt/.16;
 controls();
 const angle=+$('aim').value*Math.PI/180;aim.visible=!s.moving&&!s.done&&!swing;aim.position.set(s.x,.09,s.z);aim.setDirection(new T.Vector3(Math.sin(angle),0,-Math.cos(angle)));aim.setLength(.8+(+$('power').value/100)*2.4,.22,.12);
 putter.visible=!s.moving&&!s.done;putter.position.set(s.x-Math.sin(angle)*(.28+swing),0,s.z+Math.cos(angle)*(.28+swing));putter.rotation.y=-angle;
 if(overview){desired.set(14,22,19);look.lerp(new T.Vector3(0,0,0),.08)}else{desired.set(s.x*.65,5.2,s.z+8.5);look.lerp(new T.Vector3(s.x,.05,s.z-3),.08)}camera.position.lerp(desired,1-Math.exp(-dt*4));camera.lookAt(look);
-const pos=flag.geometry.attributes.position;for(let i=0;i<pos.count;i++)pos.setZ(i,Math.sin(now*.003+flagBase[i*3]*5)*.045*(flagBase[i*3]+.43));pos.needsUpdate=true;water.material.opacity=.83+Math.sin(now*.0008)*.03;renderer.render(scene,camera);requestAnimationFrame(frame)}
+const pos=flag.geometry.attributes.position;for(let i=0;i<pos.count;i++)pos.setZ(i,Math.sin(now*.003+flagBase[i*3]*5)*.045*(flagBase[i*3]+.43));pos.needsUpdate=true;water.material.opacity=.83+Math.sin(now*.0008)*.03;if(movingGate)movingGate.position.x=gateAt(s.hole,s.moving?s.time:(now/1000)%1000).x;if(creek){const p=creek.geometry.attributes.position;for(let i=0;i<p.count;i++)p.setZ(i,Math.sin(now*.003+p.getX(i)*4+p.getY(i)*2)*.015);p.needsUpdate=true}renderer.render(scene,camera);requestAnimationFrame(frame)}
 $('loading').hidden=true;$('putt').disabled=false;requestAnimationFrame(frame);
 }catch(e){$('loading').textContent='3D graphics could not start. Try an updated browser with graphics acceleration enabled.';console.error(e)}

@@ -8,10 +8,10 @@ async function api(action,extra={}){const r=await fetch('./api/mini-golf',{metho
 function error(e){$('roomError').textContent=e.message}
 async function sync(){if(!room||polling)return;polling=true;try{
 if(pending&&!submitted){try{await api('finish',{shots:pending});submitted=true}catch(e){if(e.status===409){pending=null}else throw e}}
-const b=await api('state');if(b.round!==round){round=b.round;submitted=b.me.finished;pending=null;reset();if(b.phase==='playing'){try{const shots=JSON.parse(localStorage.getItem(key())||'[]');restore(shots)}catch{}}}phase=b.phase;submitted=b.me.finished||submitted;
+const b=await api('state');if(b.round!==round){round=b.round;submitted=b.me.finished;pending=null;reset((round-1)%3);if(b.phase==='playing'){try{const shots=JSON.parse(localStorage.getItem(key())||'[]');restore(shots)}catch{}}}phase=b.phase;submitted=b.me.finished||submitted;
 $('roomPanel').hidden=false;$('roomLabel').textContent='Room '+room+' · Round '+round;
 $('roomStatus').textContent=phase==='lobby'?'Waiting for the host to start.':phase==='results'?'Round complete — fewest strokes wins.':submitted?'Waiting for '+b.remaining+' player'+(b.remaining===1?'':'s')+'…':'Play this hole at your own pace. '+b.remaining+' still playing.';
-$('startRound').hidden=!b.host||phase==='playing';$('startRound').textContent=phase==='results'?'Play this hole again':'Start round';$('endRound').hidden=!b.host||phase!=='playing';
+$('startRound').hidden=!b.host||phase==='playing';$('startRound').textContent=phase==='results'?'Start next hole':'Start round';$('endRound').hidden=!b.host||phase!=='playing';
 $('roomPlayers').replaceChildren();const rows=b.players.slice();if(phase==='results')rows.sort((a,b)=>(a.dnf?999:a.score)-(b.dnf?999:b.score));let rank=0,last=null;rows.forEach((p,i)=>{const li=document.createElement('li');if(phase==='results'){if(p.score!==last){rank=i+1;last=p.score}li.textContent=p.dnf?p.name+' — Did not finish':rank+'. '+p.name+' — '+p.score+' strokes'}else li.textContent=p.name+(p.finished?' · Finished':' · '+(phase==='lobby'?'Ready':'Playing'));$('roomPlayers').append(li)});$('roomError').textContent='';
 }catch(e){error(e)}finally{polling=false}}
 async function enter(action){try{const b=await api(action,{room:$('roomInput').value.trim().toUpperCase(),name:$('playerName').value});room=b.room;round=0;phase='lobby';pending=null;submitted=false;persist();reset();await sync()}catch(e){error(e)}}
