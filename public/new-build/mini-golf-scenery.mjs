@@ -1,0 +1,13 @@
+import {themes} from './mini-golf-courses.mjs';
+export function waterTexture(T){const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d');x.fillStyle='#82d9ee';x.fillRect(0,0,256,256);x.strokeStyle='#d6f9ff88';x.lineWidth=1.3;const points=[];for(let j=-1;j<13;j++){const row=[];for(let i=-1;i<13;i++)row.push({x:i*24+Math.sin(i*3.4+j*1.8)*6,y:j*24+Math.cos(i*2.1+j*4.2)*6});points.push(row)}for(let j=0;j<points.length-1;j++)for(let i=0;i<points[j].length-1;i++){const corners=[points[j][i],points[j][i+1],points[j+1][i+1],points[j+1][i]];x.beginPath();corners.forEach((p,n)=>n?x.lineTo(p.x,p.y):x.moveTo(p.x,p.y));x.closePath();x.stroke()}
+const texture=new T.CanvasTexture(c);texture.colorSpace=T.SRGBColorSpace;texture.wrapS=texture.wrapT=T.RepeatWrapping;texture.repeat.set(12,12);return texture}
+export function createScenery(T,scene){const root=new T.Group();scene.add(root);const trees=[],materials=[];
+const bark=new T.MeshStandardMaterial({color:'#79573b',roughness:1}),leaves=new T.MeshStandardMaterial({color:'#438d42',roughness:1}),rock=new T.MeshStandardMaterial({color:'#a4ac9c',roughness:.95});materials.push(bark,leaves,rock);
+function add(geo,mat,x,y,z,parent=root){const m=new T.Mesh(geo,mat);m.position.set(x,y,z);m.castShadow=m.receiveShadow=true;parent.add(m);return m}
+let seed=71;const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
+function rebuild(theme){seed=theme==='creek'?83:theme==='lakeside'?97:71;for(const child of [...root.children]){child.traverse(m=>{if(m.isMesh)m.geometry.dispose()});root.remove(child)}trees.length=0;const palette=themes[theme]||themes.garden;bark.color.set(palette.trunk);leaves.color.set(palette.leaves);
+ for(let i=0;i<24;i++){const side=i%2?1:-1,g=new T.Group();g.position.set(side*(6.7+rnd()*3.5),-.4,-18+rnd()*36);root.add(g);trees.push(g);const h=2.6+rnd()*2;add(new T.CylinderGeometry(.09,.2,h,8),bark,0,h/2,0,g);if(theme==='lakeside'){for(let j=0;j<7;j++){const leaf=add(new T.SphereGeometry(.6,10,6),leaves,Math.cos(j*Math.PI*2/7)*.65,h,Math.sin(j*Math.PI*2/7)*.65,g);leaf.scale.set(1.6,.15,.45);leaf.rotation.y=-j*Math.PI*2/7;leaf.rotation.z=.18}}else{for(let j=0;j<4;j++){const crown=add(new T.IcosahedronGeometry(.65+j*.06,2),leaves,(j%2?-.35:.35),h-.4+j*.3,(j<2?-.25:.25),g);crown.scale.y=theme==='creek'?1.4:1.05;}}}
+ for(let i=0;i<18;i++){const b=add(new T.DodecahedronGeometry(.3+rnd()*.3,1),rock,(i%2?1:-1)*(5.9+rnd()),-.16,-13+rnd()*26);b.scale.set(1.2,.65,1)}
+}
+return {setCourse:rebuild,animate(now,wind){trees.forEach((g,i)=>{g.rotation.z=Math.sin(now*.0011+i)*(.004+(wind?.x||0)*.008)})}};
+}
