@@ -32,3 +32,59 @@ body.game-fullscreen{background:#071411}
 #coursePreview article>img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:9px;margin-bottom:14px;border:1px solid #687a55}
 
 #liveRoomTools{padding:6px 10px;border:1px solid #50644a;border-radius:9px;background:#10271f;font-size:12px;margin:4px 0}#liveRoomTools summary{cursor:pointer;color:#e8cf8b}.game-fullscreen main>#liveRoomTools:not([hidden]){display:block;max-height:27dvh;overflow:auto;flex-shrink:0}
+
+
+/* Keep the full-screen round usable on narrow phones without horizontal overflow. */
+@media (max-width: 600px) {
+  body.game-fullscreen {
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .game-fullscreen header {
+    display: flex;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    width: 100%;
+    padding: calc(5px + env(safe-area-inset-top)) 8px 5px;
+  }
+  .game-fullscreen header img {
+    flex: 0 0 42px;
+    width: 42px;
+    margin: 0 auto 0 0;
+  }
+  .game-fullscreen header button {
+    flex: 1 1 calc((100% - 64px) / 3);
+    min-width: 0;
+    max-width: calc((100% - 64px) / 3);
+    min-height: 38px;
+    padding: 5px 3px;
+    overflow-wrap: anywhere;
+    white-space: normal;
+    font-size: clamp(10px, 2.8vw, 12px);
+    line-height: 1.1;
+  }
+  .game-fullscreen main {
+    min-width: 0;
+    overflow: hidden;
+    padding: 0 7px max(5px, env(safe-area-inset-bottom));
+  }
+  .game-fullscreen .heading { gap: 4px; }
+  .game-fullscreen .heading small { font-size: 7px; letter-spacing: .7px; }
+  .game-fullscreen h1 { font-size: 14px; }
+  .game-fullscreen #score { font-size: 11px; }
+  .game-fullscreen #stage { width: 100%; min-width: 0; min-height: 0; }
+  .game-fullscreen .course-hud { left: 7px; right: 7px; top: 48px; gap: 4px; }
+  .game-fullscreen .course-hud span { padding: 4px 6px; font-size: clamp(9px, 2.6vw, 11px); }
+  .game-fullscreen #shotHud { left: 8px; right: 8px; bottom: 8px; padding: 7px 9px; }
+  .game-fullscreen #status { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .game-fullscreen .button-controls { max-height: 22dvh; }
+  .game-fullscreen .button-controls[open] { overflow: auto; }
+  .game-fullscreen .round-actions { gap: 6px; }
+  .game-fullscreen .round-actions button { flex: 1 1 0; min-width: 0; padding: 5px 6px; }
+}
