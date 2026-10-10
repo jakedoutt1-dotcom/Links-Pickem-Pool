@@ -51,7 +51,7 @@ async function handleRequest({request,env}){try{
  s.phase='lobby';s.game++;s.phaseId=0;s.deadline=0;s.responses={};s.results=[];delete s.question;delete s.challenge;delete s.challengeOutcome;for(const p of Object.values(s.players)){p.score=0;p.ready=false;p.lives=3;p.echoCharge=0;p.progress=0;p.atRisk=false}changed=true;
  }else if(action!=='state')return json({error:'Unknown action.'},400);
  }
- if(changed){const update=s.mode==='solo'?await db.prepare('UPDATE links_dead_air_rooms SET state=?,version=version+1 WHERE code=? AND version=?').bind(JSON.stringify(s),code,row.version).run():await savePartyRoom(db,'dead-air',code,row.version,s,completed);if(!update.meta?.changes)continue}
+ if(changed){const update=await savePartyRoom(db,'dead-air',code,row.version,s,completed);if(!update.meta?.changes)continue}
  return json({...view(s,current,time,display),...(issued?{token:issued}:{})});
  }return json({error:'Room busy. Please try again.'},409);
  }catch{return json({error:'Unable to complete that request. Please try again.'},503)}}

@@ -1,7 +1,15 @@
 import {goalLineBoard} from '../../lib/goal-line-scoreboard.js';
-import {SCORE_GAMES,BOARD_GAMES,ensureScoreboard,periodStart} from '../../lib/party-scoreboard.js';
+import {SCORE_GAMES,BOARD_GAMES,ensureScoreboard,periodStart,partyResultStatements} from '../../lib/party-scoreboard.js';
 import {partySession} from '../../lib/party-access.js';
 import {ensureAccounts} from '../../lib/commissioner-account.js';
+import {weekKey} from '../../lib/football-trivia.js';
+async function recoverFinished(db,game,room,cfg){
+ const row=await db.prepare(`SELECT state,version FROM ${cfg.table} WHERE ${cfg.column||'code'}=? AND expires>?`).bind(room,Date.now()).first();if(!row)return null;
+ const state=JSON.parse(row.state);let snapshot=state;
+ if(game==='mini-golf'&&state.phase==='results')snapshot={phase:'ended',game:state.round,participantCount:state.players.length,players:Object.fromEntries(state.players.filter(p=>!p.dnf&&p.score!==null).map(p=>[p.key,{name:p.name,score:p.score}]))};
+ if(snapshot.phase==='ended'){const statements=partyResultStatements(db,game,room,row.version-1,row.state,[snapshot]);if(statements.length)await db.batch(statements)}
+ return state;
+}
 const json=(v,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store'}});
 const hash=async value=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)))).map(x=>x.toString(16).padStart(2,'0')).join('');
 export async function onRequest({request,env}){try{
@@ -24,7 +32,7 @@ export async function onRequest({request,env}){try{
     if(!cfg||!/^[A-F0-9]{10}$/.test(room)||typeof input.token!=='string'||input.token.length!==72)continue;
     const seat=await hash(input.token);
     let valid=await db.prepare('SELECT 1 AS ok FROM links_party_results WHERE game=? AND room=? AND seat=? LIMIT 1').bind(input.game,room,seat).first();
-    if(!valid){try{const row=await db.prepare(`SELECT state FROM ${cfg.table} WHERE code=? AND expires>?`).bind(room,Date.now()).first();valid=row&&JSON.parse(row.state).players?.[seat]}catch{valid=null}}
+    if(!valid){try{const state=await recoverFinished(db,input.game,room,cfg);valid=state&&(cfg.column==='id'?state.players?.find(p=>p.key===seat):state.players?.[seat])}catch{valid=null}}
     if(!valid)continue;
     const claimed=await db.prepare('SELECT email FROM links_party_score_seats WHERE game=? AND room=? AND seat=?').bind(input.game,room,seat).first();
     if(claimed)continue;
@@ -50,16 +58,22 @@ export async function onRequest({request,env}){try{
   }return json({ok:true,linked});
  }
  const period=u.searchParams.get('period')||'week',game=u.searchParams.get('game')||'all';if(!['week','year','all'].includes(period)||(game!=='all'&&!BOARD_GAMES[game]))return json({error:'Choose a valid scoreboard.'},400);
+ if(game==='two-minute-drill'){
+ await db.prepare('CREATE TABLE IF NOT EXISTS links_football_trivia(id TEXT PRIMARY KEY,owner TEXT NOT NULL,week TEXT NOT NULL,season TEXT NOT NULL,difficulty TEXT NOT NULL,display_name TEXT NOT NULL,deck TEXT NOT NULL,idx INTEGER NOT NULL DEFAULT 0,score INTEGER NOT NULL DEFAULT 0,correct INTEGER NOT NULL DEFAULT 0,misses INTEGER NOT NULL DEFAULT 0,deadline INTEGER NOT NULL,version INTEGER NOT NULL DEFAULT 0,status TEXT NOT NULL DEFAULT \'active\',UNIQUE(owner,week))').run();
+ const cutoff=period==='all'?'0000-00-00':period==='year'?new Intl.DateTimeFormat('en-CA',{timeZone:'America/Chicago',year:'numeric'}).format(Date.now())+'-01-01':weekKey();
+ const rows=(await db.prepare("SELECT owner AS id,MAX(display_name) AS name,COUNT(*) AS played,0 AS wins,MAX(score) AS best FROM links_football_trivia WHERE status='complete' AND week>=? GROUP BY owner ORDER BY best DESC,owner LIMIT 100").bind(cutoff).all()).results;
+ return json({rows,highScore:rows[0]?.best??null,profile:null,solo:true,games:Object.entries(BOARD_GAMES).map(([id,g])=>({id,...g})),game,period});
+ }
  if(game==='goal-line')return json({...await goalLineBoard(db,period),games:Object.entries(BOARD_GAMES).map(([id,g])=>({id,...g})),game,period});
  const profile=session?await db.prepare('SELECT id,name FROM links_party_score_profiles WHERE email=?').bind(session.email).first():null;
- const base=`FROM links_party_results r JOIN links_party_score_seats s ON s.game=r.game AND s.room=r.room AND s.seat=r.seat JOIN links_party_score_profiles p ON p.email=s.email WHERE r.game IN ('trivia-rally','friend-challenge','million-point','dead-air','last-alibi') AND r.finished>=? AND (?='all' OR r.game=?)`;
+ const base=`FROM links_party_results r JOIN links_party_score_seats s ON s.game=r.game AND s.room=r.room AND s.seat=r.seat JOIN links_party_score_profiles p ON p.email=s.email WHERE r.game IN ('trivia-rally','friend-challenge','million-point','dead-air','last-alibi','mini-golf') AND r.finished>=? AND (?='all' OR r.game=?)`;
  const args=[periodStart(period),game,game];
  // Public guests appear without accounts. Claimed seats are shown only once.
- const guestBase=`FROM links_party_results r JOIN links_party_guest_names g ON g.game=r.game AND g.room=r.room AND g.round=r.round AND g.seat=r.seat WHERE r.game IN ('trivia-rally','friend-challenge','million-point','dead-air','last-alibi') AND r.finished>=? AND (?='all' OR r.game=?) AND NOT EXISTS(SELECT 1 FROM links_party_score_seats ss WHERE ss.game=r.game AND ss.room=r.room AND ss.seat=r.seat)`;
- const members=await db.prepare(`SELECT p.id,p.name,COUNT(*) AS played,SUM(r.win) AS wins,${game==='all'?'NULL':'MAX(r.score)'} AS best ${base} GROUP BY p.id,p.name`).bind(...args).all();
- const guests=await db.prepare(`SELECT COALESCE(gp.id,('guest:'||r.game||':'||r.room||':'||r.seat)) AS id,COALESCE(gp.name,MAX(g.name)) AS name,COUNT(*) AS played,SUM(r.win) AS wins,${game==='all'?'NULL':'MAX(r.score)'} AS best FROM links_party_results r JOIN links_party_guest_names g ON g.game=r.game AND g.room=r.room AND g.round=r.round AND g.seat=r.seat LEFT JOIN links_party_guest_seats gs ON gs.game=r.game AND gs.room=r.room AND gs.seat=r.seat LEFT JOIN links_party_guest_profiles gp ON gp.id=gs.guest_id WHERE r.game IN ('trivia-rally','friend-challenge','million-point','dead-air','last-alibi') AND r.finished>=? AND (?='all' OR r.game=?) AND NOT EXISTS(SELECT 1 FROM links_party_score_seats ss WHERE ss.game=r.game AND ss.room=r.room AND ss.seat=r.seat) GROUP BY COALESCE(gp.id,('guest:'||r.game||':'||r.room||':'||r.seat))`).bind(...args).all();
- const rows={results:[...members.results,...guests.results].sort((a,b)=>Number(game==='all'?b.wins:b.best)-Number(game==='all'?a.wins:a.best)||a.played-b.played||String(a.id).localeCompare(String(b.id))).slice(0,100)};
- const best=game==='all'?null:await db.prepare('SELECT MAX(score) AS score FROM links_party_results WHERE finished>=? AND game=?').bind(periodStart(period),game).first();
- const mine=profile?await db.prepare(`SELECT COUNT(*) AS played,COALESCE(SUM(r.win),0) AS wins,${game==='all'?'NULL':'MAX(r.score)'} AS best ${base} AND p.id=?`).bind(...args,profile.id).first():null;
+ const guestBase=`FROM links_party_results r JOIN links_party_guest_names g ON g.game=r.game AND g.room=r.room AND g.round=r.round AND g.seat=r.seat WHERE r.game IN ('trivia-rally','friend-challenge','million-point','dead-air','last-alibi','mini-golf') AND r.finished>=? AND (?='all' OR r.game=?) AND NOT EXISTS(SELECT 1 FROM links_party_score_seats ss WHERE ss.game=r.game AND ss.room=r.room AND ss.seat=r.seat)`;
+ const members=await db.prepare(`SELECT p.id,p.name,COUNT(*) AS played,SUM(r.win) AS wins,${game==='all'?'NULL':game==='mini-golf'?'MIN(r.score)':'MAX(r.score)'} AS best ${base} GROUP BY p.id,p.name`).bind(...args).all();
+ const guests=await db.prepare(`SELECT COALESCE(gp.id,('guest:'||r.game||':'||r.room||':'||r.seat)) AS id,COALESCE(gp.name,MAX(g.name)) AS name,COUNT(*) AS played,SUM(r.win) AS wins,${game==='all'?'NULL':game==='mini-golf'?'MIN(r.score)':'MAX(r.score)'} AS best FROM links_party_results r JOIN links_party_guest_names g ON g.game=r.game AND g.room=r.room AND g.round=r.round AND g.seat=r.seat LEFT JOIN links_party_guest_seats gs ON gs.game=r.game AND gs.room=r.room AND gs.seat=r.seat LEFT JOIN links_party_guest_profiles gp ON gp.id=gs.guest_id WHERE r.game IN ('trivia-rally','friend-challenge','million-point','dead-air','last-alibi','mini-golf') AND r.finished>=? AND (?='all' OR r.game=?) AND NOT EXISTS(SELECT 1 FROM links_party_score_seats ss WHERE ss.game=r.game AND ss.room=r.room AND ss.seat=r.seat) GROUP BY COALESCE(gp.id,('guest:'||r.game||':'||r.room||':'||r.seat))`).bind(...args).all();
+ const rows={results:[...members.results,...guests.results].sort((a,b)=>(game==='mini-golf'?Number(a.best)-Number(b.best):Number(game==='all'?b.wins:b.best)-Number(game==='all'?a.wins:a.best))||a.played-b.played||String(a.id).localeCompare(String(b.id))).slice(0,100)};
+ const best=game==='all'?null:await db.prepare(`SELECT ${game==='mini-golf'?'MIN':'MAX'}(score) AS score FROM links_party_results WHERE finished>=? AND game=?`).bind(periodStart(period),game).first();
+ const mine=profile?await db.prepare(`SELECT COUNT(*) AS played,COALESCE(SUM(r.win),0) AS wins,${game==='all'?'NULL':game==='mini-golf'?'MIN(r.score)':'MAX(r.score)'} AS best ${base} AND p.id=?`).bind(...args,profile.id).first():null;
  return json({games:Object.entries(BOARD_GAMES).map(([id,g])=>({id,name:g.name,storage:g.storage})),period,game,profile,mine,signedIn:!!session,rows:rows.results,highScore:best?.score??null});
  }catch{return json({error:'The scoreboard could not load. Please try again.'},503)}}

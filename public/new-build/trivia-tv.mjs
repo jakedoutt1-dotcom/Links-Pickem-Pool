@@ -5,7 +5,7 @@ const $=id=>document.getElementById(id),themes={football:'SPORTS',music:'MUSIC',
 let code='',state=null,offset=0,heartbeat=0,timer,version=0,signature='';
 function tick(){if(!state)return;sounds.update(state,Date.now()+offset);const now=Date.now()+offset,count=Math.max(0,Math.ceil((state.startsAt-now)/1000)),waiting=state.phase==='question'&&!state.question;$('countdown').hidden=!waiting;$('questionArea').hidden=waiting;$('countdownNumber').textContent=count||'GO';$('clock').textContent=state.phase==='question'&&!waiting?String(Math.max(0,Math.ceil((state.deadline-now)/1000))).padStart(2,'0'):'—';}
 function fitQuestion(){
- const display=$('display');if(display.hidden)return;display.style.minHeight=Math.max(0,innerHeight-display.getBoundingClientRect().top-14)+'px';const stage=$('stage');if(stage.hidden)return;const bannerSpace=$('venueBanner').hidden?0:$('venueBanner').offsetHeight;
+ const display=$('display');if(display.hidden)return;display.style.minHeight=Math.max(0,innerHeight-display.getBoundingClientRect().top-14)+'px';const stage=$('stage');if(stage.hidden)return;const bannerSpace=($('venueBanner').hidden?0:$('venueBanner').offsetHeight)+($('tvStandings').hidden?0:$('tvStandings').offsetHeight+10);
  let question=Math.min(40,Math.max(24,innerWidth*.026)),answer=Math.min(30,Math.max(20,innerWidth*.019));
  const apply=()=>{stage.style.setProperty('--tv-question-size',question+'px');stage.style.setProperty('--tv-answer-size',answer+'px')};apply();
  while(stage.getBoundingClientRect().bottom>innerHeight-14-bannerSpace&&(question>18||answer>15)){question=Math.max(18,question-1);answer=Math.max(15,answer-1);apply()}
@@ -13,13 +13,14 @@ function fitQuestion(){
 window.addEventListener('resize',()=>requestAnimationFrame(fitQuestion));
 document.addEventListener('fullscreenchange',()=>requestAnimationFrame(fitQuestion));
 function render(){
+ const leaders=state.leaders||[];$('tvStandings').hidden=state.phase==='lobby'||!leaders.length;$('standingCount').textContent='Top '+Math.min(12,leaders.length)+' of '+leaders.length;$('tvLeaders').replaceChildren();for(const player of leaders.slice(0,12)){const row=document.createElement('li');for(const [cls,value] of [['rank',player.rank],['name',player.name],['points',Number(player.score||0).toLocaleString()]]){const span=document.createElement('span');span.className=cls;span.textContent=value;row.append(span)}$('tvLeaders').append(row)}
  const q=state.question,phase=state.phase,theme=state.categoryIntro||q?.category||'general';document.body.dataset.category=theme;
  const logo=$('venueLogo'),venue=state.venue;logo.hidden=!venue?.logo;$('venueBanner').hidden=!venue;$('venueName').textContent=venue?.name||'';logo.alt=venue?.name||'';logo.onerror=()=>{logo.hidden=true;requestAnimationFrame(fitQuestion)};logo.onload=()=>requestAnimationFrame(fitQuestion);if(venue?.logo&&logo.getAttribute('src')!==venue.logo)logo.src=venue.logo;
  $('title').textContent=state.title;$('roomLabel').textContent='ROOM '+code;$('lobby').hidden=phase!=='lobby';$('stage').hidden=phase==='lobby';
  $('category').textContent=themes[theme]+(q?' · '+q.difficulty.toUpperCase():'');$('number').textContent=state.isFinal?'FINAL ROUND · DOUBLE POINTS':'QUESTION '+(state.index+1);
  $('question').textContent=phase==='category'?themes[theme]+' · Get ready':q?.text||(phase==='ended'?'Thanks for playing!':'');
  $('answers').replaceChildren();if(q)q.answers.forEach((text,i)=>{const row=document.createElement('div');row.className='tv-answer'+(q.correct===i?' correct':'');const letter=document.createElement('b');letter.textContent='ABCD'[i];const label=document.createElement('span');label.textContent=text+(q.correct===i?' ✓':'');row.append(letter,label);$('answers').append(row)});
- $('note').textContent=phase==='ended'?'Game complete · Check your phone for final standings.':phase==='reveal'?'Answer revealed · Check your phone for standings':phase==='category'?'The host will start the clock.':(state.mode==='teams'?'Discuss together. Submit one answer on your team’s phone.':'Answer on your phone. The host reveals after time is up.');$('source').textContent=q?.source?'Source: '+q.source+' · '+q.license:'';
+ $('note').textContent=phase==='ended'?'Game complete · Final standings below.':phase==='reveal'?'Answer revealed · Live standings below':phase==='category'?'The host will start the clock.':(state.mode==='teams'?'Discuss together. Submit one answer on your team’s phone.':'Answer on your phone. The host reveals after time is up.');$('source').textContent=q?.source?'Source: '+q.source+' · '+q.license:'';
  $('count').textContent=state.playerCount+(state.mode==='teams'?' teams joined':' players joined');tick();requestAnimationFrame(fitQuestion);
 }
 async function poll(n){if(n!==version||!code)return;try{

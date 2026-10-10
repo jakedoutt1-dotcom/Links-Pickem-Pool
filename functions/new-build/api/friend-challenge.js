@@ -49,7 +49,7 @@ async function handleRequest({request,env}){
      if(!['lobby','ended'].includes(s.phase))return json({error:'You can close this page now. Your result stays in this game.'},409);delete s.players[seat];for(const p of Object.values(s.players))p.ready=false;changed=true;
     }else if(action!=='state')return json({error:'Unknown action.'},400);
    }
-   if(changed){const update=s.mode==='solo'?await db.prepare('UPDATE links_friend_rooms SET state=?,version=version+1 WHERE code=? AND version=?').bind(JSON.stringify(s),code,row.version).run():await savePartyRoom(db,'friend-challenge',code,row.version,s,completed);if(!update.meta?.changes)continue}
+   if(changed){const update=await savePartyRoom(db,'friend-challenge',code,row.version,s,completed);if(!update.meta?.changes)continue}
    return json({...challengeView(s,newSeat,time),...(issued?{token:issued}:{})});
   }return json({error:'The room is busy. Please try again.'},409);
  }catch{return json({error:'Challenge could not complete that request. Please try again.'},503)}

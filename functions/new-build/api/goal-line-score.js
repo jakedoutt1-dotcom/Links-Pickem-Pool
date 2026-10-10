@@ -12,7 +12,7 @@ export async function onRequest({request,env}){
  const hash=async x=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(x))),v=>v.toString(16).padStart(2,'0')).join('');
  const player=await hash(b.secret),run=await hash(b.secret+':'+b.run);
  await ensureGoalScores(env.DB);
- await env.DB.prepare('INSERT OR IGNORE INTO links_goal_line_scores(run,player,name,score,finished) VALUES(?,?,?,?,?)').bind(run,player,name,score,Date.now()).run();
+ await env.DB.prepare('INSERT INTO links_goal_line_scores(run,player,name,score,finished) VALUES(?,?,?,?,?) ON CONFLICT(run) DO UPDATE SET name=excluded.name WHERE links_goal_line_scores.player=excluded.player').bind(run,player,name,score,Date.now()).run();
  return json({ok:true,score});
  }catch{return json({error:'Score could not save. Please try again.'},503)}
 }
