@@ -101,6 +101,7 @@ $('zoomIn').onclick=()=>cameraDistance=Math.max(2.8,cameraDistance-.6);$('zoomOu
 $('behindBall').onclick=()=>{overview=false;cameraYaw=-Number($('aim').value)*Math.PI/180;cameraPitch=.28;cameraDistance=4.2;$('view').textContent='Course view'};
 window.addEventListener('blur',()=>{cancelDrag();rolling(0)});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelDrag();rolling(0)}});
+$('course').addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' ','+','-','c','C'].includes(e.key))return;e.preventDefault();if(e.key==='c'||e.key==='C')$('view').click();else if(e.key==='+')$('zoomIn').click();else if(e.key==='-')$('zoomOut').click();else if(e.key===' ')$('putt').click();else if(canAim()){if(e.key==='ArrowLeft'||e.key==='ArrowRight')setAim(+$('aim').value+(e.key==='ArrowRight'?3:-3));else{$('power').value=Math.max(5,Math.min(100,+$('power').value+(e.key==='ArrowUp'?5:-5)));$('power').oninput()}}});
 $('aimPad').addEventListener('keydown',e=>{if(canAim()&&['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();setAim(+$('aim').value+(e.key==='ArrowRight'?3:-3))}});
 
 function frame(now){const dt=Math.min((now-last)/1000||0,.25);last=now;if(document.hidden){requestAnimationFrame(frame);return}if(swing>0){swing-=dt;if(swing<=0){swing=0;hit(s,...pendingShot);shots.push(pendingShot);room.save(shots);tone();pendingShot=null;$('status').textContent='Ball rolling. You can adjust aim and power for your next putt.';controls()}}
