@@ -18,7 +18,7 @@ async function enter(action){try{const b=await api(action,{room:$('roomInput').v
 $('createRoom').onclick=()=>enter('create');$('joinRoom').onclick=()=>enter('join');$('startRound').onclick=async()=>{try{await api('start');await sync()}catch(e){error(e)}};
 $('endRound').onclick=async()=>{if(!confirm('End this round? Unfinished players will be marked Did not finish.'))return;try{await api('end');await sync()}catch(e){error(e)}};
 $('retryRoom').onclick=sync;$('leaveRoom').onclick=()=>{room='';phase='';pending=null;submitted=false;persist();$('roomPanel').hidden=true;reset()};
-$('shareRoom').onclick=async()=>{const url=new URL(location.href);url.search='room='+room;try{if(navigator.share)await navigator.share({title:'LINKS Mini Golf',text:'Join room '+room,url:url.href});else{await navigator.clipboard.writeText(url.href);$('roomError').textContent='Invite link copied.'}}catch{ $('roomError').textContent='Share room code '+room}};
+$('shareRoom').onclick=async()=>{const url=new URL(location.href);url.search='room='+room;try{if(navigator.share)await navigator.share({title:'LINKS Putt Club',text:'Join room '+room,url:url.href});else{await navigator.clipboard.writeText(url.href);$('roomError').textContent='Invite link copied.'}}catch{ $('roomError').textContent='Share room code '+room}};
 $('roomInput').value=new URLSearchParams(location.search).get('room')||'';if($('roomInput').value)$('multiplayer details').open=true;
 setInterval(()=>{if(!document.hidden)sync()},3000);sync();
 return {locked:()=>!!room&&(phase!=='playing'||submitted||!!pending),active:()=>!!room,save(shots){if(room)try{localStorage.setItem(key(),JSON.stringify(shots))}catch{}},finish(shots){if(room){pending=shots.slice();sync()}}};
