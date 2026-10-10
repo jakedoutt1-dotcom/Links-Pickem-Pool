@@ -13,3 +13,5 @@ const miss=Math.hypot(prev.x+dx*t-cup.x,prev.z+dz*t-cup.z);
 if(miss<.29&&speed<(miss<.17?4.5:3.2)){s.done=true;s.moving=false;s.x=cup.x;s.z=cup.z;s.vx=s.vz=0;return}
 const factor=Math.max(0,1-1.1*dt/Math.max(speed,.01));s.vx*=factor;s.vz*=factor;if(speed<.09){s.moving=false;s.vx=s.vz=0}
 }
+
+export function replayShots(shots){if(!Array.isArray(shots)||shots.length>10)throw Error('Invalid shots');const s=create();for(const e of shots){if(!Array.isArray(e)||e.length!==2||s.done||!hit(s,...e))throw Error('Invalid shot');for(let i=0;i<6000&&s.moving;i++)step(s,1/120);if(s.moving)throw Error('Unfinished shot')}return s}
