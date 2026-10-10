@@ -1,6 +1,6 @@
 import * as T from './vendor/three/three.module.min.js';
-import {create,hit,step,blocks,cup} from './mini-golf-core.mjs';
-const $=id=>document.getElementById(id);let s=create(),overview=false,acc=0,last=0,swing=0;
+import {create,hit,step,blocks,cup} from './mini-golf-core.mjs?v=cup2';
+const $=id=>document.getElementById(id);let s=create(),overview=false,acc=0,last=0,swing=0,pendingShot=null;
 try{
 const renderer=new T.WebGLRenderer({canvas:$('course'),antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
 const scene=new T.Scene();scene.background=new T.Color('#b8d4da');scene.fog=new T.Fog('#b8d4da',35,115);const camera=new T.PerspectiveCamera(48,1,.1,180);
@@ -9,13 +9,13 @@ function texture(kind){const el=document.createElement('canvas');el.width=el.hei
 const turf=texture('turf'),stone=texture('stone');const stoneMat=new T.MeshStandardMaterial({map:stone,roughness:.94,bumpMap:stone,bumpScale:.055});
 function mesh(geo,mat,x,y,z){const m=new T.Mesh(geo,mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);return m}
 function box(w,h,d,mat,x,y,z){return mesh(new T.BoxGeometry(w,h,d),mat,x,y,z)}
-const land=new T.MeshStandardMaterial({color:'#567649',roughness:1});box(160,.5,160,land,0,-.65,0);box(6,.25,26,new T.MeshStandardMaterial({map:turf,roughness:.96,bumpMap:turf,bumpScale:.025}),0,-.125,0);
-for(let i=0;i<13;i++)box(5.96,.002,1,new T.MeshStandardMaterial({color:i%2?'#88a962':'#345e35',transparent:true,opacity:.08}),0,.002,-12+i*2);
+const land=new T.MeshStandardMaterial({color:'#567649',roughness:1});box(160,.5,160,land,0,-.65,0);const greenShape=new T.Shape();greenShape.moveTo(-3,-13);greenShape.lineTo(3,-13);greenShape.lineTo(3,13);greenShape.lineTo(-3,13);greenShape.closePath();const cutout=new T.Path();cutout.absarc(cup.x,-cup.z,.29,0,Math.PI*2,true);greenShape.holes.push(cutout);const green=mesh(new T.ShapeGeometry(greenShape,48),new T.MeshStandardMaterial({map:turf,roughness:.96,bumpMap:turf,bumpScale:.025}),0,0,0);green.rotation.x=-Math.PI/2;
+for(let i=0;i<13;i++)if(Math.abs(-12+i*2-cup.z)>.8)box(5.96,.002,1,new T.MeshStandardMaterial({color:i%2?'#88a962':'#345e35',transparent:true,opacity:.08}),0,.002,-12+i*2);
 box(.32,.48,26.6,stoneMat,-3.16,.1,0);box(.32,.48,26.6,stoneMat,3.16,.1,0);box(6.6,.48,.32,stoneMat,0,.1,-13.16);box(6.6,.48,.32,stoneMat,0,.1,13.16);
 for(const b of blocks)box(b.w,.4,b.d,stoneMat,b.x,.2,b.z);
 // Dark recessed cup with a metal rim.
-const dark=new T.MeshStandardMaterial({color:'#03120a',roughness:1});mesh(new T.CylinderGeometry(.29,.29,.025,40),dark,cup.x,.016,cup.z);const rim=mesh(new T.TorusGeometry(.295,.018,8,40),new T.MeshStandardMaterial({color:'#a7ab8e',metalness:.5,roughness:.4}),cup.x,.022,cup.z);rim.rotation.x=Math.PI/2;
-mesh(new T.CylinderGeometry(.025,.025,1.7,12),new T.MeshStandardMaterial({color:'#dedacc',metalness:.4,roughness:.4}),0,.86,-11);
+const dark=new T.MeshStandardMaterial({color:'#03120a',roughness:1});mesh(new T.CylinderGeometry(.29,.29,.025,40),dark,cup.x,-.28,cup.z);const rim=mesh(new T.TorusGeometry(.295,.018,8,40),new T.MeshStandardMaterial({color:'#a7ab8e',metalness:.5,roughness:.4}),cup.x,.022,cup.z);rim.rotation.x=Math.PI/2;
+const pin=mesh(new T.CylinderGeometry(.025,.025,1.7,12),new T.MeshStandardMaterial({color:'#dedacc',metalness:.4,roughness:.4}),0,.86,-11);
 const logo=new T.TextureLoader().load('/links-small-logo.png');logo.colorSpace=T.SRGBColorSpace;
 const flag=mesh(new T.PlaneGeometry(.85,.35,10,3),new T.MeshStandardMaterial({map:logo,transparent:true,side:T.DoubleSide,roughness:.9}),.43,1.5,-11);const flagBase=Float32Array.from(flag.geometry.attributes.position.array);
 function sign(x,z,title){box(1.8,.85,.13,new T.MeshStandardMaterial({color:'#10251c',roughness:.5}),x,.95,z);for(const dx of [-.65,.65])box(.07,.7,.07,stoneMat,x+dx,.3,z);const face=mesh(new T.PlaneGeometry(1.58,.53),new T.MeshBasicMaterial({map:logo,transparent:true}),x,1.06,z+.075);face.castShadow=false;
@@ -32,14 +32,15 @@ const putter=new T.Group();const shaft=new T.Mesh(new T.CylinderGeometry(.018,.0
 const aim=new T.ArrowHelper(new T.Vector3(0,0,-1),new T.Vector3(0,.07,11),2.4,0xf0d384,.3,.15);scene.add(aim);
 const desired=new T.Vector3(),look=new T.Vector3();camera.position.set(0,6,20);look.set(0,0,6);
 function resize(){const r=$('stage').getBoundingClientRect();renderer.setSize(r.width,r.height,false);camera.aspect=r.width/r.height;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe($('stage'));resize();
-function controls(){for(const id of ['aim','power','putt'])$(id).disabled=s.moving||s.done||swing>0;$('score').textContent=s.strokes+' stroke'+(s.strokes===1?'':'s')}
-$('putt').onclick=()=>{if(s.moving||s.done||swing)return;swing=.38;controls();$('status').textContent='Putting…'};
-$('reset').onclick=()=>{s=create();swing=0;acc=0;$('status').textContent='New round. Aim, set power, and putt.';controls()};$('view').onclick=()=>{overview=!overview;$('view').textContent=overview?'Ball view':'Course view'};
+function controls(){for(const id of ['aim','power'])$(id).disabled=s.done||swing>0;$('putt').disabled=s.moving||s.done||swing>0;$('score').textContent=s.strokes+' stroke'+(s.strokes===1?'':'s')}
+$('putt').onclick=()=>{if(s.moving||s.done||swing)return;pendingShot=[+$('aim').value*Math.PI/180,+$('power').value/100];swing=.38;drag=null;controls();$('status').textContent='Putting…'};
+$('reset').onclick=()=>{s=create();swing=0;pendingShot=null;acc=0;$('status').textContent='New round. Aim, set power, and putt.';controls()};$('view').onclick=()=>{overview=!overview;$('view').textContent=overview?'Ball view':'Course view'};
 $('power').oninput=()=>$('powerText').textContent=$('power').value+'%';
-let drag=null;$('course').addEventListener('pointerdown',e=>{if(!s.moving&&!s.done&&!swing)drag={x:e.clientX,angle:+$('aim').value}});$('course').addEventListener('pointermove',e=>{if(drag)$('aim').value=Math.max(-180,Math.min(180,drag.angle+(e.clientX-drag.x)*.45))});window.addEventListener('pointerup',()=>drag=null);$('course').addEventListener('pointercancel',()=>drag=null);
-function frame(now){const dt=Math.min((now-last)/1000||0,.05);last=now;if(document.hidden){requestAnimationFrame(frame);return}if(swing>0){swing-=dt;if(swing<=0){swing=0;hit(s,+$('aim').value*Math.PI/180,+$('power').value/100);controls()}}
+let drag=null;$('course').addEventListener('pointerdown',e=>{if(!s.done&&!swing)drag={x:e.clientX,angle:+$('aim').value}});$('course').addEventListener('pointermove',e=>{if(drag)$('aim').value=Math.max(-180,Math.min(180,drag.angle+(e.clientX-drag.x)*.45))});window.addEventListener('pointerup',()=>drag=null);$('course').addEventListener('pointercancel',()=>drag=null);
+function frame(now){const dt=Math.min((now-last)/1000||0,.25);last=now;if(document.hidden){requestAnimationFrame(frame);return}if(swing>0){swing-=dt;if(swing<=0){swing=0;hit(s,...pendingShot);pendingShot=null;$('status').textContent='Ball rolling. You can adjust aim and power for your next putt.';controls()}}
 const moving=s.moving;acc+=dt;while(acc>=1/120){step(s,1/120);acc-=1/120}if(moving&&!s.moving){$('status').textContent=s.done?'In the cup! Finished in '+s.strokes+' strokes. Restart to beat your score.':'Ball stopped. Line up your next putt.';controls()}
-ball.position.set(s.x,s.done?-.08:.17,s.z);ball.visible=!s.done;ball.rotation.x+=s.vz*dt/.16;ball.rotation.z-=s.vx*dt/.16;
+ball.position.set(s.x,s.done?Math.max(-.3,ball.position.y-dt*.8):.17,s.z);ball.visible=!s.done||ball.position.y>-.29;pin.visible=flag.visible=Math.hypot(s.x-cup.x,s.z-cup.z)>3&&!s.done;ball.rotation.x+=s.vz*dt/.16;ball.rotation.z-=s.vx*dt/.16;
+controls();
 const angle=+$('aim').value*Math.PI/180;aim.visible=!s.moving&&!s.done&&!swing;aim.position.set(s.x,.09,s.z);aim.setDirection(new T.Vector3(Math.sin(angle),0,-Math.cos(angle)));aim.setLength(.8+(+$('power').value/100)*2.4,.22,.12);
 putter.visible=!s.moving&&!s.done;putter.position.set(s.x-Math.sin(angle)*(.28+swing),0,s.z+Math.cos(angle)*(.28+swing));putter.rotation.y=-angle;
 if(overview){desired.set(14,22,19);look.lerp(new T.Vector3(0,0,0),.08)}else{desired.set(s.x*.65,5.2,s.z+8.5);look.lerp(new T.Vector3(s.x,.05,s.z-3),.08)}camera.position.lerp(desired,1-Math.exp(-dt*4));camera.lookAt(look);
