@@ -8,3 +8,6 @@ s=create();s.z=-10;hit(s,0,.35);for(let i=0;i<600;i++)step(s,1/120);assert(s.don
 s=create();s.z=-10;s.x=.5;hit(s,0,.35);for(let i=0;i<600;i++)step(s,1/120);assert(!s.done,'near miss does not score');
 s=create();s.z=-10.95;s.moving=true;s.vz=-8;step(s,1/60);assert(!s.done,'overpowered shot rolls across cup');
 s=create();s.z=-10.98;s.moving=true;s.vz=-3.5;step(s,1/60);assert(s.done,'centered moderate-speed putt drops');console.log('PASS close putts, near misses and cup speed limits');
+
+s=create();s.x=.34;s.z=-10.9;s.moving=true;s.vz=-2;step(s,1/120);assert(s.done,'edge putt is forgiving');
+s=create();s.x=2.82;s.moving=true;s.vx=3;step(s,1/60);assert(s.bounced,'collision reports bounce for sound');console.log('PASS forgiving cup and bounce event');

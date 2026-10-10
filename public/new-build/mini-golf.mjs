@@ -1,12 +1,12 @@
 import {connectRoom} from './mini-golf-room.mjs?v=1';
-import {tone,unlock,setupSound} from './mini-golf-sound.mjs';
+import {tone,unlock,setupSound,bounce} from './mini-golf-sound.mjs?v=2';
 import * as T from './vendor/three/three.module.min.js';
-import {create,hit,step,blocks,cup,replayShots} from './mini-golf-core.mjs?v=rooms4';
+import {create,hit,step,blocks,cup,replayShots} from './mini-golf-core.mjs?v=controls5';
 const $=id=>document.getElementById(id);let s=create(),overview=false,acc=0,last=0,swing=0,pendingShot=null;
 let shots=[],celebrationTimer;setupSound($('sound'));
 function resetGame(){s=create();shots=[];swing=0;pendingShot=null;acc=0;$('celebration').hidden=true;clearTimeout(celebrationTimer)}
 const room=connectRoom({reset:resetGame,restore(log){s=replayShots(log);shots=log;if(s.done||s.strokes>=10)room.finish(shots)}});
-function finished(){const ace=s.done&&s.strokes===1;const box=$('celebration');box.replaceChildren();box.append(document.createTextNode(s.done?(ace?'HOLE IN ONE!':'IN THE CUP!'):'HOLE COMPLETE'));const sub=document.createElement('small');sub.textContent=s.strokes+' strokes'+(room.active()?' · Waiting for the group':'');box.append(sub);if(s.done){tone(true,ace);for(let i=0;i<(ace?65:25);i++){const el=document.createElement('i');el.style.left=(i*37%100)+'%';el.style.animationDelay=(i%8)*.08+'s';box.append(el)}}box.hidden=false;clearTimeout(celebrationTimer);celebrationTimer=setTimeout(()=>box.hidden=true,ace?5000:3200);room.finish(shots)}
+function finished(){const ace=s.done&&s.strokes===1;const box=$('celebration');box.replaceChildren();const title=document.createElement('strong');title.className='celebration-title';title.textContent=s.done?(ace?'HOLE IN ONE!':'NICE PUTT!'):'HOLE COMPLETE';box.append(title);const sub=document.createElement('small');sub.textContent=s.strokes+' strokes'+(room.active()?' · Waiting for the group':'');box.append(sub);if(s.done){tone(true,ace);for(let i=0;i<(ace?65:25);i++){const el=document.createElement('i');el.style.left=(i*37%100)+'%';el.style.animationDelay=(i%8)*.08+'s';box.append(el)}}box.hidden=false;clearTimeout(celebrationTimer);celebrationTimer=setTimeout(()=>box.hidden=true,ace?6500:4500);room.finish(shots)}
 try{
 const renderer=new T.WebGLRenderer({canvas:$('course'),antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
 const scene=new T.Scene();scene.background=new T.Color('#b8d4da');scene.fog=new T.Fog('#b8d4da',35,115);const camera=new T.PerspectiveCamera(48,1,.1,180);
@@ -42,9 +42,18 @@ function controls(){for(const id of ['aim','power'])$(id).disabled=s.done||s.str
 $('putt').onclick=()=>{if(s.moving||s.done||s.strokes>=10||swing||room.locked())return;unlock();pendingShot=[+$('aim').value*Math.PI/180,+$('power').value/100];swing=.38;drag=null;controls();$('status').textContent='Putting…'};
 $('reset').onclick=()=>{if(room.active())return;resetGame();$('status').textContent='New round. Aim, set power, and putt.';controls()};$('view').onclick=()=>{overview=!overview;$('view').textContent=overview?'Ball view':'Course view'};
 $('power').oninput=()=>$('powerText').textContent=$('power').value+'%';
-let drag=null;$('course').addEventListener('pointerdown',e=>{if(!s.done&&s.strokes<10&&!swing&&!room.locked())drag={x:e.clientX,angle:+$('aim').value}});$('course').addEventListener('pointermove',e=>{if(drag)$('aim').value=Math.max(-180,Math.min(180,drag.angle+(e.clientX-drag.x)*.45))});window.addEventListener('pointerup',()=>drag=null);$('course').addEventListener('pointercancel',()=>drag=null);
+let drag=null;
+function setAim(value){$('aim').value=((value+540)%360)-180;$('aimPad').setAttribute('aria-valuenow',String(Math.round(+$('aim').value)));$('aimStick').style.rotate=$('aim').value+'deg'}
+function canAim(){return !s.done&&s.strokes<10&&!swing&&!room.locked()}
+for(const target of [$('course'),$('aimPad')]){
+ target.addEventListener('pointerdown',e=>{if(!canAim())return;target.setPointerCapture(e.pointerId);drag={x:e.clientX,angle:+$('aim').value,id:e.pointerId};e.preventDefault()});
+ target.addEventListener('pointermove',e=>{if(drag&&drag.id===e.pointerId&&canAim()){setAim(drag.angle+(e.clientX-drag.x)*(target===$('aimPad')?1.4:.45));e.preventDefault()}});
+ for(const type of ['pointerup','pointercancel','lostpointercapture'])target.addEventListener(type,()=>drag=null);
+}
+$('aimPad').addEventListener('keydown',e=>{if(canAim()&&['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();setAim(+$('aim').value+(e.key==='ArrowRight'?3:-3))}});
+
 function frame(now){const dt=Math.min((now-last)/1000||0,.25);last=now;if(document.hidden){requestAnimationFrame(frame);return}if(swing>0){swing-=dt;if(swing<=0){swing=0;hit(s,...pendingShot);shots.push(pendingShot);room.save(shots);tone();pendingShot=null;$('status').textContent='Ball rolling. You can adjust aim and power for your next putt.';controls()}}
-const moving=s.moving;acc+=dt;while(acc>=1/120){step(s,1/120);acc-=1/120}if(moving&&!s.moving){$('status').textContent=s.done?'In the cup! Finished in '+s.strokes+' strokes. Restart to beat your score.':'Ball stopped. Line up your next putt.';if(s.done||s.strokes>=10)finished();controls()}
+const moving=s.moving;acc+=dt;while(acc>=1/120){step(s,1/120);if(s.bounced)bounce();acc-=1/120}if(moving&&!s.moving){$('status').textContent=s.done?'In the cup! Finished in '+s.strokes+' strokes. Restart to beat your score.':'Ball stopped. Line up your next putt.';if(s.done||s.strokes>=10)finished();controls()}
 ball.position.set(s.x,s.done?Math.max(-.3,ball.position.y-dt*.8):.17,s.z);ball.visible=!s.done||ball.position.y>-.29;pin.visible=flag.visible=Math.hypot(s.x-cup.x,s.z-cup.z)>3&&!s.done;ball.rotation.x+=s.vz*dt/.16;ball.rotation.z-=s.vx*dt/.16;
 controls();
 const angle=+$('aim').value*Math.PI/180;aim.visible=!s.moving&&!s.done&&!swing;aim.position.set(s.x,.09,s.z);aim.setDirection(new T.Vector3(Math.sin(angle),0,-Math.cos(angle)));aim.setLength(.8+(+$('power').value/100)*2.4,.22,.12);
