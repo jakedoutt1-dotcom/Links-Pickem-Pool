@@ -1,4 +1,19 @@
-import {themes} from './mini-golf-courses.mjs';
+import {themes} from './mini-golf-courses.mjs?v=course18-1';
+// The rotor angle comes from the shared replay physics, not a second animation clock.
+export function createWindmill(T,definition){
+ const {x,z,w,hubHeight,bladeLength}=definition,root=new T.Group();root.position.set(x,0,z);
+ const stone=new T.MeshStandardMaterial({color:'#eee2cb',roughness:.8}),wood=new T.MeshStandardMaterial({color:'#624a35',roughness:.8}),gold=new T.MeshStandardMaterial({color:'#d9ba69',metalness:.45,roughness:.4});
+ const add=(geometry,material,px,py,pz,parent=root)=>{const mesh=new T.Mesh(geometry,material);mesh.position.set(px,py,pz);mesh.castShadow=mesh.receiveShadow=true;parent.add(mesh);return mesh};
+ const height=hubHeight+bladeLength+.28,postX=3.45+Math.abs(x);
+ // Keep the opening clear: the animated sails are the only ground-level collision.
+ for(const side of [-1,1]){add(new T.BoxGeometry(.3,height,.55),stone,side*postX,height/2,-.35);add(new T.ConeGeometry(.3,.45,4),wood,side*postX,height+.2,-.35)}
+ add(new T.BoxGeometry(postX*2+.3,.22,.5),wood,0,height,-.35);
+ add(new T.CylinderGeometry(.055,.055,height-hubHeight,8),wood,0,(height+hubHeight)/2,-.35);
+ const rotor=new T.Group();rotor.position.y=hubHeight;root.add(rotor);
+ for(let i=0;i<4;i++){const arm=new T.Group();arm.rotation.z=i*Math.PI/2;rotor.add(arm);add(new T.BoxGeometry(bladeLength,.16,definition.d),wood,bladeLength/2,0,0,arm);for(let n=1;n<=4;n++)add(new T.BoxGeometry(.035,.16,.025),gold,n*bladeLength/5,0,definition.d/2+.015,arm)}
+ const hub=add(new T.CylinderGeometry(.17,.17,.25,16),gold,0,hubHeight,.04);hub.rotation.x=Math.PI/2;
+ return {root,rotor,dispose(){root.traverse(m=>{if(m.isMesh)m.geometry.dispose()});stone.dispose();wood.dispose();gold.dispose()}};
+}
 export function waterTexture(T){const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d');x.fillStyle='#82d9ee';x.fillRect(0,0,256,256);x.strokeStyle='#d6f9ff88';x.lineWidth=1.3;const points=[];for(let j=-1;j<13;j++){const row=[];for(let i=-1;i<13;i++)row.push({x:i*24+Math.sin(i*3.4+j*1.8)*6,y:j*24+Math.cos(i*2.1+j*4.2)*6});points.push(row)}for(let j=0;j<points.length-1;j++)for(let i=0;i<points[j].length-1;i++){const corners=[points[j][i],points[j][i+1],points[j+1][i+1],points[j+1][i]];x.beginPath();corners.forEach((p,n)=>n?x.lineTo(p.x,p.y):x.moveTo(p.x,p.y));x.closePath();x.stroke()}
 const texture=new T.CanvasTexture(c);texture.colorSpace=T.SRGBColorSpace;texture.wrapS=texture.wrapT=T.RepeatWrapping;texture.repeat.set(12,12);return texture}
 export function createScenery(T,scene){const root=new T.Group();scene.add(root);const trees=[],materials=[];

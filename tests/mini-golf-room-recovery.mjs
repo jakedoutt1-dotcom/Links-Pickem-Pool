@@ -1,0 +1,19 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+const source=fs.readFileSync(new URL('../public/new-build/mini-golf-room.mjs',import.meta.url),'utf8').replace(/^import .*;\r?\n/,'').replace('export function connectRoom','function connectRoom')+'\nglobalThis.connectRoom=connectRoom;';
+const tick=()=>new Promise(resolve=>setImmediate(resolve));
+async function fixture({active=false,soloStatus=200}={}){
+ const values=new Map();if(active)values.set('links-mini-room-v1',JSON.stringify({room:'ABCDEF1234',token:'a'.repeat(40)}));
+ const nodes=new Map(),events={},calls=[],resets=[];let finishStatus=400;
+ const element=id=>{if(!nodes.has(id))nodes.set(id,{value:'Golfer',textContent:'',hidden:false,children:[],replaceChildren(){this.children=[]},append(item){this.children.push(item)},click(){return this.onclick?.()}});return nodes.get(id)};
+ const context={console,crypto,URL,URLSearchParams,courses:[{}, {}, {}],location:{search:'',href:'https://test/new-build/mini-golf.html'},navigator:{},confirm:()=>true,document:{hidden:false,getElementById:element,querySelector:()=>({}),createElement:()=>({textContent:''})},localStorage:{getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)},window:{addEventListener:(name,fn)=>events[name]=fn},setInterval:()=>0,setTimeout,fetch:async(url,opts)=>{const b=JSON.parse(opts.body);calls.push(b);if(b.action==='solo')return Response.json(soloStatus===200?{ok:true}:{error:'Rejected score'},{status:soloStatus});if(b.action==='finish')return Response.json({error:'Rejected shots'},{status:finishStatus});return Response.json({phase:'playing',round:1,hole:0,holeCount:18,rulesVersion:4,host:true,me:{finished:false},remaining:1,players:[{name:'Golfer',finished:false}]})}};
+ vm.createContext(context);vm.runInContext(source,context);const room=context.connectRoom({reset:(...a)=>resets.push(a),restore(){}});await tick();
+ return {room,calls,values,element,resets,events,setFinishStatus(value){finishStatus=value},setSoloStatus(value){soloStatus=value}};
+}
+const rejected=await fixture();await rejected.room.finish([[0,.5]]); // No active room, no write.
+const active=await fixture({active:true});active.room.finish([[0,.5]]);await tick();assert.equal(active.room.locked(),false);assert.equal(active.calls.filter(x=>x.action==='state').length,2);assert.equal(active.calls.filter(x=>x.action==='finish').length,1);assert.match(active.element('roomError').textContent,/restarted/);await active.room.refresh();assert.equal(active.calls.filter(x=>x.action==='finish').length,1);
+const conflict=await fixture({active:true});conflict.setFinishStatus(409);conflict.room.finish([[0,.5]]);await tick();assert.equal(conflict.room.locked(),true);assert.equal(conflict.calls.filter(x=>x.action==='state').length,2);await conflict.room.refresh();assert.equal(conflict.calls.filter(x=>x.action==='finish').length,2);
+const failed=await fixture({soloStatus:400});await failed.room.saveSolo([[0,.1]],17);assert.match(failed.element('status').textContent,/not saved/);assert.equal(JSON.parse(failed.values.get('links-putt-scores-v1')).length,0);
+const offline=await fixture({soloStatus:503});await offline.room.saveSolo([[0,.1]],17);assert.equal(JSON.parse(offline.values.get('links-putt-scores-v1')).length,1);assert.match(offline.element('status').textContent,/reconnect/);offline.setSoloStatus(200);offline.events.online();await tick();assert.equal(JSON.parse(offline.values.get('links-putt-scores-v1')).length,0);const writes=offline.calls.filter(x=>x.action==='solo');assert.equal(writes[0].room,writes[1].room);assert.equal(writes[1].rulesVersion,4);
+console.log('PASS rejected room score unlocks and keeps polling; solo rejection is not success; offline score retries idempotently on reconnect');
