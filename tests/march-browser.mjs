@@ -71,7 +71,7 @@ try{
   await poolPage.getByRole('button',{name:'Pool standings',exact:true}).click();
   await poolPage.getByRole('heading',{name:'The standings tip off with the tournament.'}).waitFor();
   await poolPage.getByRole('button',{name:'ADMIN',exact:true}).click();
-  await poolPage.getByText('Set the field. Open the challenge.',{exact:true}).filter({visible:true}).click();await poolPage.locator('#loadField').waitFor();assert.equal(await poolPage.getByRole('link',{name:'Back to Locker Room',exact:true}).getAttribute('href'),'./control-center.html?pool=1');
+  await poolPage.getByText('Set the field. Open the challenge.',{exact:true}).filter({visible:true}).click();await poolPage.locator('#loadField').waitFor();assert.equal(await poolPage.getByRole('link',{name:/Back to Home/}).getAttribute('href'),'/new-build/index.html');
   await poolPage.screenshot({path:resolve(output,'march-commissioner.png'),fullPage:true});
   await poolPage.getByRole('button',{name:'My bracket',exact:true}).click();
   await poolPage.locator('[data-game="East-1-0"]').first().click();

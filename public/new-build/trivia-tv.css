@@ -22,3 +22,12 @@ main{padding:8px 3vw 14px}.tv-heading{gap:12px;margin-bottom:8px}.tv-heading h1{
 #venueBanner{align-items:center;gap:18px;flex-wrap:wrap}#venueName{font-size:clamp(16px,2vw,26px);overflow-wrap:anywhere}
 
 #tvStandings{margin:10px 0 0;padding:10px 16px;border:1px solid #8b774c;border-radius:14px;background:#0b1720;flex-shrink:0}.standings-heading{display:flex;justify-content:space-between;color:#f4ce76;font-size:14px}#tvLeaders{list-style:none;padding:0;margin:6px 0 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 24px}#tvLeaders li{display:flex;align-items:center;gap:12px;font-size:clamp(16px,1.3vw,23px);min-width:0}#tvLeaders .rank{color:#f4ce76;width:30px}#tvLeaders .name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#tvLeaders .points{font-variant-numeric:tabular-nums}@media(max-height:650px){#tvStandings{padding:6px 12px}#tvLeaders li{font-size:15px}}
+
+/* Keep twelve leaders readable without pushing the venue banner off a TV. */
+#tvLeaders{grid-template-columns:repeat(3,minmax(0,1fr))}#tvLeaders li{font-size:clamp(14px,1.1vw,20px);line-height:1.3}@media(max-width:650px){#tvLeaders{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+#tvStandings{padding:6px 12px}#tvLeaders{gap:3px 20px}#tvLeaders li{font-size:clamp(14px,1.05vw,20px);line-height:1.2}
+
+@media(max-height:650px) and (min-width:651px){#tvLeaders{grid-template-columns:repeat(4,minmax(0,1fr));gap:2px 16px}#tvLeaders li{font-size:13px}#tvStandings .standings-heading{font-size:12px}#note{font-size:12px}}
+
+@media(max-height:650px) and (min-width:651px){#stage .stage-top{padding:2px 6px;line-height:1.2}#stage .clock{padding:2px 8px}#stage .clock small{display:none}#stage .clock strong{font-size:20px}#stage .tv-answer{padding:4px 8px}#stage .tv-answer b{flex-basis:22px;width:22px;height:22px;font-size:15px}#stage .answers{gap:5px}#stage .question-area{margin-top:4px}#note{margin-top:4px}#venueLogo{height:40px}#venueBanner{padding-top:6px}}

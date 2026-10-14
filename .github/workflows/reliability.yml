@@ -1,0 +1,43 @@
+name: Non-NFL reliability checks
+on:
+  pull_request:
+    paths: ['public/**', 'functions/**', 'tests/**', '.github/workflows/reliability.yml']
+  push:
+    branches: [main]
+    paths: ['public/**', 'functions/**', 'tests/**', '.github/workflows/reliability.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [accounts, games, pools]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node tests/reliability-suite.mjs ${{ matrix.group }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reliability-${{ matrix.group }}
+          path: output/reliability/
+  concurrent-games:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node tests/load/concurrent-games.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: concurrent-game-results
+          path: output/scale-readiness/concurrent-games.json

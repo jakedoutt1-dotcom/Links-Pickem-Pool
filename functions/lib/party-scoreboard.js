@@ -35,7 +35,7 @@ export function partyResultStatements(db,game,code,version,encoded,snapshots){
  const table=SCORE_GAMES[game].table,column=SCORE_GAMES[game].column||'code',seen=new Set(),out=[];
  for(const s of snapshots){if(!s)continue;for(const p of partyOutcomes(game,s)){
  const id=s.game+':'+p.seat;if(seen.has(id))continue;seen.add(id);
- const player=s.players?.[p.seat];const guestName=String(player?.name||'Guest').trim().replace(/[<>\\x00-\\x1f]/g,'').slice(0,32)||'Guest';
+ const player=s.players?.[p.seat];const guestName=String(player?.name||'Guest').trim().replace(/[<>\x00-\x1f]/g,'').slice(0,32)||'Guest';
  out.push(db.prepare('INSERT OR IGNORE INTO links_party_guest_names(game,room,round,seat,name) SELECT ?,?,?,?,? WHERE EXISTS(SELECT 1 FROM '+table+' WHERE '+column+'=? AND version=? AND state=?)').bind(game,code,s.game,p.seat,guestName,code,version+1,encoded));
  out.push(db.prepare(`INSERT OR IGNORE INTO links_party_results(game,room,round,seat,score,win,finished) SELECT ?,?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM ${table} WHERE ${column}=? AND version=? AND state=?)`).bind(game,code,s.game,p.seat,p.score,p.win,Date.now(),code,version+1,encoded));
  }}return out;

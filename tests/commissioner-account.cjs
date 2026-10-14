@@ -1,4 +1,7 @@
 const assert=require('node:assert/strict'),{DatabaseSync}=require('node:sqlite');
+// Exercise the future paid policy in this process only; deployed testing policy stays unchanged.
+const {registerHooks}=require('node:module');
+const paidPolicy=registerHooks({load(url,context,nextLoad){const result=nextLoad(url,context);if(url.endsWith('/functions/lib/testing-access.js'))return {...result,source:String(result.source).replace('FREE_GAME_TESTING=true','FREE_GAME_TESTING=false')};return result}});
 (async()=>{
  const sql=new DatabaseSync(':memory:');sql.exec(`
  CREATE TABLE pools(id INTEGER PRIMARY KEY,code TEXT UNIQUE,name TEXT,admin_salt TEXT,admin_hash TEXT,created_at TEXT);
@@ -65,5 +68,5 @@ const assert=require('node:assert/strict'),{DatabaseSync}=require('node:sqlite')
  const sessions=sql.prepare('SELECT token_hash FROM links_account_sessions').all();assert.ok(sessions.every(x=>!x.token_hash.includes(a.token)),'Sessions stored hashed');
  assert.equal((await call({action:'logout'},a.token)).status,200);assert.equal((await call(null,a.token)).status,401);
  console.log('PASS verification, alias normalization, ownership, slot limits, repeated NFL pools, multi-game capacity, archive/restore, saved-pick preservation, payment verification/replay, atomic rollback, logout and retired endpoints');
- }finally{global.fetch=oldFetch;sql.close()}
+ }finally{global.fetch=oldFetch;sql.close();paidPolicy.deregister()}
 })().catch(e=>{console.error(e);process.exitCode=1});

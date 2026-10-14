@@ -16,6 +16,7 @@ try{for(const width of [1280,390]){
    const token=(req.headers().authorization||'').replace('Bearer ',''),body=req.method()==='POST'?req.postDataJSON():null;
    try{const {status,...data}=await fx.call(url.searchParams.get('game'),url.searchParams.get('action'),body,token,Number(url.searchParams.get('week')));return route.fulfill({status,json:data})}catch(e){errors.push(e.stack);return route.fulfill({status:500,json:{error:e.message}})}
   }
+  if(url.pathname.endsWith('/api/login-transition'))return route.fulfill({json:{phase:'off'}});
   if(url.pathname.endsWith('/api/pool-games'))return route.fulfill({json:{games:[{key:'squares',name:'Squares'},{key:'props',name:'Props'},{key:'playoff',name:'Playoffs'}]}});
   if(url.pathname==='/api/session'){const admin=(req.headers().authorization||'').includes('admin');return route.fulfill({json:{role:admin?'admin':'player',poolCode:'POOL',name:admin?'Owner':'Alice',access:{adFree:true}}})}
   if(url.pathname.endsWith('/api/pool-switcher'))return route.fulfill({json:{currentPool:'1',pools:[{id:'1',code:'POOL',name:'Test pool',playerName:'Owner',role:'admin',games:['squares','props','playoff']}]}});
@@ -24,10 +25,11 @@ try{for(const width of [1280,390]){
  });
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());
  const go=async game=>{await page.goto(origin+'/new-build/'+game+'.html?pool=1');await page.getByText('Your pool is up to date.',{exact:true}).waitFor()};
+ const openTool=async title=>{await page.locator('.pool-admin-tool').filter({hasText:title}).click();await page.locator('.pool-admin-screen:visible').waitFor()};
  const saved=()=>page.getByText('Saved to your pool.',{exact:true}).waitFor();
  const role=async value=>page.evaluate(v=>localStorage.setItem('test-role',v),value);
  await go('squares');await page.getByRole('button',{name:'ADMIN',exact:true}).click();
- await page.locator('summary').filter({hasText:'Create an NFL board'}).click();await page.getByRole('button',{name:'Load NFL games',exact:true}).click();await page.locator('#event option[value="one"]').waitFor({state:'attached'});
+ await openTool('Create an NFL board');await page.getByRole('button',{name:'Load NFL games',exact:true}).click();await page.locator('#event option[value="one"]').waitFor({state:'attached'});
  await page.locator('#event').selectOption('one');await page.locator('#boardTitle').fill('Sunday Squares');await page.locator('#price').fill('10');
  await page.getByRole('button',{name:'Create board',exact:true}).click();await saved();
  await role('alice');await go('squares');assert.equal(await page.getByRole('button',{name:'ADMIN',exact:true}).count(),0);
@@ -35,25 +37,25 @@ try{for(const width of [1280,390]){
  if(output)await page.screenshot({path:resolve(output,'squares-'+width+'.png'),fullPage:true});
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'Grid scroll stays inside phone viewport');
  await role('admin');await go('squares');await page.getByRole('button',{name:'ADMIN',exact:true}).click();
- await page.locator('[data-paid="12"]').evaluate(n=>{const d=n.closest('details');if(d)d.open=true});await page.locator('[data-paid="12"]').check();await saved();await page.getByRole('button',{name:'Draw and lock numbers',exact:true}).click();await saved();
+ await openTool('Manage a board');await page.locator('[data-paid="12"]').check();await saved();await page.getByRole('button',{name:'Draw and lock numbers',exact:true}).click();await saved();
  await page.getByRole('button',{name:'Board',exact:true}).click();assert.equal(await page.locator('[data-square]:enabled').count(),0);
  await page.getByRole('button',{name:'Winners',exact:true}).click();await page.getByRole('heading',{name:'Quarter winners',exact:true}).waitFor();
  await go('props');await page.getByRole('button',{name:'ADMIN',exact:true}).click();
- await page.locator('#propsDeadline').evaluate(n=>{const d=n.closest('details');if(d)d.open=true});await page.locator('#propsDeadline').fill('2090-10-01T18:00');await page.locator('#questionsEditor input').fill('Will the first score be a touchdown?');await page.locator('#propsPoints').fill('3');
+ await openTool('Set up your questions');await page.locator('#propsDeadline').fill('2090-10-01T18:00');await page.locator('#questionsEditor input').fill('Will the first score be a touchdown?');await page.locator('#propsPoints').fill('3');
  await page.getByRole('button',{name:'Save setup',exact:true}).click();await saved();
  await role('alice');await go('props');await page.locator('[name="answer0"][value="Yes"]').check();await page.getByRole('button',{name:'Save answers',exact:true}).click();await saved();
  await page.reload();await page.locator('[name="answer0"]:checked').waitFor();assert.equal(await page.locator('[name="answer0"]:checked').inputValue(),'Yes');
  if(output)await page.screenshot({path:resolve(output,'props-'+width+'.png'),fullPage:true});
  const settings=JSON.parse(fx.db.raw.prepare("SELECT value FROM pool_settings WHERE key='game_settings_props'").get().value);settings.lockTime=settings.deadline='2020-01-01T00:00:00Z';fx.db.raw.prepare("UPDATE pool_settings SET value=? WHERE key='game_settings_props'").run(JSON.stringify(settings));
- await role('admin');await go('props');await page.getByRole('button',{name:'ADMIN',exact:true}).click();await page.locator('[name="official0"][value="Yes"]').evaluate(n=>{const d=n.closest('details');if(d)d.open=true});await page.locator('[name="official0"][value="Yes"]').check();await page.getByRole('button',{name:'Publish official answers',exact:true}).click();await saved();
+ await role('admin');await go('props');await page.getByRole('button',{name:'ADMIN',exact:true}).click();await openTool('Grade official answers');await page.locator('[name="official0"][value="Yes"]').check();await page.getByRole('button',{name:'Publish official answers',exact:true}).click();await saved();
  await page.getByRole('button',{name:'Standings',exact:true}).click();assert.match(await page.locator('tbody').textContent(),/Alice3FINAL/);
- await go('playoff');await page.getByRole('button',{name:'ADMIN',exact:true}).click();await page.locator('[name="divisionalPoints"]').evaluate(n=>{const d=n.closest('details');if(d)d.open=true});await page.locator('[name="divisionalPoints"]').fill('2');await page.getByRole('button',{name:'Save round scoring',exact:true}).click();await saved();
+ await go('playoff');await page.getByRole('button',{name:'ADMIN',exact:true}).click();await openTool('Playoff round scoring');await page.locator('[name="divisionalPoints"]').fill('2');await page.getByRole('button',{name:'Save round scoring',exact:true}).click();await saved();
  await role('alice');await go('playoff');await page.locator('#playoffRound').selectOption('20');await page.getByRole('heading',{name:'Divisional',exact:true}).waitFor();await page.locator('[name="pick0"][value="BUF"]').check();await page.getByRole('button',{name:'Save round picks',exact:true}).click();await saved();
  await page.reload();await page.getByText('Your pool is up to date.',{exact:true}).waitFor();assert.equal(await page.locator('#playoffRound').inputValue(),'20');assert.equal(await page.locator('[name="pick0"]:checked').inputValue(),'BUF');assert.equal(await page.locator('#pickProgress').textContent(),'1 / 1 picks selected');assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  if(output)await page.screenshot({path:resolve(output,'playoff-'+width+'.png'),fullPage:true});
  fx.runtime.slate=[{...fx.runtime.slate[0],kickoff:'2020-01-01',completed:true,winner:'BUF',awayScore:20,homeScore:10}];
  await page.getByRole('button',{name:'Refresh',exact:true}).click();await page.getByText('Your pool is up to date.',{exact:true}).waitFor();assert.equal(await page.locator('[name="pick0"]:enabled').count(),0);
  await page.getByRole('button',{name:'Standings',exact:true}).click();assert.match(await page.locator('tbody').textContent(),/Alice/);assert.equal(await page.locator('tbody tr').first().locator('td').last().textContent(),'2');
- await page.getByRole('link',{name:'Back to Locker Room',exact:true}).click();await page.locator('#topGameGrid .game-plaque').first().waitFor();assert.equal(await page.getByRole('button',{name:'Test pool · Squares',exact:true}).isEnabled(),true);assert.equal(await page.getByRole('button',{name:'Test pool · Playoffs',exact:true}).isEnabled(),true);for(const g of ['Props'])assert.equal(await page.getByRole('button',{name:'Test pool · '+g+' · Coming soon',exact:true}).isDisabled(),true);
+ await page.goto(origin+'/new-build/control-center.html?pool=1');await page.locator('#topGameGrid .game-plaque').first().waitFor();assert.equal(await page.getByRole('button',{name:'Test pool · Squares',exact:true}).isEnabled(),true);assert.equal(await page.getByRole('button',{name:'Test pool · Playoffs',exact:true}).isEnabled(),true);for(const g of ['Props'])assert.equal(await page.getByRole('button',{name:'Test pool · '+g+' · Coming soon',exact:true}).isDisabled(),true);
  assert.deepEqual(errors,[]);fx.db.raw.close();await context.close();console.log('PASS '+width+'px complete Squares, Props and Playoffs player/commissioner flows against database handlers');
  }}finally{await browser.close()}

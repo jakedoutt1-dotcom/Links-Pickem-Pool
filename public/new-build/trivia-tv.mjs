@@ -8,7 +8,7 @@ function fitQuestion(){
  const display=$('display');if(display.hidden)return;display.style.minHeight=Math.max(0,innerHeight-display.getBoundingClientRect().top-14)+'px';const stage=$('stage');if(stage.hidden)return;const bannerSpace=($('venueBanner').hidden?0:$('venueBanner').offsetHeight)+($('tvStandings').hidden?0:$('tvStandings').offsetHeight+10);
  let question=Math.min(40,Math.max(24,innerWidth*.026)),answer=Math.min(30,Math.max(20,innerWidth*.019));
  const apply=()=>{stage.style.setProperty('--tv-question-size',question+'px');stage.style.setProperty('--tv-answer-size',answer+'px')};apply();
- while(stage.getBoundingClientRect().bottom>innerHeight-14-bannerSpace&&(question>18||answer>15)){question=Math.max(18,question-1);answer=Math.max(15,answer-1);apply()}
+ while(stage.getBoundingClientRect().bottom>innerHeight-14-bannerSpace&&(question>14||answer>12)){question=Math.max(14,question-1);answer=Math.max(12,answer-1);apply()}
 }
 window.addEventListener('resize',()=>requestAnimationFrame(fitQuestion));
 document.addEventListener('fullscreenchange',()=>requestAnimationFrame(fitQuestion));

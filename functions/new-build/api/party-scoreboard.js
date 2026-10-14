@@ -25,7 +25,7 @@ export async function onRequest({request,env}){try{
    if(!Array.isArray(b.seats)||b.seats.length>50)return json({error:'Too many game seats.'},400);
    const secretHash=await hash(b.secret);
    let profile=await db.prepare('SELECT id,name FROM links_party_guest_profiles WHERE secret_hash=?').bind(secretHash).first();
-   const requestedName=String(b.name||'').trim().replace(/[<>\\x00-\\x1f]/g,'').slice(0,32);
+   const requestedName=String(b.name||'').trim().replace(/[<>\x00-\x1f]/g,'').slice(0,32);
    if(!profile){const id=crypto.randomUUID();await db.prepare('INSERT OR IGNORE INTO links_party_guest_profiles(id,secret_hash,name) VALUES(?,?,?)').bind(id,secretHash,requestedName||'Guest Player').run();profile=await db.prepare('SELECT id,name FROM links_party_guest_profiles WHERE secret_hash=?').bind(secretHash).first();}
    let linked=0;
    for(const input of b.seats){const cfg=SCORE_GAMES[input.game],room=String(input.room||'');
