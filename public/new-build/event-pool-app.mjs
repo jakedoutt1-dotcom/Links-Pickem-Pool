@@ -2,14 +2,15 @@ import {FORMATS,scoreCard} from './event-pool-core.mjs';
 const demoMode=/\/event-pool-demo(?:\.html)?\/?$/.test(location.pathname),params=new URLSearchParams(location.search),game=demoMode?(params.get('game')==='nascar'?'nascar':'golf'):(location.pathname.includes('nascar')?'nascar':'golf'),pool=params.get('pool');
 const practice=demoMode?(await import('./event-pool-demo.mjs')).createDemo(game):null;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let state,view='picks',event='',draft={picks:[],garage:''},busy=false,root;
+let state,view='picks',event='',draft={picks:[],garage:''},busy=false,loading=false,loadSequence=0,root;
 const field=(label,name,value='',type='text')=>'<label>'+label+'<input name="'+name+'" type="'+type+'" value="'+esc(value)+'" required></label>';
 const options=(values,selected)=>values.map(([value,label])=>'<option value="'+esc(value)+'" '+(value===selected?'selected':'')+'>'+esc(label)+'</option>').join('');
 const local=v=>v?new Date(Date.parse(v)-new Date(v).getTimezoneOffset()*60000).toISOString().slice(0,16):'';
 async function api(action,body={}){if(practice)return practice.api(action,body);const r=await LINKS_API_FETCH('./api/event-pool?'+new URLSearchParams({pool,game,event}),action?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pool,game,event,version:state?.version,action,...body})}:{cache:'no-store'});const j=await r.json();if(!r.ok)throw Error(j.error||'Request failed.');return j;}
 function status(text){root.querySelector('[role=status]').textContent=text;}
-async function load(){state=await api();event=state.event||'';draft=state.card?structuredClone(state.card):{picks:[],garage:''};render();}
-async function mutate(action,body){if(busy)return;busy=true;const enabled=[...root.querySelectorAll('button:not(:disabled)')];enabled.forEach(b=>b.disabled=true);try{const j=await api(action,body);if(j.event)event=j.event;await load();status(practice?'Saved in this practice demo.':'Saved to your pool.')}catch(e){if(action==='configure'){const notice=root.querySelector('#setupStatus');notice.textContent=e.message;notice.scrollIntoView({block:'center'});}else{render();status(e.message)}}finally{busy=false;enabled.forEach(b=>{if(b.isConnected)b.disabled=false});}}
+function hasUnsavedDraft(){return JSON.stringify(draft)!==JSON.stringify(state?.card||{picks:[],garage:''});}
+async function load(){const sequence=++loadSequence;loading=true;root.querySelectorAll('button').forEach(b=>b.disabled=true);try{const next=await api();if(sequence!==loadSequence)return;state=next;event=state.event||'';draft=state.card?structuredClone(state.card):{picks:[],garage:''};render();}catch(error){if(sequence!==loadSequence)return;event=state?.event||'';render();throw error;}finally{if(sequence===loadSequence)loading=false;}}
+async function mutate(action,body){if(busy||loading)return;busy=true;const enabled=[...root.querySelectorAll('button:not(:disabled)')];enabled.forEach(b=>b.disabled=true);try{const j=await api(action,body);if(j.event)event=j.event;await load();status(practice?'Saved in this practice demo.':'Saved to your pool.')}catch(e){if(action==='configure'){const notice=root.querySelector('#setupStatus');notice.textContent=e.message;notice.scrollIntoView({block:'center'});}else{render();status(e.message)}}finally{busy=false;enabled.forEach(b=>{if(b.isConnected)b.disabled=false});}}
 function renderRaceLive(){if(game==='golf'){
  root.querySelector('.race-live')?.remove();if(!state.liveGolf)return;const golf=state.liveGolf,strip=document.createElement('section');strip.className='race-live';strip.innerHTML='<strong>● LINKS LIVE GOLF</strong><span>'+esc(golf.name)+' · '+(golf.final?'Final':'Round '+(golf.round||'—'))+'</span><span>'+golf.leaders.map(p=>esc(p.position+'. '+p.name+' '+(p.score===0?'E':p.score>0?'+'+p.score:p.score))).join(' · ')+'</span><small>Live scores are provisional until the tournament is final.</small>';root.querySelector('.event-heading').after(strip);return;
  }if(game!=='nascar')return;root.querySelector('.race-live')?.remove();
@@ -22,9 +23,9 @@ function render(){
  root.innerHTML='<div class="event-heading"><div><small>YOUR '+game.toUpperCase()+' POOL</small><h2>'+esc(c?.title||'Choose your game format')+'</h2></div><button id="eventRefresh">Refresh</button></div><nav class="event-tabs">'+['picks','standings','results','rules',...(state.role==='admin'?['admin']:[])].map(v=>'<button data-view="'+v+'" class="'+(view===v?'active':'')+'">'+v.toUpperCase()+'</button>').join('')+'</nav><label'+(state.events.length?'':' hidden')+'>Saved pool events<select id="eventSelect">'+(!event?'<option value="" disabled selected>Choose a saved event</option>':'')+options(state.events.map(e=>[e.id,e.title]),event)+'</select></label><p role="status" aria-live="polite"></p><div id="eventBody"></div>';
  renderRaceLive();
  if(state.scoringMessage)status(state.scoringMessage);
- root.querySelector('#eventRefresh').onclick=()=>load().catch(e=>status(e.message));
- root.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{view=b.dataset.view;render();});
- root.querySelector('#eventSelect').onchange=e=>{event=e.target.value;load().catch(e=>status(e.message));};
+ root.querySelector('#eventRefresh').onclick=()=>{if(busy)return;if(hasUnsavedDraft()&&!confirm('Refresh and discard your unsaved entry changes?'))return;load().catch(e=>status(e.message));};
+ root.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{if(busy||loading)return;view=b.dataset.view;render();});
+ root.querySelector('#eventSelect').onchange=e=>{if(busy||hasUnsavedDraft()&&!confirm('Change events and discard your unsaved entry changes?')){e.target.value=event;return;}event=e.target.value;load().catch(e=>status(e.message));};
  const body=root.querySelector('#eventBody');
  if(view==='admin'){admin(body);return;}
  if(!c){body.innerHTML='<p>Your commissioner can create an event and choose its format in Admin. '+(state.events.length?'Choose a saved pool event above to view previous entries.':'No events have been saved for this pool yet.')+'</p>';return;}
@@ -92,7 +93,7 @@ if(practice){document.querySelector('h1').textContent=game==='golf'?'Try a Golf 
 
 // Refresh the race strip without resetting an unsaved roster or moving the page.
 if(!practice){
- let polling=false;const timer=setInterval(async()=>{if(document.hidden||polling||busy||!state?.config)return;polling=true;const selected=event;try{const next=await api();if(event===selected&&!busy){state.liveRace=next.liveRace;state.liveGolf=next.liveGolf;renderRaceLive();if(['standings','results'].includes(view)){state=next;render();}}}catch{}finally{polling=false}},60000);
+ let polling=false;const timer=setInterval(async()=>{if(document.hidden||polling||busy||loading||!state?.config)return;polling=true;const selected=event,sequence=loadSequence;try{const next=await api();if(event===selected&&sequence===loadSequence&&!busy&&!loading){state.liveRace=next.liveRace;state.liveGolf=next.liveGolf;renderRaceLive();if(['standings','results'].includes(view)){state=next;render();}}}catch{}finally{polling=false}},60000);
  window.addEventListener('pagehide',()=>clearInterval(timer),{once:true});
 }
 

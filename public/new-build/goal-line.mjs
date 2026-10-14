@@ -1,3 +1,4 @@
+import {createPendingScores} from './goal-line-pending.mjs';
 import {createGame,snap,step,pass,GOAL} from './goal-line-core.mjs';
 const $=id=>document.getElementById(id),canvas=$('field'),ctx=canvas.getContext('2d');let s=createGame(),paused=false,keys=new Set(),axis={x:0,y:0},boost=false,last=0,elapsed=0,best=0,muted=false,audio;
 try{best=Number(localStorage.getItem('links-goal-line-best'))||0;muted=localStorage.getItem('links-games-muted')==='1'}catch{}
@@ -30,11 +31,16 @@ function frame(now){const dt=last?Math.min(.05,(now-last)/1000):0;last=now;elaps
 
 try{$('scoreName').value=localStorage.getItem('links-goal-line-name')||'Guest Quarterback'}catch{}
 $('scoreName').onchange=()=>{try{localStorage.setItem('links-goal-line-name',$('scoreName').value.trim())}catch{}};
+const pendingScores=createPendingScores({storage:localStorage,send:async payload=>{const r=await fetch('./api/goal-line-score',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:AbortSignal.timeout(12000)});const j=await r.json();if(!r.ok)throw Error(j.error||'Please try again.');return j}});
+const retryPending=document.createElement('button');retryPending.type='button';retryPending.textContent='Retry saved scores';$('scoreSave').append(retryPending);
+function pendingStatus(){retryPending.hidden=!pendingScores.count()}
+async function flushPending(){try{const saved=await pendingScores.flush();if(saved)$('saveStatus').textContent='Saved '+saved+' completed score(s) to the leaderboard.'}catch(e){$('saveStatus').textContent=e.message+' Your completed scores are saved on this device. Retry when connected.'}finally{pendingStatus()}}
+retryPending.onclick=flushPending;window.addEventListener('online',flushPending);pendingStatus();if(pendingScores.count())void flushPending();
 async function saveRun(automatic=false){if(s.phase!=='ended')return;const savingRun=runId,runEvents=events.slice(),button=$('saveScore');button.disabled=true;
  try{
  let secret=localStorage.getItem('links-scoreboard-guest-secret');if(!/^[a-f0-9]{64}$/i.test(secret||'')){secret=Array.from(crypto.getRandomValues(new Uint8Array(32)),v=>v.toString(16).padStart(2,'0')).join('');localStorage.setItem('links-scoreboard-guest-secret',secret)}
  const name=$('scoreName').value.trim()||'Guest Quarterback';localStorage.setItem('links-goal-line-name',name);
- const r=await fetch('./api/goal-line-score',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({secret,name,run:savingRun,events:runEvents})});const j=await r.json();if(!r.ok)throw Error(j.error||'Please try again.');if(runId===savingRun)$('saveStatus').textContent='Saved! Your '+j.score+' points are on the Goal Line scoreboard.';
- }catch(e){if(runId===savingRun)$('saveStatus').textContent=e.message+' · Use Save this score to retry.'}finally{if(runId===savingRun)button.disabled=false}
+ pendingScores.enqueue({secret,name,run:savingRun,events:runEvents});pendingStatus();await pendingScores.flush();if(runId===savingRun)$('saveStatus').textContent='Saved! Your score is on the Goal Line scoreboard.';
+ }catch(e){if(runId===savingRun)$('saveStatus').textContent=e.message+' · Retry saved scores when connected. Do not clear this device’s site data.'}finally{if(runId===savingRun)button.disabled=false;pendingStatus()}
 }
 $('scoreSave').onsubmit=e=>{e.preventDefault();void saveRun()};

@@ -13,6 +13,17 @@ try{
  let r=await call();assert.equal(r.status,200);assert.equal(r.data.games.length,2);assert.equal(r.data.standings.length,3);assert.equal(r.data.active,true);
  assert.equal((await call({action:'pick',eventId:'1',team:'147',player:'Bob'})).status,200);assert.equal((await call({action:'pick',eventId:'2',team:'111'})).status,200);assert.equal(sql.prepare("SELECT COUNT(*) n FROM links_nba_picks WHERE player='Alice'").get().n,2);assert.deepEqual((await call()).data.shared,[]);
  assert.equal((await call({action:'pick',eventId:'1',team:'111'})).status,200);assert.equal((await call({action:'pick',eventId:'1',team:'147'})).status,200);assert.equal((await call()).data.picks['1'],'147');
+
+ // A slow historical feed must never hold up a current, valid pick.
+ const historical={...r.data.games[0],id:'999',final:false,live:false,voided:false};
+ sql.prepare('INSERT INTO links_nba_games VALUES(?,?,?,?,?)').run(date,'999',JSON.stringify(historical),1,new Date().toISOString());
+ sql.prepare('INSERT INTO links_nba_picks VALUES(?,?,?,?,?,?)').run(1,'Alice',date,'999','147',new Date().toISOString());
+ let historicalRequests=0;
+ global.fetch=async url=>{if(String(url).includes('/summary?')){historicalRequests++;return new Promise(()=>{});}return Response.json({events:games});};
+ let deadline;try{const saved=await Promise.race([call({action:'pick',eventId:'2',team:'111'}),new Promise((_,reject)=>{deadline=setTimeout(()=>reject(Error('Current pick waited for historical provider')),1000)})]);assert.equal(saved.status,200);assert.equal(historicalRequests,0);}finally{clearTimeout(deadline);}
+ global.fetch=async url=>{if(String(url).includes('/summary?')){historicalRequests++;return Response.json({});}return Response.json({events:games});};
+ assert.equal((await call()).status,200);assert.equal(historicalRequests,1,'Read still reconciles older results');
+ sql.prepare("DELETE FROM links_nba_picks WHERE event_id='999'").run();sql.prepare("DELETE FROM links_nba_games WHERE event_id='999'").run();global.fetch=async()=>Response.json({events:games});
  games[0].date=new Date(Date.now()-1000).toISOString();assert.equal((await call({action:'pick',eventId:'1',team:'111',start:'2099-01-01'})).status,403);
  games[0].date=later;assert.equal((await call({action:'pick',eventId:'1',team:'111'})).status,403,'Delay must not reopen');
  assert.equal((await call({action:'pick',eventId:'2',team:'147'})).status,200,'Other doubleheader game remains open');

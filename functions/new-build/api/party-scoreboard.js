@@ -45,13 +45,14 @@ export async function onRequest({request,env}){try{
   }
   if(!session)return json({error:'Sign in to link a member record.'},401);
   const existing=b.action==='link'?await db.prepare('SELECT name FROM links_party_score_profiles WHERE email=?').bind(session.email).first():null;
+  if(b.action==='link'&&!existing)return json({ok:true,linked:0,needsProfile:true});
   const name=String(existing?.name||b.name||'').trim();if(name.length<1||name.length>32)return json({error:'Choose a public name, up to 32 characters.'},400);
   if(!Array.isArray(b.seats)||b.seats.length>50)return json({error:'Save up to 50 rooms at a time.'},400);
   if(b.action!=='link')await db.prepare('INSERT INTO links_party_score_profiles(email,id,name) VALUES(?,?,?) ON CONFLICT(email) DO UPDATE SET name=excluded.name').bind(session.email,crypto.randomUUID(),name).run();
   let linked=0;
   for(const input of b.seats){const cfg=SCORE_GAMES[input.game],room=String(input.room||'');if(!cfg||!/^[A-F0-9]{10}$/.test(room)||typeof input.token!=='string'||input.token.length!==72)continue;
    const seat=await hash(input.token);let valid=await db.prepare('SELECT 1 AS ok FROM links_party_results WHERE game=? AND room=? AND seat=? LIMIT 1').bind(input.game,room,seat).first();
-   if(!valid){try{const row=await db.prepare(`SELECT state FROM ${cfg.table} WHERE code=? AND expires>?`).bind(room,Date.now()).first();valid=row&&JSON.parse(row.state).players?.[seat]}catch{valid=null}}
+   if(!valid){try{const row=await db.prepare(`SELECT state FROM ${cfg.table} WHERE ${cfg.column||'code'}=? AND expires>?`).bind(room,Date.now()).first();const state=row&&JSON.parse(row.state);valid=state&&(cfg.column==='id'?state.players?.find(p=>p.key===seat):state.players?.[seat])}catch{valid=null}}
    if(!valid)continue;
    // Possession of the private seat token proves ownership; names never do.
    const r=await db.prepare('INSERT OR IGNORE INTO links_party_score_seats(game,room,seat,email) VALUES(?,?,?,?)').bind(input.game,room,seat,session.email).run();linked+=r.meta?.changes||0;

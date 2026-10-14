@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {fixture} from './helpers/pool-format-fixture.mjs';
+import {ensureIdentity} from '../functions/lib/player-identity.js';
+import {digest} from '../functions/lib/commissioner-account.js';
+import {onRequest} from '../functions/new-build/api/party-scoreboard.js';
+import {createPendingScores} from '../public/new-build/goal-line-pending.mjs';
+const {db}=fixture();await ensureIdentity(db);const cookie='test-cookie-secret';
+await db.prepare('INSERT OR IGNORE INTO links_id_accounts(id,username,email,display_name,salt,password_hash,created_at) VALUES(?,?,?,?,?,?,?)').bind('new','newname','private@example.com','New Person','salt','hash','2026').run();await db.prepare('INSERT INTO links_id_sessions VALUES(?,?,?)').bind(await digest(cookie),'new',Date.now()+60000).run();
+async function call(body){const r=await onRequest({request:new Request('https://test/api/party-scoreboard',{method:body?'POST':'GET',headers:{Origin:'https://test',Cookie:'__Host-links_identity='+cookie},...(body?{body:JSON.stringify(body)}:{})}),env:{DB:db}});return {status:r.status,...await r.json()}}
+assert.equal((await call({action:'link',seats:[]})).needsProfile,true);assert.equal((await call({name:'Chosen Public Name',seats:[]})).status,200);const board=await call();assert.equal(board.profile.name,'Chosen Public Name');assert(!JSON.stringify(board).includes('private@example.com'));assert.equal((await call({action:'link',seats:[]})).status,200);
+const values=new Map(),storage={getItem:k=>values.get(k),setItem:(k,v)=>values.set(k,v)};let online=false;const saved=new Set(),send=async payload=>{if(!online)throw Error('offline');saved.add(payload.run)};let queue=createPendingScores({storage,send});queue.enqueue({run:'first',events:[1]});await assert.rejects(queue.flush());assert.equal(queue.count(),1);queue=createPendingScores({storage,send});queue.enqueue({run:'second',events:[2]});online=true;await Promise.all([queue.flush(),queue.flush()]);assert.deepEqual([...saved],['first','second']);assert.equal(queue.count(),0);console.log('PASS cookie-only public profile opt-in/email privacy and offline score persistence across reload/new run with duplicate-safe retry');
