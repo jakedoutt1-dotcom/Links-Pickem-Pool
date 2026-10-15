@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {normalizeGame as nba} from '../public/new-build/nba-core.mjs';
+import {normalizeGame as mlb,gradeRows,pickClosed} from '../public/new-build/mlb-core.mjs';
+const competitors=[{homeAway:'home',team:{id:'1'},score:'100'},{homeAway:'away',team:{id:'2'},score:null}];
+const raw={id:'1',date:'2026-10-15T23:00:00Z',competitions:[{status:{type:{state:'post',completed:true}},competitors}]};
+assert.equal(nba(raw).winner,null,'A missing score must not become zero and create a winner');
+competitors[1].score='90';assert.equal(nba(raw).winner,'1');competitors[1].score='';assert.equal(nba(raw).winner,null);
+competitors[1].score='100';assert.equal(nba(raw).winner,null,'A tied final feed remains unresolved');
+competitors[1].winner=true;assert.equal(nba(raw).winner,'2','Explicit official winner takes precedence');
+const base={id:'1',day:'2026-10-15',final:true,voided:false,winner:null};
+let row=gradeRows(['A'],[{player:'A',day:base.day,event_id:'1',team:'1'}],[base])[0];assert.equal(row.pending,1);assert.equal(row.voids,0);
+row=gradeRows(['A'],[{player:'A',day:base.day,event_id:'1',team:'1'}],[{...base,voided:true}])[0];assert.equal(row.voids,1);
+const missingTeam=mlb({gamePk:1,gameDate:'2099-01-01',teams:{home:{team:{id:1}}}});assert.equal(pickClosed(missingTeam),true,'Missing opponent cannot accept picks');
+console.log('PASS incomplete final scores remain pending without invented winners; missing matchups stay closed');

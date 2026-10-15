@@ -15,14 +15,14 @@ try{
  assert.equal((await call({action:'pick',eventId:'1',team:'111'})).status,200);assert.equal((await call({action:'pick',eventId:'1',team:'147'})).status,200);assert.equal((await call()).data.picks['1'],'147');
 
  // A slow historical feed must never hold up a current, valid pick.
- const historical={...r.data.games[0],id:'999',final:false,live:false,voided:false};
+ const historical={...r.data.games[0],id:'999',final:true,winner:null,live:false,voided:false};
  sql.prepare('INSERT INTO links_nba_games VALUES(?,?,?,?,?)').run(date,'999',JSON.stringify(historical),1,new Date().toISOString());
  sql.prepare('INSERT INTO links_nba_picks VALUES(?,?,?,?,?,?)').run(1,'Alice',date,'999','147',new Date().toISOString());
  let historicalRequests=0;
  global.fetch=async url=>{if(String(url).includes('/summary?')){historicalRequests++;return new Promise(()=>{});}return Response.json({events:games});};
  let deadline;try{const saved=await Promise.race([call({action:'pick',eventId:'2',team:'111'}),new Promise((_,reject)=>{deadline=setTimeout(()=>reject(Error('Current pick waited for historical provider')),1000)})]);assert.equal(saved.status,200);assert.equal(historicalRequests,0);}finally{clearTimeout(deadline);}
- global.fetch=async url=>{if(String(url).includes('/summary?')){historicalRequests++;return Response.json({});}return Response.json({events:games});};
- assert.equal((await call()).status,200);assert.equal(historicalRequests,1,'Read still reconciles older results');
+ global.fetch=async url=>{if(String(url).includes('/summary?')){historicalRequests++;const recovered=game(999);recovered.competitions[0].status={type:{state:'post',completed:true}};recovered.competitions[0].competitors[0].winner=true;return Response.json({header:recovered});}return Response.json({events:games});};
+ assert.equal((await call()).status,200);assert.equal(historicalRequests,1,'Read still reconciles older results');assert.equal(JSON.parse(sql.prepare("SELECT data FROM links_nba_games WHERE event_id='999'").get().data).winner,'147','Incomplete final results recover an official winner');
  sql.prepare("DELETE FROM links_nba_picks WHERE event_id='999'").run();sql.prepare("DELETE FROM links_nba_games WHERE event_id='999'").run();global.fetch=async()=>Response.json({events:games});
  games[0].date=new Date(Date.now()-1000).toISOString();assert.equal((await call({action:'pick',eventId:'1',team:'111',start:'2099-01-01'})).status,403);
  games[0].date=later;assert.equal((await call({action:'pick',eventId:'1',team:'111'})).status,403,'Delay must not reopen');

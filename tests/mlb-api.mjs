@@ -12,6 +12,15 @@ try{
  assert.equal((await call(null,'other')).status,401);assert.equal((await call(null,'bad')).status,401);assert.equal((await call(null,'alice','2026-02-31')).status,400);
  let r=await call();assert.equal(r.status,200);assert.equal(r.data.games.length,2);assert.equal(r.data.standings.length,3);assert.equal(r.data.active,true);
  assert.equal((await call({action:'pick',eventId:'1',team:'147',player:'Bob'})).status,200);assert.equal((await call({action:'pick',eventId:'2',team:'111'})).status,200);assert.equal(sql.prepare("SELECT COUNT(*) n FROM links_mlb_picks WHERE player='Alice'").get().n,2);assert.deepEqual((await call()).data.shared,[]);
+
+ const historical={...r.data.games[0],id:'999',final:true,winner:null,live:false,voided:false};
+ sql.prepare('INSERT INTO links_mlb_games VALUES(?,?,?,?,?)').run(date,'999',JSON.stringify(historical),1,new Date().toISOString());
+ sql.prepare('INSERT INTO links_mlb_picks VALUES(?,?,?,?,?,?)').run(1,'Alice',date,'999','147',new Date().toISOString());
+ let historicalRequests=0;global.fetch=async url=>{if(String(url).includes('gamePks=')){historicalRequests++;return new Promise(()=>{});}return Response.json({dates:[{games}]});};
+ let deadline;try{const saved=await Promise.race([call({action:'pick',eventId:'2',team:'111'}),new Promise((_,reject)=>{deadline=setTimeout(()=>reject(Error('Current MLB pick waited for historical provider')),1000)})]);assert.equal(saved.status,200);assert.equal(historicalRequests,0);}finally{clearTimeout(deadline);}
+ global.fetch=async url=>{if(String(url).includes('gamePks=')){historicalRequests++;const recovered=game(999);recovered.status={abstractGameState:'Final',detailedState:'Final'};recovered.teams.away.isWinner=true;return Response.json({dates:[{games:[recovered]}]});}return Response.json({dates:[{games}]});};
+ assert.equal((await call()).status,200);assert.equal(historicalRequests,1);assert.equal(JSON.parse(sql.prepare("SELECT data FROM links_mlb_games WHERE event_id='999'").get().data).winner,'147','Incomplete final is refreshed');
+ sql.prepare("DELETE FROM links_mlb_picks WHERE event_id='999'").run();sql.prepare("DELETE FROM links_mlb_games WHERE event_id='999'").run();global.fetch=async()=>Response.json({dates:[{games}]});
  games[0].gameDate=new Date(Date.now()-1000).toISOString();assert.equal((await call({action:'pick',eventId:'1',team:'111',start:'2099-01-01'})).status,403);
  games[0].gameDate=later;assert.equal((await call({action:'pick',eventId:'1',team:'111'})).status,403,'Delay must not reopen');
  assert.equal((await call({action:'pick',eventId:'2',team:'147'})).status,200,'Other doubleheader game remains open');

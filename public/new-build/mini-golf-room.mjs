@@ -12,7 +12,7 @@ async function saveSolo(shots,hole,rulesVersion=4){let run=soloRuns.get(shots);i
 window.addEventListener('online',()=>{flushSolo();sync()});
 const persist=()=>{try{localStorage.setItem(storage,JSON.stringify({room,token}))}catch{}};
 const key=()=>storage+':'+room+':'+round;
-async function api(action,extra={}){const r=await fetch('./api/mini-golf',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,room,token,round,...extra})});const b=await r.json();if(!r.ok){const e=Error(b.error||'Please retry');e.status=r.status;throw e;}return b}
+async function api(action,extra={}){const r=await fetch('./api/mini-golf',{method:'POST',signal:AbortSignal.timeout(12000),headers:{'Content-Type':'application/json'},body:JSON.stringify({action,room,token,round,...extra})});const b=await r.json();if(!r.ok){const e=Error(b.error||'Please retry');e.status=r.status;throw e;}return b}
 function error(e){$('roomError').textContent=e.message}
 async function sync(){if(!room||polling)return false;polling=true;try{
 let finishError=null;let restartRejected=false;const pendingRound=round;if(pending&&!submitted){try{await api('finish',{shots:pending});submitted=true;pending=null}catch(e){finishError=e;if(e.status===409){/* Keep the score until state confirms a new round or a saved result. */}else if(e.status>=400&&e.status<500&&e.status!==429){pending=null;submitted=false;restartRejected=true;try{localStorage.removeItem(key())}catch{}}}}

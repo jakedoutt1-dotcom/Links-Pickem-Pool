@@ -1,4 +1,4 @@
-import {createPendingScores} from './goal-line-pending.mjs';
+import {createPendingScores} from './goal-line-pending.mjs?v=queue-isolation2';
 import {createGame,snap,step,pass,GOAL} from './goal-line-core.mjs';
 const $=id=>document.getElementById(id),canvas=$('field'),ctx=canvas.getContext('2d');let s=createGame(),paused=false,keys=new Set(),axis={x:0,y:0},boost=false,last=0,elapsed=0,best=0,muted=false,audio;
 try{best=Number(localStorage.getItem('links-goal-line-best'))||0;muted=localStorage.getItem('links-games-muted')==='1'}catch{}

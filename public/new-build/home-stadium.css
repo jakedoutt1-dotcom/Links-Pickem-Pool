@@ -10,3 +10,14 @@
 
 .hero{background-repeat:no-repeat}
 @media(max-width:700px){.hero{background-image:linear-gradient(0deg,#080b0e 0%,#080b0ef5 38%,#080b0e70 66%,transparent 85%),url('./assets/links-all-sports-hero-v4.png');background-size:100% 100%,auto 390px;background-position:center,54% top;background-repeat:no-repeat}}
+
+/* Keep both pools and games within reach on phones. */
+@media(max-width:700px){
+ html{scroll-padding-top:125px}
+ .top{height:auto;min-height:112px;display:grid;grid-template-columns:1fr auto;gap:10px 16px;padding:12px 18px 9px}
+ .top .brand{grid-column:1;grid-row:1}
+ .top .header-login{grid-column:2;grid-row:1}
+ .top .nav{grid-column:1/-1;grid-row:2;display:flex;justify-content:space-between;gap:12px;font-size:12px}
+ .top .nav a{display:flex;align-items:center;min-height:36px;color:#edce85}
+ .hero{padding-top:185px}
+}

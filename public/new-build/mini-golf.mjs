@@ -1,7 +1,7 @@
 import {createScenery,waterTexture,createWindmill} from './mini-golf-scenery.mjs?v=course18-1';
 import {themes,courseFor,coursesFor} from './mini-golf-courses.mjs?v=course18-1';
 import {setupLobby} from './mini-golf-lobby.mjs?v=course18-1';
-import {connectRoom} from './mini-golf-room.mjs?v=course18-1';
+import {connectRoom} from './mini-golf-room.mjs?v=recovery-timeout2';
 import {tone,unlock,setupSound,bounce,rolling,splash,ambience} from './mini-golf-sound.mjs?v=lobby13';
 import * as T from './vendor/three/three.module.min.js';
 import {create,hit,step,blocks,cup,replayShots,gateAt,windmillAt} from './mini-golf-core.mjs?v=course18-1';

@@ -5,9 +5,9 @@ import {fileURLToPath} from 'node:url';
 import {resolve} from 'node:path';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const groups={
- accounts:['login-transition.mjs','login-email-recovery.mjs','player-setup-invites.mjs','selective-pool-connect.mjs','player-identity.mjs','pool-password-recovery.mjs','links-owner-admin.cjs','owner-package-grant.cjs','partners.mjs','partner-logo.mjs','owner-pool-delete.cjs','pool-chat-unread.mjs','session-security-api.cjs','pool-chat.mjs'],
+ accounts:['homepage-routing.cjs','login-transition.mjs','login-email-recovery.mjs','player-setup-invites.mjs','pool-email-content.mjs','selective-pool-connect.mjs','player-identity.mjs','pool-password-recovery.mjs','links-owner-admin.cjs','owner-package-grant.cjs','partners.mjs','partner-logo.mjs','owner-pool-delete.cjs','pool-chat-unread.mjs','session-security-api.cjs','pool-chat.mjs'],
  games:['trivia-provider.mjs','trivia-api-games.mjs','trivia-night.mjs','trivia-teams.mjs','trivia-submit-answer.mjs','trivia-close-room.mjs','trivia-sessions.mjs','trivia-answer-changes.mjs','trivia-rally.mjs','friend-challenge.mjs','dead-air.mjs','last-alibi.mjs','million-point.mjs','solo-trivia.mjs','party-scoreboard.mjs','goal-line-scoreboard.mjs','mini-golf-core.mjs','mini-golf-courses.mjs','mini-golf-rooms.mjs','mini-golf-eighteen.mjs','mini-golf-room-recovery.mjs','venue-scoreboard.mjs','party-grants.mjs','game-feedback.mjs','game-score-recovery.mjs'],
- pools:['nba-api.mjs','mlb-api.mjs','college-api.cjs','college-rankings.cjs','nascar-scoring.mjs','nascar-schedule.cjs','golf-scoring.mjs','golf-schedule.mjs','event-pool.test.mjs','fantasy.test.mjs','march.test.mjs','march-2025-replay.mjs','playoff-challenge.mjs','launch-availability.test.mjs','non-nfl-navigation-races.mjs','legacy-invite-security.mjs']
+ pools:['nba-api.mjs','mlb-api.mjs','pickem-incomplete-results.mjs','college-api.cjs','college-rankings.cjs','nascar-scoring.mjs','nascar-schedule.cjs','golf-scoring.mjs','golf-schedule.mjs','event-pool.test.mjs','fantasy.test.mjs','march.test.mjs','march-2025-replay.mjs','playoff-challenge.mjs','launch-availability.test.mjs','non-nfl-navigation-races.mjs','legacy-invite-security.mjs']
 };
 const selected=process.argv[2];
 if(selected&&!groups[selected])throw Error('Choose accounts, games or pools');
