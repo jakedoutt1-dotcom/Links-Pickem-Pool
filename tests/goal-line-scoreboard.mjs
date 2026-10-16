@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {fixture} from './helpers/pool-format-fixture.mjs';
 import {createGame,snap,step} from '../public/new-build/goal-line-core.mjs';
-import {replayGoalLine} from '../functions/lib/goal-line-scoreboard.js';
+import {replayGoalLine,goalLineBoard} from '../functions/lib/goal-line-scoreboard.js';
 import {BOARD_GAMES,ensureScoreboard} from '../functions/lib/party-scoreboard.js';
 import {onRequest as save} from '../functions/new-build/api/goal-line-score.js';
 import {onRequest as board} from '../functions/new-build/api/party-scoreboard.js';
@@ -17,8 +17,11 @@ await db.prepare("INSERT INTO links_party_results VALUES('say-what','OLD',1,'sea
 await db.prepare("INSERT INTO links_party_guest_names VALUES('say-what','OLD',1,'seat','Retired winner')").run();
 async function get(game,period='all'){const r=await board({env:{DB:db},request:new Request('https://test/new-build/api/party-scoreboard?'+new URLSearchParams({game,period}))});return {status:r.status,...await r.json()}}
 assert.equal((await get('all')).rows.length,0);assert.equal((await get('say-what')).status,400);assert.equal((await get('captain-clash')).status,400);
-let j=await get('goal-line');assert.equal(j.status,200);assert.equal(j.rows[0].name,'Alex Fox 2026');assert.equal(j.rows[0].played,1);assert.equal(j.highScore,0);assert(j.solo);assert.equal(j.games.length,8);assert(!j.games.some(g=>['say-what','captain-clash'].includes(g.id)));
+assert.equal((await get('goal-line')).status,400,'Paused game is not a public leaderboard');
+const active=await get('all');assert.equal(active.games.length,7);assert(!active.games.some(g=>['goal-line','say-what','captain-clash'].includes(g.id)));
+let j=await goalLineBoard(db,'all');assert.equal(j.rows[0].name,'Alex Fox 2026');assert.equal(j.rows[0].played,1);assert.equal(j.highScore,0);assert(j.solo);
 await db.prepare("INSERT INTO links_goal_line_scores VALUES('older','old','Old player',70,0)").run();
-assert.equal((await get('goal-line','week')).highScore,0);assert.equal((await get('goal-line','year')).highScore,0);assert.equal((await get('goal-line')).highScore,70);
-assert.equal(Object.keys(BOARD_GAMES).length,8);
-console.log('PASS replay validation, forged score ignored, origin check, idempotent save, retired-game exclusion, current games, weekly/yearly/all-time Goal Line board');
+assert.equal((await goalLineBoard(db,'week')).highScore,0);assert.equal((await goalLineBoard(db,'year')).highScore,0);assert.equal((await goalLineBoard(db,'all')).highScore,70);
+assert.equal(Object.keys(BOARD_GAMES).length,7);
+db.raw.close();
+console.log('PASS paused Goal Line excluded from active boards; replay validation, idempotent saving and historical score periods preserved');

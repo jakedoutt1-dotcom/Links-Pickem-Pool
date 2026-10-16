@@ -30,3 +30,9 @@ Existing game suites: trivia-rally, friend-challenge, million-point, dead-air, s
 Scores are friendly records, not normalized competitive ratings: difficulty, game mode and room size affect point totals. Overall wins avoid summing incomparable points.
 
 No billing flags or new login launch settings are changed by this feature.
+
+## Goal Line pause — October 16, 2026
+
+Goal Line is temporarily removed from the Game Room, venue presentation, public leaderboard registry and feedback menu. Direct game links use the existing Coming Soon gate; old leaderboard bookmarks open the overall active-games board.
+
+Its game code, artwork, replay validation, score storage and saved results remain intact. No data migration or deletion is required. Before reintroducing it, remove `goal-line` from the paused set in `functions/lib/game-availability.js`, restore its `BOARD_GAMES` entry and public listings, and remove the old-bookmark fallback from `party-scoreboard.mjs`. Its solo scores should still never count as multiplayer wins. The score endpoint remains available for unfinished uploads from older open tabs.
