@@ -3,3 +3,82 @@
 @media(min-width:900px) and (max-height:800px){body[data-display=true] header{padding:8px 18px}body[data-display=true] header img{width:90px}body[data-display=true] .roomhead{margin:5px 0 10px}body[data-display=true] .roomhead h2{font-size:20px}body[data-display=true] #stage{padding:15px;min-height:0}body[data-display=true] #clock{width:43px;height:43px;font-size:24px}body[data-display=true] .host-line{margin:7px 0;font-size:12px}body[data-display=true] #headline{font-size:27px;margin:8px 0}body[data-display=true] #instructions{font-size:14px;margin:8px 0}body[data-display=true] #survival{padding:13px}body[data-display=true] .cast-member{padding:7px 0}body[data-display=true] .portrait{width:33px;height:38px}body[data-display=true] .cast-member strong{font-size:13px}body[data-display=true] #options .choice{font-size:17px;padding:12px}body[data-display=true] .prop svg{width:44px;height:44px}body[data-display=true] .prop{padding:8px}body[data-display=true] #roundResults{margin-top:8px}body[data-display=true] #feedback,body[data-display=true] #submitted{margin:8px 0}body[data-display=true] .transmitter{height:105px;margin:5px auto}}
 
 body[data-display=true][data-phase=result] #instructions,body[data-display=true][data-phase=result] .host-line,body[data-display=true][data-phase=answer] .host-line,body[data-display=true][data-phase=finalAnswer] .host-line{display:none}
+
+/* The station gives every player one clear next move. */
+.header-actions,.room-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.audio-settings{position:relative;text-align:left;z-index:5}
+.audio-settings>summary{list-style:none;padding:11px 15px;border:1px solid #73765c;border-radius:10px;background:#142229;font-weight:700;cursor:pointer}
+.audio-settings>summary::-webkit-details-marker{display:none}
+.audio-settings-panel{position:absolute;right:0;top:calc(100% + 10px);width:min(330px,calc(100vw - 32px));padding:18px;background:#0d2028;border:1px solid #8a8e68;border-radius:14px;box-shadow:0 12px 50px #000b;line-height:1.5}
+.audio-settings-panel p{font-size:12px}.audio-settings-panel select{max-width:100%;margin-bottom:10px}.audio-settings-panel button{font-size:13px}
+.phase-track{display:flex;gap:6px;align-items:center;margin:10px 0 13px;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
+.phase-track span{flex:1;padding:7px 4px;text-align:center;border-bottom:2px solid #294049;color:#8aa4ab}
+.phase-track .current{color:#f5d68b;border-color:#f5d68b;text-shadow:0 0 15px #eac76b55}
+.player-status{border:1px solid #51766f;border-left:4px solid #78c8ae;background:linear-gradient(90deg,#1d443b88,#0a202755);border-radius:9px;padding:12px 14px;margin-bottom:17px;position:relative}
+.player-status strong{font-size:11px;letter-spacing:1.4px;color:#a2ead0}.player-status p{margin:5px 0 0;font-size:13px;line-height:1.4;color:#d0dfdb}
+.player-status[data-tone=risk]{border-color:#a8574d;background:linear-gradient(90deg,#68332888,#23101555)}.player-status[data-tone=risk] strong{color:#ffb2a5}
+.player-status[data-tone=echo]{border-color:#806a9c;background:linear-gradient(90deg,#412b5988,#18132c55)}.player-status[data-tone=echo] strong{color:#d6b4fb}
+.player-status[data-tone=final],.player-status[data-tone=paused]{border-color:#bd9e56;background:linear-gradient(90deg,#54462388,#221c1555)}.player-status[data-tone=final] strong,.player-status[data-tone=paused] strong{color:#f3d287}
+.narration-transcript{font-size:12px;color:#a9bdbd;margin:8px 0;position:relative}.narration-transcript summary{cursor:pointer;display:inline-block;border-bottom:1px dotted #71858b}.narration-transcript p{line-height:1.6;color:#e0d4b4;max-width:80ch}
+.bars{height:14px;background:transparent;overflow:visible;margin-top:8px;border-radius:0}
+.bars .signal-meter{display:grid;width:100%;height:100%;grid-template-columns:repeat(12,minmax(0,1fr));gap:3px;background:transparent}
+.signal-meter i{display:block;min-width:0;background:#15313c;border:1px solid #335460;border-radius:2px;transition:background .45s,box-shadow .45s}
+.signal-meter i.lit{background:linear-gradient(#fae7a6,#d3a343);border-color:#f6da92;box-shadow:0 0 6px #e4bd5955}
+body[data-paused=true] .transmitter i{animation-play-state:paused}
+body[data-paused=true] #clock{color:#f3d287;border-style:dashed}
+button:focus-visible,a:focus-visible,summary:focus-visible,select:focus-visible{outline:3px solid #f2d186;outline-offset:3px}
+body[data-display=true] #linksSiteNavigation{display:none!important}
+body[data-display=true]>p,body[data-display=true] .narration-transcript{display:none}
+body[data-display=true] .phase-track{margin:8px 0;font-size:9px}
+body[data-display=true] .player-status{padding:9px 12px;margin-bottom:10px}
+body[data-display=true] .player-status p{font-size:12px}
+body[data-display=true] #roundResults{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+body[data-display=true] .result-line{min-width:0;flex-direction:column;gap:3px;font-size:12px;overflow-wrap:anywhere}
+body[data-display=true] .result-line small{font-size:10px}
+body[data-display=true] .bars{height:12px}
+@media(max-width:650px){
+ header{align-items:flex-start}.header-actions{justify-content:flex-end;max-width:calc(100% - 95px)}
+ .audio-settings>summary{font-size:11px;padding:8px}.audio-settings-panel{position:fixed;top:110px;left:16px;right:16px;width:auto;max-height:70dvh;overflow:auto}
+ .room-actions{justify-content:flex-end}.roomhead{align-items:flex-start}.roomhead>div:first-child{min-width:0}
+ .roomhead .eyebrow{overflow-wrap:anywhere}.phase-track{font-size:9px;letter-spacing:.6px}.player-status{padding:10px;margin-bottom:13px}.player-status p{font-size:12px}
+ body[data-phase=question] .host-line,body[data-phase=final] .host-line{display:none}
+ #options button{min-height:54px}#sequenceControls{flex-wrap:wrap}.bars{height:12px}.signal-meter{gap:2px!important}
+ body[data-phase=ended] #cast,body[data-phase^=final] #cast{grid-template-columns:1fr}
+}
+@media(min-width:900px) and (max-height:800px){
+ body[data-display=true] main{padding:0 14px 10px;max-width:none}
+ body[data-display=true] header{padding:7px 14px;max-width:none}body[data-display=true] header img{width:75px}
+ body[data-display=true] .header-actions button,body[data-display=true] .audio-settings>summary{font-size:12px;padding:8px 12px}
+ body[data-display=true] .roomhead{margin:3px 0 8px}body[data-display=true] .roomhead h2{font-size:18px;margin:3px 0}
+ body[data-display=true] #gameLayout{grid-template-columns:minmax(0,3fr) minmax(220px,1fr);gap:10px}
+ body[data-display=true] #stage{padding:12px;min-height:0}body[data-display=true] #survival{padding:10px}
+ body[data-display=true] .phase-track,body[data-display=true] .host-line{display:none}
+ body[data-display=true] .player-status{padding:7px 10px;margin:8px 0}.player-status strong{font-size:10px}
+ body[data-display=true] #headline{font-size:clamp(22px,2.1vw,28px);margin:8px 0}
+ body[data-display=true] #instructions{font-size:12px;margin:7px 0}
+ body[data-display=true] #options{gap:6px;margin:10px 0}body[data-display=true] #options .choice{padding:9px 11px;font-size:15px}
+ body[data-display=true] #phaseLabel{font-size:9px;margin:6px 0}
+ body[data-display=true] .cast-member{padding:7px 0;gap:6px}.cast-member .identity{overflow-wrap:anywhere}
+ body[data-display=true] .cast-member strong{font-size:12px}body[data-display=true] .cast-member .stats{font-size:11px}body[data-display=true] .cast-member small{font-size:10px}
+ body[data-display=true] #roundResults{margin-top:8px}body[data-display=true] .result-line{font-size:11px;padding:5px 7px}
+ body[data-display=true] .result-line small{font-size:10px}body[data-display=true] #feedback:empty,body[data-display=true] #submitted:empty{display:none}
+ body[data-display=true] #sequence{font-size:27px;min-height:52px}
+ body[data-display=true]:is([data-phase^=final],[data-phase=ended]) #gameLayout{grid-template-columns:minmax(0,1.55fr) minmax(340px,1fr)}
+ body[data-display=true]:is([data-phase^=final],[data-phase=ended]) #cast{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ body[data-display=true]:is([data-phase^=final],[data-phase=ended]) .cast-member{display:grid;grid-template-columns:26px minmax(0,1fr);align-content:start;gap:4px 6px;padding:7px 0}
+ body[data-display=true]:is([data-phase^=final],[data-phase=ended]) .portrait{grid-row:1 / 3;width:26px;height:31px;align-self:center}
+ body[data-display=true]:is([data-phase^=final],[data-phase=ended]) .cast-member .stats{grid-column:2;display:flex;justify-content:space-between;gap:4px;font-size:10px;text-align:left}
+ body[data-display=true]:is([data-phase^=final],[data-phase=ended]) .cast-member strong{font-size:11px;line-height:1.2}
+ body[data-display=true]:is([data-phase^=final],[data-phase=ended]) .cast-member small{font-size:9px;line-height:1.2}
+ body[data-display=true]:is([data-phase^=final],[data-phase=ended]) .bars{height:9px;margin-top:5px}
+}
+@media(min-width:900px) and (max-height:600px){
+ body[data-display=true] .player-status p{display:none}body[data-display=true] .player-status{margin:6px 0;padding:6px 8px}
+ body[data-display=true] .roomhead h2 small{display:none}body[data-display=true] #clock{height:32px;width:32px;font-size:20px}
+ body[data-display=true] #survival .eyebrow{font-size:9px}body[data-display=true] #survival h2{font-size:17px;margin:5px 0}
+ body[data-display=true] .portrait{width:26px;height:31px}body[data-display=true] .cast-member{padding:5px 0}body[data-display=true] .cast-member strong{font-size:11px}
+ body[data-display=true] .transmitter{height:85px}body[data-display=true] #cinemaText{font-size:17px}
+ body[data-display=true] #roundResults{gap:4px}body[data-display=true] .bars{height:9px;margin-top:4px}
+ body[data-display=true] #board{gap:6px;margin:10px 0}body[data-display=true] .prop{padding:6px}
+ body[data-display=true] .prop svg{width:36px;height:36px}body[data-display=true] #submitted{margin:8px 0;font-size:11px}
+}

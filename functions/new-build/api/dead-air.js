@@ -3,7 +3,7 @@ import {partyFinish,savePartyRoom} from '../../lib/party-scoreboard.js';
 import {requirePartyPass} from '../../lib/party-access.js';
 import {loadGameQuestions,completeQuestionBank} from '../../lib/trivia-provider.js';
 import {CATEGORIES} from '../../lib/trivia-night.js';
-import {QUESTIONS,AVATARS,start,advance,view,respond} from '../../lib/dead-air.js';
+import {QUESTIONS,AVATARS,start,advance,view,respond,pause} from '../../lib/dead-air.js';
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
 const hash=async t=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t)))).map(n=>n.toString(16).padStart(2,'0')).join('');
 async function handleRequest({request,env}){try{
@@ -20,7 +20,7 @@ async function handleRequest({request,env}){try{
  if(action==='create'){const paymentGate=await requirePartyPass(request,env);if(paymentGate)return paymentGate;
  if(!validName)return json({error:'Enter a name up to 32 characters.'},400);
  const code=crypto.randomUUID().replace(/-/g,'').slice(0,10).toUpperCase(),token=crypto.randomUUID()+crypto.randomUUID(),seat=await hash(token);
- const s={code,mode:b.mode==='solo'?'solo':'friends',game:1,index:-1,phase:'lobby',owner:seat,displayKey:crypto.randomUUID()+crypto.randomUUID(),players:{[seat]:{name,avatar,score:0,ready:false,lives:3,echoCharge:0,progress:0}}};await db.prepare('INSERT INTO links_dead_air_rooms(code,state,expires) VALUES(?,?,?)').bind(code,JSON.stringify(s),now+7200000).run();return json({...view(s,seat,now),token});}
+ const s={code,mode:b.mode==='solo'?'solo':'friends',flowVersion:2,game:1,index:-1,phase:'lobby',owner:seat,displayKey:crypto.randomUUID()+crypto.randomUUID(),players:{[seat]:{name,avatar,score:0,ready:false,lives:3,echoCharge:0,progress:0}}};await db.prepare('INSERT INTO links_dead_air_rooms(code,state,expires) VALUES(?,?,?)').bind(code,JSON.stringify(s),now+7200000).run();return json({...view(s,seat,now),token});}
  const code=String(b.code||u.searchParams.get('code')||'').toUpperCase();if(!/^[A-F0-9]{10}$/.test(code))return json({error:'Enter your room code.'},400);
  const token=request.headers.get('x-dead-air-token')||'',seat=token?await hash(token):'',displayKey=request.headers.get('x-dead-air-display')||'';
  let questionLoad;
@@ -46,9 +46,13 @@ async function handleRequest({request,env}){try{
  questionLoad ||= loadGameQuestions({env,categories:CATEGORIES,backup,exclude:seen,perGroup:2});
  const loaded=await questionLoad,bank=completeQuestionBank(loaded.questions,backup,{exclude:seen,minimum:16}).map(q=>({id:q.id,category:q.category,text:q.text,correct:q.answers[q.correct],wrong:q.answers.filter((_,i)=>i!==q.correct)}));
  start(s,Date.now(),bank);s.questionSource=loaded.source;s.questionNotice=loaded.notice;s.seenQuestions=[...new Set([...seen,...s.deck])].slice(-1500);changed=true;
+ }else if(action==='pause'){
+ if(seat!==s.owner)return json({error:'Only the creator can pause or resume the broadcast.'},403);
+ if(b.game!==s.game||b.phaseId!==s.phaseId)return json({error:'This screen has moved on.'},409);
+ try{changed=pause(s,time,b.paused)||changed}catch(e){return json({error:e.message},409)}
  }else if(action==='again'){
  if(seat!==s.owner||s.phase!=='ended')return json({error:'Only the creator can restart after results.'},403);
- s.phase='lobby';s.game++;s.phaseId=0;s.deadline=0;s.responses={};s.results=[];delete s.question;delete s.challenge;delete s.challengeOutcome;for(const p of Object.values(s.players)){p.score=0;p.ready=false;p.lives=3;p.echoCharge=0;p.progress=0;p.atRisk=false}changed=true;
+ s.phase='lobby';s.game++;s.phaseId=0;s.deadline=0;s.startsAt=0;s.pausedAt=null;s.cleanBroadcast=false;s.challengeCounts={};s.responses={};s.results=[];delete s.question;delete s.challenge;delete s.challengeOutcome;for(const p of Object.values(s.players)){p.score=0;p.ready=false;p.lives=3;p.echoCharge=0;p.progress=0;p.atRisk=false}changed=true;
  }else if(action!=='state')return json({error:'Unknown action.'},400);
  }
  if(changed){const update=await savePartyRoom(db,'dead-air',code,row.version,s,completed);if(!update.meta?.changes)continue}
