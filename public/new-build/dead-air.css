@@ -82,3 +82,59 @@ body[data-display=true] .bars{height:12px}
  body[data-display=true] #board{gap:6px;margin:10px 0}body[data-display=true] .prop{padding:6px}
  body[data-display=true] .prop svg{width:36px;height:36px}body[data-display=true] #submitted{margin:8px 0;font-size:11px}
 }
+
+/* Relay Trace: one live feed, a field of disconnected decoys. */
+#relay{position:relative;margin:14px 0 18px}
+.relay-frame{display:grid;grid-template-columns:24px minmax(0,240px) 24px;grid-template-rows:22px auto 22px;justify-content:center;max-width:288px;margin:auto}
+.relay-grid{grid-area:2/2;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;aspect-ratio:1;padding:6px;background:#061119;border:1px solid #416675;border-radius:10px;box-shadow:inset 0 0 24px #0007}
+.relay-cell{position:relative;display:grid;place-items:center;min-width:0;background:linear-gradient(145deg,#203b46,#11232b);border:1px solid #47616a;border-radius:6px;font-family:Arial,sans-serif;font-size:32px;line-height:1;color:#d0e1e0}
+.relay-cell.input{border:2px solid #8af6c7;color:#b4ffe0;background:#1b493e;box-shadow:0 0 13px #56dda64d}
+.relay-cell.live{border-color:#86ebc0;color:#adfddc;background:#1a483c}
+.relay-in,.relay-step{position:absolute;top:3px;font-size:8px;line-height:1;letter-spacing:.3px;font-weight:bold}
+.relay-in{left:3px;color:#c3ffe3}.relay-step{right:4px;color:#f3db8a}
+.relay-edge{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#97b3b6;align-self:center;justify-self:center}.relay-edge.live{color:#92f3c7;text-shadow:0 0 10px #72dfbb77}
+.edge-0{grid-area:1/2}.edge-1{grid-area:2/3;writing-mode:vertical-rl}.edge-2{grid-area:3/2}.edge-3{grid-area:2/1;writing-mode:vertical-rl;transform:rotate(180deg)}
+.relay-caption,#relay>p{font-size:12px;color:#aec4c3;text-align:center;line-height:1.4;max-width:390px;margin:8px auto 0}
+.relay-example{display:grid;grid-template-columns:80px 80px;grid-template-rows:64px 30px;gap:6px;justify-content:center;margin:10px auto}
+.relay-example span{display:grid;place-items:center;border:1px solid #516e75;border-radius:7px;background:#142f36;font-size:31px}.relay-example .input{border-color:#9beaC4;color:#c4ffe3;font-size:25px}.relay-example .exit{grid-column:2;font-size:10px;color:#e9d491;letter-spacing:1px;border-color:#b6a05d;background:#42391d}
+.personal-result{position:relative;margin:12px 0 16px;border:1px solid #737b5a;border-radius:10px;background:#172b2aaa;padding:12px 14px;overflow-wrap:anywhere}
+.personal-result>strong{font-size:10px;letter-spacing:1px;color:#f1d289}.personal-result p{font-size:14px;line-height:1.4;margin:7px 0 0}.personal-result .result-solution{color:#b7f1d2}.personal-result .result-effect{font-size:12px;color:#afc7c8;border-top:1px solid #c4dfd322;padding-top:8px}
+.personal-result:is([data-outcome=faded],[data-outcome=charged],[data-outcome=echo]){border-color:#8d6caf;background:#2e214380}
+.personal-result[data-outcome=returned]{border-color:#83e5b6;box-shadow:0 0 20px #60d5a01a}
+.result-line.you{border:1px solid #d9c37c}.result-line[data-outcome=returned]{background:#183e31}.result-line[data-outcome=faded]{background:#382541}
+#options .choice-state{display:block;font-size:10px;font-weight:700;letter-spacing:.6px;margin-top:5px;color:#f3db91}
+.remove-player{font-size:10px;padding:7px 8px;border-color:#57656b;color:#b4c6c8;font-weight:400}
+#clock[data-urgent=true]{border-color:#ffb291;color:#ffc4a5;background:#67291d66;box-shadow:0 0 18px #f46e312d}
+body[data-display=true] .personal-result{display:none}
+@media(max-width:650px){
+ #lobbyCast{grid-template-columns:1fr}.remove-player{padding:8px 10px;font-size:11px}
+ .relay-frame{grid-template-columns:22px minmax(0,226px) 22px;max-width:270px}.relay-cell{font-size:29px}
+ .personal-result{padding:11px 12px}.personal-result p{font-size:13px}
+ body[data-challenge=relay][data-phase=challenge] .host-line,body[data-challenge=relay][data-phase=challenge] .phase-track,body[data-challenge=relay][data-phase=challenge] .player-status p{display:none}
+ body[data-challenge=relay][data-phase=challenge] .player-status{margin:10px 0;padding:9px 10px}
+ body[data-challenge=relay][data-phase=challenge] #headline{margin:8px 0}
+ body[data-challenge=relay][data-phase=challenge] #relay{margin:8px 0 12px}
+ body[data-challenge=relay][data-phase=challenge] #feedback{font-size:13px;line-height:1.35}
+}
+@media(min-width:900px) and (max-height:800px){
+ body[data-display=true][data-challenge=relay] #relay{float:left;width:240px;margin:4px 16px 0 0}
+ body[data-display=true][data-challenge=relay] .relay-frame{grid-template-columns:20px minmax(0,200px) 20px;grid-template-rows:18px auto 18px}
+ body[data-display=true][data-challenge=relay] .relay-cell{font-size:27px}
+ body[data-display=true][data-challenge=relay] .relay-caption{font-size:10px;line-height:1.3}
+ body[data-display=true][data-challenge=relay][data-phase=challenge] #options{grid-template-columns:1fr;margin:20px 0 12px 256px}
+ body[data-display=true][data-challenge=relay][data-phase=challenge] #feedback,body[data-display=true][data-challenge=relay][data-phase=challenge] #submitted{margin-left:256px}
+ body[data-display=true][data-challenge=relay][data-phase=brief] #relay{float:none;width:auto;margin:10px 0}
+ body[data-display=true][data-challenge=relay][data-phase=result] #relay{width:220px;margin-right:12px}
+ body[data-display=true][data-challenge=relay][data-phase=result] #feedback,body[data-display=true][data-challenge=relay][data-phase=result] #roundResults{margin-left:232px}
+ body[data-display=true][data-challenge=relay][data-phase=result] #roundResults{grid-template-columns:repeat(2,minmax(0,1fr))}
+ body[data-display=true][data-challenge=relay][data-phase=result] #feedback{font-size:12px}
+}
+@media(min-width:900px) and (max-height:600px){
+ body[data-display=true][data-challenge=relay] #relay{width:218px}
+ body[data-display=true][data-challenge=relay] .relay-frame{grid-template-columns:19px minmax(0,180px) 19px}
+ body[data-display=true][data-challenge=relay] .relay-grid{padding:5px;gap:4px}.relay-cell{font-size:25px}
+ body[data-display=true][data-challenge=relay][data-phase=challenge] #options{margin-left:234px}
+ body[data-display=true][data-challenge=relay][data-phase=challenge] #feedback,body[data-display=true][data-challenge=relay][data-phase=challenge] #submitted{margin-left:234px}
+ body[data-display=true][data-challenge=relay][data-phase=result] #relay{width:200px}
+ body[data-display=true][data-challenge=relay][data-phase=result] #feedback,body[data-display=true][data-challenge=relay][data-phase=result] #roundResults{margin-left:212px}
+}

@@ -51,10 +51,13 @@ try {
   update(test, scene()); assert.equal(test.synth.current, null, 'Resume leaves narration to Replay');
   test.controls.replayButton.click(); await Promise.resolve();
   document.hidden = true; document.fire('visibilitychange'); assert.equal(test.synth.current, null);
+  assert.match(test.controls.status.textContent, /Narration stopped while this page was hidden/);
   document.hidden = false; document.fire('visibilitychange'); await Promise.resolve();
   assert.equal(test.synth.current, null, 'Returning to a tab must not replay stale speech');
+  assert.match(test.controls.status.textContent, /Replay narration/);
   test.controls.replayButton.click(); await Promise.resolve();
   window.fire('pagehide'); assert.equal(test.synth.current, null);
+  assert.match(test.controls.status.textContent, /Narration stopped/);
   test.player.dispose(); assert.equal(test.timers.size, 0); assert.equal(test.contexts[0].state, 'closed');
 
   // Shared reveal stages are deduplicated and cannot speak the solution early.
@@ -84,6 +87,30 @@ try {
     assert.ok(test.contexts[0].sources.length > sources, kind + ' produces its own cue');
   }
   test.player.dispose();
+
+  // A revoked seat clears the old room without changing preferences or disabling future joins.
+  test = environment(); update(test, scene()); await test.gesture();
+  test.player.setVoice('cloud'); test.controls.replayButton.click(); await Promise.resolve();
+  const staleSpeech = test.synth.current;
+  test.player.reset();
+  assert.equal(test.synth.current, null);
+  assert.equal(test.timers.size, 0, 'Room reset stops score and narration timers');
+  assert.equal(test.controls.caption.textContent, '');
+  assert.equal(test.controls.replayButton.disabled, true);
+  assert.equal(test.contexts[0].nodes[0].gain.value, 0);
+  const resetSpeechCount = test.synth.spoken.length, resetSources = test.contexts[0].sources.length;
+  staleSpeech.onend(); test.advance(30000); await test.gesture();
+  document.hidden = true; document.fire('visibilitychange');
+  document.hidden = false; document.fire('visibilitychange'); await Promise.resolve();
+  assert.equal(test.synth.spoken.length, resetSpeechCount, 'Removed room cannot replay on late callback or gesture');
+  assert.equal(test.contexts[0].sources.length, resetSources, 'Removed room cannot restart its music on focus');
+  update(test, scene()); await Promise.resolve();
+  assert.ok(test.synth.current, 'The same scene can play on an explicit rejoin');
+  assert.ok(test.contexts[0].sources.length > resetSources, 'Rejoining also restores music after a hidden-page suspension');
+  assert.equal(test.synth.current.voice.voiceURI, 'cloud', 'Room reset preserves voice choice');
+  test.controls.button.click(); test.player.reset(); update(test, scene()); await test.gesture();
+  assert.equal(test.synth.current, null, 'Room reset preserves mute');
+  assert.equal(test.controls.button.getAttribute('aria-pressed'), 'true'); test.player.dispose();
 
   test = environment(); update(test, scene({mode: 'together'})); await test.gesture();
   assert.equal(test.synth.spoken.length, 0, 'Group phones start with narrator off');

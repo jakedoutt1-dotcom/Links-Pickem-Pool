@@ -22,7 +22,7 @@ for(const id of Object.keys(echo.players))respond(echo,id,echo.challenge.correct
 assert.equal(echo.players.b.lives,1);assert.equal(echo.players.b.echoCharge,0);advance(echo,echo.deadline);
 respond(echo,'a',echo.question.correct,echo.startsAt);respond(echo,'b',(echo.question.correct+1)%4,echo.startsAt);advance(echo,echo.deadline);advance(echo,echo.deadline);
 assert.equal(echo.phase,'brief');assert.equal(echo.deadline-echo.startsAt,5000);
-for(const type of ['signal','evidence','frequency','power']){
+for(const type of ['signal','evidence','frequency','power','relay']){
  const s=room();enterQuestion(s);advance(s,s.deadline);s.puzzleOrder=[type];advance(s,s.deadline);assert.equal(s.phase,'brief');
  const before=view(s,'',s.startsAt,true);assert.equal(before.challenge.sequence,undefined);assert.equal(before.challenge.correct,undefined);assert.equal(before.challenge.board,undefined);
  advance(s,s.deadline);assert.equal(s.phase,['signal','evidence'].includes(type)?'observe':'challenge');

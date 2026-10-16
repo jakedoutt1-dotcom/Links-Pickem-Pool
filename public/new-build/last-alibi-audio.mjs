@@ -55,7 +55,7 @@ export function mountMysteryAudio(button, {narrationButton, voiceSelect, replayB
   let narrationPreference = readPreference('narration'), preferredVoice = readPreference('voice') || '';
   let state = null, phaseKey = '', tickKey = '', scoreStep = 0, scoreTimer;
   let speechTimer, speechWatchdog, speechGeneration = 0, utterance = null, speaking = false;
-  let pendingNarration = false, voices = [];
+  let pendingNarration = false, voices = [], roomReset = false;
   const active = new Set(), cueTimes = new Map(), listeners = [];
   const synth = window.speechSynthesis, supportsSpeech = !!(synth && window.SpeechSynthesisUtterance);
   const listen = (target, event, handler, options) => {
@@ -68,7 +68,7 @@ export function mountMysteryAudio(button, {narrationButton, voiceSelect, replayB
   // Native speech can work even when Web Audio cannot. Keep master mute available
   // throughout that narration session, including the silence between spoken lines.
   const soundIsOn = () => enabled || (activated && supportsSpeech && narrationEnabled());
-  const available = () => !disposed && activated && !muted && !document.hidden && !state?.paused;
+  const available = () => !disposed && !roomReset && activated && !muted && !document.hidden && !state?.paused;
   const canSound = () => available() && enabled && ctx?.state === 'running';
   const sayStatus = text => { if (status && status.textContent !== text) status.textContent = text; };
   const sceneKey = value => [value.code || '', value.game, value.phase, value.chapter, value.revealStep ?? '', value.narrationScene?.key || ''].join(':');
@@ -264,7 +264,7 @@ export function mountMysteryAudio(button, {narrationButton, voiceSelect, replayB
   }
 
   async function activate() {
-    if (disposed || muted || document.hidden) return;
+    if (disposed || roomReset || muted || document.hidden) return;
     activated = true;
     // Speech starts inside a gesture handler whenever possible, including on mobile.
     if (pendingNarration && !state?.paused) speakScene();
@@ -274,7 +274,7 @@ export function mountMysteryAudio(button, {narrationButton, voiceSelect, replayB
       if (!Audio) throw new Error('Web Audio unavailable');
       if (!ctx || ctx.state === 'closed') { ctx = new Audio(); buildGraph(); }
       resuming = ctx.resume(); await resuming;
-      if (disposed || muted || document.hidden) return;
+      if (disposed || roomReset || muted || document.hidden) return;
       enabled = ctx.state === 'running'; audioFailed = !enabled;
       if (enabled) { duck(speaking); startBed(); }
     } catch {
@@ -313,8 +313,10 @@ export function mountMysteryAudio(button, {narrationButton, voiceSelect, replayB
 
   function update(nextState, now) {
     if (disposed || !nextState) return;
+    const rejoining = roomReset; roomReset = false;
     const previous = state, nextKey = sceneKey(nextState), changed = nextKey !== phaseKey;
     state = nextState;
+    if (rejoining && activated && !muted) void activate();
     if (changed) {
       const hadScene = !!phaseKey;
       phaseKey = nextKey; tickKey = ''; scoreStep = 0; cueTimes.clear(); stopNarration(); stopBed();
@@ -344,13 +346,18 @@ export function mountMysteryAudio(button, {narrationButton, voiceSelect, replayB
     if (!muted && (!enabled || pendingNarration)) void activate();
   };
   listen(document, 'click', gesture, true); listen(document, 'keydown', gesture, true);
+  const stopForHiddenPage = () => {
+    const interrupted = speaking || !!utterance;
+    stopSound(); stopNarration(); pendingNarration = false;
+    if (interrupted) sayStatus('Narration stopped while this page was hidden. Use Replay narration to hear it again.');
+  };
   listen(document, 'visibilitychange', () => {
     if (document.hidden) {
-      stopSound(); stopNarration(); pendingNarration = false;
+      stopForHiddenPage();
       if (ctx?.state === 'running') ctx.suspend().catch(() => {});
     } else if (activated && !muted) void activate();
   });
-  listen(window, 'pagehide', () => { stopSound(); stopNarration(); pendingNarration = false; });
+  listen(window, 'pagehide', stopForHiddenPage);
   listen(synth, 'voiceschanged', refreshVoices);
   listen(button, 'click', () => {
     if (!muted && !soundIsOn()) { void activate(); return; }
@@ -369,6 +376,12 @@ export function mountMysteryAudio(button, {narrationButton, voiceSelect, replayB
   if (!supportsSpeech) sayStatus('Device narration is unavailable. The complete scene remains on screen.');
   return {
     cue, update, replayNarration, setNarrationEnabled, setVoice, getVoices: () => [...voices], stopNarration,
+    reset() {
+      roomReset = true; state = null; phaseKey = tickKey = ''; scoreStep = 0;
+      stopSound(); stopNarration(); pendingNarration = false; cueTimes.clear();
+      if (caption) caption.textContent = '';
+      sayStatus(''); draw();
+    },
     dispose() {
       disposed = true; stopSound(); stopNarration(); listeners.forEach(remove => remove());
       if (ctx && ctx.state !== 'closed') void ctx.close().catch(() => {});

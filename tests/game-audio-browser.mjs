@@ -46,7 +46,7 @@ try {
     assert.ok(await page.evaluate(() => !!speechSynthesis.current));
     await page.evaluate(cues => cues.forEach(kind => player.cue(kind)), game === 'last-alibi'
       ? ['paper', 'discovery', 'share', 'ready', 'transition', 'accusation', 'reveal']
-      : ['ident', 'tune', 'question', 'lock', 'risk', 'lifeLost', 'echoReturn', 'correct', 'wrong', 'final', 'ending']);
+      : ['ident', 'tune', 'relay', 'question', 'lock', 'risk', 'lifeLost', 'echoReturn', 'correct', 'wrong', 'final', 'ending']);
     await page.waitForFunction(() => {
       const samples = new Float32Array(testAnalyser.fftSize); testAnalyser.getFloatTimeDomainData(samples);
       return samples.some(sample => Math.abs(sample) > .00001);

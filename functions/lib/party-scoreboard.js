@@ -24,7 +24,7 @@ export async function ensureScoreboard(db){await db.batch([
 export function partyFinish(s){return s.phase==='ended'?JSON.parse(JSON.stringify(s)):null;}
 export function partyOutcomes(game,s){
  if(!SCORE_GAMES[game]||s?.phase!=='ended'||Object.keys(s.players||{}).length<1)return [];
- const entries=Object.entries(s.players).map(([seat,p])=>({seat,score:Math.max(0,Math.round(Number(game==='million-point'&&s.mode==='duel'?s.duel?.[seat]?.earned:p.score)||0)),progress:Number(p.progress)||0}));
+ const entries=Object.entries(s.players).filter(([,p])=>game!=='last-alibi'||!p.away).map(([seat,p])=>({seat,score:Math.max(0,Math.round(Number(game==='million-point'&&s.mode==='duel'?s.duel?.[seat]?.earned:p.score)||0)),progress:Number(p.progress)||0}));
  const multiplayer=(s.participantCount||Object.keys(s.players).length)>=2&&s.mode!=='solo';
  const best=Math.max(...entries.map(p=>p.score)),progress=Math.max(...entries.map(p=>p.progress));
  const finalBest=Math.max(...entries.filter(p=>p.progress===progress).map(p=>p.score));

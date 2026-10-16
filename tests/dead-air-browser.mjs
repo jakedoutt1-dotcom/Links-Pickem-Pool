@@ -26,9 +26,9 @@ try{
  for(let i=2;i<8;i++){const player=await api({action:'join',name:'Player '+(i+1),avatar:'Editor'});bots.push(player);await api({action:'ready'},player.token)}
  await phones[0].click('#tvButton');const tvUrl=await phones[0].locator('#tvLink').getAttribute('href');await phones[0].click('#closeTv');const tvContext=await browser.newContext({viewport:{width:960,height:540}});await offlineDeadAir(tvContext,route);tv=await tvContext.newPage();tv.on('pageerror',e=>errors.push(e.message));await tv.goto(tvUrl);await tv.waitForSelector('#lobby:visible');assert.equal(await tv.locator('#ready').isVisible(),false);
  for(const page of phones)await page.click('#ready');await phones[0].waitForFunction(()=>!document.querySelector('#start').disabled);await phones[0].click('#start');await waitPhase(phones[0],'intro');
- await queue;const seeded=await raw();seeded.puzzleOrder=['signal','evidence','frequency','power'];db.raw.prepare('UPDATE links_dead_air_rooms SET state=? WHERE code=?').run(JSON.stringify(seeded),code);
+ await queue;const seeded=await raw();seeded.puzzleOrder=['signal','evidence','frequency','power','relay'];db.raw.prepare('UPDATE links_dead_air_rooms SET state=? WHERE code=?').run(JSON.stringify(seeded),code);
  fs.mkdirSync('output/dead-air',{recursive:true});const seen=new Set();
- for(let cycle=0;cycle<4;cycle++){
+ for(let cycle=0;cycle<5;cycle++){
   let s=await next('question');const wrong=(s.question.correct+1)%4;
   await phones[0].locator('#options button').nth(wrong).click();await saved(phones[0]);assert.equal(await phones[0].locator('#options button').nth(s.question.correct).isEnabled(),true);
   await phones[0].locator('#options button').nth(s.question.correct).click();await phones[0].waitForFunction(index=>document.querySelectorAll('#options button')[index].classList.contains('selected'),s.question.correct);
@@ -42,17 +42,18 @@ try{
    const resumed=await raw();assert.equal(resumed.phaseId,frozen.phaseId);assert.equal(resumed.deadline-frozen.deadline,60000);assert.equal(await phones[0].locator('#options button:enabled').count(),4);
   }
   for(const [i,page] of phones.entries()){assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);await page.screenshot({path:'output/dead-air/phone-'+(i?390:360)+'-question.png',fullPage:true})}
-  await next('answer');assert.equal(await tv.locator('#options .correct').count(),1);assert.equal(await tv.locator('#options .correct').textContent(),s.question.options[s.question.correct]);if(cycle===0)await tv.screenshot({path:'output/dead-air/tv-trivia-answer-960x540.png'});
+  await next('answer');assert.equal(await tv.locator('#options .correct').count(),1);assert.equal(await tv.locator('#options .correct').textContent(),s.question.options[s.question.correct]);assert.match(await phones[1].locator('#personalReport').textContent(),/You sent:.*Correct:/);assert.equal(await phones[1].locator('#statusTitle').textContent(),'YOUR NEXT CHALLENGE COUNTS');if(cycle===0)await tv.screenshot({path:'output/dead-air/tv-trivia-answer-960x540.png'});
   s=await next('brief');seen.add(s.challenge.type);if(['signal','evidence'].includes(s.challenge.type)){await next('observe');await tv.screenshot({path:'output/dead-air/tv-'+s.challenge.type+'-observe.png'})}
   await next('challenge');
   for(let i=0;i<2;i++){
    const page=phones[i],c=s.challenge;if(c.type==='signal'){assert.equal(await tv.locator('#sequence').isVisible(),false);for(const n of c.sequence)await page.locator('#options button').nth(n).click();await page.click('#submitSequence');await saved(page);assert.equal(await page.locator('#undoSymbol').isEnabled(),true)}
-   else{await page.locator('#options button').nth(c.type==='frequency'?c.correct:c.type==='evidence'?c.changed:i).click();await saved(page)}
+   else{await page.locator('#options button').nth(['frequency','relay'].includes(c.type)?c.correct:c.type==='evidence'?c.changed:i).click();await saved(page)}
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+   if(c.type==='relay'){assert.equal(await page.locator('.relay-cell').count(),16);assert.equal(await page.locator('.relay-cell.live').count(),0);assert.equal(await page.locator('#options button[aria-pressed=true]').count(),1);await page.screenshot({path:'output/dead-air/phone-'+(i?390:360)+'-relay.png',fullPage:true})}
   }
-  for(const [i,bot] of bots.entries()){const c=s.challenge,answer=c.type==='signal'?c.sequence:c.type==='evidence'?c.changed:c.type==='frequency'?c.correct:i%3;await api({action:'answer',phaseId:(await raw()).phaseId,answer},bot.token)}
-  await next('result');await tv.screenshot({path:'output/dead-air/tv-'+s.challenge.type+'-result.png'});await phones[0].reload();await waitPhase(phones[0],'result');
+  for(const [i,bot] of bots.entries()){const c=s.challenge,answer=c.type==='signal'?c.sequence:c.type==='evidence'?c.changed:['frequency','relay'].includes(c.type)?c.correct:i%3;await api({action:'answer',phaseId:(await raw()).phaseId,answer},bot.token)}
+  await next('result');await tv.screenshot({path:'output/dead-air/tv-'+s.challenge.type+'-result.png'});assert.equal(await phones[0].locator('#personalReport').isVisible(),true);if(s.challenge.type==='relay'){for(const [i,page]of phones.entries()){assert.equal(await page.locator('.relay-cell.live').count(),s.challenge.route.length);await page.screenshot({path:'output/dead-air/phone-'+(i?390:360)+'-relay-result.png',fullPage:true})}}await phones[0].reload();await waitPhase(phones[0],'result');assert.equal(await phones[0].locator('#personalReport').isVisible(),true);
  }
- assert.equal(seen.size,4);assert.equal((await raw()).flowVersion,2);assert.equal(await tv.locator('#cast .cast-member').count(),8);assert.deepEqual(errors,[]);
- console.log('PASS offline Dead Air browser integration: 360/390px phones, eight-player room, all challenge controls, editable answers, host pause/resume, TV correct-answer reveal, memory secrecy and reconnect.');
+ assert.equal(seen.size,5);assert.equal((await raw()).flowVersion,2);assert.equal(await tv.locator('#cast .cast-member').count(),8);assert.deepEqual(errors,[]);
+ console.log('PASS offline Dead Air browser integration: 360/390px phones, eight-player room, five challenge controls, Relay Trace secret/solved route, personal reports, editable answers, host pause/resume, TV correct-answer reveal, memory secrecy and reconnect.');
 }finally{Date.now=realNow;globalThis.fetch=realFetch;await browser.close();db.raw.close()}

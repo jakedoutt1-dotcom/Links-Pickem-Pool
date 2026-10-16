@@ -31,13 +31,18 @@ const challengeRules = {
   signal: 'Remember the symbols in order. After the blackout, rebuild the sequence on your phone.',
   evidence: 'Study the six shelves. After the blackout, choose the shelf whose object changed.',
   frequency: 'Tune the correct frequency. Three clues arrive, one at a time.',
-  power: 'Choose a generator in secret. Stay within its capacity. Overload it, and everyone on it fails.'
+  power: 'Choose a generator in secret. Stay within its capacity. Overload it, and everyone on it fails.',
+  relay: 'Start at IN. Follow each arrow one tile. Choose the edge where the live signal leaves the board.'
 };
 const answering = state => ['question', 'challenge', 'final'].includes(state.phase);
 const visibleClueCount = state => state.challenge?.type === 'frequency' && answering(state) ? state.challenge.clues?.length || 0 : 0;
 const relevantResults = state => {
   const you = state.players?.find(player => player.you);
-  return you ? (state.results || []).filter(result => result.name === you.name) : state.results || [];
+  const results = state.results || [];
+  if (!you) return results;
+  // New rooms identify the viewer's result without publishing seat credentials.
+  if (results.some(result => typeof result.you === 'boolean')) return results.filter(result => result.you);
+  return results.filter(result => result.name === you.name);
 };
 
 // Read only phase instructions and clues already in the public view. Sequence, shelf
@@ -55,11 +60,13 @@ export function deadAirNarration(state) {
       signal: 'Signal Lost. Memorize the order, then rebuild it.',
       evidence: 'Evidence Edit. Remember the shelves. Spot the change.',
       frequency: 'Frequency Lock. Three clues. Find the frequency.',
-      power: 'Power Split. Choose a generator. Avoid an overload.'
+      power: 'Power Split. Choose a generator. Avoid an overload.',
+      relay: 'Relay Trace. Follow IN to the exit edge.'
     })[challenge?.type] || 'Your survival test begins next.';
     return (challenge?.title ? challenge.title + '. ' : '') + (challengeRules[challenge?.type] || SIGNAL_LINES.brief);
   }
   if (state.phase === 'observe') return ['frequency', 'power'].includes(challenge?.type) ? 'Stand by. Your answer controls open next.' : 'Watch closely. Hold the picture in your mind.';
+  if (state.phase === 'challenge' && challenge?.type === 'relay') return 'Follow the live path. Which edge carries your signal out?';
   if (state.phase === 'question') return [SIGNAL_LINES.question, 'The question is live. Knowledge keeps the lights on.', 'A new question. Give the station something it can use.'][(state.cycle || 0) % 3];
   if (state.phase === 'answer') {
     if (state.cleanBroadcast) return 'Clean broadcast. 150 bonus points each. ' + (state.cycle >= 11 ? 'The final broadcast is next.' : 'Straight to the next broadcast.');
@@ -70,6 +77,10 @@ export function deadAirNarration(state) {
   }
   if (state.phase === 'result') {
     const results = relevantResults(state);
+    const yours = state.players?.some(player => player.you) ? results[0] : null;
+    if (yours?.outcome === 'charged') return 'Echo charge ' + yours.echoCharge + ' of two. Clear one more challenge to get back on air.';
+    if (yours?.outcome === 'safe') return 'The challenge was missed, but your signal was safe. No life lost. Stay tuned.';
+    if (yours?.outcome === 'echo') return 'Your Echo charge is unchanged. You are still playing. The next challenge is another chance.';
     if (results.some(result => /BACK ON AIR/.test(result.note))) return 'An Echo is back on air. One life restored. The station has not finished with you.';
     if (results.some(result => /SIGNAL LOST/.test(result.note))) return 'A signal has become an Echo. You still play. Clear two challenges to return with one life.';
     if (results.some(result => /Lost one life/.test(result.note))) return 'A life lost. Keep playing. Your next answer can change the broadcast.';
@@ -86,6 +97,7 @@ export function deadAirNarration(state) {
 export function deadAirPhaseCue(state) {
   if (state.narrationScene?.cue !== undefined) return state.narrationScene.cue;
   if (state.phase === 'intro') return 'ident';
+  if (state.phase === 'brief' && state.challenge?.type === 'relay') return 'relay';
   if (state.phase === 'question') return 'question';
   if (state.phase === 'answer') {
     const risk = state.players?.find(player => player.you)?.atRisk ?? state.players?.some(player => player.atRisk);
@@ -128,7 +140,7 @@ export function mountDeadAirAudio(button, {narrationButton, voiceSelect, replayB
   let narrationPreference = readPreference('narration'), preferredVoice = readPreference('voice') || '';
   let state = null, phaseKey = '', tickKey = '', scoreStep = 0, scoreTimer;
   let speechTimer, speechWatchdog, speechGeneration = 0, utterance = null, speaking = false;
-  let pendingNarration = false, voices = [];
+  let pendingNarration = false, voices = [], roomReset = false;
   const active = new Set(), cueTimes = new Map(), listeners = [];
   const synth = window.speechSynthesis, supportsSpeech = !!(synth && window.SpeechSynthesisUtterance);
   const listen = (target, event, handler, options) => {
@@ -141,7 +153,7 @@ export function mountDeadAirAudio(button, {narrationButton, voiceSelect, replayB
   // Native speech can work even when Web Audio cannot. Keep master mute available
   // throughout that narration session, including the silence between spoken lines.
   const soundIsOn = () => enabled || (activated && supportsSpeech && narrationEnabled());
-  const available = () => !disposed && activated && !muted && !document.hidden && !state?.paused;
+  const available = () => !disposed && !roomReset && activated && !muted && !document.hidden && !state?.paused;
   const canSound = () => available() && enabled && ctx?.state === 'running';
   const sayStatus = text => { if (status && status.textContent !== text) status.textContent = text; };
   const sceneKey = value => [value.code || '', value.game, value.phaseId, value.phase, visibleClueCount(value), value.narrationScene?.key || ''].join(':');
@@ -251,6 +263,11 @@ export function mountDeadAirAudio(button, {narrationButton, voiceSelect, replayB
     } else if (kind === 'tune') {
       noise(t, .3, .055, 2000, {type: 'bandpass', q: 1.3, endFrequency: 800});
       tone(740, t + .08, .18, .012, {endHz: 440});
+    } else if (kind === 'relay') {
+      [330, 440, 554.37, 659.25].forEach((hz, i) => {
+        noise(t + i * .12, .035, .016, 1600, {type: 'bandpass'});
+        tone(hz, t + i * .12, .12, .018, {type: 'triangle', pan: -.35 + i * .23});
+      });
     } else if (kind === 'question') {
       noise(t, .12, .028, 1300, {type: 'bandpass'}); tone(330, t + .06, .24, .026);
     } else if (kind === 'tick') {
@@ -350,7 +367,7 @@ export function mountDeadAirAudio(button, {narrationButton, voiceSelect, replayB
   }
 
   async function activate() {
-    if (disposed || muted || document.hidden) return;
+    if (disposed || roomReset || muted || document.hidden) return;
     activated = true;
     // Speech starts inside a gesture handler whenever possible, including on mobile.
     if (pendingNarration && !state?.paused) speakScene();
@@ -360,7 +377,7 @@ export function mountDeadAirAudio(button, {narrationButton, voiceSelect, replayB
       if (!Audio) throw new Error('Web Audio unavailable');
       if (!ctx || ctx.state === 'closed') { ctx = new Audio(); buildGraph(); }
       resuming = ctx.resume(); await resuming;
-      if (disposed || muted || document.hidden) return;
+      if (disposed || roomReset || muted || document.hidden) return;
       enabled = ctx.state === 'running'; audioFailed = !enabled;
       if (enabled) { duck(speaking); startBed(); }
     } catch {
@@ -399,9 +416,11 @@ export function mountDeadAirAudio(button, {narrationButton, voiceSelect, replayB
 
   function update(nextState, now) {
     if (disposed || !nextState) return;
+    const rejoining = roomReset; roomReset = false;
     const previous = state, nextKey = sceneKey(nextState), changed = nextKey !== phaseKey;
     const phaseChanged = !previous || previous.code !== nextState.code || previous.game !== nextState.game || previous.phaseId !== nextState.phaseId || previous.phase !== nextState.phase;
     state = nextState;
+    if (rejoining && activated && !muted) void activate();
     if (changed) {
       const hadScene = !!phaseKey;
       phaseKey = nextKey; stopNarration();
@@ -432,13 +451,18 @@ export function mountDeadAirAudio(button, {narrationButton, voiceSelect, replayB
     if (!muted && (!enabled || pendingNarration)) void activate();
   };
   listen(document, 'click', gesture, true); listen(document, 'keydown', gesture, true);
+  const stopForHiddenPage = () => {
+    const interrupted = speaking || !!utterance;
+    stopSound(); stopNarration(); pendingNarration = false;
+    if (interrupted) sayStatus('Narration stopped while this page was hidden. Use Replay narration to hear it again.');
+  };
   listen(document, 'visibilitychange', () => {
     if (document.hidden) {
-      stopSound(); stopNarration(); pendingNarration = false;
+      stopForHiddenPage();
       if (ctx?.state === 'running') ctx.suspend().catch(() => {});
     } else if (activated && !muted) void activate();
   });
-  listen(window, 'pagehide', () => { stopSound(); stopNarration(); pendingNarration = false; });
+  listen(window, 'pagehide', stopForHiddenPage);
   listen(synth, 'voiceschanged', refreshVoices);
   listen(button, 'click', () => {
     if (!muted && !soundIsOn()) { void activate(); return; }
@@ -457,6 +481,12 @@ export function mountDeadAirAudio(button, {narrationButton, voiceSelect, replayB
   if (!supportsSpeech) sayStatus('Device narration is unavailable. The complete scene remains on screen.');
   return {
     cue, update, replayNarration, setNarrationEnabled, setVoice, getVoices: () => [...voices], stopNarration,
+    reset() {
+      roomReset = true; state = null; phaseKey = tickKey = ''; scoreStep = 0;
+      stopSound(); stopNarration(); pendingNarration = false; cueTimes.clear();
+      if (caption) caption.textContent = '';
+      sayStatus(''); draw();
+    },
     dispose() {
       disposed = true; stopSound(); stopNarration(); listeners.forEach(remove => remove());
       if (ctx && ctx.state !== 'closed') void ctx.close().catch(() => {});

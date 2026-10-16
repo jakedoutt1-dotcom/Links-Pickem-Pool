@@ -20,16 +20,17 @@ async function handleRequest({request,env}){try{
  if(action==='create'){const paymentGate=await requirePartyPass(request,env);if(paymentGate)return paymentGate;
  if(!validName)return json({error:'Enter a name up to 32 characters.'},400);
  const code=crypto.randomUUID().replace(/-/g,'').slice(0,10).toUpperCase(),token=crypto.randomUUID()+crypto.randomUUID(),seat=await hash(token);
- const s={code,mode:b.mode==='solo'?'solo':'friends',flowVersion:2,game:1,index:-1,phase:'lobby',owner:seat,displayKey:crypto.randomUUID()+crypto.randomUUID(),players:{[seat]:{name,avatar,score:0,ready:false,lives:3,echoCharge:0,progress:0}}};await db.prepare('INSERT INTO links_dead_air_rooms(code,state,expires) VALUES(?,?,?)').bind(code,JSON.stringify(s),now+7200000).run();return json({...view(s,seat,now),token});}
+ const s={code,mode:b.mode==='solo'?'solo':'friends',flowVersion:2,game:1,index:-1,phase:'lobby',owner:seat,displayKey:crypto.randomUUID()+crypto.randomUUID(),players:{[seat]:{id:crypto.randomUUID(),name,avatar,score:0,ready:false,lives:3,echoCharge:0,progress:0}}};await db.prepare('INSERT INTO links_dead_air_rooms(code,state,expires) VALUES(?,?,?)').bind(code,JSON.stringify(s),now+7200000).run();return json({...view(s,seat,now),token});}
  const code=String(b.code||u.searchParams.get('code')||'').toUpperCase();if(!/^[A-F0-9]{10}$/.test(code))return json({error:'Enter your room code.'},400);
  const token=request.headers.get('x-dead-air-token')||'',seat=token?await hash(token):'',displayKey=request.headers.get('x-dead-air-display')||'';
  let questionLoad;
  for(let n=0;n<5;n++){
  const row=await db.prepare('SELECT * FROM links_dead_air_rooms WHERE code=? AND expires>?').bind(code,Date.now()).first();if(!row)return json({error:'Room expired or not found.'},404);
  const s=JSON.parse(row.state),time=Date.now(),display=!!displayKey&&displayKey===s.displayKey;let changed=advance(s,time),issued,current=seat;const completed=partyFinish(s);
+ for(const p of Object.values(s.players))if(!p.id){p.id=crypto.randomUUID();changed=true}
  if(action==='join'){
  if(display)return json({error:'Join on your phone.'},403);
- if(!s.players[seat]){if(s.mode==='solo'||s.phase!=='lobby'||Object.keys(s.players).length>=8)return json({error:'Room started or full. Join the next game.'},409);if(!validName)return json({error:'Enter a name up to 32 characters.'},400);if(Object.values(s.players).some(p=>p.name.toLowerCase()===name.toLowerCase()))return json({error:'That name is taken.'},409);issued=crypto.randomUUID()+crypto.randomUUID();current=await hash(issued);s.players[current]={name,avatar,score:0,ready:false,lives:3,echoCharge:0,progress:0};changed=true}
+ if(!s.players[seat]){if(s.mode==='solo'||s.phase!=='lobby'||Object.keys(s.players).length>=8)return json({error:'Room started or full. Join the next game.'},409);if(!validName)return json({error:'Enter a name up to 32 characters.'},400);if(Object.values(s.players).some(p=>p.name.toLowerCase()===name.toLowerCase()))return json({error:'That name is taken.'},409);issued=crypto.randomUUID()+crypto.randomUUID();current=await hash(issued);s.players[current]={id:crypto.randomUUID(),name,avatar,score:0,ready:false,lives:3,echoCharge:0,progress:0};changed=true}
  }else{
  if(!s.players[seat]&&!display)return json({error:'Join this room first.'},401);
  if(display&&action!=='state')return json({error:'TV display is read only.'},403);
@@ -37,7 +38,14 @@ async function handleRequest({request,env}){try{
  if(action==='answer'){
  if(b.game!==s.game||b.phaseId!==s.phaseId)return json({error:'This screen has moved on.'},409);
  try{respond(s,seat,b.answer,time)}catch(e){return json({error:e.message},409)}changed=true;
- }else if(action==='ready'){if(s.phase!=='lobby')return json({error:'Game already started.'},409);p.ready=!p.ready;changed=true}
+ }else if(action==='ready'){if(s.phase!=='lobby')return json({error:'Game already started.'},409);if(b.game!==undefined&&b.game!==s.game)return json({error:'This lobby has moved on.'},409);p.ready=!p.ready;changed=true}
+ else if(action==='remove'){
+ if(seat!==s.owner)return json({error:'Only the creator can remove a player.'},403);
+ if(s.phase!=='lobby'||b.game!==s.game)return json({error:'Players can only be removed from the current lobby.'},409);
+ const target=Object.entries(s.players).find(([,player])=>player.id===b.player)?.[0];
+ if(!target||target===s.owner)return json({error:'Choose another player in this lobby.'},409);
+ delete s.players[target];changed=true;
+ }
  else if(action==='start'){
  if(seat!==s.owner)return json({error:'Only the creator can start.'},403);
  if(s.phase!=='lobby'||Object.keys(s.players).length<(s.mode==='solo'?1:2)||!Object.values(s.players).every(p=>p.ready))return json({error:'Need 2–8 players, all ready.'},409);
