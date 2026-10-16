@@ -1,5 +1,7 @@
 import {balancedCategories} from './trivia-category-balance.js';
 import { QUESTIONS, shuffled } from './football-trivia.js';
+import {isTeamPlay,teamView} from './trivia-team-play.js';
+import {fairPlayView} from './trivia-fair-play.js';
 
 export const CATEGORIES = ['football','music','movies','history','science','general'];
 export const SECONDS = {easy:10,medium:12,hard:15};
@@ -69,13 +71,14 @@ export function reveal(state){
  state.phase='reveal';
 }
 export function view(state,seat,host,now=Date.now()){
+ const scoreSeat=isTeamPlay(state)?state.members[seat]?.team:seat;
  const countdown=state.phase==='question'&&now<(state.startsAt||0);
  const q=state.phase==='category'||countdown?null:state.deck[state.index],revealed=['reveal','ended'].includes(state.phase);
- const leaders=Object.entries(state.players).map(([id,p])=>({name:p.name,score:p.score,you:id===seat})).sort((a,b)=>b.score-a.score||a.name.localeCompare(b.name));
+ const leaders=Object.entries(state.players).map(([id,p])=>({name:p.name,score:p.score,you:id===scoreSeat})).sort((a,b)=>b.score-a.score||a.name.localeCompare(b.name));
  leaders.forEach((p,i)=>{p.rank=i&&p.score===leaders[i-1].score?leaders[i-1].rank:i+1;});
  const p=state.players[seat];
  return {...(host?{questionSource:state.questionSource||'LINKS question library',questionNotice:state.questionNotice||''}:{}),code:state.code,title:state.title,mode:state.mode||'individual',phase:state.phase,game:state.game,index:state.index,host,categories:state.categories,difficulty:state.difficulty,serverNow:now,deadline:state.deadline,startsAt:state.startsAt||0,countdown,isFinal:!!state.isFinal,categoryIntro:state.phase==='category'?state.deck[state.index+1]?.category:countdown?state.deck[state.index]?.category:null,canFinal:!!state.finalQuestion&&!state.isFinal,availableCategories:[...new Set(state.deck.slice(state.index+1).map(q=>q.category))],availableLevels:host?Object.fromEntries([...new Set(state.deck.slice(state.index+1).map(q=>q.category))].map(c=>[c,[...new Set(state.deck.slice(state.index+1).filter(q=>q.category===c).map(q=>q.difficulty))]])):undefined,remaining:state.deck.length-state.index-1,playerCount:leaders.length,leaders,
   answered:Object.values(state.players).filter(p=>p.answer?.index===state.index).length,
   submitted:p?.answer?.index===state.index&&p.answer.submitted===true,eligible:!!p&&p.eligible<=state.index,choice:p?.answer?.index===state.index?p.answer.choice:null,
-  question:q?{text:q.text,answers:q.answers,category:q.category,difficulty:q.difficulty,...(revealed?{correct:q.correct,source:q.source,license:q.license}: {})}:null};
+  question:q?{text:q.text,answers:q.answers,category:q.category,difficulty:q.difficulty,...(revealed?{correct:q.correct,source:q.source,license:q.license}: {})}:null,...teamView(state,seat,host),...fairPlayView(state,seat,host)};
 }
