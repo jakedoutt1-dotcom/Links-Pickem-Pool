@@ -1,0 +1,16 @@
+.workbook-banner{padding-top:20px;padding-bottom:40px}
+.workbook-promo{display:grid;grid-template-columns:1.05fr 1fr;gap:38px;align-items:center;padding:38px;border:1px solid #8a7041;border-radius:16px;background:radial-gradient(ellipse at top right,#b28b3221,transparent 65%),#10191e;overflow:hidden}
+.workbook-promo-copy{min-width:0}
+.workbook-promo h2{font-size:clamp(30px,3.1vw,43px)}
+.workbook-promo-copy>p:not(.eyebrow){color:#c2cacf;font-size:15px;line-height:1.7;max-width:480px;margin:20px 0}
+.workbook-promo-copy .workbook-note{font-size:12px!important;color:#a8b2b8!important;margin-bottom:0!important}
+.workbook-promo-actions{display:flex;flex-wrap:wrap;gap:10px}
+.workbook-promo-actions .button{gap:8px}
+.workbook-promo-downloads{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.workbook-promo-downloads a{display:inline-flex;align-items:center;min-height:44px;padding:10px 13px;border:1px solid #52626a;border-radius:6px;color:#f1d28c;font-size:12px;font-weight:700}
+.workbook-promo-downloads a:hover{background:#1b2a32;border-color:#efca77}
+.workbook-promo-preview{display:block;min-width:0;margin:0;padding:12px;border-radius:10px;background:#edf1f3;box-shadow:0 16px 38px #0007}
+.workbook-promo-preview img{display:block;width:100%;height:auto;max-height:430px;object-fit:contain;background:#fff;border-radius:4px}
+.workbook-promo-preview figcaption{display:flex;justify-content:space-between;gap:16px;margin:12px 2px 2px;color:#234237;font-size:11px;font-weight:700}
+@media(max-width:800px){.workbook-promo{grid-template-columns:1fr;gap:26px;padding:27px}.workbook-promo-copy>p:not(.eyebrow){max-width:none}.workbook-promo-preview{max-width:650px;width:100%}}
+@media(max-width:450px){.workbook-banner{padding-top:12px;padding-bottom:24px}.workbook-promo{padding:24px 18px;gap:24px}.workbook-promo h2{font-size:32px}.workbook-promo-actions .button{width:100%}.workbook-promo-downloads{display:grid;grid-template-columns:1fr 1fr}.workbook-promo-downloads a{justify-content:center;text-align:center}.workbook-promo-preview{padding:8px}.workbook-promo-preview figcaption{font-size:10px;gap:8px}}

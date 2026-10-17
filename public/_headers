@@ -31,3 +31,13 @@
 
 /new-build/*.mjs
   Cache-Control: no-store, no-cache, must-revalidate, max-age=0
+
+/downloads/nfl-crew-windows.zip
+  Content-Type: application/zip
+  Content-Disposition: attachment; filename="NFL-Crew-Windows.zip"
+  Cache-Control: public, max-age=3600
+
+/downloads/nfl-crew-mac.zip
+  Content-Type: application/zip
+  Content-Disposition: attachment; filename="NFL-Crew-Mac.zip"
+  Cache-Control: public, max-age=3600
