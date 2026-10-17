@@ -34,10 +34,10 @@
 
 /downloads/nfl-crew-windows.zip
   Content-Type: application/zip
-  Content-Disposition: attachment; filename="NFL-Crew-Windows.zip"
+  Content-Disposition: attachment; filename="LINKS-Pickem-Clean-Windows.zip"
   Cache-Control: public, max-age=3600
 
 /downloads/nfl-crew-mac.zip
   Content-Type: application/zip
-  Content-Disposition: attachment; filename="NFL-Crew-Mac.zip"
+  Content-Disposition: attachment; filename="LINKS-Pickem-Clean-Mac.zip"
   Cache-Control: public, max-age=3600

@@ -37,7 +37,10 @@ const server = createServer(async (request, response) => {
     let body = await readFile(file);
     if (url.pathname === '/') body = Buffer.from(body.toString().replace('<head>', '<head><base href="/new-build/">'));
     const headers = {'Content-Type':mime[path.extname(file)] || 'application/octet-stream', 'Content-Length':body.length};
-    if (path.extname(file) === '.zip') headers['Content-Disposition'] = 'attachment; filename="' + path.basename(file) + '"';
+    if (path.extname(file) === '.zip') {
+      const names = {'nfl-crew-windows.zip':'LINKS-Pickem-Clean-Windows.zip', 'nfl-crew-mac.zip':'LINKS-Pickem-Clean-Mac.zip'};
+      headers['Content-Disposition'] = 'attachment; filename="' + (names[path.basename(file)] || path.basename(file)) + '"';
+    }
     response.writeHead(200, headers); response.end(body);
   } catch {missing.push(url.pathname); response.writeHead(404); response.end('Not found');}
 });
@@ -80,12 +83,15 @@ try {
       for (const version of ['Windows', 'Mac']) {
         const link = page.getByRole('link', {name:'Download for ' + version, exact:false}).first();
         const downloadPath = await link.getAttribute('href');
-        assert.equal(downloadPath, '/downloads/nfl-crew-' + version.toLowerCase() + '.zip');
+        const downloadURL = new URL(downloadPath, origin);
+        assert.equal(downloadURL.pathname, '/downloads/nfl-crew-' + version.toLowerCase() + '.zip');
+        assert.ok(downloadURL.searchParams.has('v'), 'Updated clean downloads bypass older cached ZIPs');
         const event = page.waitForEvent('download');
         await link.click();
         const download = await event, local = await download.path();
         assert.equal(await download.failure(), null);
-        const actual = await readFile(local), expected = await readFile(path.join(publicRoot, downloadPath));
+        assert.equal(download.suggestedFilename(), 'LINKS-Pickem-Clean-' + version + '.zip');
+        const actual = await readFile(local), expected = await readFile(path.join(publicRoot, downloadURL.pathname));
         assert.equal(actual.subarray(0, 2).toString(), 'PK', 'Download must be a real ZIP');
         assert.equal(digest(actual), digest(expected), version + ' download is complete');
         assert.ok(actual.length > 100000, 'Workbook ZIP is not an empty placeholder');
