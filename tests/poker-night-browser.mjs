@@ -79,11 +79,24 @@ try{
  await tv.setViewportSize({width:1280,height:720});await fits(tv);
  assert.equal(await tv.evaluate(()=>document.getElementById('standingsPanel').getBoundingClientRect().bottom<=innerHeight),true,'TV standings remain visible at 720p');
  await tv.screenshot({path:out+'/table-tv-720.png',fullPage:true});await tv.setViewportSize({width:1920,height:1080});
+ // Finish both live tables through real folds. Every connected screen must
+ // show the automatic countdown and receive hand two without host input.
+ for(let step=0;step<25;step++){
+  const state=(await api(null,hostSession,{code})).room,table=state.tables.find(t=>t.phase!=='showdown');if(!table)break;
+  const seat=sessions.find(s=>s.playerId===table.actorId);assert.ok(seat);
+  await api({action:'bet',code,tableId:table.id,handNumber:table.handNumber,turnId:table.turnId,move:'fold'},seat);
+ }
+ await tv.waitForFunction(()=>document.getElementById('actionMessage').textContent.includes('deals automatically'));
+ assert.equal((await api(null,hostSession,{code})).room.status,'playing','A hand winner does not end the game');
+ await tv.waitForFunction(()=>document.getElementById('tableLabel').textContent.includes('HAND 2'),null,{timeout:20000});
+ await host.waitForFunction(()=>document.getElementById('tableLabel').textContent.includes('HAND 2'));
+ await guest.waitForFunction(()=>document.getElementById('tableLabel').textContent.includes('HAND 2'));
+ assert.equal(await host.locator('#nextButton').isVisible(),false,'No host click is required to continue');
  await host.locator('#pauseButton').click();await tv.waitForFunction(()=>document.getElementById('actionMessage').textContent.includes('paused'));
  assert.equal(await guest.locator('#privateCards .card:not(.back)').count(),2);
  await host.locator('#pauseButton').click();
  const desk=await context(1440,1000);await desk.goto(origin+'/new-build/poker-night.html');await desk.locator('#showSetup').click();await desk.locator('#hostName').fill('Practice Player');await desk.locator('#mode').selectOption('practice');await desk.locator('#createForm button[type=submit]').click();await desk.waitForFunction(()=>!document.getElementById('lobby').hidden);await desk.locator('#startButton').click();await desk.waitForFunction(()=>!document.getElementById('gameArea').hidden);await fits(desk);
  await desk.screenshot({path:out+'/practice-desktop.png',fullPage:true});
  assert.deepEqual(errors,[]);assert.deepEqual(missing,[]);
- console.log('PASS real API/browser:18 players,9-seat phone layout,private cards,hide/reload,raise,TV privacy/feature switch,standings,pause,practice and rules/ranks.');
+ console.log('PASS real API/browser:18 players,9-seat phone layout,private cards,hide/reload,raise,TV privacy/feature switch,standings,automatic next hand on all devices,pause,practice and rules/ranks.');
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve));db.raw.close();}

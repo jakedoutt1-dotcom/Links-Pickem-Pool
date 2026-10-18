@@ -16,4 +16,4 @@
  .party-page .million-title small,.party-page .million-title span{font-size:8px}
 }
 
-.poker-art{position:relative}.poker-art img.poker-brand{position:absolute;top:3%;left:42%;width:16%;height:auto;aspect-ratio:auto;object-fit:contain;pointer-events:none}
+.poker-art{position:relative}.party-page .game .art img.poker-brand{position:absolute;top:3%;left:50%;transform:translateX(-50%);width:16%;max-width:75px;height:auto;aspect-ratio:auto;object-fit:contain;pointer-events:none}

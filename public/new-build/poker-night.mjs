@@ -183,13 +183,13 @@ function render() {
   const host = !isTv && !!(room.isHost || session.hostToken), lobby = room.status === 'lobby', table = room.table;
   document.body.classList.toggle('tv',isTv);
   $('roomLabel').textContent = `${room.mode === 'tournament' ? 'HOSTED TOURNAMENT' : room.mode === 'practice' ? 'PRACTICE · COMPUTER OPPONENTS' : 'TEXAS HOLD’EM'} · ROOM ${code}`;
-  $('roomTitle').textContent = room.status === 'closed' ? 'This room is closed.' : room.status === 'finished' ? 'A night to remember.' : lobby ? 'Your seat is waiting.' : isTv ? 'LINKS Poker Night' : 'Every hand is a new game.';
+  $('roomTitle').textContent = room.status === 'closed' ? 'This room is closed.' : room.status === 'finished' ? 'A night to remember.' : lobby ? 'Your seat is waiting.' : isTv ? 'LINKS Poker Night' : 'Play to the last stack.';
   $('lobby').hidden = !lobby; $('gameArea').hidden = lobby || room.status === 'closed'; $('standingsPanel').hidden = lobby; $('hostDesk').hidden = !host || room.status === 'closed'; $('tvButton').hidden = !host; $('fullScreenButton').hidden = !isTv; $('inviteButton').hidden = room.status === 'closed' || room.mode === 'practice';
   $('lobbyCode').textContent = code;
   $('lobbySettings').textContent = `${chips(room.settings?.startingChips)} starting chips · ${room.settings?.tableSize || 9} seats per table · ${room.settings?.turnSeconds || 30} seconds to act`;
   $('lobbyRebuy').textContent = room.settings?.maxReentries ? `${room.settings.maxReentries} virtual-chip buy back${room.settings.maxReentries > 1 ? 's' : ''} per player${room.mode === 'tournament' ? ', through blind level ' + room.settings.reentryLevels : ''}.` : 'No buy backs. Everyone gets one starting stack.';
   setHtml('lobbyRoster',(room.players || []).map(p => `<span>${esc(p.name)}${p.id === session.playerId ? ' · You' : ''}</span>`).join(''));
-  $('lobbyHelp').textContent = host ? `${room.players?.length || 0} joined. Start when everyone is ready; at least two players are needed.` : 'The host will start when everyone is ready. Keep this page open.';
+  $('lobbyHelp').textContent = (host ? `${room.players?.length || 0} joined. Start when everyone is ready; at least two players are needed.` : 'The host will start when everyone is ready. Keep this page open.') + ' After that, hands deal automatically. Keep playing while you have chips; the last stack wins.';
   $('startButton').hidden = !host || !lobby; $('startButton').disabled = busy || (room.players?.length || 0) < 2;
   $('lobbyQr').hidden = room.mode === 'practice';
   if (lobby && room.mode !== 'practice') drawQr('lobbyQr',inviteUrl());
@@ -251,7 +251,7 @@ function renderTable(table) {
   if (showWin) {
     const texts = winners.map(w => typeof w === 'string' ? nameOf(w) : `${w.name || nameOf(w.playerId || w.id)}${w.amount ? ' +' + chips(w.amount) : ''}`);
     const handNames = [...new Set(winners.map(w => w.handName).filter(name => name && name !== 'Uncontested'))];
-    $('winnerToast').textContent = texts.join(' · ') + (winners.length > 1 ? ' · Pot awarded' : ' wins!') + (handNames.length ? ' · ' + handNames.join(' / ') : '');
+    $('winnerToast').textContent = texts.join(' · ') + (winners.length > 1 ? ' · Pot awarded' : ' wins this hand!') + (handNames.length ? ' · ' + handNames.join(' / ') : '');
     const win = `${table?.id}:${table?.handNumber}:${texts.join(',')}`; if (win !== lastWin) { sound('win'); lastWin = win; }
   }
 }
@@ -326,7 +326,13 @@ function tick() {
   $('turnClock').classList.toggle('urgent',room.status === 'playing' && !!deadline && remaining <= 5);
   if (deadline && remaining === 0 && room.table?.actorId === session.playerId) updateControls();
   $('levelClock').textContent = room.status === 'paused' ? room.autoResumeAt ? timeLeft(dateValue(room.autoResumeAt)) + ' break' : 'Paused' : room.nextLevelAt ? timeLeft(dateValue(room.nextLevelAt)) : 'Fixed blinds';
-  if (room.nextHandAt && room.status === 'playing') { const next = seconds(dateValue(room.nextHandAt)); $('nextButton').disabled = busy || next > 0; if (room.table?.waitingForTables || ['showdown','complete'].includes(room.table?.phase)) $('actionMessage').textContent = next > 0 ? `Next hand in ${next}s. Buy backs are available if eligible.` : 'Preparing the next hand…'; }
+  if (room.nextHandAt && room.status === 'playing') {
+    const next = seconds(dateValue(room.nextHandAt)); $('nextButton').disabled = busy || next > 0;
+    if (room.table?.waitingForTables || ['showdown','complete'].includes(room.table?.phase)) {
+      const finalStack = room.remaining === 1;
+      $('actionMessage').textContent = next > 0 ? (finalStack ? `Final result in ${next}s.` : `Next hand deals automatically in ${next}s.`) + (room.canRebuy ? ' Buy back in below to keep playing.' : '') : finalStack ? 'Confirming the winner…' : 'Dealing the next hand…';
+    }
+  }
 }
 setInterval(tick,250);
 setInterval(() => { if (!document.hidden) void poll(); },1500);
