@@ -8,6 +8,7 @@ const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;',
 const chips = value => Number(value || 0).toLocaleString();
 const url = new URL(location.href), isTv = url.searchParams.get('tv') === '1';
 const displayKey = new URLSearchParams(url.hash.slice(1)).get('display') || '';
+let selectedTvTable = isTv ? url.searchParams.get('table') || '' : '';
 let code = (url.searchParams.get('room') || url.searchParams.get('code') || '').trim().toUpperCase();
 let room = null, session = {}, busy = false, fetching = false, generation = 0, offset = 0, cardsHidden = false, raiseOpen = false, tableSignature = '', playerSignature = '', lastTurn = '', lastWin = '', connectionFailures = 0;
 let muted = readStorage('links-poker-muted') === '1', audio = null, confirmResolve = null;
@@ -90,7 +91,7 @@ $('confirmDialog').addEventListener('cancel', event => { event.preventDefault();
 async function api(body, retried = false) {
   const headers = {'Content-Type':'application/json'}, params = new URLSearchParams({code});
   if (!isTv && readStorage('links-account-token')) headers['x-links-account'] = readStorage('links-account-token');
-  if (isTv) { params.set('tv','1'); headers['x-poker-display'] = displayKey; }
+  if (isTv) { params.set('tv','1'); if (selectedTvTable) params.set('table',selectedTvTable); headers['x-poker-display'] = displayKey; }
   else { if (session.playerToken) headers['x-poker-token'] = session.playerToken; if (session.hostToken) headers['x-poker-host'] = session.hostToken; }
   let response;
   try { response = await fetch('./api/poker-night' + (body ? '' : '?' + params), {method:body ? 'POST' : 'GET', headers, cache:'no-store', signal:AbortSignal.timeout(12000), ...(body ? {body:JSON.stringify(body)} : {})}); }
@@ -104,6 +105,7 @@ function adopt(data) {
   const incoming = data.room || data;
   if (!incoming.code) return;
   room = incoming; code = room.code;
+  if (isTv && selectedTvTable && room.tables?.length && !room.tables.some(t => t.id === selectedTvTable)) { selectedTvTable = ''; note('That table has closed. This TV now follows the featured table.'); }
   if (room.serverNow) offset = dateValue(room.serverNow) - Date.now();
   if (!isTv && session.playerToken) {
     writeStorage('links-poker-session-' + code, JSON.stringify(session));
@@ -114,6 +116,7 @@ function adopt(data) {
   }
   const clean = new URL(location.href); clean.searchParams.set('room',code); clean.searchParams.delete('code');
   if (!isTv) { clean.hash = ''; clean.searchParams.delete('tv'); }
+  if (isTv) { if (selectedTvTable) clean.searchParams.set('table',selectedTvTable); else clean.searchParams.delete('table'); }
   history.replaceState(null,'',clean);
   showPanel('room'); render();
 }
@@ -169,7 +172,12 @@ $('joinForm').onsubmit = async event => {
 };
 
 function inviteUrl() { const address = new URL('./poker-night.html',location.href); address.searchParams.set('room',code); return address.href; }
-function tvUrl() { const address = new URL(inviteUrl()); address.searchParams.set('tv','1'); address.hash = new URLSearchParams({display:room?.displayKey || ''}).toString(); return address.href; }
+function tvUrl() { const address = new URL(inviteUrl()); address.searchParams.set('tv','1'); if ($('tvTable').value) address.searchParams.set('table',$('tvTable').value); address.hash = new URLSearchParams({display:room?.displayKey || ''}).toString(); return address.href; }
+function displayOptions(id, selected) {
+  const options = '<option value="">Follow host’s featured table</option>' + (room?.tables || []).map(t => `<option value="${esc(t.id)}">${esc(String(t.id).replace(/^table[-_]?/i,'Table '))}${room.tables.length === 1 ? ' · Final / only table' : ''}</option>`).join('');
+  setHtml(id,options); $(id).value = selected;
+}
+function refreshTvLink() { $('tvLink').value = tvUrl(); $('openTv').href = tvUrl(); $('tvStatus').textContent = ''; }
 function drawQr(target, link) { if ($(target).dataset.link === link) return; const qr = qrcode(0,'M'); qr.addData(link); qr.make(); $(target).innerHTML = qr.createSvgTag({cellSize:6,margin:8,scalable:true}); $(target).dataset.link = link; }
 function invitationText() { return `Join me for LINKS Poker Night! Room ${code}. Open the link on your phone and choose your name. Virtual chips only.\n${inviteUrl()}`; }
 $('inviteButton').onclick = () => {
@@ -185,7 +193,9 @@ $('inviteButton').onclick = () => {
 async function copyText(text, target) { try { await navigator.clipboard.writeText(text); $(target).textContent = 'Link copied. Paste it into a message.'; } catch { const input = target === 'shareStatus' ? $('inviteLink') : $('tvLink'); input.focus(); input.select(); $(target).textContent = 'Select and copy the link above.'; } }
 $('copyInvite').onclick = () => copyText(inviteUrl(),'shareStatus');
 $('shareInvite').onclick = async () => { if (!navigator.share) return copyText(inviteUrl(),'shareStatus'); try { await navigator.share({title:'LINKS Poker Night',text:`Join me for LINKS Poker Night! Room ${code}. Choose your name on your phone. Virtual chips only.`,url:inviteUrl()}); } catch (error) { if (error.name !== 'AbortError') void copyText(inviteUrl(),'shareStatus'); } };
-$('tvButton').onclick = () => { if (!room?.displayKey) return note('Your TV link is not ready. Try again in a moment.',true); $('tvLink').value = tvUrl(); $('openTv').href = tvUrl(); $('tvStatus').textContent = ''; $('tvDialog').showModal(); };
+$('tvButton').onclick = () => { if (!room?.displayKey) return note('Your TV link is not ready. Try again in a moment.',true); displayOptions('tvTable',$('tvTable').value); refreshTvLink(); $('tvDialog').showModal(); };
+$('tvTable').onchange = refreshTvLink;
+$('displayTable').onchange = () => { selectedTvTable = $('displayTable').value; generation++; void poll(); };
 $('copyTv').onclick = () => copyText(tvUrl(),'tvStatus');
 $('fullScreenButton').onclick = async () => { try { if (document.fullscreenElement) await document.exitFullscreen(); else if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen(); else note('Use your TV or browser’s full-screen setting.'); } catch { note('Use your TV or browser’s full-screen setting.'); } };
 $('exitButton').onclick = async () => {
@@ -200,6 +210,8 @@ function render() {
   if ($('inviteButton').parentElement !== inviteHome) inviteHome[lobby ? 'append' : 'prepend']($('inviteButton'));
   $('lobbyInvite').hidden = room.mode === 'practice';
   document.body.classList.toggle('tv',isTv);
+  $('displayTableControl').hidden = !isTv;
+  if (isTv) displayOptions('displayTable',selectedTvTable);
   $('roomLabel').textContent = `${room.mode === 'tournament' ? 'HOSTED TOURNAMENT' : room.mode === 'practice' ? 'PRACTICE · COMPUTER OPPONENTS' : 'TEXAS HOLD’EM'} · ROOM ${code}`;
   $('roomTitle').textContent = room.status === 'closed' ? 'This room is closed.' : room.status === 'finished' ? 'A night to remember.' : lobby ? 'Your seat is waiting.' : isTv ? 'LINKS Poker Night' : 'Play to the last stack.';
   $('lobby').hidden = !lobby; $('gameArea').hidden = lobby || room.status === 'closed'; $('standingsPanel').hidden = lobby; $('hostDesk').hidden = !host || room.status === 'closed'; $('tvButton').hidden = !host; $('fullScreenButton').hidden = !isTv; $('inviteButton').hidden = room.status === 'closed' || room.mode === 'practice';
@@ -222,7 +234,7 @@ function render() {
   $('remainingValue').textContent = `${room.remaining ?? room.players?.filter(p => p.stack > 0).length ?? 0} / ${room.players?.length || 0}`;
   const ranking = sortedStandings(), myIndex = ranking.findIndex(p => p.id === session.playerId);
   $('rankValue').textContent = isTv ? 'Live' : myIndex < 0 ? '—' : `${myPlayer()?.place || myPlayer()?.rank || myIndex + 1}${myPlayer()?.place ? ' · Final' : ''}`;
-  $('rankValue').previousElementSibling.textContent = isTv ? 'FEATURED TABLE' : 'YOUR POSITION';
+  $('rankValue').previousElementSibling.textContent = isTv ? 'TABLE ON THIS TV' : 'YOUR POSITION';
   if (isTv) $('rankValue').textContent = table ? String(table.id).replace(/^table[-_]?/,'') : '—';
   $('tableLabel').textContent = table ? `${String(table.id).replace(/^table[-_]?/i,'TABLE ')} · HAND ${table.handNumber || 1}` : 'WAITING FOR A SEAT';
   $('actionMessage').textContent = room.status === 'paused' ? 'Game paused. Your chips and seat are safe.' : table?.waitingForTables ? 'Hand complete. Waiting for the other tables.' : table?.message || (table?.actorId ? `${nameOf(table.actorId)} to act.` : 'The next hand is on its way.');
@@ -231,7 +243,7 @@ function render() {
   $('finishedPanel').hidden = room.status !== 'finished'; $('championName').textContent = room.winnerId ? `${nameOf(room.winnerId)} wins Poker Night!` : 'Thanks for playing.';
   const tables = room.tables || [];
   $('tableCount').textContent = `${tables.length} table${tables.length === 1 ? '' : 's'}`;
-  if (host) setHtml('tableList',tables.map(t => `<article class="table-status ${t.id === room.featuredTableId ? 'featured' : ''}"><h3>${esc(String(t.id).replace(/^table[-_]?/i,'Table '))}${t.id === room.featuredTableId ? ' · On TV' : ''}</h3><p>${t.players?.length || 0} players · ${esc(t.phase || 'Waiting')}<br>Pot ${chips(t.pot)}</p><button type="button" data-feature="${esc(t.id)}" ${t.id === room.featuredTableId || busy ? 'disabled' : ''}>Feature on TV</button></article>`).join(''));
+  if (host) setHtml('tableList',tables.map(t => `<article class="table-status ${t.id === room.featuredTableId ? 'featured' : ''}"><h3>${esc(String(t.id).replace(/^table[-_]?/i,'Table '))}${t.id === room.featuredTableId ? ' · Featured' : ''}</h3><p>${t.players?.length || 0} players · ${esc(t.phase || 'Waiting')}<br>Pot ${chips(t.pot)}</p><button type="button" data-feature="${esc(t.id)}" ${t.id === room.featuredTableId || busy ? 'disabled' : ''}>Feature on TV</button></article>`).join(''));
   $('pauseButton').textContent = room.status === 'paused' ? 'Resume game' : 'Pause game'; $('pauseButton').disabled = busy || !['playing','paused'].includes(room.status);
   $('closeButton').disabled = busy || room.status === 'closed';
   const venue = room.venue; $('venueBanner').hidden = !venue?.logo;

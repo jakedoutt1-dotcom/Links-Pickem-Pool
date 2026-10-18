@@ -196,13 +196,13 @@ export function resumeTournament(s,now=Date.now()){
  for(const table of s.tables){if(table.deadline)table.deadline+=delay;if(table.handEndsAt)table.handEndsAt+=delay;}
  if(s.nextHandAt)s.nextHandAt+=delay;s.pausedMs+=delay;s.pausedAt=0;s.autoResumeAt=0;s.status='playing';return s;
 }
-export function tournamentView(s,seat='',{host=false,tv=false,venue=null}={},now=Date.now()){
+export function tournamentView(s,seat='',{host=false,tv=false,venue=null,tableId=''}={},now=Date.now()){
  const self=s.players[seat],blinds=blindState(s,now);
  const standings=participants(s).map(p=>({id:p.id,name:p.name,stack:p.stack,score:p.score,status:p.status,tableId:p.tableId,reentries:p.reentries,away:!!p.away,bot:!!p.bot,place:p.place||null,you:p.id===self?.id})).sort((a,b)=>a.status==='eliminated'?(b.status==='eliminated'?(a.place||99)-(b.place||99):1):b.status==='eliminated'?-1:b.stack-a.stack||a.name.localeCompare(b.name));
  standings.forEach((p,i)=>p.rank=p.place||i+1);
  const allowShow=s.mode!=='practice'&&['playing','paused','finished'].includes(s.status);
  const tables=s.tables.map(t=>publicTable(t,tv?null:self?.id,{tv,allowShow}));
  for(const t of tables){const internal=s.tables.find(x=>x.id===t.id);t.turnId=internal.actionNumber;t.waitingForTables=idle(internal)&&s.tables.some(x=>!idle(x));}
- const table=tables.find(t=>t.id===(tv?s.featuredTableId:self?.tableId))||tables.find(t=>t.id===s.featuredTableId)||null;
+ const table=tables.find(t=>t.id===(tv?(tableId||s.featuredTableId):self?.tableId))||tables.find(t=>t.id===s.featuredTableId)||tables[0]||null;
  return {code:s.code,mode:s.mode,status:s.status,settings:s.settings,serverNow:now,...blinds,remaining:alive(s).length,players:standings,standings,tables,table,featuredTableId:s.featuredTableId,canRebuy:canRebuy(s,self,now),isHost:host,isTv:tv,playerId:self?.id||null,expiresAt:s.expiresAt,winnerId:s.winnerId||null,nextHandAt:s.nextHandAt||0,pausedAt:s.pausedAt||0,autoResumeAt:s.autoResumeAt||0,venue,...(host?{displayKey:s.displayKey}:{})};
 }

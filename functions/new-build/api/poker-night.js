@@ -98,7 +98,7 @@ export async function onRequest({request,env}){
    if(JSON.stringify(s)!==before){const result=await savePartyRoom(db,'poker-night',code,row.version,s,null);if(!result.meta?.changes)continue;}
    let venue=null;
    try{await ensureVenue(db);venue=await db.prepare("SELECT p.name,p.logo FROM links_venue_rooms v JOIN links_partners p ON p.id=v.partner WHERE v.game='poker-night' AND v.room=? AND p.active=1").bind(code).first();}catch{}
-   const result={ok:true,room:tournamentView(s,current,{host,tv:display||url.searchParams.get('tv')==='1',venue},time),...(session?{session}:{})};
+   const result={ok:true,room:tournamentView(s,current,{host,tv:display||url.searchParams.get('tv')==='1',venue,tableId:url.searchParams.get('table')||''},time),...(session?{session}:{})};
    if(receiptId)await db.prepare('INSERT OR IGNORE INTO links_poker_night_receipts(id,response,expires) VALUES(?,?,?)').bind(receiptId,JSON.stringify(result),s.expiresAt).run();
    return json(result);
   }

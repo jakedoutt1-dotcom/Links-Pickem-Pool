@@ -124,15 +124,25 @@ try{
  }
  await host.locator('#bettingControls').waitFor({state:'visible'});await host.locator('#raiseOpen').click();await host.locator('[data-bet=min]').click();
  const actionBefore=(await api(null,hostSession,{code})).room.table.actionNumber;
- await host.locator('#raiseButton').click();await host.waitForFunction(()=>document.getElementById('bettingControls').hidden);
+ const hostRaise=host.waitForResponse(response=>response.url().includes('/api/poker-night')&&response.request().method()==='POST'&&response.request().postDataJSON()?.move==='raise');
+ await host.locator('#raiseButton').click();assert.equal((await hostRaise).status(),200);await host.waitForFunction(()=>document.getElementById('bettingControls').hidden);
  assert.equal((await api(null,hostSession,{code})).room.table.actionNumber,actionBefore+1);
  await host.screenshot({path:out+'/table-phone.png',fullPage:true});await host.locator('#pokerTable').screenshot({path:out+'/table-phone-close.png'});
  await host.locator('#tvButton').click();const tvHref=await host.locator('#openTv').getAttribute('href');assert.ok(tvHref.includes('#display='));assert.equal(new URL(tvHref).searchParams.has('hostToken'),false);
+ await host.locator('#tvTable').selectOption('table-1');const pinnedHref=await host.locator('#openTv').getAttribute('href');assert.equal(new URL(pinnedHref).searchParams.get('table'),'table-1');
  await host.locator('#tvDialog [data-close]').click();
  const tv=await context(1920,1080);await tv.goto(tvHref);await tv.waitForFunction(()=>document.querySelectorAll('#seats .seat').length===9);
+ const pinnedTv=await context(1280,720);await pinnedTv.goto(pinnedHref);await pinnedTv.waitForFunction(()=>document.getElementById('tableLabel').textContent.startsWith('TABLE 1'));
  assert.equal(await tv.locator('#privateCards .card:not(.back)').count(),0);assert.equal(await tv.locator('#myHand').isVisible(),false);assert.equal(await tv.locator('#hostDesk').isVisible(),false);assert.equal(await tv.locator('#standings li').count(),18);await fits(tv);
  const first=await tv.locator('#tableLabel').textContent();await host.locator('#hostDesk summary').click();await host.locator('[data-feature="table-2"]').click();
  await tv.waitForFunction(first=>document.getElementById('tableLabel').textContent!==first,first);
+ assert.ok((await pinnedTv.locator('#tableLabel').textContent()).startsWith('TABLE 1'),'A second TV stays on its selected table when the featured table changes');
+ assert.equal(await pinnedTv.locator('#seats .card:not(.back)').count(),0,'Independent TV does not reveal private cards');
+ await pinnedTv.locator('#displayTable').selectOption('table-2');await pinnedTv.waitForFunction(()=>document.getElementById('tableLabel').textContent.startsWith('TABLE 2'));
+ await pinnedTv.reload();await pinnedTv.waitForFunction(()=>document.getElementById('displayTable').value==='table-2');
+ await pinnedTv.locator('#displayTable').selectOption('table-1');await pinnedTv.waitForFunction(()=>document.getElementById('tableLabel').textContent.startsWith('TABLE 1'));
+ assert.equal((await api(null,hostSession,{code})).room.featuredTableId,'table-2','Changing one TV does not change the featured table');
+ await fits(pinnedTv);await pinnedTv.close();
  assert.equal(await tv.evaluate(()=>document.getElementById('standingsPanel').getBoundingClientRect().bottom<=innerHeight),true,'TV table and standings fit a 1080p screen');
  await tv.screenshot({path:out+'/table-tv.png',fullPage:true});
  await tv.setViewportSize({width:1280,height:720});await fits(tv);
