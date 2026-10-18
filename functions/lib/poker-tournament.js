@@ -1,4 +1,5 @@
-import {createTable,startHand,act,advanceTimeout,publicTable,evaluateHand} from './poker-night.js';
+import {createTable,startHand,act,advanceTimeout,publicTable,showHand} from './poker-night.js';
+import {computerMove} from './poker-computer.js';
 
 const fail=(message,code='INVALID_ACTION')=>{const error=new Error(message);error.code=code;throw error;};
 const number=(value,fallback,min,max,label)=>{
@@ -61,15 +62,8 @@ function advanceComputer(s,table,now){
  const player=playerById(s,table.actorId);if(!player?.bot||idle(table))return;
  if(table.botActorId!==player.id||table.botTurn!==table.actionNumber){table.botActorId=player.id;table.botTurn=table.actionNumber;table.botReadyAt=now+1200;return;}
  if(now<table.botReadyAt)return;
- const own=publicTable(table,player.id),cards=own.players.find(p=>p.id===player.id).holeCards,legal=own.legalActions;
- // A practice opponent sees precisely its own two cards and the public board.
- const rank=own.board.length>=3?evaluateHand([...cards,...own.board]).rank:(cards[0]?.[0]===cards[1]?.[0]?1:0);
- const random=crypto.getRandomValues(new Uint32Array(1))[0]/0x100000000;
- let type=legal.canCheck?'check':'call',amount;
- if(legal.canRaise&&((rank>=2&&random<0.55)||(rank>=1&&random<0.3)||random<0.08)){
-  type='raise';amount=Math.min(legal.maxRaiseTo,Math.max(legal.minRaiseTo,own.currentBet+own.bigBlind*2));
- }else if(!legal.canCheck&&rank===0&&legal.callAmount>Math.max(own.bigBlind*2,own.pot/3)&&random<0.6)type='fold';
- act(table,player.id,{type,amount},{turnSeconds:s.settings.turnSeconds},now);
+ const move=computerMove(publicTable(table,player.id),player.id);
+ act(table,player.id,move,{turnSeconds:s.settings.turnSeconds},now);
 }
 function syncPlayers(s,now){
  for(const table of s.tables){
@@ -187,6 +181,13 @@ export function rebuyTournament(s,seat,now=Date.now()){
  const p=s.players[seat];if(!canRebuy(s,p,now))fail('Buy back is unavailable: you must be out, have a buy back left, and be before the cutoff.');
  p.stack=s.settings.startingChips;p.reentries++;p.status='waiting';p.tableId=null;p.away=false;delete p.place;delete p.eliminatedAt;delete p.eliminatedRound;delete p.eliminatedStack;return s;
 }
+export function showTournamentHand(s,seat,input){
+ if(s.mode==='practice'||!['playing','paused','finished'].includes(s.status))fail('Showing a hand is available only after a multiplayer hand ends.','CANNOT_SHOW_HAND');
+ const player=s.players[seat],table=s.tables.find(t=>t.id===input.tableId);
+ if(!player||!table||!table.players.some(p=>p.id===player.id))fail('You were not dealt into this hand.','CANNOT_SHOW_HAND');
+ if(input.handNumber!==table.handNumber)fail('The hand changed. Your new cards will stay private.','STALE_HAND');
+ showHand(table,player.id);return s;
+}
 export function pauseTournament(s,now=Date.now()){
  if(s.status!=='playing')fail('Only a running game can be paused.');s.status='paused';s.pausedAt=now;return s;
 }
@@ -199,7 +200,8 @@ export function tournamentView(s,seat='',{host=false,tv=false,venue=null}={},now
  const self=s.players[seat],blinds=blindState(s,now);
  const standings=participants(s).map(p=>({id:p.id,name:p.name,stack:p.stack,score:p.score,status:p.status,tableId:p.tableId,reentries:p.reentries,away:!!p.away,bot:!!p.bot,place:p.place||null,you:p.id===self?.id})).sort((a,b)=>a.status==='eliminated'?(b.status==='eliminated'?(a.place||99)-(b.place||99):1):b.status==='eliminated'?-1:b.stack-a.stack||a.name.localeCompare(b.name));
  standings.forEach((p,i)=>p.rank=p.place||i+1);
- const tables=s.tables.map(t=>publicTable(t,tv?null:self?.id,{tv}));
+ const allowShow=s.mode!=='practice'&&['playing','paused','finished'].includes(s.status);
+ const tables=s.tables.map(t=>publicTable(t,tv?null:self?.id,{tv,allowShow}));
  for(const t of tables){const internal=s.tables.find(x=>x.id===t.id);t.turnId=internal.actionNumber;t.waitingForTables=idle(internal)&&s.tables.some(x=>!idle(x));}
  const table=tables.find(t=>t.id===(tv?s.featuredTableId:self?.tableId))||tables.find(t=>t.id===s.featuredTableId)||null;
  return {code:s.code,mode:s.mode,status:s.status,settings:s.settings,serverNow:now,...blinds,remaining:alive(s).length,players:standings,standings,tables,table,featuredTableId:s.featuredTableId,canRebuy:canRebuy(s,self,now),isHost:host,isTv:tv,playerId:self?.id||null,expiresAt:s.expiresAt,winnerId:s.winnerId||null,nextHandAt:s.nextHandAt||0,pausedAt:s.pausedAt||0,autoResumeAt:s.autoResumeAt||0,venue,...(host?{displayKey:s.displayKey}:{})};

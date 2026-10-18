@@ -84,4 +84,54 @@
   body.tv .standings .player-name small{display:none}
   body.tv .venue-banner{padding-top:5px}
 }
+#showHandPanel{text-align:center;margin-top:16px}#showHandButton{width:100%;font-size:.85rem}#showHandHelp{font-size:.76rem;line-height:1.5;margin:9px 0 0;color:var(--muted)}
+.preselect-controls{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.preselect-controls .eyebrow{font-size:.62rem;margin-bottom:10px}
+.preselect-controls button[aria-pressed=true]{background:linear-gradient(110deg,#f8dd94,#c89e42);color:#14222c;border-color:#ffe7a7;box-shadow:0 0 0 2px #edca7355}
+#preselectionStatus{font-size:.75rem;line-height:1.5;color:var(--muted);margin:10px 0 0}
+#preRaisePanel{padding-top:12px}#preRaiseAmount{width:100%;margin:10px 0;accent-color:var(--gold)}
+#queueRaise{width:100%;font-size:.82rem}#cancelPreselection{display:block;margin:10px auto 0;font-size:.76rem;min-height:34px;padding:6px 12px}
+/* Keep the player's cards and all betting actions alongside the desktop table. */
+@media(min-width:1000px){
+  body:not(.tv):has(#myHand:not([hidden])) .site-header{padding-top:8px;padding-bottom:8px}
+  body:not(.tv):has(#myHand:not([hidden])) .brand img{height:44px}
+  body:not(.tv):has(#myHand:not([hidden])) main{max-width:1600px;padding-top:12px}
+  body:not(.tv):has(#myHand:not([hidden])) .room-top{margin-bottom:14px}
+  body:not(.tv):has(#myHand:not([hidden])) .room-top h1{font-size:1.65rem}
+  body:not(.tv) #gameArea:has(#myHand:not([hidden])){display:grid;grid-template-columns:minmax(0,1fr) 320px;grid-template-areas:"progress hand" "heading hand" "table hand" "finished finished";grid-template-rows:auto auto 1fr auto;column-gap:24px;align-items:start}
+  body:not(.tv) #gameArea>.tournament-strip{grid-area:progress;padding:10px 8px;margin-bottom:8px}
+  body:not(.tv) #gameArea>.table-heading{grid-area:heading;min-height:36px;margin:4px 4px 8px}
+  body:not(.tv) #pokerTable{grid-area:table;height:clamp(320px,calc(100dvh - 310px),600px);min-height:0;aspect-ratio:auto;margin:14px auto 24px}
+  body:not(.tv) #finishedPanel{grid-area:finished}
+  body:not(.tv) #myHand{grid-area:hand;position:sticky;top:12px;align-self:start;display:flex;flex-direction:column;min-width:0;width:100%;margin:0;padding:16px}
+  body:not(.tv) #myHand .hand-heading{order:0;gap:8px}
+  body:not(.tv) #myHand .hand-heading h2{font-size:1.18rem}
+  body:not(.tv) #myHand .hand-heading .eyebrow{font-size:.6rem;margin-bottom:4px}
+  body:not(.tv) #hideCardsButton{min-height:36px;padding:7px 9px;font-size:.73rem}
+  body:not(.tv) #privateCards{order:1;margin:10px auto 8px;gap:10px}
+  body:not(.tv) #privateCards .card{width:55px;height:77px;padding:5px;border-radius:6px}
+  body:not(.tv) #privateCards .rank,body:not(.tv) #privateCards .suit{font-size:23px}
+  body:not(.tv) #privateCards .large-suit{font-size:30px;right:5px;bottom:5px}
+  body:not(.tv) #myStatus{order:2;font-size:.78rem;line-height:1.4;margin:0 0 8px}
+  body:not(.tv) #bettingControls{order:3}
+  body:not(.tv) #preselectControls{order:3;margin-top:0}
+  body:not(.tv) #turnPrompt{font-size:.9rem;line-height:1.4;margin:3px 0 9px}
+  body:not(.tv) .main-bets{gap:6px}
+  body:not(.tv) .main-bets button{min-height:44px;padding:8px 5px;font-size:.8rem}
+  body:not(.tv) #raisePanel{padding-top:12px}
+  body:not(.tv) #raisePanel label{font-size:.84rem}
+  body:not(.tv) #raiseAmount{margin:8px 0;min-height:24px}
+  body:not(.tv) .quick-bets{gap:5px}
+  body:not(.tv) .quick-bets button{min-height:36px;padding:6px;font-size:.76rem}
+  body:not(.tv) #raiseButton{min-height:40px;margin-top:8px;padding:8px;font-size:.85rem}
+  body:not(.tv) #rebuyPanel{order:4;margin-top:8px}
+  body:not(.tv) #showHandPanel{order:4;margin-top:8px}
+  body:not(.tv) #sitOutButton{order:5;min-height:34px;margin:12px auto 0;padding:6px 12px}
+}
+@media(min-width:1000px) and (max-width:1200px){
+  body:not(.tv) #gameArea:has(#myHand:not([hidden])){grid-template-columns:minmax(0,1fr) 300px;column-gap:20px}
+  body:not(.tv) .seat{width:90px}
+  body:not(.tv) .seat-label{padding:6px}
+  body:not(.tv) .seat-name,body:not(.tv) .seat-stack{font-size:.7rem}
+}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}

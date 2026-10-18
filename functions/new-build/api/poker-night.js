@@ -1,14 +1,14 @@
 import {requirePartyPass} from '../../lib/party-access.js';
 import {savePartyRoom} from '../../lib/party-scoreboard.js';
 import {ensureVenue} from '../../lib/venue-scoreboard.js';
-import {createTournament,joinTournament,advanceTournament,startTournament,betTournament,rebuyTournament,pauseTournament,resumeTournament,tournamentView,playerName} from '../../lib/poker-tournament.js';
+import {createTournament,joinTournament,advanceTournament,startTournament,betTournament,rebuyTournament,showTournamentHand,pauseTournament,resumeTournament,tournamentView,playerName} from '../../lib/poker-tournament.js';
 
 const json=(value,status=200)=>Response.json(value,{status,headers:{'Cache-Control':'no-store','Referrer-Policy':'no-referrer'}});
 const hash=async value=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)))).map(x=>x.toString(16).padStart(2,'0')).join('');
 const token=()=>crypto.randomUUID()+crypto.randomUUID();
 const credential=value=>typeof value==='string'&&/^[a-f0-9-]{72}$/.test(value)?value:'';
 const permission=()=>json({error:'Only this game’s host can use that control.'},403);
-const gameErrors=new Set(['INVALID_ACTION','INVALID_SETTINGS','INVALID_NAME','STALE_HAND','STALE_TURN','INVALID_CHIPS','INVALID_BLINDS','INVALID_TIMER','TABLE_FULL','INVALID_PLAYER','INVALID_SEAT','HAND_RUNNING','NEED_PLAYERS','NO_ACTIVE_HAND','NOT_YOUR_TURN','TURN_EXPIRED','CANNOT_CHECK','CANNOT_CALL','CANNOT_RAISE','INVALID_RAISE','MIN_RAISE']);
+const gameErrors=new Set(['INVALID_ACTION','INVALID_SETTINGS','INVALID_NAME','STALE_HAND','STALE_TURN','INVALID_CHIPS','INVALID_BLINDS','INVALID_TIMER','TABLE_FULL','INVALID_PLAYER','INVALID_SEAT','HAND_RUNNING','NEED_PLAYERS','NO_ACTIVE_HAND','NOT_YOUR_TURN','TURN_EXPIRED','CANNOT_CHECK','CANNOT_CALL','CANNOT_RAISE','INVALID_RAISE','MIN_RAISE','CANNOT_SHOW_HAND']);
 async function initialize(db){
  await db.batch([
   db.prepare('CREATE TABLE IF NOT EXISTS links_poker_night_rooms(code TEXT PRIMARY KEY,state TEXT NOT NULL,version INTEGER NOT NULL DEFAULT 0,expires INTEGER NOT NULL)'),
@@ -35,7 +35,7 @@ export async function onRequest({request,env}){
    if(!body||typeof body!=='object'||Array.isArray(body))return json({error:'Invalid request.'},400);
   }
   const action=request.method==='GET'?'state':body.action;
-  if(!['state','create','join','start','bet','rebuy','feature','pause','resume','close','next','sitout'].includes(action))return json({error:'Unknown action.'},400);
+  if(!['state','create','join','start','bet','rebuy','show','feature','pause','resume','close','next','sitout'].includes(action))return json({error:'Unknown action.'},400);
   if(action!=='state'&&!/^[a-zA-Z0-9_-]{16,80}$/.test(String(body.requestId||'')))return json({error:'This action needs a fresh request. Please try again.'},400);
   await initialize(db);
   const ip=request.headers.get('CF-Connecting-IP')||'local',receiptId=action==='create'||action==='join'?await hash(ip+':'+action+':'+body.requestId):'';
@@ -79,10 +79,11 @@ export async function onRequest({request,env}){
     }
    }else if(!already&&action!=='state'){
     const onlyHost=['start','feature','pause','resume','close','next'].includes(action);if(onlyHost&&!host)return permission();
-    if(['closed','finished'].includes(s.status)&&action!=='close')return json({error:'This game has ended. Create a new room to play again.'},409);
+    if((s.status==='closed'||(s.status==='finished'&&action!=='show'))&&action!=='close')return json({error:'This game has ended. Create a new room to play again.'},409);
     if(action==='start')startTournament(s,time);
     else if(action==='bet')betTournament(s,seat,body,time);
     else if(action==='rebuy')rebuyTournament(s,seat,time);
+    else if(action==='show')showTournamentHand(s,seat,body);
     else if(action==='pause')pauseTournament(s,time);
     else if(action==='resume')resumeTournament(s,time);
     else if(action==='feature'){

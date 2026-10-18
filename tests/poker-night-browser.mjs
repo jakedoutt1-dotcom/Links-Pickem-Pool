@@ -57,6 +57,43 @@ try{
  await host.locator('#hideCardsButton').click();assert.equal(await host.locator('#privateCards .back').count(),2);assert.equal(await host.locator('#seats .card:not(.back)').count(),0);
  await host.locator('#hideCardsButton').click();assert.equal(await host.locator('#privateCards .card:not(.back)').count(),2);
  const beforeCards=await host.locator('#privateCards').textContent();await host.reload();await host.waitForFunction(()=>document.querySelectorAll('#privateCards .card:not(.back)').length===2);assert.equal(await host.locator('#privateCards').textContent(),beforeCards,'Refresh restores exact seat and private cards');
+ // A waiting phone queues one call, privately, then sends it only on its turn.
+ const queuedTable=(await api(null,hostSession,{code})).room.table,actor=queuedTable.players.find(p=>p.id===queuedTable.actorId);
+ const ordered=queuedTable.players.slice().sort((a,b)=>a.seat-b.seat),next=ordered[(ordered.findIndex(p=>p.id===actor.id)+1)%ordered.length];
+ const queuedSession=sessions.find(s=>s.playerId===next.id),queued=await context(1280,720),sent=[];
+ await queued.addInitScript(({code,session})=>localStorage.setItem('links-poker-session-'+code,JSON.stringify(session)),{code,session:queuedSession});
+ queued.on('request',request=>{if(request.url().includes('/api/poker-night')&&request.method()==='POST')sent.push(request.postDataJSON());});
+ await queued.goto(origin+'/new-build/poker-night.html?room='+code);await queued.locator('#preselectControls').waitFor({state:'visible'});
+ await queued.locator('#preFold').click();assert.equal(await queued.locator('#preFold').getAttribute('aria-pressed'),'true');
+ await queued.locator('#cancelPreselection').click();assert.equal(await queued.locator('#preFold').getAttribute('aria-pressed'),'false');
+ await queued.locator('#preCall').click();assert.equal(await queued.locator('#preCall').getAttribute('aria-pressed'),'true');
+ assert.equal(sent.filter(p=>p.action==='bet').length,0,'Preselection is private and does not bet early');
+ await queued.screenshot({path:out+'/preselect-desktop.png'});
+ const actorSession=sessions.find(s=>s.playerId===actor.id),actorTable=(await api(null,actorSession,{code})).room.table;
+ await api({action:'bet',code,tableId:actorTable.id,handNumber:actorTable.handNumber,turnId:actorTable.turnId,move:actorTable.legalActions.canCheck?'check':'call'},actorSession);
+ await queued.waitForFunction(()=>document.getElementById('preCall').getAttribute('aria-pressed')==='false');
+ assert.equal(sent.filter(p=>p.action==='bet').length,1,'A queued call submits exactly once');
+ assert.equal(sent.find(p=>p.action==='bet').move,'call');
+ assert.equal((await api(null,queuedSession,{code})).room.table.lastAction.playerId,next.id);
+ await queued.locator('#preselectControls').waitFor({state:'visible'});
+ await queued.locator('#preCall').click();
+ const changed=(await api(null,queuedSession,{code})).room.table,raisingSession=sessions.find(s=>s.playerId===changed.actorId),raising=(await api(null,raisingSession,{code})).room.table;
+ await api({action:'bet',code,tableId:raising.id,handNumber:raising.handNumber,turnId:raising.turnId,move:'raise',amount:raising.legalActions.minRaiseTo},raisingSession);
+ await queued.waitForFunction(()=>document.getElementById('notice').textContent.includes('bet changed'));
+ assert.equal(await queued.locator('#preCall').getAttribute('aria-pressed'),'false');
+ assert.equal(sent.filter(p=>p.action==='bet').length,1,'An increased bet clears the queued call');
+ await queued.locator('#preRaise').click();const queuedRaise=Number(await queued.locator('#preRaiseAmount').inputValue());
+ await queued.locator('#queueRaise').click();assert.equal(await queued.locator('#preRaise').getAttribute('aria-pressed'),'true');
+ const raisedResponse=queued.waitForResponse(response=>response.url().includes('/api/poker-night')&&response.request().method()==='POST'&&response.request().postDataJSON()?.move==='raise');
+ for(let i=0;i<12;i++){
+  const current=(await api(null,queuedSession,{code})).room.table;if(current.actorId===queuedSession.playerId)break;
+  const acting=sessions.find(s=>s.playerId===current.actorId),own=(await api(null,acting,{code})).room.table;
+  await api({action:'bet',code,tableId:own.id,handNumber:own.handNumber,turnId:own.turnId,move:own.legalActions.canCheck?'check':'call'},acting);
+ }
+ assert.equal((await raisedResponse).status(),200);
+ assert.equal(sent.filter(p=>p.action==='bet').length,2);
+ assert.equal(sent.filter(p=>p.action==='bet')[1].amount,queuedRaise,'A preselected raise keeps the exact amount');
+ await queued.close();
  // Bring action around to the real phone, then exercise its raise controls.
  for(let i=0;i<12;i++){
   const room=(await api(null,hostSession,{code})).room,table=room.table;if(table.actorId===hostSession.playerId)break;
@@ -88,15 +125,26 @@ try{
  }
  await tv.waitForFunction(()=>document.getElementById('actionMessage').textContent.includes('deals automatically'));
  assert.equal((await api(null,hostSession,{code})).room.status,'playing','A hand winner does not end the game');
+ assert.equal(await tv.locator('#seats .card:not(.back)').count(),0,'An uncontested pot reveals no cards automatically');
+ const settledRoom=(await api(null,hostSession,{code})).room,settled=settledRoom.table;
+ if(settledRoom.featuredTableId!==settled.id)await host.locator('[data-feature="'+settled.id+'"]').click();
+ await host.locator('#showHandButton').waitFor({state:'visible'});await host.locator('#showHandButton').click();
+ await tv.waitForFunction(()=>document.querySelectorAll('#seats .card:not(.back)').length===2);
+ assert.equal(await host.locator('#showHandButton').isDisabled(),true,'Voluntary reveal is one use per hand');
+ await tv.screenshot({path:out+'/voluntary-show-tv.png'});
  await tv.waitForFunction(()=>document.getElementById('tableLabel').textContent.includes('HAND 2'),null,{timeout:20000});
  await host.waitForFunction(()=>document.getElementById('tableLabel').textContent.includes('HAND 2'));
  await guest.waitForFunction(()=>document.getElementById('tableLabel').textContent.includes('HAND 2'));
  assert.equal(await host.locator('#nextButton').isVisible(),false,'No host click is required to continue');
+ assert.equal(await host.locator('#showHandPanel').isVisible(),false,'Show-hand choice resets with the new hand');
+ assert.equal(await tv.locator('#seats .card:not(.back)').count(),0,'Shown cards are private again on the next deal');
  await host.locator('#pauseButton').click();await tv.waitForFunction(()=>document.getElementById('actionMessage').textContent.includes('paused'));
  assert.equal(await guest.locator('#privateCards .card:not(.back)').count(),2);
  await host.locator('#pauseButton').click();
  const desk=await context(1440,1000);await desk.goto(origin+'/new-build/poker-night.html');await desk.locator('#showSetup').click();await desk.locator('#hostName').fill('Practice Player');await desk.locator('#mode').selectOption('practice');await desk.locator('#createForm button[type=submit]').click();await desk.waitForFunction(()=>!document.getElementById('lobby').hidden);await desk.locator('#startButton').click();await desk.waitForFunction(()=>!document.getElementById('gameArea').hidden);await fits(desk);
  await desk.screenshot({path:out+'/practice-desktop.png',fullPage:true});
+ assert.equal(await desk.locator('#showHandPanel').isVisible(),false,'Practice never offers voluntary public reveal');
+ assert.equal(await desk.evaluate(()=>document.getElementById('myHand').getBoundingClientRect().left>=document.getElementById('pokerTable').getBoundingClientRect().right),true,'Desktop controls sit to the right of the table');
  assert.deepEqual(errors,[]);assert.deepEqual(missing,[]);
  console.log('PASS real API/browser:18 players,9-seat phone layout,private cards,hide/reload,raise,TV privacy/feature switch,standings,automatic next hand on all devices,pause,practice and rules/ranks.');
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve));db.raw.close();}

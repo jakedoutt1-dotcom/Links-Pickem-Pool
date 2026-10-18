@@ -1,6 +1,7 @@
 import qrcode from './vendor/qrcode.mjs';
 import {rememberPartySeat} from './party-score-link.mjs';
 import {updateVenueRoom} from './venue-link.mjs';
+import {preselectOptions,choosePreselection,resolvePreselection} from './poker-preselect.mjs';
 
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -10,7 +11,8 @@ const displayKey = new URLSearchParams(url.hash.slice(1)).get('display') || '';
 let code = (url.searchParams.get('room') || url.searchParams.get('code') || '').trim().toUpperCase();
 let room = null, session = {}, busy = false, fetching = false, generation = 0, offset = 0, cardsHidden = false, raiseOpen = false, tableSignature = '', playerSignature = '', lastTurn = '', lastWin = '', connectionFailures = 0;
 let muted = readStorage('links-poker-muted') === '1', audio = null, confirmResolve = null;
-let rememberedCode = '', potSignature = '';
+let rememberedCode = '', potSignature = '', lastFinishedPoll = 0;
+let preselection = null, preRaiseOpen = false;
 const read = key => { try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; } };
 function readStorage(key) { try { return localStorage.getItem(key); } catch { return null; } }
 function writeStorage(key, value) { try { localStorage.setItem(key, value); } catch { /* The live seat still works without browser storage. */ } }
@@ -117,6 +119,7 @@ function adopt(data) {
 }
 async function act(action, extra = {}) {
   if (busy || isTv) return;
+  if (['bet','sitout'].includes(action)) { preselection = null; preRaiseOpen = false; }
   busy = true; generation++; updateControls(); note('');
   try {
     const data = await api({action,code,playerId:session.playerId,playerToken:session.playerToken,hostToken:session.hostToken,requestId:crypto.randomUUID(),...extra});
@@ -125,11 +128,13 @@ async function act(action, extra = {}) {
   finally { busy = false; updateControls(); }
 }
 async function poll() {
-  if (!code || busy || fetching || ['closed','finished'].includes(room?.status) || (!isTv && !session.playerToken)) return;
+  if (!code || busy || fetching || room?.status === 'closed' || (!isTv && !session.playerToken)) return;
+  // Final-table players can still choose to show a hand after the match ends.
+  if (room?.status === 'finished') { if (Date.now() - lastFinishedPoll < 5000) return; lastFinishedPoll = Date.now(); }
   fetching = true; const ticket = generation;
   try { const data = await api(); if (ticket !== generation) return; adopt(data); if (connectionFailures) note('Back at the table. Your seat is connected.'); connectionFailures = 0; }
   catch (error) { if (ticket !== generation) return; connectionFailures++; if (connectionFailures === 1) note(error.message,true); }
-  finally { fetching = false; }
+  finally { fetching = false; if (!connectionFailures) runPreselection(); }
 }
 
 $('showSetup').onclick = () => { showPanel('setupPanel'); $('hostName').focus(); };
@@ -175,7 +180,7 @@ $('copyTv').onclick = () => copyText(tvUrl(),'tvStatus');
 $('fullScreenButton').onclick = async () => { try { if (document.fullscreenElement) await document.exitFullscreen(); else if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen(); else note('Use your TV or browser’s full-screen setting.'); } catch { note('Use your TV or browser’s full-screen setting.'); } };
 $('exitButton').onclick = async () => {
   if (!isTv && room?.status === 'playing' && !await confirmAction('Leave this screen?', 'Your seat stays saved. Blinds continue, and missed turns automatically check or fold. Reopen your room link on this browser to return.', 'Leave screen')) return;
-  generation++; code = ''; room = null; session = {}; history.replaceState(null,'',location.pathname); document.body.classList.remove('tv'); showPanel('welcome'); note('');
+  generation++; preselection = null; preRaiseOpen = false; code = ''; room = null; session = {}; history.replaceState(null,'',location.pathname); document.body.classList.remove('tv'); showPanel('welcome'); note('');
 };
 
 function sortedStandings() { const list = Array.isArray(room?.standings) ? room.standings : room?.players || []; return list.slice().sort((a,b) => (a.place && b.place ? a.place-b.place : a.place ? 1 : b.place ? -1 : (b.stack || 0) - (a.stack || 0))); }
@@ -239,10 +244,11 @@ function renderTable(table) {
   if (nextPot !== potSignature) { const pot = $('potValue').closest('.pot'); pot.classList.remove('chips-moving'); if (potSignature && table?.pot) { void pot.offsetWidth; pot.classList.add('chips-moving'); } potSignature = nextPot; }
   const seatHtml = players.map((p,index) => {
     const position = positions[index] || positions[0];
-    const revealed = isTv ? ['showdown','complete'].includes(table?.phase) && !p.folded : p.id !== myId && ['showdown','complete'].includes(table?.phase) && !p.folded;
+    const revealed = (isTv || p.id !== myId) && ['showdown','complete'].includes(table?.phase) && (!p.folded || p.voluntaryShown);
     const cards = revealed && p.holeCards?.length ? p.holeCards.map(c => cardHtml(c)).join('') : (!p.folded ? cardHtml(null,{back:true}) + cardHtml(null,{back:true}) : '');
     const markers = `${p.seat === table.buttonSeat ? '<b class="marker" title="Dealer">D</b>' : ''}${p.seat === table.smallBlindSeat ? '<b class="marker blind" title="Small blind">SB</b>' : ''}${p.seat === table.bigBlindSeat ? '<b class="marker blind" title="Big blind">BB</b>' : ''}`;
-    return `<div class="seat ${p.id === myId ? 'you' : ''} ${p.id === table.actorId ? 'active' : ''} ${p.folded ? 'folded' : ''}" style="left:${position[0]}%;top:${position[1]}%"><div class="seat-cards">${cards}</div><div class="seat-label"><span class="markers">${markers}</span><span class="seat-name">${esc(p.name)}${p.id === myId ? ' · You' : ''}</span><span class="seat-stack">${chips(p.stack)}</span>${p.folded || p.allIn || p.away ? `<span class="seat-status">${p.folded ? 'Folded' : p.allIn ? 'All in' : 'Away'}</span>` : ''}</div>${p.bet ? `<span class="seat-bet">Bet ${chips(p.bet)}</span>` : ''}</div>`;
+    const status = p.voluntaryShown ? (p.folded ? 'Folded · Shown' : 'Hand shown') : p.folded ? 'Folded' : p.allIn ? 'All in' : p.away ? 'Away' : '';
+    return `<div class="seat ${p.id === myId ? 'you' : ''} ${p.id === table.actorId ? 'active' : ''} ${p.folded && !p.voluntaryShown ? 'folded' : ''}" style="left:${position[0]}%;top:${position[1]}%"><div class="seat-cards">${cards}</div><div class="seat-label"><span class="markers">${markers}</span><span class="seat-name">${esc(p.name)}${p.id === myId ? ' · You' : ''}</span><span class="seat-stack">${chips(p.stack)}</span>${status ? `<span class="seat-status">${status}</span>` : ''}</div>${p.bet ? `<span class="seat-bet">Bet ${chips(p.bet)}</span>` : ''}</div>`;
   }).join('');
   setHtml('seats',seatHtml);
   const winners = table?.winners || [];
@@ -257,14 +263,19 @@ function renderTable(table) {
 }
 function renderHand(table) {
   const player = myPlayer(), seat = table?.players?.find(p => p.id === session.playerId);
-  $('myHand').hidden = isTv || !player || room.status === 'finished';
+  $('myHand').hidden = isTv || !player || (room.status === 'finished' && !seat?.holeCards?.length);
   $('myStack').textContent = `${chips(player?.stack)} chips`;
   const privateCards = cardsHidden ? [null,null] : seat?.holeCards || [];
   const signature = JSON.stringify([privateCards,cardsHidden]);
   if (signature !== playerSignature) { const html = privateCards.length ? privateCards.map(c => cardHtml(c,{back:cardsHidden,animate:!cardsHidden})).join('') : cardHtml(null,{back:true}) + cardHtml(null,{back:true}); $('privateCards').innerHTML = html; $('bettingHand').innerHTML = html; playerSignature = signature; }
   $('hideCardsButton').textContent = cardsHidden ? 'Show cards' : 'Hide cards'; $('hideCardsButton').setAttribute('aria-pressed',String(cardsHidden));
+  $('showHandPanel').hidden = isTv || !seat || (!table?.canShowHand && !seat.voluntaryShown);
+  $('showHandButton').textContent = seat?.voluntaryShown ? 'Hand shown to everyone' : 'Show hand to everyone';
+  $('showHandButton').disabled = busy || !table?.canShowHand;
+  $('showHandHelp').textContent = seat?.voluntaryShown ? 'These cards are visible to the other players and the TV.' : 'Optional after the hand ends. Keep your cards private, or show both to the table and TV.';
   $('sitOutButton').textContent = player?.away || seat?.away ? 'I’m back' : 'Sit out'; $('sitOutButton').disabled = busy || !['playing','paused'].includes(room.status);
   $('myStatus').textContent = room.status === 'paused' ? 'The host paused the game.' : player?.status === 'eliminated' ? room.canRebuy ? 'Your stack is out. You can buy back in below.' : 'Your stack is out. Stay to watch the rest of the game.' : player?.away || seat?.away ? 'Sitting out. Blinds continue; turns automatically check or fold.' : seat?.folded ? 'You folded. Watch this hand and get ready for the next.' : seat?.allIn ? 'You’re all in. Good luck.' : table?.actorId === session.playerId ? 'Your turn. Choose your move below.' : !seat ? 'Waiting to be seated for the next hand.' : 'Your cards are private. Watch the table for your turn.';
+  if (seat?.voluntaryShown) $('myStatus').textContent = 'You chose to show this hand to everyone.';
   const canRebuy = typeof room.canRebuy === 'object' ? !!room.canRebuy.allowed : !!room.canRebuy;
   $('rebuyPanel').hidden = !canRebuy;
   $('rebuyButton').textContent = `Buy back in · ${chips(room.settings?.startingChips)} chips`;
@@ -293,16 +304,70 @@ function updateControls() {
   if (Number($('raiseAmount').value) < min || Number($('raiseAmount').value) > max) $('raiseAmount').value = String(Math.min(min,max));
   updateRaise();
   $('rebuyButton').disabled = busy; $('startButton').disabled = busy || (room.players?.length || 0) < 2;
+  $('showHandButton').disabled = busy || !table?.canShowHand;
   $('nextButton').disabled = busy || room.status !== 'playing' || !room.nextHandAt || seconds(dateValue(room.nextHandAt)) > 0;
+  updatePreselection();
 }
+function updatePreselection() {
+  const options = preselectOptions(room,session.playerId), decision = resolvePreselection(preselection,room,session.playerId);
+  if (decision.state === 'cancel') { preselection = null; preRaiseOpen = false; note(decision.reason); }
+  $('preselectControls').hidden = isTv || !options.waiting;
+  $('preCall').textContent = options.callAmount ? `Call ${chips(options.callAmount)}` : 'Check';
+  for (const [id,move] of [['preFold','fold'],['preCall','call'],['preRaise','raise']]) {
+    $(id).setAttribute('aria-pressed',String(preselection?.move === move));
+    $(id).disabled = busy || !options.waiting || (move === 'raise' && !options.canRaise);
+  }
+  $('preRaisePanel').hidden = !preRaiseOpen || !options.waiting || !options.canRaise;
+  const input = $('preRaiseAmount'); input.min = String(options.minRaiseTo); input.max = String(options.maxRaiseTo);
+  if (!Number(input.value) || Number(input.value) < options.minRaiseTo || Number(input.value) > options.maxRaiseTo) input.value = String(options.minRaiseTo);
+  updatePreRaise();
+  $('queueRaise').disabled = busy || !options.waiting || !options.canRaise;
+  $('cancelPreselection').hidden = !preselection && !preRaiseOpen;
+  $('preselectionStatus').textContent = preselection ? `Selected: ${preselection.move === 'fold' ? 'Fold' : preselection.move === 'raise' ? 'Raise to ' + chips(preselection.amount) : preselection.callAmount ? 'Call ' + chips(preselection.callAmount) : 'Check'}. Plays automatically on your turn. Tap again or cancel to change it.` : 'Optional. Pick your next move while you wait. Calls and raises clear if the bet changes. Keep this page open.';
+}
+function updatePreRaise() {
+  const amount = Number($('preRaiseAmount').value), options = preselectOptions(room,session.playerId);
+  $('preRaiseOutput').textContent = chips(amount);
+  $('queueRaise').textContent = `Preselect ${amount === options.maxRaiseTo ? 'all in' : 'raise to'} ${chips(amount)}`;
+}
+async function selectMove(move, amount) {
+  if (busy || isTv) return;
+  if (preselection?.move === move && move !== 'raise') { preselection = null; updatePreselection(); return; }
+  const candidate = choosePreselection(room,session.playerId,move,amount);
+  if (!candidate) return;
+  if ((move === 'raise' && amount === candidate.stack + candidate.streetBet) || (move === 'call' && candidate.callAmount === candidate.stack)) {
+    preselection = null;
+    if (!await confirmAction('Preselect all in?', `When your turn arrives, this will commit all ${chips(candidate.stack)} remaining virtual chips if the bet is unchanged.`, 'Preselect all in')) { updatePreselection(); return; }
+  }
+  if (resolvePreselection(candidate,room,session.playerId).state !== 'waiting') { updatePreselection(); return note('The table changed. Review it before selecting your move.'); }
+  preselection = candidate; preRaiseOpen = false; updatePreselection();
+}
+function runPreselection() {
+  if (!preselection || busy || isTv || document.hidden || confirmResolve) return;
+  const decision = resolvePreselection(preselection,room,session.playerId), deadline = dateValue(room?.table?.deadline);
+  if (decision.state !== 'ready' || (deadline && deadline <= now())) return;
+  // Clear before sending: a network failure must never repeat a queued bet.
+  preselection = null; preRaiseOpen = false;
+  void bet(decision.move,decision.amount,{preselected:true});
+}
+$('preFold').onclick = () => void selectMove('fold');
+$('preCall').onclick = () => void selectMove('call');
+$('preRaise').onclick = () => {
+  if (preselection?.move === 'raise') { preselection = null; preRaiseOpen = false; }
+  else { preselection = null; preRaiseOpen = !preRaiseOpen; $('preRaiseAmount').value = String(preselectOptions(room,session.playerId).minRaiseTo); }
+  updatePreselection();
+};
+$('preRaiseAmount').oninput = updatePreRaise;
+$('queueRaise').onclick = () => void selectMove('raise',Number($('preRaiseAmount').value));
+$('cancelPreselection').onclick = () => { preselection = null; preRaiseOpen = false; updatePreselection(); };
 function updateRaise() { const amount = Number($('raiseAmount').value), all = amount === Number(room?.table?.legalActions?.maxRaiseTo); $('raiseOutput').textContent = chips(amount); $('raiseButton').textContent = `${all ? 'All in' : 'Raise to'} ${chips(amount)}`; }
 $('raiseAmount').oninput = updateRaise;
 $('raiseOpen').onclick = () => { raiseOpen = !raiseOpen; if (raiseOpen) $('raiseAmount').value = String(Math.min(room.table.legalActions.minRaiseTo,room.table.legalActions.maxRaiseTo)); updateControls(); };
 document.querySelectorAll('[data-bet]').forEach(button => button.onclick = () => { const table = room?.table, legal = table?.legalActions || {}, min = Number(legal.minRaiseTo || 0), max = Number(legal.maxRaiseTo || 0); let amount = button.dataset.bet === 'all' ? max : button.dataset.bet === 'pot' ? Number(table.currentBet || 0) + Number(table.pot || 0) + Number(legal.callAmount || 0) : button.dataset.bet === 'half' ? Number(table.currentBet || 0) + Math.ceil((Number(table.pot || 0) + Number(legal.callAmount || 0)) / 2) : min; $('raiseAmount').value = String(Math.min(max,Math.max(min,amount))); updateRaise(); });
-async function bet(move, amount) {
+async function bet(move, amount, {preselected = false} = {}) {
   if (busy || !room?.table) return;
   const table = room.table, hand = {tableId:table.id,handNumber:table.handNumber,turnId:table.turnId}, player = table.players?.find(p => p.id === session.playerId);
-  if (move === 'raise' && amount >= table.legalActions.maxRaiseTo || move === 'call' && table.legalActions.callAmount >= (player?.stack || Infinity)) {
+  if (!preselected && (move === 'raise' && amount >= table.legalActions.maxRaiseTo || move === 'call' && table.legalActions.callAmount >= (player?.stack || Infinity))) {
     if (!await confirmAction('Put your stack in?', `This commits all ${chips(player?.stack)} of your remaining virtual chips to this hand.`, 'Go all in')) return;
     if (room?.table?.id !== hand.tableId || room?.table?.turnId !== hand.turnId || room?.table?.handNumber !== hand.handNumber) return note('The turn changed while the confirmation was open. Review the current table.');
   }
@@ -312,6 +377,7 @@ $('foldButton').onclick = () => bet('fold');
 $('callButton').onclick = () => bet(room?.table?.legalActions?.canCheck ? 'check' : 'call');
 $('raiseButton').onclick = () => bet('raise',Number($('raiseAmount').value));
 $('hideCardsButton').onclick = () => { cardsHidden = !cardsHidden; renderHand(room?.table); };
+$('showHandButton').onclick = () => { if (room?.table?.canShowHand) void act('show',{tableId:room.table.id,handNumber:room.table.handNumber}); };
 $('startButton').onclick = () => act('start');
 $('rebuyButton').onclick = async () => { if (await confirmAction('Back in the game?', `Use one of your allowed buy backs to receive ${chips(room.settings.startingChips)} virtual chips. No payment is involved.`, 'Buy back in')) await act('rebuy'); };
 $('sitOutButton').onclick = async () => { const away = !!(myPlayer()?.away || room?.table?.players?.find(p => p.id === session.playerId)?.away); if (away || await confirmAction('Step away from the table?', 'Your blinds still apply. While you’re away, turns automatically check when allowed or fold. Press “I’m back” when ready.', 'Sit out')) await act('sitout',{away:!away}); };

@@ -89,7 +89,7 @@ export function createTable(id, players = [], options = {}, now = Date.now()) {
     const seat = player.seat ?? index;
     if (!Number.isInteger(seat) || seat < 0 || seat > 8 || seats.has(seat)) fail('INVALID_SEAT', 'Each player needs a different seat from zero to eight.');
     ids.add(player.id); seats.add(seat);
-    return { id: player.id, name: String(player.name || 'Player').slice(0, 40), stack: chips(player.stack ?? 5000, 'Stack'), seat, sittingOut: !!player.sittingOut, holeCards: [], inHand: false, folded: false, allIn: false, contribution: 0, streetBet: 0, actedAtBet: null };
+    return { id: player.id, name: String(player.name || 'Player').slice(0, 40), stack: chips(player.stack ?? 5000, 'Stack'), seat, sittingOut: !!player.sittingOut, holeCards: [], inHand: false, folded: false, allIn: false, contribution: 0, streetBet: 0, actedAtBet: null, voluntaryShown: false };
   });
   if (copy.reduce((sum, p) => sum + p.stack, 0) > MAX_CHIPS) fail('INVALID_CHIPS', 'The table chip total is too large.');
   return { id, players: copy, ...settings(options), phase: 'waiting', handNumber: 0, actionNumber: 0, buttonSeat: null, smallBlindSeat: null, bigBlindSeat: null, actorId: null, board: [], pot: 0, lastPot: 0, currentBet: 0, minRaise: options.bigBlind ?? 50, deadline: 0, handEndsAt: 0, winners: [], pots: [], message: 'Waiting for players.', lastAction: null, createdAt: now, pending: [], deck: [], burns: [], showCards: false };
@@ -130,7 +130,7 @@ export function startHand(table, options = {}, now = Date.now()) {
   table.handNumber++; table.actionNumber = (table.actionNumber || 0) + 1; table.phase = 'preflop'; table.board = []; table.deck = deck; table.burns = [];
   table.pot = 0; table.lastPot = 0; table.currentBet = table.bigBlind; table.minRaise = table.bigBlind;
   table.winners = []; table.pots = []; table.showCards = false; table.handEndsAt = 0; table.lastAction = null;
-  for (const player of table.players) Object.assign(player, { handStartStack: player.stack, holeCards: [], inHand: player.stack > 0, folded: false, allIn: false, contribution: 0, streetBet: 0, actedAtBet: null });
+  for (const player of table.players) Object.assign(player, { handStartStack: player.stack, holeCards: [], inHand: player.stack > 0, folded: false, allIn: false, contribution: 0, streetBet: 0, actedAtBet: null, voluntaryShown: false });
   const dealOrder = [...participants.filter(p => p.seat > table.buttonSeat), ...participants.filter(p => p.seat <= table.buttonSeat)];
   for (let round = 0; round < 2; round++) for (const player of dealOrder) player.holeCards.push(table.deck.pop());
   const sb = participants.find(p => p.seat === table.smallBlindSeat), bb = participants.find(p => p.seat === table.bigBlindSeat);
@@ -257,23 +257,41 @@ export function advanceTimeout(table, options = {}, now = Date.now()) {
   return act(table, player.id, { type: legal(table, player).canCheck ? 'check' : 'fold' }, { ...options, timeout: true }, now);
 }
 
-export function publicTable(table, viewerId = null, { tv = false } = {}) {
+function automaticallyShown(table, player) {
+  return !!(table.phase === 'showdown' && table.showCards && player?.inHand && !player.folded);
+}
+function canShow(table, player) {
+  return !!(table.phase === 'showdown' && player?.inHand && player.holeCards.length === 2 && !player.voluntaryShown && !automaticallyShown(table, player));
+}
+export function showHand(table, playerId) {
+  const player = table.players.find(p => p.id === playerId);
+  // Idempotent within this completed hand. The tournament/API layer also binds
+  // the authenticated player to the requested table and hand number.
+  if (table.phase === 'showdown' && player?.inHand && player.voluntaryShown) return table;
+  if (!canShow(table, player)) fail('CANNOT_SHOW_HAND', 'You can show your own hidden cards only after this hand has ended.');
+  player.voluntaryShown = true;
+  return table;
+}
+
+export function publicTable(table, viewerId = null, { tv = false, allowShow = true } = {}) {
   const viewer = tv ? null : table.players.find(p => p.id === viewerId);
   return {
     id: table.id, phase: table.phase, handNumber: table.handNumber, actionNumber: table.actionNumber, turnId: table.actionNumber, buttonSeat: table.buttonSeat,
     smallBlindSeat: table.smallBlindSeat, bigBlindSeat: table.bigBlindSeat, smallBlind: table.smallBlind, bigBlind: table.bigBlind,
     turnSeconds: table.turnSeconds, actorId: table.actorId, board: [...table.board], pot: table.pot, lastPot: table.lastPot,
     currentBet: table.currentBet, minRaise: table.minRaise, deadline: table.deadline, handEndsAt: table.handEndsAt,
-    message: table.message, showCards: table.showCards,
+    message: table.message, showCards: table.showCards, canShowHand: !!allowShow && canShow(table, viewer),
     lastAction: table.lastAction ? { ...table.lastAction } : null,
     winners: table.winners.map(w => ({ ...w, ...(w.cards ? { cards: [...w.cards] } : {}) })),
     pots: table.pots.map(pot => ({ amount: pot.amount, eligibleIds: [...pot.eligibleIds], winnerIds: [...pot.winnerIds] })),
     players: ordered(table.players).map(player => {
-      const reveal = viewer?.id === player.id || (table.phase === 'showdown' && table.showCards && player.inHand && !player.folded);
+      const voluntaryShown = !!(table.phase === 'showdown' && player.inHand && player.voluntaryShown);
+      const cardsShown = automaticallyShown(table, player) || voluntaryShown;
+      const reveal = viewer?.id === player.id || cardsShown;
       return {
         id: player.id, name: player.name, seat: player.seat, stack: player.stack,
         streetBet: player.streetBet, bet: player.streetBet, contribution: player.contribution, inHand: player.inHand, folded: player.folded,
-        allIn: player.allIn, sittingOut: !!player.sittingOut, you: viewer?.id === player.id,
+        allIn: player.allIn, sittingOut: !!player.sittingOut, you: viewer?.id === player.id, voluntaryShown, cardsShown,
         isDealer: player.seat === table.buttonSeat, isSmallBlind: player.seat === table.smallBlindSeat, isBigBlind: player.seat === table.bigBlindSeat,
         holeCards: reveal ? [...player.holeCards] : [], holeCardCount: player.holeCards.length,
         hiddenCardCount: !reveal && !player.folded ? player.holeCards.length : 0
