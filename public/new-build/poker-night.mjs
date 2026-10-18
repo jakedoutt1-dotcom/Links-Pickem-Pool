@@ -171,10 +171,20 @@ $('joinForm').onsubmit = async event => {
 function inviteUrl() { const address = new URL('./poker-night.html',location.href); address.searchParams.set('room',code); return address.href; }
 function tvUrl() { const address = new URL(inviteUrl()); address.searchParams.set('tv','1'); address.hash = new URLSearchParams({display:room?.displayKey || ''}).toString(); return address.href; }
 function drawQr(target, link) { if ($(target).dataset.link === link) return; const qr = qrcode(0,'M'); qr.addData(link); qr.make(); $(target).innerHTML = qr.createSvgTag({cellSize:6,margin:8,scalable:true}); $(target).dataset.link = link; }
-$('inviteButton').onclick = () => { $('inviteCode').textContent = code; $('inviteLink').value = inviteUrl(); drawQr('inviteQr',inviteUrl()); $('shareStatus').textContent = ''; $('inviteDialog').showModal(); };
-async function copyText(text, target) { try { await navigator.clipboard.writeText(text); $(target).textContent = 'Link copied. Paste it into a message.'; } catch { $(target).textContent = 'Select and copy the link above.'; } }
-$('copyInvite').onclick = () => copyText('Join me for LINKS Poker Night! Virtual chips only.\n' + inviteUrl(),'shareStatus');
-$('shareInvite').onclick = async () => { if (!navigator.share) return copyText(inviteUrl(),'shareStatus'); try { await navigator.share({title:'LINKS Poker Night',text:'Your seat is waiting. Virtual chips only.',url:inviteUrl()}); } catch (error) { if (error.name !== 'AbortError') void copyText(inviteUrl(),'shareStatus'); } };
+function invitationText() { return `Join me for LINKS Poker Night! Room ${code}. Open the link on your phone and choose your name. Virtual chips only.\n${inviteUrl()}`; }
+$('inviteButton').onclick = () => {
+  const mobile = navigator.userAgentData?.mobile || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const ios = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  $('inviteCode').textContent = code; $('inviteLink').value = inviteUrl(); drawQr('inviteQr',inviteUrl());
+  $('textInvite').hidden = !mobile; $('textInvite').href = `sms:${ios ? '&' : '?'}body=${encodeURIComponent(invitationText())}`;
+  $('emailInvite').href = `mailto:?subject=${encodeURIComponent('Join my LINKS Poker Night')}&body=${encodeURIComponent(invitationText())}`;
+  $('shareInvite').hidden = typeof navigator.share !== 'function';
+  $('shareHelp').textContent = mobile ? 'Text the invite, share it through another app, or copy the link. Choose who to send it to in your messaging app.' : 'Copy the invite link into a text or chat, email it, or have players scan the QR code with their phones.';
+  $('shareStatus').textContent = ''; $('inviteDialog').showModal();
+};
+async function copyText(text, target) { try { await navigator.clipboard.writeText(text); $(target).textContent = 'Link copied. Paste it into a message.'; } catch { const input = target === 'shareStatus' ? $('inviteLink') : $('tvLink'); input.focus(); input.select(); $(target).textContent = 'Select and copy the link above.'; } }
+$('copyInvite').onclick = () => copyText(inviteUrl(),'shareStatus');
+$('shareInvite').onclick = async () => { if (!navigator.share) return copyText(inviteUrl(),'shareStatus'); try { await navigator.share({title:'LINKS Poker Night',text:`Join me for LINKS Poker Night! Room ${code}. Choose your name on your phone. Virtual chips only.`,url:inviteUrl()}); } catch (error) { if (error.name !== 'AbortError') void copyText(inviteUrl(),'shareStatus'); } };
 $('tvButton').onclick = () => { if (!room?.displayKey) return note('Your TV link is not ready. Try again in a moment.',true); $('tvLink').value = tvUrl(); $('openTv').href = tvUrl(); $('tvStatus').textContent = ''; $('tvDialog').showModal(); };
 $('copyTv').onclick = () => copyText(tvUrl(),'tvStatus');
 $('fullScreenButton').onclick = async () => { try { if (document.fullscreenElement) await document.exitFullscreen(); else if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen(); else note('Use your TV or browser’s full-screen setting.'); } catch { note('Use your TV or browser’s full-screen setting.'); } };
@@ -186,6 +196,9 @@ $('exitButton').onclick = async () => {
 function sortedStandings() { const list = Array.isArray(room?.standings) ? room.standings : room?.players || []; return list.slice().sort((a,b) => (a.place && b.place ? a.place-b.place : a.place ? 1 : b.place ? -1 : (b.stack || 0) - (a.stack || 0))); }
 function render() {
   const host = !isTv && !!(room.isHost || session.hostToken), lobby = room.status === 'lobby', table = room.table;
+  const inviteHome = lobby ? $('lobbyInvite') : $('roomActions');
+  if ($('inviteButton').parentElement !== inviteHome) inviteHome[lobby ? 'append' : 'prepend']($('inviteButton'));
+  $('lobbyInvite').hidden = room.mode === 'practice';
   document.body.classList.toggle('tv',isTv);
   $('roomLabel').textContent = `${room.mode === 'tournament' ? 'HOSTED TOURNAMENT' : room.mode === 'practice' ? 'PRACTICE · COMPUTER OPPONENTS' : 'TEXAS HOLD’EM'} · ROOM ${code}`;
   $('roomTitle').textContent = room.status === 'closed' ? 'This room is closed.' : room.status === 'finished' ? 'A night to remember.' : lobby ? 'Your seat is waiting.' : isTv ? 'LINKS Poker Night' : 'Play to the last stack.';

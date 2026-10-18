@@ -47,7 +47,29 @@ try{
  await host.locator('#showSetup').click();await host.locator('#hostName').fill('Alex');await host.locator('#mode').selectOption('tournament');await host.locator('#turnSeconds').selectOption('60');
  await host.locator('#createForm button[type=submit]').click();await host.waitForFunction(()=>!document.getElementById('lobby').hidden);
  const code=await host.locator('#lobbyCode').textContent();assert.match(code,/^[A-F0-9]{10}$/);
+ assert.equal(await host.locator('#lobbyInvite #inviteButton').count(),1,'Invite sits with the lobby QR code');
+ assert.equal(await host.evaluate(()=>document.getElementById('inviteButton').getBoundingClientRect().top>=document.getElementById('lobbyQr').getBoundingClientRect().bottom),true,'Share button is below the QR code on phones');
  const hostSession=await host.evaluate(code=>JSON.parse(localStorage.getItem('links-poker-session-'+code)),code);
+ // Share options prepare a public player invite, never the private TV/host link.
+ await host.evaluate(()=>{
+  Object.defineProperty(navigator,'userAgent',{configurable:true,value:'iPhone'});
+  Object.defineProperty(navigator,'share',{configurable:true,value:async data=>{window.sharedInvite=data;}});
+  Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{window.copiedInvite=text;}}});
+ });
+ await host.locator('#inviteButton').click();assert.equal(await host.locator('#textInvite').isVisible(),true);
+ const sms=await host.locator('#textInvite').getAttribute('href');assert.ok(sms.startsWith('sms:&body='));
+ assert.ok(decodeURIComponent(sms).includes('Room '+code));assert.ok(decodeURIComponent(sms).includes('?room='+code));
+ const email=new URL(await host.locator('#emailInvite').getAttribute('href'));assert.ok(email.searchParams.get('body').includes('?room='+code));
+ await host.locator('#copyInvite').click();const copied=await host.evaluate(()=>window.copiedInvite);
+ assert.equal(copied,origin+'/new-build/poker-night.html?room='+code);assert.equal(new URL(copied).hash,'');
+ await host.locator('#shareInvite').click();assert.equal(await host.evaluate(()=>window.sharedInvite.url),copied);
+ await host.locator('#inviteDialog [data-close]').click();
+ await host.setViewportSize({width:1280,height:720});
+ await host.evaluate(()=>{Object.defineProperty(navigator,'userAgent',{configurable:true,value:'Desktop'});Object.defineProperty(navigator,'share',{configurable:true,value:undefined});});
+ await host.locator('#inviteButton').click();assert.equal(await host.locator('#textInvite').isVisible(),false);assert.equal(await host.locator('#shareInvite').isVisible(),false);
+ assert.equal(await host.evaluate(()=>document.getElementById('inviteButton').getBoundingClientRect().top>=document.getElementById('lobbyQr').getBoundingClientRect().bottom),true,'Share button stays below the QR code on desktop');
+ assert.equal(await host.locator('#copyInvite').isVisible(),true);assert.equal(await host.locator('#emailInvite').isVisible(),true);await fits(host);
+ await host.locator('#inviteDialog [data-close]').click();await host.setViewportSize({width:390,height:844});
  await guest.goto(origin+'/new-build/poker-night.html?room='+code);await guest.locator('#joinName').fill('Jordan');await guest.locator('#joinForm button[type=submit]').click();await guest.waitForFunction(()=>!document.getElementById('lobby').hidden);
  const guestSession=await guest.evaluate(code=>JSON.parse(localStorage.getItem('links-poker-session-'+code)),code),sessions=[hostSession,guestSession];
  for(let i=3;i<=18;i++)sessions.push((await api({action:'join',code,name:'Player '+i})).session);

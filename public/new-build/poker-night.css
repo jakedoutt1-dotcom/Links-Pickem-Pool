@@ -85,6 +85,7 @@
   body.tv .venue-banner{padding-top:5px}
 }
 #showHandPanel{text-align:center;margin-top:16px}#showHandButton{width:100%;font-size:.85rem}#showHandHelp{font-size:.76rem;line-height:1.5;margin:9px 0 0;color:var(--muted)}
+.lobby-invite{display:flex;flex-direction:column;align-items:center;gap:14px;width:235px;max-width:100%}.lobby-invite #inviteButton{width:100%}
 .preselect-controls{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
 .preselect-controls .eyebrow{font-size:.62rem;margin-bottom:10px}
 .preselect-controls button[aria-pressed=true]{background:linear-gradient(110deg,#f8dd94,#c89e42);color:#14222c;border-color:#ffe7a7;box-shadow:0 0 0 2px #edca7355}
