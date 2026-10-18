@@ -1,7 +1,7 @@
 // Temporary, server-enforced delivery for Destiny. Set false to close access.
 // The password is never stored here; it is required to decrypt the archive.
 import {recordWorkbookDownload,confirmWorkbookDownload} from './workbook-download-activity.js';
-export const DESTINY_WORKBOOK_DOWNLOAD_ENABLED = false;
+export const DESTINY_WORKBOOK_DOWNLOAD_ENABLED = true;
 const ARCHIVES = Object.freeze({
   windows: {path: '/downloads/private/destiny-windows.enc', name: 'Destiny-NFL-Crew-Windows.zip'},
   mac: {path: '/downloads/private/destiny-mac.enc', name: 'Destiny-NFL-Crew-Mac.zip'},

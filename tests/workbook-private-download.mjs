@@ -55,7 +55,7 @@ function request(input = {version: 'windows', password}, {method = 'POST', ip = 
 }
 const call = (input, options) => privateWorkbookDownload({request: request(input, options), env},{enabled:true});
 try {
-  assert.equal((await onRequest({request:request(),env})).status,404,'Published Destiny download is disabled');
+  assert.equal((await onRequest({request:request(undefined,{method:'GET'}),env})).status,405,'Restored download requires its protected POST form');
   assert.equal((await call(undefined, {method: 'GET'})).status, 405);
   assert.equal((await call(undefined, {headers: {Origin: 'https://other.test'}})).status, 403);
   assert.equal((await call({version: '../secret', password})).status, 400);
