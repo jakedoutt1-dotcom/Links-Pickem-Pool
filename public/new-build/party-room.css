@@ -15,3 +15,5 @@
  .party-page .million-title strong{font-size:clamp(18px,6vw,30px)}
  .party-page .million-title small,.party-page .million-title span{font-size:8px}
 }
+
+.poker-art{position:relative}.poker-art img.poker-brand{position:absolute;top:3%;left:42%;width:16%;height:auto;aspect-ratio:auto;object-fit:contain;pointer-events:none}

@@ -2,7 +2,7 @@ import {FREE_GAME_TESTING} from './testing-access.js';
 import {accountSession} from './commissioner-account.js';
 import {complimentaryAccess} from './party-grants.js';
 export const PARTY_PLANS={day:{label:'Party Pass',amount:499,hours:24},annual:{label:'Annual Party Pack',amount:3999,hours:365*24},host_day:{label:'Trivia Night Day Pass',amount:499,hours:24}};
-export const PARTY_GAMES=['trivia-rally','million-point','dead-air','say-what','last-alibi','captain-clash','friend-challenge'];
+export const PARTY_GAMES=['poker-night','trivia-rally','million-point','dead-air','say-what','last-alibi','captain-clash','friend-challenge'];
 export const partyEnabled=env=>env.PARTY_PACK_ENABLED==='true';
 export async function ensureParty(db){await db.batch([
  db.prepare('CREATE TABLE IF NOT EXISTS links_party_purchases(id TEXT PRIMARY KEY,email TEXT NOT NULL,plan TEXT NOT NULL,amount_cents INTEGER NOT NULL,order_id TEXT UNIQUE NOT NULL,status TEXT NOT NULL,created_at TEXT NOT NULL,paid_at TEXT,expires_at TEXT)'),

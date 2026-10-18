@@ -1,6 +1,7 @@
 import {ensureVenue,venueStatements} from './venue-scoreboard.js';
 // Add future games here with an explicit outcome rule; raw points never cross games.
 export const SCORE_GAMES={
+ 'poker-night':{name:'Poker Night',table:'links_poker_night_rooms',storage:'links-poker-seat-'},
  'mini-golf':{name:'Putt Club',table:'links_mini_golf_rooms',column:'id',storage:'links-putt-seat-'},
  'trivia-rally':{name:'Trivia Rally',table:'links_rally_rooms',storage:'links-rally-seat-'},
  'friend-challenge':{name:'Challenge a Friend Trivia',table:'links_friend_rooms',storage:'links-friend-seat-'},
@@ -23,6 +24,7 @@ export async function ensureScoreboard(db){await db.batch([
 ]);}
 export function partyFinish(s){return s.phase==='ended'?JSON.parse(JSON.stringify(s)):null;}
 export function partyOutcomes(game,s){
+ if(game==='poker-night'&&s?.mode==='practice')return [];
  if(!SCORE_GAMES[game]||s?.phase!=='ended'||Object.keys(s.players||{}).length<1)return [];
  const entries=Object.entries(s.players).filter(([,p])=>game!=='last-alibi'||!p.away).map(([seat,p])=>({seat,score:Math.max(0,Math.round(Number(game==='million-point'&&s.mode==='duel'?s.duel?.[seat]?.earned:p.score)||0)),progress:Number(p.progress)||0}));
  const multiplayer=(s.participantCount||Object.keys(s.players).length)>=2&&s.mode!=='solo';
