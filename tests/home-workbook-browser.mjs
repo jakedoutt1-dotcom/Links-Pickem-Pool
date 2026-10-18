@@ -103,44 +103,9 @@ try {
         assert.equal(digest(actual), digest(expected), version + ' download is complete');
         assert.ok(actual.length > 100000, 'Workbook ZIP is not an empty placeholder');
       }
-      await page.locator('#destinyDownload').click();
-      assert.equal(await page.locator('#destinyDownloadDialog').evaluate(dialog => dialog.open), true);
-      await page.locator('#destinyPassword').fill('wrong');
-      await page.locator('#destinyConfirmDownload').click();
-      await page.locator('#destinyDialogMessage').filter({hasText:'not accepted'}).waitFor();
-      assert.equal(await page.locator('#destinyPassword').getAttribute('aria-invalid'), 'true');
-      for (const version of ['Windows', 'Mac']) {
-        if (version === 'Mac') await page.locator('#destinyDownload').click();
-        await page.locator('#destinyVersion').selectOption(version.toLowerCase());
-        await page.locator('#destinyPassword').fill(fixturePassword);
-        const event = page.waitForEvent('download');
-        const receipt=page.waitForResponse(r=>r.url().includes('/api/workbook-private-download')&&r.request().postDataJSON()?.action==='received');
-        await page.locator('#destinyConfirmDownload').click();
-        const download = await event;
-        assert.equal(download.suggestedFilename(), 'Destiny-NFL-Crew-' + version + '.zip');
-        assert.equal(digest(await readFile(await download.path())), digest(fixtureZip));
-        assert.equal((await receipt).status(),200,'Browser confirms after receiving the complete file');
-        await page.locator('#destinyDownloadDialog').waitFor({state:'hidden'});
-        assert.equal(await page.locator('#destinyPassword').inputValue(), '');
-      }
-      await page.locator('#destinyDownload').click();
-      await page.locator('#destinyPassword').fill(fixturePassword);
-      await page.locator('#destinyDialogClose').click();
-      await page.waitForFunction(() => document.getElementById('destinyPassword').value === '');
-      assert.equal(await page.locator('#destinyPassword').inputValue(), '');
-      privateEnabled = false;
-      await page.locator('#destinyDownload').click();
-      await page.locator('#destinyPassword').fill(fixturePassword);
-      await page.locator('#destinyConfirmDownload').click();
-      await page.locator('#destinyDialogMessage').filter({hasText:'no longer available'}).waitFor();
-      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'Private dialog fits on mobile');
-      await page.locator('#destinyDialogClose').click();
-      assert.equal(await page.evaluate(value => JSON.stringify([location.href, Object.entries(localStorage), Object.entries(sessionStorage)]).includes(value), fixturePassword), false, 'Private password never goes in URLs or browser storage');
-      assert.equal(privateRequests.length, 4);
-      assert.equal(privateReceipts.length,2,'Only complete successful downloads are confirmed');
-      assert.ok(privateReceipts.every(r=>Object.keys(r).sort().join(',')==='action,receipt'),'Confirmation never resends the password');
-      assert.ok(privateRequests.every(item => item.method === 'POST'));
-      assert.deepEqual(privateRequests.map(item => item.data.version), ['windows','windows','mac','windows']);
+      assert.equal(await page.locator('#destinyDownload').count(),0,'Destiny download is removed');
+      assert.equal(await page.locator('#destinyDownloadDialog').count(),0,'Private download form is removed');
+
     }
     await page.evaluate(()=>sessionStorage.setItem('links-owner-admin-token','workbook-owner-fixture'));
     await page.goto(origin+'/new-build/links-admin.html');await page.locator('#adminTools').waitFor({state:'visible'});
@@ -155,5 +120,5 @@ try {
   }
   assert.deepEqual(errors, []);
   assert.deepEqual(missing, []);
-  console.log('PASS homepage placement, public page, live score integration, 360/1280 layouts, complete Windows/Mac ZIPs, private password errors/success/removal, password clearing and no browser storage.');
+  console.log('PASS homepage placement, public page, live score integration, 360/1280 layouts, complete Windows/Mac ZIPs, Destiny download removed and owner-only download activity layouts.');
 } finally {await browser.close(); server.closeAllConnections(); await new Promise(resolve => server.close(resolve));}

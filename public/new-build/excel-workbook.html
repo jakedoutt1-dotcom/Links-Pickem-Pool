@@ -113,29 +113,8 @@
       <p class="download-footnote">Desktop Excel and macros are required. Mac setup is included; the Mac version has not yet been verified on a Mac.</p>
     </section>
 
-    <!-- Temporary private access: remove this section, its dialog and its module together. -->
-    <section class="private-download-panel" id="destiny-private-download" aria-label="Private workbook download">
-      <button class="private-download-button" id="destinyDownload" type="button" aria-haspopup="dialog" aria-controls="destinyDownloadDialog"><span><strong>Destiny</strong><small>Private workbook download · Password required</small></span><span aria-hidden="true">↓</span></button>
-      <p id="destinyDownloadStatus" class="private-download-status" role="status" aria-live="polite"></p>
-    </section>
-  </main>
+</main>
 
-  <dialog class="private-download-dialog" id="destinyDownloadDialog" aria-labelledby="destinyDialogTitle" aria-describedby="destinyDialogDescription">
-    <button class="private-dialog-close" id="destinyDialogClose" type="button" aria-label="Close private download">×</button>
-    <p class="eyebrow">PRIVATE WORKBOOK DOWNLOAD</p>
-    <h2 id="destinyDialogTitle">Destiny’s workbook</h2>
-    <p id="destinyDialogDescription">Choose your computer and enter the password provided for this private copy.</p>
-    <form id="destinyDownloadForm" method="post" action="/new-build/api/workbook-private-download">
-      <label for="destinyVersion">Your computer</label>
-      <select id="destinyVersion" name="version"><option value="windows">Windows</option><option value="mac">Mac</option></select>
-      <label for="destinyPassword">Password</label>
-      <input id="destinyPassword" name="password" type="password" required maxlength="256" autocomplete="current-password" autocapitalize="off" spellcheck="false" aria-describedby="destinyDialogMessage">
-      <p id="destinyDialogMessage" class="private-dialog-message" role="status" aria-live="polite"></p>
-      <button class="download primary private-confirm" id="destinyConfirmDownload" type="submit">Download workbook ZIP</button>
-    </form>
-  </dialog>
-
-  <footer class="page-footer"><span>LINKS · PICKS. POOLS. PEOPLE.</span></footer>
-  <script type="module" src="./workbook-private-download.mjs?v=20261018-tracking1"></script>
+<footer class="page-footer"><span>LINKS · PICKS. POOLS. PEOPLE.</span></footer>
 </body>
 </html>

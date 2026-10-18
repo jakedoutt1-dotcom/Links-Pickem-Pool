@@ -53,8 +53,9 @@ function request(input = {version: 'windows', password}, {method = 'POST', ip = 
     ...(method === 'POST' ? {body: body ?? JSON.stringify(input)} : {}),
   });
 }
-const call = (input, options) => onRequest({request: request(input, options), env});
+const call = (input, options) => privateWorkbookDownload({request: request(input, options), env},{enabled:true});
 try {
+  assert.equal((await onRequest({request:request(),env})).status,404,'Published Destiny download is disabled');
   assert.equal((await call(undefined, {method: 'GET'})).status, 405);
   assert.equal((await call(undefined, {headers: {Origin: 'https://other.test'}})).status, 403);
   assert.equal((await call({version: '../secret', password})).status, 400);
@@ -95,7 +96,7 @@ try {
   assetsAvailable = false; response = await call(undefined, {ip: 'asset-error'}); assert.equal(response.status, 503); assetsAvailable = true;
   bodyOverride = tampered; response = await call(undefined, {ip: 'tampered'}); assert.equal(response.status, 401);
   bodyOverride = zip; response = await call(undefined, {ip: 'plaintext'}); assert.equal(response.status, 503);
-  response = await onRequest({request: request(), env: {ASSETS: env.ASSETS}}); assert.equal(response.status, 503, 'missing limiter fails closed');
+  response = await privateWorkbookDownload({request: request(), env: {ASSETS: env.ASSETS}},{enabled:true}); assert.equal(response.status, 503, 'missing limiter fails closed');
   const tables = sql.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map(row => row.name);
   assert.deepEqual(tables, ['links_workbook_download_attempts','links_workbook_download_activity'], 'download changes only its own tracking tables');
   const history=await workbookDownloadActivity(db);
