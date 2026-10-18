@@ -1,5 +1,6 @@
 // Temporary, server-enforced delivery for Destiny. Set false to close access.
 // The password is never stored here; it is required to decrypt the archive.
+import {recordWorkbookDownload,confirmWorkbookDownload} from './workbook-download-activity.js';
 export const DESTINY_WORKBOOK_DOWNLOAD_ENABLED = true;
 const ARCHIVES = Object.freeze({
   windows: {path: '/downloads/private/destiny-windows.enc', name: 'Destiny-NFL-Crew-Windows.zip'},
@@ -79,6 +80,10 @@ export async function privateWorkbookDownload({request, env}, {enabled = DESTINY
   let input;
   try {input = JSON.parse(new TextDecoder().decode(await readBounded(request.body, MAX_REQUEST_BYTES)));}
   catch (error) {return json({error: error.message === 'too large' ? 'Request too large.' : 'Invalid download request.'}, error.message === 'too large' ? 413 : 400);}
+  if (input?.action === 'received') {
+    try {return await confirmWorkbookDownload(env?.DB,input.receipt) ? json({ok:true},200) : json({error:'Download receipt not found.'},404);}
+    catch {return json({error:'Download confirmation is temporarily unavailable.'},503);}
+  }
   const archive = typeof input?.version === 'string' && Object.hasOwn(ARCHIVES, input.version) ? ARCHIVES[input.version] : null;
   if (!archive) return json({error: 'Choose Windows or Mac.'}, 400);
   try {
@@ -95,7 +100,10 @@ export async function privateWorkbookDownload({request, env}, {enabled = DESTINY
     try {bytes = await decryptPrivateWorkbook(envelope, input.password);}
     catch {return json({error: 'The password was not accepted. Please try again.'}, 401);}
     if (bytes[0] !== 0x50 || bytes[1] !== 0x4b || ![3, 5, 7].includes(bytes[2])) return json({error: 'The download is temporarily unavailable.'}, 503);
-    return new Response(bytes, {headers: {...PRIVATE_HEADERS, 'Content-Type': 'application/zip',
+    let receipt = '';
+    try {receipt = await recordWorkbookDownload(env.DB,input.version,bytes.byteLength);}
+    catch {console.error('Private workbook download activity could not be recorded.');}
+    return new Response(bytes, {headers: {...PRIVATE_HEADERS, ...(receipt ? {'X-Workbook-Download-Receipt':receipt} : {}), 'Content-Type': 'application/zip',
       'Content-Disposition': 'attachment; filename="' + archive.name + '"', 'Content-Length': String(bytes.byteLength)}});
   } catch {return json({error: 'The download is temporarily unavailable. Please try again.'}, 503);}
 }

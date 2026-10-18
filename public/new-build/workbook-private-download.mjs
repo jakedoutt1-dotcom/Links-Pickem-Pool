@@ -95,6 +95,13 @@ if (openButton && dialog && form && password && version && submit && closeButton
       document.body.append(link);
       link.click();
       link.remove();
+      // Confirm only after the full ZIP reached this browser and the save was
+      // offered. This does not claim the user saved or opened the workbook.
+      const receipt = response.headers.get('X-Workbook-Download-Receipt');
+      if (receipt) void fetch('/new-build/api/workbook-private-download', {
+        method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',cache:'no-store',keepalive:true,
+        body:JSON.stringify({action:'received',receipt})
+      }).catch(()=>{});
       window.setTimeout(() => URL.revokeObjectURL(url), 30000);
       password.value = '';
       status.textContent = 'Your Destiny workbook download has started.';

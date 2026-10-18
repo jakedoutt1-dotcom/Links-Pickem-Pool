@@ -14,15 +14,22 @@ const errors = [], missing = [];
 const fixturePassword = 'test-' + crypto.randomUUID();
 const fixtureZip = Buffer.from([0x50,0x4b,3,4, ...Buffer.from('synthetic private download')]);
 const privateRequests = [];
+const privateReceipts = [];
 let privateEnabled = true;
 const server = createServer(async (request, response) => {
   const url = new URL(request.url, 'http://localhost');
+  if(['/new-build/api/links-admin','/new-build/api/workbook-download-activity'].includes(url.pathname)) {
+    if(request.headers.authorization!=='Bearer workbook-owner-fixture'){response.writeHead(401,{'Content-Type':'application/json'});return response.end('{"error":"Owner sign-in required."}');}
+    response.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});
+    return response.end(JSON.stringify(url.pathname.endsWith('links-admin')?{pools:[],accounts:[],grants:[],activity:[],accountActivity:[]}:{summaries:[{version:'windows',prepared:1,received:1,lastPrepared:'2026-10-18T12:00:00Z',lastReceived:'2026-10-18T12:00:01Z'}],recent:[{version:'windows',prepared_at:'2026-10-18T12:00:00Z',received_at:'2026-10-18T12:00:01Z',bytes:1234}]}));
+  }
   if (url.pathname === '/new-build/api/workbook-private-download') {
     const chunks = []; for await (const chunk of request) chunks.push(chunk);
     const data = JSON.parse(Buffer.concat(chunks).toString());
+    if(data.action==='received') {privateReceipts.push(data);response.writeHead(200,{'Content-Type':'application/json'});return response.end('{"ok":true}');}
     privateRequests.push({method:request.method, data});
     const status = !privateEnabled ? 404 : data.password === fixturePassword ? 200 : 401;
-    response.writeHead(status, {'Content-Type':status === 200 ? 'application/zip' : 'application/json', 'Cache-Control':'no-store'});
+    response.writeHead(status, {'Content-Type':status === 200 ? 'application/zip' : 'application/json', 'Cache-Control':'no-store',...(status===200?{'X-Workbook-Download-Receipt':crypto.randomUUID()}:{})});
     return response.end(status === 200 ? fixtureZip : JSON.stringify({error:'Download denied.'}));
   }
   if (url.pathname === '/new-build/api/live-scores') {
@@ -107,10 +114,12 @@ try {
         await page.locator('#destinyVersion').selectOption(version.toLowerCase());
         await page.locator('#destinyPassword').fill(fixturePassword);
         const event = page.waitForEvent('download');
+        const receipt=page.waitForResponse(r=>r.url().includes('/api/workbook-private-download')&&r.request().postDataJSON()?.action==='received');
         await page.locator('#destinyConfirmDownload').click();
         const download = await event;
         assert.equal(download.suggestedFilename(), 'Destiny-NFL-Crew-' + version + '.zip');
         assert.equal(digest(await readFile(await download.path())), digest(fixtureZip));
+        assert.equal((await receipt).status(),200,'Browser confirms after receiving the complete file');
         await page.locator('#destinyDownloadDialog').waitFor({state:'hidden'});
         assert.equal(await page.locator('#destinyPassword').inputValue(), '');
       }
@@ -128,9 +137,20 @@ try {
       await page.locator('#destinyDialogClose').click();
       assert.equal(await page.evaluate(value => JSON.stringify([location.href, Object.entries(localStorage), Object.entries(sessionStorage)]).includes(value), fixturePassword), false, 'Private password never goes in URLs or browser storage');
       assert.equal(privateRequests.length, 4);
+      assert.equal(privateReceipts.length,2,'Only complete successful downloads are confirmed');
+      assert.ok(privateReceipts.every(r=>Object.keys(r).sort().join(',')==='action,receipt'),'Confirmation never resends the password');
       assert.ok(privateRequests.every(item => item.method === 'POST'));
       assert.deepEqual(privateRequests.map(item => item.data.version), ['windows','windows','mac','windows']);
     }
+    await page.evaluate(()=>sessionStorage.setItem('links-owner-admin-token','workbook-owner-fixture'));
+    await page.goto(origin+'/new-build/links-admin.html');await page.locator('#adminTools').waitFor({state:'visible'});
+    await page.getByRole('link',{name:'Workbook Downloads',exact:false}).click();
+    await page.locator('#workbookDownloads').filter({hasText:'File received by browser'}).waitFor();
+    assert.equal(await page.locator('#workbookDownloads > .cards').first().locator('.card').count(),2,'Windows and Mac have separate download status');
+    assert.equal(await page.locator('#workbookDownloads').textContent().then(t=>t.includes('No downloads recorded yet')),true,'An untouched version is not marked downloaded');
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'Download activity fits at '+width);
+    await page.screenshot({path:'output/home-workbook/destiny-download-admin-'+width+'.png',fullPage:true});
+    await page.locator('#refresh').click();await page.locator('#workbookDownloads').filter({hasText:'File received by browser'}).waitFor();
     await context.close();
   }
   assert.deepEqual(errors, []);
