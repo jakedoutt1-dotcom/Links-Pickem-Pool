@@ -1,6 +1,7 @@
 import {createPokerAudio} from './poker-audio.mjs';
 import {pokerSeatPosition} from './poker-seats.mjs';
 import {raisePreset,validRaise} from './poker-controls.mjs';
+import {createActionLog,renderActionLog} from './poker-action-log.mjs';
 import qrcode from './vendor/qrcode.mjs';
 import {rememberPartySeat} from './party-score-link.mjs';
 import {updateVenueRoom} from './venue-link.mjs';
@@ -19,6 +20,7 @@ const pokerAudio = createPokerAudio({getMuted:()=>muted});
 let tableAudio = null, lastWarning = '', lastNotifiedTurn = '';
 let rememberedCode = '', potSignature = '', lastFinishedPoll = 0;
 let preselection = null, preRaiseOpen = false, syncNeeded = false, exactDirty = false;
+const actionLog = createActionLog();
 const read = key => { try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; } };
 function readStorage(key) { try { return localStorage.getItem(key); } catch { return null; } }
 function writeStorage(key, value) { try { localStorage.setItem(key, value); } catch { /* The live seat still works without browser storage. */ } }
@@ -128,7 +130,12 @@ async function poll() {
   if (room?.status === 'finished') { if (Date.now() - lastFinishedPoll < 5000) return; lastFinishedPoll = Date.now(); }
   fetching = true; const ticket = generation;
   try { const data = await api(); if (ticket !== generation) return; const recovered=syncNeeded||connectionFailures; adopt(data); if (recovered) note('Back at the table. Review your current cards and turn.'); connectionFailures = 0; }
-  catch (error) { if (ticket !== generation) return; connectionFailures++; if (connectionFailures === 1) note(error.message,true); }
+  catch (error) {
+    if (ticket !== generation) return;
+    connectionFailures++; syncNeeded = true; preselection = null; preRaiseOpen = false;
+    updateControls();
+    if (connectionFailures === 1) note(`${error.message} Betting is paused on this screen until the table reconnects. Your seat is saved; the game clock continues.`,true);
+  }
   finally { fetching = false; if (!connectionFailures) runPreselection(); }
 }
 
@@ -244,6 +251,8 @@ function render() {
   updateControls(); tick();
 }
 function renderTable(table) {
+  renderActionLog($('recentActions'),actionLog.update(code,table));
+  $('recentActionPanel').hidden = !table;
   const myId = !isTv ? session.playerId : '', players = (table?.players || []).slice();
   const ownSeat = players.find(p => p.id === myId)?.seat;
   const mobile = matchMedia('(max-width:600px)').matches;
@@ -336,7 +345,7 @@ function updateControls() {
 function updatePreselection() {
   const options = preselectOptions(room,session.playerId), decision = resolvePreselection(preselection,room,session.playerId);
   if (decision.state === 'cancel') { preselection = null; preRaiseOpen = false; note(decision.reason); }
-  $('preselectControls').hidden = isTv || !options.waiting;
+  $('preselectControls').hidden = isTv || syncNeeded || !options.waiting;
   $('preCall').textContent = options.callAmount ? `Call ${chips(options.callAmount)}` : 'Check';
   for (const [id,move] of [['preFold','fold'],['preCall','call'],['preRaise','raise']]) {
     $(id).setAttribute('aria-pressed',String(preselection?.move === move));
@@ -356,7 +365,7 @@ function updatePreRaise() {
   $('queueRaise').textContent = `Preselect ${amount === options.maxRaiseTo ? 'all in' : 'raise to'} ${chips(amount)}`;
 }
 async function selectMove(move, amount) {
-  if (busy || isTv) return;
+  if (busy || syncNeeded || isTv) return;
   if (preselection?.move === move && move !== 'raise') { preselection = null; updatePreselection(); return; }
   const candidate = choosePreselection(room,session.playerId,move,amount);
   if (!candidate) return;
@@ -388,6 +397,8 @@ $('cancelPreselection').onclick = () => { preselection = null; preRaiseOpen = fa
 const exactLabel = document.createElement('label'); exactLabel.className = 'raise-exact-label'; exactLabel.htmlFor = 'raiseExact'; exactLabel.textContent = 'Total chips';
 const exactInput = document.createElement('input'); exactInput.id = 'raiseExact'; exactInput.className = 'raise-exact'; exactInput.type = 'number'; exactInput.inputMode = 'numeric'; exactInput.step = '1'; exactInput.autocomplete = 'off';
 $('raiseAmount').after(exactLabel,exactInput);
+const raiseSummary = document.createElement('p'); raiseSummary.id = 'raiseSummary'; raiseSummary.className = 'hint';
+exactInput.after(raiseSummary);
 function updateRaise() {
   const amount = Number($('raiseAmount').value), table = room?.table, all = amount === Number(table?.legalActions?.maxRaiseTo);
   $('raiseOutput').textContent = chips(amount); $('raiseAmount').setAttribute('aria-valuetext',`${chips(amount)} total chips`);
@@ -396,6 +407,11 @@ function updateRaise() {
   const exactValid = !exactDirty || (exactInput.value !== '' && validRaise(table,Number(exactInput.value)));
   $('raiseButton').textContent = `${all ? 'All in' : Number(table?.currentBet || 0) ? 'Raise to' : 'Bet'} ${chips(amount)}`;
   $('raiseButton').disabled = busy || syncNeeded || !exactValid || !validRaise(table,amount);
+  const own = table?.players?.find(p => p.id === session.playerId);
+  const added = Math.max(0,amount - Number(own?.streetBet || 0));
+  raiseSummary.textContent = exactValid && validRaise(table,amount)
+    ? `Adds ${chips(added)} chips · ${chips(Math.max(0,Number(own?.stack || 0)-added))} left in your stack.`
+    : 'Choose a valid total bet before submitting.';
   for (const button of document.querySelectorAll('[data-bet]')) {
     const value = raisePreset(table,button.dataset.bet), label = {min:'Min',half:'½ pot',pot:'Pot',all:'All in'}[button.dataset.bet];
     button.textContent = `${label} · ${chips(value)}`; button.setAttribute('aria-label',`${label}, ${chips(value)} total chips`); button.setAttribute('aria-pressed',String(value === amount));
@@ -446,6 +462,14 @@ function tick() {
   const deadline = dateValue(room.table?.deadline), remaining = seconds(deadline);
   $('turnClock').textContent = room.status === 'paused' ? 'Ⅱ' : deadline ? remaining : '—';
   $('turnClock').classList.toggle('urgent',room.status === 'playing' && !!deadline && remaining <= 5);
+  const duration = Number(room.table?.turnSeconds || room.settings?.turnSeconds || 25);
+  $('turnProgress').max = duration;
+  $('turnProgress').value = Math.min(duration,remaining);
+  $('turnProgress').hidden = !deadline || room.status !== 'playing';
+  $('turnProgress').classList.toggle('urgent',remaining > 0 && remaining <= 5);
+  $('turnClock').setAttribute('aria-label',room.status === 'paused' ? 'Game paused' : `${nameOf(room.table?.actorId)}: ${remaining} seconds to act`);
+  $('turnClock').title = room.table?.legalActions?.canCheck && room.table?.actorId === session.playerId
+    ? 'If time runs out, your hand checks automatically.' : 'If time runs out, a player checks when free or folds when facing a bet.';
   const ownTurn=!isTv && room.status==='playing' && room.table?.actorId===session.playerId;
   $('turnPrompt').textContent=ownTurn ? `${remaining}s to act` : 'Your turn';
   $('bettingControls').classList.toggle('urgent',ownTurn && remaining>0 && remaining<=5);

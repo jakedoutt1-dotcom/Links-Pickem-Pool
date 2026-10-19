@@ -47,6 +47,8 @@ try{
   await page.addInitScript(({code,actor})=>localStorage.setItem('links-poker-session-'+code,JSON.stringify(actor)),{code,actor});
   await page.goto(origin+'/new-build/poker-night.html?room='+code);
   await page.locator('#bettingControls').waitFor({state:'visible'});await fits(page);
+  assert.equal(await page.locator('#turnProgress').isVisible(),true,'Active turn has a visible countdown bar');
+  assert.match(await page.locator('#turnClock').getAttribute('aria-label'),/seconds to act/,'Clock announces whose turn it is');
   const inViewport=async selector=>page.locator(selector).evaluate(el=>{const r=el.getBoundingClientRect();return r.x>=0&&r.right<=innerWidth+1&&r.y>=0&&r.bottom<=innerHeight+1;});
   if(width<=600)assert.equal(await inViewport('#bettingControls'),true,'Phone turn dock fits '+width);
   assert.ok((await page.locator('#callButton').boundingBox()).height>=44,'Thumb-sized action');
@@ -57,6 +59,7 @@ try{
   const amount=min+17;await page.locator('#raiseExact').fill(String(amount));await page.waitForResponse(r=>r.url().includes('/api/poker-night?')&&r.request().method()==='GET');
   assert.equal(await page.locator('#raiseExact').inputValue(),String(amount),'Exact edit survives polling');
   assert.equal(await page.locator('#raiseButton').isEnabled(),true);
+  assert.match(await page.locator('#raiseSummary').textContent(),new RegExp(`Adds ${amount.toLocaleString()} chips`),'Raise explains the additional commitment');
   if(width===390){await page.locator('#raiseOpen').click();await page.locator('#raiseOpen').click();assert.equal(await page.locator('#raiseExact').inputValue(),await page.locator('#raiseAmount').inputValue(),'Reopening raise cannot display a different submitted amount');assert.equal(Number(await page.locator('#raiseExact').inputValue()),min);await page.locator('#raiseExact').fill(String(amount));}
   assert.equal(posts.filter(p=>p.action==='bet').length,0,'Editing/presets do not place a bet');
   await page.locator('[data-bet=all]').click();await page.locator('#raiseButton').click();await page.locator('#confirmDialog').waitFor({state:'visible'});
@@ -66,6 +69,9 @@ try{
   await page.screenshot({path:out+`/controls-${width}.png`});
   const response=page.waitForResponse(r=>r.url().includes('/api/poker-night')&&r.request().method()==='POST');await page.locator('#raiseButton').click();assert.equal((await response).status(),200);
   assert.equal(posts.filter(p=>p.action==='bet').length,1);assert.equal(posts.find(p=>p.action==='bet').amount,amount);
+  await page.locator('#recentActionPanel summary').click();
+  await page.waitForFunction(()=>document.querySelector('#recentActions').textContent.includes('raises to'));
+  assert.match(await page.locator('#recentActions').textContent(),new RegExp(`raises to ${amount.toLocaleString()}`),'Action list shows the submitted total, not just added chips');
   await page.context().close();
   const next=(await api(null,actor,{code})).room.table;const waiting=sessions.find(s=>s.playerId!==next.actorId);
   const waitPage=await context(width,height);await waitPage.addInitScript(({code,waiting})=>localStorage.setItem('links-poker-session-'+code,JSON.stringify(waiting)),{code,waiting});
@@ -91,6 +97,15 @@ try{
  assert.equal(intercepted,1,'Rejected move is not automatically resent');
  assert.equal((await api(null,recoverySession,{code:recoveryCode})).room.table.turnId,beforeRecovery);
  assert.equal(await recoveryPage.locator('#callButton').isEnabled(),true,'Fresh state enables another deliberate move');
+ let failReads=true;
+ await recoveryPage.route('**/api/poker-night?*',route=>failReads?route.fulfill({status:503,json:{error:'Connection lost.'}}):route.continue());
+ await recoveryPage.waitForFunction(()=>document.querySelector('#notice').textContent.includes('Betting is paused'));
+ assert.equal(await recoveryPage.locator('#bettingControls').isVisible(),false,'A failed poll hides stale chip actions');
+ assert.equal(await recoveryPage.locator('#preselectControls').isVisible(),false,'A failed poll hides queued-action controls');
+ failReads=false;
+ await recoveryPage.waitForFunction(()=>document.querySelector('#notice').textContent.includes('Back at the table'));
+ assert.equal(await recoveryPage.locator('#callButton').isEnabled(),true,'Fresh poll restores intentional actions');
+ assert.equal(intercepted,1,'Reconnect never sends a bet');
  await recoveryPage.context().close();
  assert.deepEqual(errors,[]);assert.deepEqual(missing,[]);console.log('PASS mobile controls: 320/375/390 portrait,844 landscape,1280 desktop; exact entry,invalid amounts,polling,explicit all-in and one submitted raise.');
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve));db.raw.close();}

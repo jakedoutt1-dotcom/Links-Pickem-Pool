@@ -43,4 +43,27 @@ view=table(['As','7d'],['Ks','Qs','8s','4c','2h']);view.phase='river';view.legal
 assert.equal(computerMove(view,'bot',()=>.05).type,'raise','Occasional river bluff can use the nut-flush blocker');
 view.players.push({id:'third',seat:2,inHand:true,stack:1000});
 assert.equal(computerMove(view,'bot',()=>.05).type,'check','Blocker bluff is avoided in multiway pots');
-console.log('PASS computer strategy: premium hands, weak all-in folds, free checks, draw pricing, board-only hands, position, multiway bluffs, legal raises and private-card isolation.');
+view=table(['As','Kd'],['Qh','Jc','Ts','4d','2c']);view.phase='river';view.currentBet=1000;view.pot=1000;
+view.legalActions={...view.legalActions,callAmount:1000,canRaise:false};view.lastAction={type:'raise'};
+assert.equal(computerMove(view,'bot',()=>.5).type,'call','Never fold the unbeatable ace-high straight to stack pressure');
+Object.defineProperty(view.players[1],'holeCards',{get(){throw Error('Opponent cards accessed during nuts check');}});
+assert.equal(computerMove(view,'bot',()=>.5).type,'call','Nuts check uses possible unseen cards, never private opponent cards');
+view=table(['2c','3d'],['As','Kd','Qh','Jc','Ts']);view.phase='river';view.currentBet=1000;view.pot=1000;
+view.legalActions={...view.legalActions,callAmount:1000,canRaise:false};
+assert.equal(computerMove(view,'bot',()=>.5).type,'call','Call an unbeatable shared board straight rather than forfeit a guaranteed split');
+view=table(['9s','8d'],['Qh','Jc','Ts','4d','2c']);view.phase='river';view.currentBet=1000;view.pot=1000;
+view.legalActions={...view.legalActions,callAmount:1000,canRaise:false};view.lastAction={type:'raise'};
+assert.equal(computerMove(view,'bot',()=>.5).type,'fold','A lower straight remains vulnerable to higher possible straights');
+for(const [cards,board,reason] of [
+  [['Ac','Kd'],['Qs','Js','Ts','4d','2c'],'Possible flush or straight flush beats a straight'],
+  [['As','Kd'],['Qh','Qc','Js','Td','2c'],'A paired board permits a higher full house or quads'],
+  [['Jh','Th'],['Ah','9h','3h','2c','7d'],'Other unseen hearts can make a higher flush'],
+  [['Ac','Ad'],['Ah','Kc','Kd','2c','7d'],'A full house is vulnerable to possible quads']
+]){
+  view=table(cards,board);view.phase='river';view.currentBet=1000;view.pot=100;
+  view.legalActions={...view.legalActions,callAmount:1000,canRaise:false};
+  assert.equal(computerMove(view,'bot',()=>.5).type,'fold',reason);
+}
+view=table(['Ac','Kd'],['As','7h','2c']);view.currentBet=500;view.pot=600;view.lastAction={type:'call'};view.legalActions.callAmount=500;
+assert.equal(computerMove(view,'bot',()=>0).type,'fold','A previous caller does not erase large-raise pressure');
+console.log('PASS computer strategy: premium hands, weak all-in folds, free checks, draw pricing, board-only hands, position, multiway bluffs, legal raises, unbeatable river calls and private-card isolation.');

@@ -2,6 +2,7 @@ import {evaluateHand} from './poker-night.js';
 
 const rank = card => '23456789TJQKA'.indexOf(card[0]) + 2;
 const clamp = (value,min,max) => Math.max(min,Math.min(max,value));
+const straightMasks = new Set([...Array.from({length:9},(_,i)=>31<<(i+2)),(1<<14)|(15<<2)]);
 
 // Accept only the player's sanitized table view. Never inspect the deck,
 // opponents' private cards, or upcoming community cards.
@@ -74,7 +75,12 @@ export function computerMove(view, playerId, random = () => crypto.getRandomValu
     const requirement = Math.max(.25,odds + .12 + (pressure > .3 ? .13 : 0) + (call > view.bigBlind*8 ? .08 : 0) + (facingRaise ? .09 : 0));
     const pricedDraw = draw > 0 && pressure < .25 && odds <= draw*.9;
     const badDrawPrice = madeRank < 1 && draw > 0 && odds > draw + .04;
-    if (badDrawPrice || strength < requirement && !pricedDraw) return {type:'fold'};
+    if (badDrawPrice || strength < requirement && !pricedDraw) {
+      // Pressure cannot make an unbeatable river hand a fold. Compare only
+      // possible unseen cards, never opponents' actual cards or the deck.
+      if (board.length === 5 && madeRank >= 4 && riverCannotLose(cards,board)) return {type:'call'};
+      return {type:'fold'};
+    }
   }
   const valueRaise = strength > (facingRaise ? .86 : .73) && roll < .78 ||
     !facingRaise && !board.length && strength > .57 && pressure < .12 && roll < .28;
@@ -100,6 +106,37 @@ export function computerMove(view, playerId, random = () => crypto.getRandomValu
 }
 
 function callIsRaise(view, legal) {
-  return !legal.canCheck && view.lastAction?.type === 'raise' &&
-    view.currentBet > view.bigBlind;
+  // A call or fold after a raise must not erase the size of the bet faced.
+  return !legal.canCheck && view.currentBet > view.bigBlind;
+}
+
+function riverCannotLose(cards,board) {
+  const known = new Set([...cards,...board]);
+  const unseen = [...'cdhs'].flatMap(suit => [...'23456789TJQKA'].map(r => r+suit)).filter(card => !known.has(card));
+  const made = evaluateHand([...cards,...board]), score = made.score;
+  const beats = candidate => {
+    // Cheap category rejection avoids invoking the full evaluator for the
+    // thousands of high-card/pair combinations that cannot beat a straight+.
+    const counts = new Uint8Array(15);
+    let mask=0,maxCount=0;
+    for (const card of candidate) {const r=rank(card);mask|=1<<r;maxCount=Math.max(maxCount,++counts[r]);}
+    const flush=candidate.every(card=>card[1]===candidate[0][1]);
+    const straight=straightMasks.has(mask);
+    const category=flush&&straight?8:maxCount===4?7:maxCount===3&&counts.includes(2)?6:flush?5:straight?4:0;
+    return category>=made.rank && evaluateHand(candidate).score>score;
+  };
+  // Examine each distinct possible five-card best hand once. Evaluating every
+  // opponent seven-card holding repeats board/one-hole combinations hundreds
+  // of times. Zero-hole combinations cannot beat our own best hand.
+  for (let omitted=0;omitted<5;omitted++) {
+    const four = board.filter((_,i)=>i!==omitted);
+    for (const card of unseen) if (beats([...four,card])) return false;
+  }
+  for (let a=0;a<3;a++) for (let b=a+1;b<4;b++) for (let c=b+1;c<5;c++) {
+    const three=[board[a],board[b],board[c]];
+    for (let x=0;x<unseen.length-1;x++) for (let y=x+1;y<unseen.length;y++) {
+      if (beats([...three,unseen[x],unseen[y]])) return false;
+    }
+  }
+  return true;
 }
