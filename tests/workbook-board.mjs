@@ -3,6 +3,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {readFile} from 'node:fs/promises';
 import {normalizeBoard,weekStandings} from '../public/new-build/workbook-board-model.mjs';
 import {onRequest} from '../functions/new-build/api/workbook-board.js';
+const realFetch=globalThis.fetch;globalThis.fetch=(url,options)=>String(url).includes('site.api.espn.com')?Promise.resolve(new Response('',{status:503})):realFetch(url,options);
 const raw=new DatabaseSync(':memory:'),db={prepare(sql){let args=[];return {bind(...a){args=a;return this;},async run(){return raw.prepare(sql).run(...args);},async first(){return raw.prepare(sql).get(...args)||null;}};}};
 const seed=JSON.parse(await readFile('public/new-build/assets/workbook/nfl-crew-board.json','utf8'));
 const privateKey=crypto.randomUUID().replaceAll('-','').repeat(2),hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(privateKey))),n=>n.toString(16).padStart(2,'0')).join('');

@@ -5,6 +5,7 @@ import {createRequire} from 'node:module';
 import {DatabaseSync} from 'node:sqlite';
 import path from 'node:path';
 import {onRequest} from '../functions/new-build/api/workbook-board.js';
+const realFetch=globalThis.fetch;globalThis.fetch=(url,options)=>String(url).includes('site.api.espn.com')?Promise.resolve(new Response('',{status:503})):realFetch(url,options);
 const require=createRequire(import.meta.url),{chromium}=require('playwright'),raw=new DatabaseSync(':memory:');
 const db={prepare(sql){let args=[];return {bind(...a){args=a;return this;},async run(){return raw.prepare(sql).run(...args);},async first(){return raw.prepare(sql).get(...args)||null;}};}};
 const publicRoot=path.resolve('public'),mime={'.html':'text/html','.mjs':'text/javascript','.css':'text/css','.png':'image/png','.json':'application/json'};
@@ -25,5 +26,13 @@ try{await mkdir('output/workbook-web-sync/previews',{recursive:true});for(const 
  await page.locator('#refresh').click();await page.reload();await page.locator('#content').waitFor({state:'visible'});assert.equal(await page.locator('#week').inputValue(),'6');
  await page.goto(origin+'/new-build/index.html');assert.equal(await page.locator('#barnesPoolResults').getAttribute('href'),'./barnes-pool-results.html');
  await page.close();
- }assert.deepEqual(errors,[]);console.log('PASS Barnes public board: real 22-week/14-player data, results colors, pending standings, player filter, shareable week URL, homepage button and phone/desktop layouts.');
+ }
+ const livePage=await browser.newPage({viewport:{width:390,height:900}});livePage.on('pageerror',e=>errors.push(e.message));
+ const live={title:'Barnes Pool Results',season:2026,updatedAt:'2026-10-19T12:00:00Z',scores:{status:'live',checkedAt:'2026-10-19T13:00:00Z',week:1},weeks:[{number:1,label:'Week 1',finalTotal:null,games:[{away:'Patriots',home:'Seahawks',winner:'',awayScore:10,homeScore:7}],players:[{name:'Alex',picks:['Patriots'],tie:44},{name:'Sam',picks:['Seahawks'],tie:40}]}]};
+ await livePage.route('**/api/workbook-board*',r=>r.fulfill({json:live}));
+ await livePage.goto(origin+'/new-build/barnes-pool-results.html?week=1');await livePage.locator('#content').waitFor({state:'visible'});assert.equal(await livePage.locator('td.correct').count(),0);
+ Object.assign(live.weeks[0].games[0],{winner:'Patriots',awayScore:24,homeScore:20});live.weeks[0].finalTotal=44;
+ await livePage.locator('#refresh').click();await livePage.waitForFunction(()=>document.querySelector('td.correct'));
+ assert.equal(await livePage.locator('td.correct').count(),1);assert.equal(await livePage.locator('td.incorrect').count(),1);assert.equal(await livePage.locator('tfoot .weekly-winner').textContent(),'WINNER');assert.match(await livePage.locator('.leader.winner').textContent(),/Alex/);await livePage.close();
+ assert.deepEqual(errors,[]);console.log('PASS Barnes public board: real 22-week/14-player data, results colors, pending standings, player filter, shareable week URL, homepage button and phone/desktop layouts.');
 }finally{await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));raw.close();}

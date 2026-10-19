@@ -1,7 +1,22 @@
 import {normalizeBoard} from '../../../public/new-build/workbook-board-model.mjs';
 import {WORKBOOK_PUBLISH_HASH} from '../../lib/workbook-publish-config.js';
+import {liveWorkbookBoard} from '../../lib/workbook-live-scores.js';
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const hash=async value=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value))),n=>n.toString(16).padStart(2,'0')).join('');
+async function scored(board,selected,db){
+ const result=await liveWorkbookBoard(board,selected),week=result.weeks.find(w=>w.number===result.scores.week),id=board.season+':'+week.number;
+ try{
+  await db.prepare('CREATE TABLE IF NOT EXISTS links_workbook_live_results (id TEXT PRIMARY KEY,payload TEXT NOT NULL,checked_at TEXT NOT NULL)').run();
+  if(['live','partial'].includes(result.scores.status)){
+   const payload=JSON.stringify({games:week.games,finalTotal:week.finalTotal});
+   await db.prepare('INSERT INTO links_workbook_live_results(id,payload,checked_at) VALUES(?,?,?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload,checked_at=excluded.checked_at WHERE payload!=excluded.payload').bind(id,payload,result.scores.checkedAt).run();
+  }else{
+   const row=await db.prepare('SELECT payload,checked_at FROM links_workbook_live_results WHERE id=?').bind(id).first();
+   if(row){const cached=JSON.parse(row.payload);if(JSON.stringify(cached.games.map(g=>[g.away,g.home]))===JSON.stringify(week.games.map(g=>[g.away,g.home]))){Object.assign(week,cached);result.scores={week:week.number,status:'cached',checkedAt:row.checked_at};}}
+  }
+ }catch{ /* A cache failure must not hide the uploaded picks or fresh scores. */ }
+ return result;
+}
 export async function onRequest({request,env}){
  if(!['GET','POST'].includes(request.method))return json({error:'Method not allowed.'},405);
  if(!env?.DB)return json({error:'Weekly board is temporarily unavailable.'},503);
@@ -21,8 +36,9 @@ export async function onRequest({request,env}){
    return json({ok:true,updatedAt,url:'https://linkspickempools.com/new-build/barnes-pool-results.html'});
   }
   const saved=await env.DB.prepare('SELECT payload,updated_at FROM links_workbook_public_boards WHERE id=?').bind('nfl-crew').first();
-  if(saved)return json({...JSON.parse(saved.payload),updatedAt:saved.updated_at});
-  if(env.ASSETS?.fetch){const seed=await env.ASSETS.fetch(new Request(new URL('/new-build/assets/workbook/nfl-crew-board.json',request.url)));if(seed.ok){const data=await seed.json();return json({...normalizeBoard(data),updatedAt:data.updatedAt});}}
+  const selected=new URL(request.url).searchParams.get('week');
+  if(saved)return json(await scored({...JSON.parse(saved.payload),updatedAt:saved.updated_at},selected,env.DB));
+  if(env.ASSETS?.fetch){const seed=await env.ASSETS.fetch(new Request(new URL('/new-build/assets/workbook/nfl-crew-board.json',request.url)));if(seed.ok){const data=await seed.json();return json(await scored({...normalizeBoard(data),updatedAt:data.updatedAt},selected,env.DB));}}
   return json({error:'The workbook owner has not published a week yet.'},404);
  }catch{return json({error:'The weekly board could not update. Please try again.'},503);}
 }
