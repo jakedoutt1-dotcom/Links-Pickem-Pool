@@ -17,3 +17,17 @@
 }
 
 .poker-art{position:relative}.party-page .game .art img.poker-brand{position:absolute;top:3%;left:50%;transform:translateX(-50%);width:16%;max-width:75px;height:auto;aspect-ratio:auto;object-fit:contain;pointer-events:none}
+
+/* Homepage preview cards show what is inside the Game Room. */
+.party-banner:has(.party-banner-games){min-height:450px}
+.party-banner-games{position:absolute;right:30px;top:50%;transform:translateY(-50%);width:48%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.party-preview-card{display:block;min-width:0;overflow:hidden;border:1px solid #c5a05e;border-radius:15px;background:#10212b;text-decoration:none;box-shadow:0 16px 32px #0008;transition:transform .18s,border-color .18s}
+.party-preview-card:hover{transform:translateY(-5px);border-color:#ffe3a0}
+.party-preview-card:focus-visible{outline:3px solid white;outline-offset:4px}
+.party-preview-card>img{display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:cover}
+.party-preview-card>span{display:block;padding:15px 13px}
+.party-preview-card strong{display:block;color:#f5dc99;font:800 clamp(16px,1.7vw,23px)/1.2 Arial,sans-serif}
+.party-preview-card small{display:block;margin-top:7px;color:#c2cdd2;font:400 12px/1.4 Arial,sans-serif}
+@media(min-width:601px) and (max-width:1000px){.party-banner:has(.party-banner-games) .party-banner-copy{width:50%;padding:30px 24px}.party-banner-games{right:20px;width:46%;gap:10px}.party-preview-card>span{padding:12px 9px}.party-preview-card small{font-size:11px}}
+@media(max-width:600px){.party-banner:has(.party-banner-games){min-height:0;padding-top:195px}.party-banner-games{top:18px;left:16px;right:16px;width:auto;transform:none;gap:12px}.party-preview-card{border-radius:11px}.party-preview-card>img{aspect-ratio:16/9}.party-preview-card>span{padding:10px}.party-preview-card strong{font-size:16px}.party-preview-card small{display:none}.party-banner:has(.party-banner-games) .party-badge{display:none}}
+@media(prefers-reduced-motion:reduce){.party-preview-card{transition:none}.party-preview-card:hover{transform:none}}

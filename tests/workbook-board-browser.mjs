@@ -18,6 +18,7 @@ try{await mkdir('output/workbook-web-sync/previews',{recursive:true});for(const 
  await page.route('**/*',r=>new URL(r.request().url()).origin===origin?r.continue():r.abort());
  await page.goto(origin+'/new-build/barnes-pool-results.html?week=1');await page.locator('#content').waitFor({state:'visible'});
  assert.equal(await page.locator('#title').textContent(),'Barnes Pool Results');assert.equal(await page.locator('#week option').count(),22);
+ assert.equal(await page.locator('#picks th img').count(),0,'Matchup column stays text-only');assert.ok(await page.locator('#picks td img').count()>0,'Team logos belong to player picks');if(width===390)assert.ok((await page.locator('#picks thead th').first().boundingBox()).width<=132,'Compact matchup column');
  assert.equal(await page.locator('.leader').count(),14);assert.ok(await page.locator('td.correct').count()>0);assert.ok(await page.locator('td.incorrect').count()>0);
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'Board fits '+width);
  await page.screenshot({path:'output/workbook-web-sync/previews/board-'+width+'.png',fullPage:true});
