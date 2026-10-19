@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {raisePreset,validRaise} from '../public/new-build/poker-controls.mjs';
+const table = {pot:300,currentBet:100,legalActions:{canRaise:true,callAmount:50,minRaiseTo:200,maxRaiseTo:1000}};
+assert.equal(raisePreset(table,'half'),275);
+assert.equal(raisePreset(table,'pot'),450);
+assert.equal(raisePreset(table,'min'),200);
+assert.equal(raisePreset(table,'all'),1000);
+assert.equal(validRaise(table,199),false);
+assert.equal(validRaise(table,200),true);
+assert.equal(validRaise(table,1001),false);
+assert.equal(validRaise(table,200.5),false);
+const short = {...table,legalActions:{...table.legalActions,minRaiseTo:200,maxRaiseTo:150}};
+assert.equal(raisePreset(short,'min'),150);
+assert.equal(validRaise(short,150),true);
+assert.equal(validRaise(short,149),false);
+console.log('PASS poker raise amounts and short-stack presets');

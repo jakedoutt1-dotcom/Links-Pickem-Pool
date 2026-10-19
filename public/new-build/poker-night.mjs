@@ -1,4 +1,6 @@
+import {createPokerAudio} from './poker-audio.mjs';
 import {pokerSeatPosition} from './poker-seats.mjs';
+import {raisePreset,validRaise} from './poker-controls.mjs';
 import qrcode from './vendor/qrcode.mjs';
 import {rememberPartySeat} from './party-score-link.mjs';
 import {updateVenueRoom} from './venue-link.mjs';
@@ -12,9 +14,11 @@ const displayKey = new URLSearchParams(url.hash.slice(1)).get('display') || '';
 let selectedTvTable = isTv ? url.searchParams.get('table') || '' : '';
 let code = (url.searchParams.get('room') || url.searchParams.get('code') || '').trim().toUpperCase();
 let room = null, session = {}, busy = false, fetching = false, generation = 0, offset = 0, cardsHidden = false, raiseOpen = false, tableSignature = '', playerSignature = '', lastTurn = '', lastWin = '', connectionFailures = 0;
-let muted = readStorage('links-poker-muted') === '1', audio = null, confirmResolve = null;
+let muted = readStorage('links-poker-muted') === '1', confirmResolve = null;
+const pokerAudio = createPokerAudio({getMuted:()=>muted});
+let tableAudio = null, lastWarning = '', lastNotifiedTurn = '';
 let rememberedCode = '', potSignature = '', lastFinishedPoll = 0;
-let preselection = null, preRaiseOpen = false;
+let preselection = null, preRaiseOpen = false, syncNeeded = false, exactDirty = false;
 const read = key => { try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; } };
 function readStorage(key) { try { return localStorage.getItem(key); } catch { return null; } }
 function writeStorage(key, value) { try { localStorage.setItem(key, value); } catch { /* The live seat still works without browser storage. */ } }
@@ -28,25 +32,12 @@ function nameOf(id) { return room?.players?.find(p => p.id === id)?.name || 'Pla
 function myPlayer() { return room?.players?.find(p => p.id === session.playerId); }
 function dateValue(value) { return typeof value === 'string' ? Date.parse(value) : Number(value || 0); }
 
-function wakeAudio() {
-  if (muted) return;
-  try { const Context = window.AudioContext || window.webkitAudioContext; if (!audio && Context) audio = new Context(); if (audio?.state === 'suspended') void audio.resume(); } catch { /* Sound is optional. */ }
-}
-function sound(kind = 'click') {
-  if (muted || !audio || audio.state !== 'running') return;
-  const t = audio.currentTime;
-  const tones = kind === 'turn' ? [[620,0,.1],[820,.13,.16]] : kind === 'win' ? [[440,0,.15],[554,.1,.16],[660,.2,.3]] : kind === 'deal' ? [[1800,0,.035],[1300,.04,.035]] : [[460,0,.04]];
-  for (const [frequency, delay, duration] of tones) {
-    const oscillator = audio.createOscillator(), gain = audio.createGain();
-    oscillator.type = kind === 'deal' ? 'triangle' : 'sine'; oscillator.frequency.value = frequency;
-    gain.gain.setValueAtTime(0, t + delay); gain.gain.linearRampToValueAtTime(.07, t + delay + .008); gain.gain.exponentialRampToValueAtTime(.001, t + delay + duration);
-    oscillator.connect(gain).connect(audio.destination); oscillator.start(t + delay); oscillator.stop(t + delay + duration + .02);
-  }
-}
+function wakeAudio() { pokerAudio.wake(); }
+function sound(kind = 'click') { return pokerAudio.play(kind); }
 document.addEventListener('pointerdown', wakeAudio, {passive:true});
 document.addEventListener('keydown', wakeAudio);
 function updateMute() { $('muteButton').textContent = muted ? 'Sound on' : 'Mute'; $('muteButton').setAttribute('aria-pressed', String(muted)); }
-$('muteButton').onclick = () => { muted = !muted; writeStorage('links-poker-muted', muted ? '1' : '0'); updateMute(); if (!muted) { wakeAudio(); sound(); } };
+$('muteButton').onclick = () => { muted = !muted; writeStorage('links-poker-muted', muted ? '1' : '0'); updateMute(); if (muted) pokerAudio.silence(); if (!muted) { wakeAudio(); sound(); } };
 updateMute();
 
 const suitSymbols = {s:'♠',h:'♥',d:'♦',c:'♣'}, rankNames = {A:'Ace',K:'King',Q:'Queen',J:'Jack',T:'10'};
@@ -105,7 +96,7 @@ function adopt(data) {
   if (data.session && !isTv) { session = {...session,...data.session}; }
   const incoming = data.room || data;
   if (!incoming.code) return;
-  room = incoming; code = room.code;
+  room = incoming; code = room.code; syncNeeded = false;
   if (isTv && selectedTvTable && room.tables?.length && !room.tables.some(t => t.id === selectedTvTable)) { selectedTvTable = ''; note('That table has closed. This TV now follows the featured table.'); }
   if (room.serverNow) offset = dateValue(room.serverNow) - Date.now();
   if (!isTv && session.playerToken) {
@@ -127,16 +118,16 @@ async function act(action, extra = {}) {
   busy = true; generation++; updateControls(); note('');
   try {
     const data = await api({action,code,playerId:session.playerId,playerToken:session.playerToken,hostToken:session.hostToken,requestId:crypto.randomUUID(),...extra});
-    adopt(data); sound(action === 'bet' ? 'click' : 'deal');
-  } catch (error) { note(error.message,true); }
-  finally { busy = false; updateControls(); }
+    adopt(data);
+  } catch (error) { syncNeeded = true; note(`${error.message} Refreshing the table before another move…`,true); }
+  finally { busy = false; updateControls(); if (syncNeeded) void poll(); }
 }
 async function poll() {
   if (!code || busy || fetching || room?.status === 'closed' || (!isTv && !session.playerToken)) return;
   // Final-table players can still choose to show a hand after the match ends.
   if (room?.status === 'finished') { if (Date.now() - lastFinishedPoll < 5000) return; lastFinishedPoll = Date.now(); }
   fetching = true; const ticket = generation;
-  try { const data = await api(); if (ticket !== generation) return; adopt(data); if (connectionFailures) note('Back at the table. Your seat is connected.'); connectionFailures = 0; }
+  try { const data = await api(); if (ticket !== generation) return; const recovered=syncNeeded||connectionFailures; adopt(data); if (recovered) note('Back at the table. Review your current cards and turn.'); connectionFailures = 0; }
   catch (error) { if (ticket !== generation) return; connectionFailures++; if (connectionFailures === 1) note(error.message,true); }
   finally { fetching = false; if (!connectionFailures) runPreselection(); }
 }
@@ -200,6 +191,7 @@ $('displayTable').onchange = () => { selectedTvTable = $('displayTable').value; 
 $('copyTv').onclick = () => copyText(tvUrl(),'tvStatus');
 $('fullScreenButton').onclick = async () => { try { if (document.fullscreenElement) await document.exitFullscreen(); else if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen(); else note('Use your TV or browser’s full-screen setting.'); } catch { note('Use your TV or browser’s full-screen setting.'); } };
 $('exitButton').onclick = async () => {
+  if (busy) return note('Wait for your current move to finish before leaving this screen.',true);
   if (!isTv && room?.status === 'playing' && !await confirmAction('Leave this screen?', 'Your seat stays saved. Blinds continue, and missed turns automatically check or fold. Reopen your room link on this browser to return.', 'Leave screen')) return;
   generation++; preselection = null; preRaiseOpen = false; code = ''; room = null; session = {}; history.replaceState(null,'',location.pathname); document.body.classList.remove('tv'); showPanel('welcome'); note('');
 };
@@ -256,7 +248,14 @@ function renderTable(table) {
   const ownSeat = players.find(p => p.id === myId)?.seat;
   const mobile = matchMedia('(max-width:600px)').matches;
   const board = table?.board || [], signature = `${table?.id}:${table?.handNumber}:${board.join(',')}`;
-  const fresh = signature !== tableSignature; if (fresh && tableSignature && board.length) sound('deal'); tableSignature = signature;
+  const fresh = signature !== tableSignature; tableSignature = signature;
+  const handKey = `${table?.id}:${table?.handNumber}`, actionKey = `${handKey}:${table?.turnId}`;
+  const ended = ['showdown','complete'].includes(table?.phase);
+  if (table && !ended) {
+    if (tableAudio?.hand !== handKey || tableAudio?.board !== board.join(',')) sound('deal');
+    else if (tableAudio.action !== actionKey && table.lastAction) sound(table.lastAction.allIn ? 'allin' : table.lastAction.type);
+  }
+  tableAudio = table ? {hand:handKey,action:actionKey,board:board.join(',')} : null;
   const winningCards = table?.phase === 'showdown' && table?.showCards ? (table.winners || []).flatMap(w => w.cards || []) : [];
   setHtml('board',Array.from({length:5},(_,i) => cardHtml(board[i],{empty:!board[i],animate:fresh && !!board[i],winning:winningCards.includes(board[i])})).join(''));
   $('potValue').textContent = chips(table?.phase === 'showdown' ? table.lastPot : table?.pot);
@@ -287,10 +286,11 @@ function renderHand(table) {
   $('myStack').textContent = `${chips(player?.stack)} chips`;
   const privateCards = cardsHidden ? [null,null] : seat?.holeCards || [];
   const signature = JSON.stringify([privateCards,cardsHidden]);
-  if (signature !== playerSignature) { const html = privateCards.length ? privateCards.map(c => cardHtml(c,{back:cardsHidden,animate:!cardsHidden})).join('') : cardHtml(null,{back:true}) + cardHtml(null,{back:true}); $('privateCards').innerHTML = html; $('bettingHand').innerHTML = html; playerSignature = signature; }
+  if (signature !== playerSignature) { const html = privateCards.length ? privateCards.map(c => cardHtml(c,{back:cardsHidden,animate:!cardsHidden})).join('') : cardHtml(null,{back:true}) + cardHtml(null,{back:true}); $('privateCards').innerHTML = html; $('bettingHand').innerHTML = html; $('preselectHand').innerHTML = html; playerSignature = signature; }
   $('hideCardsButton').textContent = cardsHidden ? 'Show cards' : 'Hide cards'; $('hideCardsButton').setAttribute('aria-pressed',String(cardsHidden));
+  for(const id of ['preHideCards','dockHideCards']){$(id).textContent=cardsHidden?'Show':'Hide';$(id).setAttribute('aria-pressed',String(cardsHidden));}
   const handName = !isTv && !cardsHidden && seat?.holeCards?.length === 2 ? table?.yourHandName : '';
-  for (const id of ['myHandName','bettingHandName']) { $(id).hidden = !handName; $(id).textContent = handName ? `Your hand: ${handName}` : ''; }
+  for (const id of ['myHandName','bettingHandName','preselectHandName']) { $(id).hidden = !handName; $(id).textContent = handName ? `Your hand: ${handName}` : ''; }
   $('showHandPanel').hidden = isTv || !seat || (!table?.canShowHand && !seat.voluntaryShown);
   $('showHandButton').textContent = seat?.voluntaryShown ? 'Hand shown to everyone' : 'Show hand to everyone';
   $('showHandButton').disabled = busy || !table?.canShowHand;
@@ -310,7 +310,7 @@ function renderStandings(players) {
 }
 function updateControls() {
   if (!room) return;
-  const table = room.table, legal = table?.legalActions || {}, turn = !isTv && room.status === 'playing' && table?.actorId === session.playerId && !busy && (!table.deadline || dateValue(table.deadline) > now());
+  const table = room.table, legal = table?.legalActions || {}, turn = !isTv && room.status === 'playing' && table?.actorId === session.playerId && !busy && !syncNeeded && (!table.deadline || dateValue(table.deadline) > now());
   document.body.dataset.pokerTurn = String(turn);
   $('bettingControls').hidden = !turn;
   $('foldButton').disabled = !turn || !legal.canFold;
@@ -319,9 +319,11 @@ function updateControls() {
   $('callButton').textContent = legal.canCheck ? 'Check' : `${legal.callAmount >= stack ? 'All-in call' : 'Call'} ${chips(legal.callAmount)}`;
   $('raiseOpen').disabled = !turn || !legal.canRaise;
   const turnKey = `${table?.id}:${table?.handNumber}:${table?.turnId}`;
-  if (turnKey !== lastTurn) { raiseOpen = false; if (turn) { sound('turn'); if (navigator.vibrate && document.visibilityState === 'visible') navigator.vibrate(90); } lastTurn = turnKey; }
+  if (turnKey !== lastTurn) { raiseOpen = false; exactDirty = false; lastTurn = turnKey; }
+  if(turn && document.visibilityState === 'visible' && lastNotifiedTurn !== turnKey){sound('turn');if(navigator.vibrate)navigator.vibrate(90);lastNotifiedTurn=turnKey;}
   $('raisePanel').hidden = !raiseOpen || !turn || !legal.canRaise;
-  $('raiseOpen').textContent = raiseOpen ? 'Cancel raise' : 'Raise';
+  $('raiseOpen').textContent = raiseOpen ? 'Cancel' : Number(table?.currentBet || 0) ? 'Raise' : 'Bet';
+  $('raiseOpen').setAttribute('aria-expanded',String(raiseOpen && turn));
   const min = Number(legal.minRaiseTo || 0), max = Number(legal.maxRaiseTo || 0);
   $('raiseAmount').min = String(Math.min(min,max)); $('raiseAmount').max = String(max); $('raiseAmount').step = '1';
   if (Number($('raiseAmount').value) < min || Number($('raiseAmount').value) > max) $('raiseAmount').value = String(Math.min(min,max));
@@ -366,7 +368,7 @@ async function selectMove(move, amount) {
   preselection = candidate; preRaiseOpen = false; updatePreselection();
 }
 function runPreselection() {
-  if (!preselection || busy || isTv || document.hidden || confirmResolve) return;
+  if (!preselection || busy || syncNeeded || isTv || document.hidden || confirmResolve) return;
   const decision = resolvePreselection(preselection,room,session.playerId), deadline = dateValue(room?.table?.deadline);
   if (decision.state !== 'ready' || (deadline && deadline <= now())) return;
   // Clear before sending: a network failure must never repeat a queued bet.
@@ -383,13 +385,43 @@ $('preRaise').onclick = () => {
 $('preRaiseAmount').oninput = updatePreRaise;
 $('queueRaise').onclick = () => void selectMove('raise',Number($('preRaiseAmount').value));
 $('cancelPreselection').onclick = () => { preselection = null; preRaiseOpen = false; updatePreselection(); };
-function updateRaise() { const amount = Number($('raiseAmount').value), all = amount === Number(room?.table?.legalActions?.maxRaiseTo); $('raiseOutput').textContent = chips(amount); $('raiseButton').textContent = `${all ? 'All in' : 'Raise to'} ${chips(amount)}`; }
-$('raiseAmount').oninput = updateRaise;
-$('raiseOpen').onclick = () => { raiseOpen = !raiseOpen; if (raiseOpen) $('raiseAmount').value = String(Math.min(room.table.legalActions.minRaiseTo,room.table.legalActions.maxRaiseTo)); updateControls(); };
-document.querySelectorAll('[data-bet]').forEach(button => button.onclick = () => { const table = room?.table, legal = table?.legalActions || {}, min = Number(legal.minRaiseTo || 0), max = Number(legal.maxRaiseTo || 0); let amount = button.dataset.bet === 'all' ? max : button.dataset.bet === 'pot' ? Number(table.currentBet || 0) + Number(table.pot || 0) + Number(legal.callAmount || 0) : button.dataset.bet === 'half' ? Number(table.currentBet || 0) + Math.ceil((Number(table.pot || 0) + Number(legal.callAmount || 0)) / 2) : min; $('raiseAmount').value = String(Math.min(max,Math.max(min,amount))); updateRaise(); });
+const exactLabel = document.createElement('label'); exactLabel.className = 'raise-exact-label'; exactLabel.htmlFor = 'raiseExact'; exactLabel.textContent = 'Total chips';
+const exactInput = document.createElement('input'); exactInput.id = 'raiseExact'; exactInput.className = 'raise-exact'; exactInput.type = 'number'; exactInput.inputMode = 'numeric'; exactInput.step = '1'; exactInput.autocomplete = 'off';
+$('raiseAmount').after(exactLabel,exactInput);
+function updateRaise() {
+  const amount = Number($('raiseAmount').value), table = room?.table, all = amount === Number(table?.legalActions?.maxRaiseTo);
+  $('raiseOutput').textContent = chips(amount); $('raiseAmount').setAttribute('aria-valuetext',`${chips(amount)} total chips`);
+  if (document.activeElement !== exactInput && !exactDirty) exactInput.value = String(amount);
+  exactInput.min = $('raiseAmount').min; exactInput.max = $('raiseAmount').max;
+  const exactValid = !exactDirty || (exactInput.value !== '' && validRaise(table,Number(exactInput.value)));
+  $('raiseButton').textContent = `${all ? 'All in' : Number(table?.currentBet || 0) ? 'Raise to' : 'Bet'} ${chips(amount)}`;
+  $('raiseButton').disabled = busy || syncNeeded || !exactValid || !validRaise(table,amount);
+  for (const button of document.querySelectorAll('[data-bet]')) {
+    const value = raisePreset(table,button.dataset.bet), label = {min:'Min',half:'½ pot',pot:'Pot',all:'All in'}[button.dataset.bet];
+    button.textContent = `${label} · ${chips(value)}`; button.setAttribute('aria-label',`${label}, ${chips(value)} total chips`); button.setAttribute('aria-pressed',String(value === amount));
+  }
+}
+exactInput.oninput = () => {
+  exactDirty = true;
+  const amount = Number(exactInput.value);
+  if (exactInput.value && validRaise(room?.table,amount)) $('raiseAmount').value = String(amount);
+  updateRaise();
+};
+exactInput.onblur = () => {
+  if (!exactInput.value || !validRaise(room?.table,Number(exactInput.value))) note(`Enter ${chips($('raiseAmount').min)}–${chips($('raiseAmount').max)} total chips.`,true);
+  updateRaise();
+};
+$('raiseAmount').oninput = () => { exactDirty = false; updateRaise(); };
+$('raiseOpen').onclick = () => { raiseOpen = !raiseOpen; if (raiseOpen) { exactDirty = false; $('raiseAmount').value = String(Math.min(room.table.legalActions.minRaiseTo,room.table.legalActions.maxRaiseTo)); exactInput.value = $('raiseAmount').value; } updateControls(); };
+document.querySelectorAll('[data-bet]').forEach(button => button.onclick = () => { exactDirty = false; $('raiseAmount').value = String(raisePreset(room?.table,button.dataset.bet)); exactInput.value = $('raiseAmount').value; updateRaise(); });
 async function bet(move, amount, {preselected = false} = {}) {
-  if (busy || !room?.table) return;
+  if (busy || syncNeeded || !room?.table || room.table.actorId !== session.playerId || (room.table.deadline && dateValue(room.table.deadline) <= now())) return;
   const table = room.table, hand = {tableId:table.id,handNumber:table.handNumber,turnId:table.turnId}, player = table.players?.find(p => p.id === session.playerId);
+  if (move === 'raise' && !validRaise(table,amount)) return note('Choose a whole-chip amount within the allowed raise range.',true);
+  if (!preselected && move === 'fold' && table.legalActions?.canCheck) {
+    if (!await confirmAction('Check instead?', 'You can stay in this hand without adding chips. Fold only if you want to give up your hand.', 'Fold anyway')) return;
+    if (room?.table?.turnId !== hand.turnId || room?.table?.handNumber !== hand.handNumber || room?.table?.id !== hand.tableId) return note('The turn changed. Review the current table.');
+  }
   if (!preselected && (move === 'raise' && amount >= table.legalActions.maxRaiseTo || move === 'call' && table.legalActions.callAmount >= (player?.stack || Infinity))) {
     if (!await confirmAction('Put your stack in?', `This commits all ${chips(player?.stack)} of your remaining virtual chips to this hand.`, 'Go all in')) return;
     if (room?.table?.id !== hand.tableId || room?.table?.turnId !== hand.turnId || room?.table?.handNumber !== hand.handNumber) return note('The turn changed while the confirmation was open. Review the current table.');
@@ -400,6 +432,7 @@ $('foldButton').onclick = () => bet('fold');
 $('callButton').onclick = () => bet(room?.table?.legalActions?.canCheck ? 'check' : 'call');
 $('raiseButton').onclick = () => bet('raise',Number($('raiseAmount').value));
 $('hideCardsButton').onclick = () => { cardsHidden = !cardsHidden; renderHand(room?.table); };
+for(const id of ['preHideCards','dockHideCards'])$(id).onclick=()=>$('hideCardsButton').click();
 $('showHandButton').onclick = () => { if (room?.table?.canShowHand) void act('show',{tableId:room.table.id,handNumber:room.table.handNumber}); };
 $('startButton').onclick = () => act('start');
 $('rebuyButton').onclick = async () => { if (await confirmAction('Back in the game?', `Use one of your allowed buy backs to receive ${chips(room.settings.startingChips)} virtual chips. No payment is involved.`, 'Buy back in')) await act('rebuy'); };
@@ -413,6 +446,12 @@ function tick() {
   const deadline = dateValue(room.table?.deadline), remaining = seconds(deadline);
   $('turnClock').textContent = room.status === 'paused' ? 'Ⅱ' : deadline ? remaining : '—';
   $('turnClock').classList.toggle('urgent',room.status === 'playing' && !!deadline && remaining <= 5);
+  const ownTurn=!isTv && room.status==='playing' && room.table?.actorId===session.playerId;
+  $('turnPrompt').textContent=ownTurn ? `${remaining}s to act` : 'Your turn';
+  $('bettingControls').classList.toggle('urgent',ownTurn && remaining>0 && remaining<=5);
+  const warningKey=`${room.table?.id}:${room.table?.handNumber}:${room.table?.turnId}`;
+  if(ownTurn && remaining>0 && remaining<=5 && document.visibilityState==='visible' && !muted && lastWarning!==warningKey){if(sound('warning'))lastWarning=warningKey;}
+
   if (deadline && remaining === 0 && room.table?.actorId === session.playerId) updateControls();
   $('levelClock').textContent = room.status === 'paused' ? room.autoResumeAt ? timeLeft(dateValue(room.autoResumeAt)) + ' break' : 'Paused' : room.nextLevelAt ? timeLeft(dateValue(room.nextLevelAt)) : 'Fixed blinds';
   if (room.nextHandAt && room.status === 'playing') {
@@ -425,7 +464,8 @@ function tick() {
 }
 setInterval(tick,250);
 setInterval(() => { if (!document.hidden) void poll(); },1500);
-document.addEventListener('visibilitychange',() => { if (!document.hidden) void poll(); });
+document.addEventListener('visibilitychange',() => { if (document.hidden) pokerAudio.silence(); else void poll(); });
+window.addEventListener('pagehide',()=>pokerAudio.silence());
 window.addEventListener('resize',() => { if (room?.table) renderTable(room.table); });
 window.addEventListener('online',() => void poll());
 
