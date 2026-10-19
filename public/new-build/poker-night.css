@@ -87,6 +87,8 @@
 #showHandPanel{text-align:center;margin-top:16px}#showHandButton{width:100%;font-size:.85rem}#showHandHelp{font-size:.76rem;line-height:1.5;margin:9px 0 0;color:var(--muted)}
 .lobby-invite{display:flex;flex-direction:column;align-items:center;gap:14px;width:235px;max-width:100%}.lobby-invite #inviteButton{width:100%}
 #displayTableControl{display:flex;align-items:center;gap:8px;font-size:.7rem}#displayTable{margin:0;min-height:33px;padding:5px 8px;width:auto;max-width:230px;font-size:.75rem}#tvTable{margin-bottom:12px}
+.hand-strength{color:var(--gold);text-align:center;font-size:.88rem;font-weight:750;margin:5px 0 10px}#bettingHandName{display:none}
+@media(max-width:600px){#bettingHandName{display:block;font-size:.76rem;margin:0 0 9px}}
 .preselect-controls{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
 .preselect-controls .eyebrow{font-size:.62rem;margin-bottom:10px}
 .preselect-controls button[aria-pressed=true]{background:linear-gradient(110deg,#f8dd94,#c89e42);color:#14222c;border-color:#ffe7a7;box-shadow:0 0 0 2px #edca7355}
@@ -111,6 +113,7 @@
   body:not(.tv) #myHand .hand-heading .eyebrow{font-size:.6rem;margin-bottom:4px}
   body:not(.tv) #hideCardsButton{min-height:36px;padding:7px 9px;font-size:.73rem}
   body:not(.tv) #privateCards{order:1;margin:10px auto 8px;gap:10px}
+  body:not(.tv) #myHandName{order:1;font-size:.82rem;margin:0 0 8px}
   body:not(.tv) #privateCards .card{width:55px;height:77px;padding:5px;border-radius:6px}
   body:not(.tv) #privateCards .rank,body:not(.tv) #privateCards .suit{font-size:23px}
   body:not(.tv) #privateCards .large-suit{font-size:30px;right:5px;bottom:5px}

@@ -75,8 +75,11 @@ try{
  for(let i=3;i<=18;i++)sessions.push((await api({action:'join',code,name:'Player '+i})).session);
  await host.locator('#startButton').click();await host.waitForFunction(()=>!document.getElementById('gameArea').hidden);await guest.waitForFunction(()=>document.querySelectorAll('#privateCards .card:not(.back)').length===2);
  assert.equal(await host.locator('#privateCards .card:not(.back)').count(),2);assert.equal(await host.locator('#seats .seat').count(),9);
+ const initialHand=(await api(null,hostSession,{code})).room.table.yourHandName;
+ assert.equal(await host.locator('#myHandName').textContent(),'Your hand: '+initialHand);
  await fits(host);await fits(guest);
  await host.locator('#hideCardsButton').click();assert.equal(await host.locator('#privateCards .back').count(),2);assert.equal(await host.locator('#seats .card:not(.back)').count(),0);
+ assert.equal(await host.locator('#myHandName').isVisible(),false,'Hide cards also conceals private hand strength');
  await host.locator('#hideCardsButton').click();assert.equal(await host.locator('#privateCards .card:not(.back)').count(),2);
  const beforeCards=await host.locator('#privateCards').textContent();await host.reload();await host.waitForFunction(()=>document.querySelectorAll('#privateCards .card:not(.back)').length===2);assert.equal(await host.locator('#privateCards').textContent(),beforeCards,'Refresh restores exact seat and private cards');
  // A waiting phone queues one call, privately, then sends it only on its turn.
@@ -123,6 +126,8 @@ try{
   const own=(await api(null,seat,{code})).room.table;await api({action:'bet',code,tableId:own.id,handNumber:own.handNumber,turnId:own.turnId,move:own.legalActions.canCheck?'check':'call'},seat);
  }
  await host.locator('#bettingControls').waitFor({state:'visible'});await host.locator('#raiseOpen').click();await host.locator('[data-bet=min]').click();
+ assert.equal(await host.locator('#bettingHandName').isVisible(),true,'Phone betting tray shows current hand strength');
+ const expectedTrayHand='Your hand: '+(await api(null,hostSession,{code})).room.table.yourHandName;await host.waitForFunction(expected=>document.querySelector('#bettingHandName').textContent===expected,expectedTrayHand);
  const actionBefore=(await api(null,hostSession,{code})).room.table.actionNumber;
  const hostRaise=host.waitForResponse(response=>response.url().includes('/api/poker-night')&&response.request().method()==='POST'&&response.request().postDataJSON()?.move==='raise');
  await host.locator('#raiseButton').click();assert.equal((await hostRaise).status(),200);await host.waitForFunction(()=>document.getElementById('bettingControls').hidden);
@@ -134,6 +139,7 @@ try{
  const tv=await context(1920,1080);await tv.goto(tvHref);await tv.waitForFunction(()=>document.querySelectorAll('#seats .seat').length===9);
  const pinnedTv=await context(1280,720);await pinnedTv.goto(pinnedHref);await pinnedTv.waitForFunction(()=>document.getElementById('tableLabel').textContent.startsWith('TABLE 1'));
  assert.equal(await tv.locator('#privateCards .card:not(.back)').count(),0);assert.equal(await tv.locator('#myHand').isVisible(),false);assert.equal(await tv.locator('#hostDesk').isVisible(),false);assert.equal(await tv.locator('#standings li').count(),18);await fits(tv);
+ assert.equal(await tv.locator('#myHandName').isVisible(),false,'TV does not display a private hand label');
  const first=await tv.locator('#tableLabel').textContent();await host.locator('#hostDesk summary').click();await host.locator('[data-feature="table-2"]').click();
  await tv.waitForFunction(first=>document.getElementById('tableLabel').textContent!==first,first);
  assert.ok((await pinnedTv.locator('#tableLabel').textContent()).startsWith('TABLE 1'),'A second TV stays on its selected table when the featured table changes');

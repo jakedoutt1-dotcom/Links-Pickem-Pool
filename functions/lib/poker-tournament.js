@@ -34,14 +34,36 @@ export function createTournament({code,mode,ownerSeat,hostHash,displayKey,player
  }
  return state;
 }
+// No historical seat existed for an invitee. Spread each completed round's
+// small + big blinds equally across the seats that were dealt in. One full
+// rotation therefore costs one small and one big blind, without choosing a
+// favorable imaginary seat. Keep fractional chips until the final deduction.
+function accountMissedBlinds(s){
+ if(!s.tables.length)return;
+ const seats=s.tables.reduce((n,t)=>n+t.players.length,0);
+ const share=s.tables.reduce((n,t)=>n+t.smallBlind+t.bigBlind,0)/Math.max(1,seats);
+ if(s.lateEntryBlindShare===undefined){
+  // Existing rooms lack round history; use their current blind/seat rate.
+  s.lateEntryBlindShare=Math.max(0,(s.round||1)-1)*share;
+  s.lateEntryAccountedRound=Math.max(0,(s.round||1)-1);
+ }
+ if(s.tables.every(idle)&&(s.lateEntryAccountedRound||0)<s.round){
+  s.lateEntryBlindShare+=share;s.lateEntryAccountedRound=s.round;
+ }
+}
 export function joinTournament(s,seat,{id,name},now=Date.now()){
  if(s.players[seat])return s;
  if(s.mode==='practice')fail('Practice is just for you and the computer opponents. Create a friends table to invite others.');
- if(s.status!=='lobby')fail('This game has started. Join the host’s next game.');
+ if(!['lobby','playing','paused'].includes(s.status))fail('This game has ended. Join the host’s next game.');
  if(Object.keys(s.players).length>=(s.mode==='tournament'?90:s.settings.tableSize))fail('This game is full.');
  name=playerName(name);
  if(Object.values(s.players).some(p=>p.name.toLocaleLowerCase()===name.toLocaleLowerCase()))fail('That name is taken. Add an initial or choose another name.');
- s.players[seat]={id,name,stack:s.settings.startingChips,score:0,status:'active',tableId:null,reentries:0,joinedAt:now,away:false};return s;
+ accountMissedBlinds(s);
+ const missedBlinds=s.status==='lobby'?0:Math.ceil(s.lateEntryBlindShare||0);
+ if(missedBlinds>=s.settings.startingChips)fail('The missed blinds use up the starting stack. Join the host’s next game.');
+ // Use the same between-hand seating path as buy backs. Never alter a live
+ // table, deck, pot, actor or blind position when an invite is accepted.
+ s.players[seat]={id,name,stack:s.settings.startingChips-missedBlinds,missedBlinds,score:0,status:s.status==='lobby'?'active':'waiting',tableId:null,reentries:0,joinedAt:now,away:false};return s;
 }
 export function blindState(s,now=Date.now()){
  const time=s.pausedAt||now;
@@ -93,8 +115,9 @@ function rebalance(s,now){
  const freeSeats=table=>Array.from({length:s.settings.tableSize},(_,seat)=>seat).filter(seat=>!table.players.some(p=>p.seat===seat));
  const unseated=new Set(active.map(p=>p.id)),balanceMoves=[];
  tables.forEach((table,i)=>{
-  // Reentries draw a fresh seat; their old, empty stack is not retained.
-  table.players=table.players.filter(p=>unseated.has(p.id)&&playerById(s,p.id)?.status!=='waiting');
+  // Keep a buy-back in its original seat when that table still exists.
+  // Its refreshed stack is copied from the player record after balancing.
+  table.players=table.players.filter(p=>{const record=playerById(s,p.id);return unseated.has(p.id)&&(record?.status!=='waiting'||record.returnTableId===table.id&&record.returnSeat===p.seat);});
   for(const p of table.players)unseated.delete(p.id);
   while(table.players.length>sizes[i]){
    // Move the player who owes the next big blind, never an arbitrary late seat.
@@ -113,13 +136,13 @@ function rebalance(s,now){
   available.sort((a,b)=>((a-start+s.settings.tableSize)%s.settings.tableSize||s.settings.tableSize)-((b-start+s.settings.tableSize)%s.settings.tableSize||s.settings.tableSize));
   place(table,record,available[0]);
  }
- // Initial tables, broken-table players and buy backs all draw server-random
+ // Initial tables, broken-table players and displaced buy backs draw server-random
  // seats. Joining earlier cannot guarantee the dealer or a preferred table.
  for(const record of shuffled(active.filter(p=>unseated.has(p.id)))){
   const choices=tables.filter((table,i)=>table.players.length<sizes[i]),table=choices[randomIndex(choices.length)],free=freeSeats(table);
   place(table,record,free[randomIndex(free.length)]);
  }
- for(const table of tables)for(const p of table.players){const record=playerById(s,p.id);p.stack=record.stack;p.name=record.name;record.tableId=table.id;record.status='active';}
+ for(const table of tables)for(const p of table.players){const record=playerById(s,p.id);p.stack=record.stack;p.name=record.name;record.tableId=table.id;record.status='active';delete record.returnTableId;delete record.returnSeat;}
  for(const p of participants(s).filter(p=>p.status==='eliminated'))p.tableId=null;
  s.tables=tables;if(!tables.some(t=>t.id===s.featuredTableId))s.featuredTableId=tables[0]?.id||null;
  if(count===1)s.featuredTableId=tables[0]?.id||null;
@@ -130,6 +153,7 @@ function finish(s,now){
  for(const p of participants(s)){if(p.id===winner?.id)p.place=1;p.score=Math.round((participants(s).length-(p.place||participants(s).length))/Math.max(1,participants(s).length-1)*1000);}
 }
 function dealRound(s,now){
+ accountMissedBlinds(s);
  if(alive(s).length<2){finish(s,now);return;}
  rebalance(s,now);const blinds=blindState(s,now);
  s.nextHandAt=0;s.round=(s.round||0)+1;s.roundStartedAt=now;s.lastDealtLevel=blinds.level;
@@ -179,6 +203,8 @@ export function betTournament(s,seat,input,now=Date.now()){
 }
 export function rebuyTournament(s,seat,now=Date.now()){
  const p=s.players[seat];if(!canRebuy(s,p,now))fail('Buy back is unavailable: you must be out, have a buy back left, and be before the cutoff.');
+ const table=s.tables.find(t=>t.players.some(q=>q.id===p.id));
+ p.returnTableId=table?.id;p.returnSeat=table?.players.find(q=>q.id===p.id)?.seat;
  p.stack=s.settings.startingChips;p.reentries++;p.status='waiting';p.tableId=null;p.away=false;delete p.place;delete p.eliminatedAt;delete p.eliminatedRound;delete p.eliminatedStack;return s;
 }
 export function showTournamentHand(s,seat,input){
@@ -204,5 +230,5 @@ export function tournamentView(s,seat='',{host=false,tv=false,venue=null,tableId
  const tables=s.tables.map(t=>publicTable(t,tv?null:self?.id,{tv,allowShow}));
  for(const t of tables){const internal=s.tables.find(x=>x.id===t.id);t.turnId=internal.actionNumber;t.waitingForTables=idle(internal)&&s.tables.some(x=>!idle(x));}
  const table=tables.find(t=>t.id===(tv?(tableId||s.featuredTableId):self?.tableId))||tables.find(t=>t.id===s.featuredTableId)||tables[0]||null;
- return {code:s.code,mode:s.mode,status:s.status,settings:s.settings,serverNow:now,...blinds,remaining:alive(s).length,players:standings,standings,tables,table,featuredTableId:s.featuredTableId,canRebuy:canRebuy(s,self,now),isHost:host,isTv:tv,playerId:self?.id||null,expiresAt:s.expiresAt,winnerId:s.winnerId||null,nextHandAt:s.nextHandAt||0,pausedAt:s.pausedAt||0,autoResumeAt:s.autoResumeAt||0,venue,...(host?{displayKey:s.displayKey}:{})};
+ return {code:s.code,mode:s.mode,status:s.status,settings:s.settings,serverNow:now,...blinds,remaining:alive(s).length,players:standings,standings,tables,table,featuredTableId:s.featuredTableId,canRebuy:canRebuy(s,self,now),isHost:host,isTv:tv,playerId:self?.id||null,missedBlinds:self?.missedBlinds||0,expiresAt:s.expiresAt,winnerId:s.winnerId||null,nextHandAt:s.nextHandAt||0,pausedAt:s.pausedAt||0,autoResumeAt:s.autoResumeAt||0,venue,...(host?{displayKey:s.displayKey}:{})};
 }

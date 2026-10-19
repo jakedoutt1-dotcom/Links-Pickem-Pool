@@ -275,7 +275,11 @@ export function showHand(table, playerId) {
 
 export function publicTable(table, viewerId = null, { tv = false, allowShow = true } = {}) {
   const viewer = tv ? null : table.players.find(p => p.id === viewerId);
+  const yourHandName = viewer?.holeCards?.length === 2 ? table.board.length >= 3
+    ? evaluateHand([...viewer.holeCards,...table.board]).name
+    : viewer.holeCards[0][0] === viewer.holeCards[1][0] ? 'One pair' : 'High card' : null;
   return {
+    yourHandName,
     id: table.id, phase: table.phase, handNumber: table.handNumber, actionNumber: table.actionNumber, turnId: table.actionNumber, buttonSeat: table.buttonSeat,
     smallBlindSeat: table.smallBlindSeat, bigBlindSeat: table.bigBlindSeat, smallBlind: table.smallBlind, bigBlind: table.bigBlind,
     turnSeconds: table.turnSeconds, actorId: table.actorId, board: [...table.board], pot: table.pot, lastPot: table.lastPot,
