@@ -1,0 +1,29 @@
+import assert from 'node:assert/strict';
+import {createServer} from 'node:http';
+import {readFile,mkdir} from 'node:fs/promises';
+import {createRequire} from 'node:module';
+import {DatabaseSync} from 'node:sqlite';
+import path from 'node:path';
+import {onRequest} from '../functions/new-build/api/workbook-board.js';
+const require=createRequire(import.meta.url),{chromium}=require('playwright'),raw=new DatabaseSync(':memory:');
+const db={prepare(sql){let args=[];return {bind(...a){args=a;return this;},async run(){return raw.prepare(sql).run(...args);},async first(){return raw.prepare(sql).get(...args)||null;}};}};
+const publicRoot=path.resolve('public'),mime={'.html':'text/html','.mjs':'text/javascript','.css':'text/css','.png':'image/png','.json':'application/json'};
+const env={DB:db,ASSETS:{async fetch(r){return new Response(await readFile(path.join(publicRoot,new URL(r.url).pathname)));}}};
+const server=createServer(async(req,res)=>{try{const url=new URL(req.url,'http://'+req.headers.host);if(url.pathname==='/new-build/api/workbook-board'){const response=await onRequest({request:new Request(url),env});res.writeHead(response.status,Object.fromEntries(response.headers));return res.end(Buffer.from(await response.arrayBuffer()));}const filename=path.resolve(publicRoot,'.'+decodeURIComponent(url.pathname));if(!filename.startsWith(publicRoot+path.sep))throw Error('Not found');const bytes=await readFile(filename);res.writeHead(200,{'Content-Type':mime[path.extname(filename)]||'application/octet-stream'});res.end(bytes);}catch{res.writeHead(404);res.end();}});
+await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+server.address().port;
+const browser=await chromium.launch({channel:'msedge',headless:true}),errors=[];
+try{await mkdir('output/workbook-web-sync/previews',{recursive:true});for(const width of [390,1280]){
+ const page=await browser.newPage({viewport:{width,height:900},reducedMotion:'reduce'});page.on('pageerror',e=>errors.push(e.message));
+ await page.route('**/*',r=>new URL(r.request().url()).origin===origin?r.continue():r.abort());
+ await page.goto(origin+'/new-build/barnes-pool-results.html?week=1');await page.locator('#content').waitFor({state:'visible'});
+ assert.equal(await page.locator('#title').textContent(),'Barnes Pool Results');assert.equal(await page.locator('#week option').count(),22);
+ assert.equal(await page.locator('.leader').count(),14);assert.ok(await page.locator('td.correct').count()>0);assert.ok(await page.locator('td.incorrect').count()>0);
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'Board fits '+width);
+ await page.screenshot({path:'output/workbook-web-sync/previews/board-'+width+'.png',fullPage:true});
+ await page.locator('#week').selectOption('6');assert.match(await page.locator('#summary').textContent(),/Standings in progress/);assert.equal(await page.locator('.leader.winner').count(),0);
+ await page.locator('#player').selectOption({index:1});assert.equal(await page.locator('#picks thead th').count(),2);
+ await page.locator('#refresh').click();await page.reload();await page.locator('#content').waitFor({state:'visible'});assert.equal(await page.locator('#week').inputValue(),'6');
+ await page.goto(origin+'/new-build/index.html');assert.equal(await page.locator('#barnesPoolResults').getAttribute('href'),'./barnes-pool-results.html');
+ await page.close();
+ }assert.deepEqual(errors,[]);console.log('PASS Barnes public board: real 22-week/14-player data, results colors, pending standings, player filter, shareable week URL, homepage button and phone/desktop layouts.');
+}finally{await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));raw.close();}

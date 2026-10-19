@@ -1,0 +1,25 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{chromium}=require('playwright');const root=path.resolve(__dirname,'../public'),origin='http://admin.test';
+(async()=>{const browser=await chromium.launch({headless:true,channel:'msedge'});try{for(const width of [1280,390]){const ctx=await browser.newContext({viewport:{width,height:950}}),posts=[],errors=[];await ctx.route('**/*',async route=>{const req=route.request(),u=new URL(req.url()),j=d=>route.fulfill({json:d});if(req.method()==='POST')posts.push({path:u.pathname,body:req.postDataJSON(),auth:req.headers().authorization});
+ if(u.hostname==='site.api.espn.com')return j({week:{number:4},events:[{id:'1',status:{type:{completed:false}}}]});
+ if(u.pathname==='/api/session')return j({role:'admin',poolCode:'FAM',poolName:'Family'});
+ if(u.pathname.endsWith('/api/game-settings'))return j({settings:null});
+ if(u.pathname.endsWith('/api/pools'))return j({pool:{id:'1',code:'FAM',name:'Family'}});
+ if(u.pathname.endsWith('/api/email-status'))return j(req.method()==='POST'?{delivery:{sent:true}}:{configured:true,from:'noreply@example.com',note:'Configuration detected is not a delivery test.'});
+ if(u.pathname.endsWith('/api/nfl-player-access'))return j({access:u.searchParams.get('week')==='3'?[{player_name:'Alice',paid:1}]:[],invites:[{email:'one@example.com'}]});
+ if(u.pathname.endsWith('/api/access-default'))return j({policy:{active:true,startWeek:5,season:2026}});
+ if(u.pathname.endsWith('/api/members'))return j({members:[{playerId:'Alice',displayName:'Alice',status:'active'}]});
+ if(u.pathname.endsWith('/api/nfl-admin-week')&&req.method()==='POST')return j({ok:true,id:'receipt-1',pending:true,message:'Submitted to LINKS Admin. The saved pick has not changed.'});
+ if(u.pathname.endsWith('/api/nfl-admin-week')&&u.searchParams.get('action')==='corrections')return j({requests:[]});
+ if(u.pathname.endsWith('/api/nfl-admin-week'))return j({games:[{eventId:'g3',home:'BUF',away:'MIA',completed:true}],commissionerEmail:'owner@example.com',rules:'Have fun'});
+ if(u.pathname.endsWith('/api/standings-v649'))return j({allFinal:true,finalizedWinners:['Alice']});
+ if(u.pathname==='/api/admin/settings')return j({ok:true});
+ if(u.pathname==='/api/admin/invite')return j({sent:1,invites:[{email:'one@example.com',sent:true,url:origin+'/new-build/join.html?invite=abc'},{email:'two@example.com',sent:false,error:'Provider rejected',url:origin+'/new-build/join.html?invite=def'}]});
+ if(u.pathname.endsWith('/api/nfl-finalize'))return j({winner:'Alice'});
+ if(u.pathname==='/api/invite')return j({poolName:'Family',poolCode:'FAM',email:'one@example.com'});
+ if(u.pathname==='/api/invite/join')return j({poolName:'Family',poolCode:'FAM',name:'New Player',token:'new-token',games:['nfl'],gameType:'nfl',welcomeEmailSent:true});
+ if(u.pathname.includes('/api/'))return j({});
+ const file=path.resolve(root,'.'+decodeURIComponent(u.pathname));if(u.origin===origin&&file.startsWith(root+path.sep)&&fs.existsSync(file))return route.fulfill({body:fs.readFileSync(file),contentType:file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.png')?'image/png':'text/html'});return route.fulfill({body:''})});
+ const page=await ctx.newPage();page.on('pageerror',e=>errors.push(e.message));await page.addInitScript(()=>{localStorage.setItem('links-legacy-token','test-token');localStorage.setItem('links-current-pool',JSON.stringify({id:'1',code:'FAM',name:'Family'}));localStorage.setItem('links-player-role','commissioner');localStorage.setItem('links-player-id','Alice');if(!localStorage.getItem('links-player-name'))localStorage.setItem('links-player-name','Alice')});await page.goto(origin+'/new-build/commissioner.html?pool=1&week=3');await page.waitForFunction(()=>document.querySelector('#savePick')&&!document.querySelector('#savePick').disabled).catch(async e=>{console.log(errors,await page.locator('body').innerText());throw e});
+
+ await page.getByRole('button',{name:'Pick deadlines Open'}).click();
+ await page.locator('#lockWeek').selectOption('8');await page.locator('#lockMode').selectOption('shared');await page.locator('#lockDate').fill('2026-11-01T10:30');await page.locator('#savePickLocks').click();await page.waitForFunction(()=>document.querySelector('#savePickLocks').disabled===false);const sent=posts.find(p=>p.path.endsWith('/api/game-settings'));assert.equal(sent.body.period,'8');assert.equal(sent.body.lockAt,new Date('2026-11-01T10:30').toISOString());assert.equal(sent.auth,'Bearer test-token');await page.locator('#lockMode').selectOption('kickoff');await page.locator('#savePickLocks').click();await page.waitForFunction(()=>document.querySelector('#savePickLocks').disabled===false);assert.equal(posts.filter(p=>p.path.endsWith('/api/game-settings')).at(-1).body.lockAt,'');assert.equal(sent.body.game,'NFL Pick\u2019em');assert.deepEqual(errors,[]);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await ctx.close();}console.log('NFL lock admin desktop/mobile PASS');}finally{await browser.close()}})().catch(e=>{console.error(e);process.exit(1)});

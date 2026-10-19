@@ -1,3 +1,4 @@
+import {nflWeekCutoff} from '../lib/nfl-lock-settings.js';
 import {AVAILABLE_GAMES} from '../lib/game-availability.js';
 import {invitedPlayerAccess} from '../lib/invite-access.js';
 import {lookupPoolCode} from '../lib/pool-code-lookup.js';
@@ -3118,6 +3119,7 @@ export async function onRequest(context){
       return json({ok:true,locked:want});
     }
     if(path==="picks"&&method==="POST"){
+      if(sport==='nfl'){const cutoff=await nflWeekCutoff(DB,pid,w);if(cutoff!==null&&Date.now()>=cutoff)return json({error:'The commissioner deadline has passed. All picks are locked.'},403);}
       if(!sessionCanPlay(s))return json({error:"Player sign-in required."},403);
       if(sport==="nfl"||s.role!=="admin"){
         const paidRow=await DB.prepare("SELECT paid FROM pool_payments WHERE pool_id=? AND sport=? AND player_name=? AND week=?").bind(pid,sport,s.player_name,w).first();

@@ -1,10 +1,13 @@
 import {sessionFor} from './college.js';
+import {nflWeekCutoff} from './nfl-lock-settings.js';
 import {weekGames,onRequestGet as compare} from '../new-build/api/compare-picks.js';
 const json=(d,s=200)=>Response.json(d,{status:s,headers:{'Cache-Control':'no-store'}});
 export async function nflPickGuard(request,db,pool,player,week,body){
  const s=await sessionFor(request,db,pool);if(!s||s.role!=='admin'&&String(s.player_name).toLowerCase()!==String(player).toLowerCase())return {response:json({error:'Sign in as this player to access picks.'},403)};
  if(!Number.isInteger(week)||week<1||week>22)return {response:json({error:'Choose a valid NFL week.'},400)};
  if(!body)return {};if(body.commissionerCorrection===true)return {response:json({error:'Submit corrections from Admin for LINKS approval.'},409)};const correction=false;if(!correction&&String(s.player_name).toLowerCase()!==String(player).toLowerCase())return {response:json({error:'You can only save your own picks.'},403)};
+ let cutoff;try{cutoff=await nflWeekCutoff(db,pool,week)}catch{return {response:json({error:'Pick deadline unavailable. Picks were not changed.'},503)}}
+ if(cutoff!==null&&Date.now()>=cutoff)return {response:json({error:'Your commissioner’s deadline has passed. All picks for this week are locked.'},403)};
  let games;try{games=await weekGames(week)}catch{return {response:json({error:'NFL schedule unavailable. Picks were not changed.'},503)}}
  if(body.eventId==='__TIEBREAKER__'){
  const last=[...games].sort((a,b)=>Date.parse(a.kickoff)-Date.parse(b.kickoff)).at(-1);
