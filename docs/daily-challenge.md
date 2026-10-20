@@ -4,7 +4,7 @@ Built October 20, 2026. Local implementation; not a deployment confirmation.
 
 - Public page: `/new-build/daily-challenge.html`; entry banners on the homepage and Game Room, a Game Room card, and a Locker Room link.
 - Free ranked play uses the existing verified LINKS account. Five shared questions each Central calendar day, 100 base points per correct answer plus a saved wheel bonus of 0–50 per correct answer, 20 seconds per question, no speed bonus. Each question starts when the player presses Next. Locking an answer is final.
-- One ranked attempt per account per day. Server deadlines, compare-and-save versions, and stored daily decks prevent restart/replay awards or answer changes across deployments. Reload resumes the same timer.
+- Normally one ranked attempt per account per day; this limit is temporarily lifted for graphics testing. Server deadlines, compare-and-save versions, and stored daily decks prevent restart/replay awards or answer changes across deployments. Reload resumes the same timer.
 - Public top-100 daily scores use display names and opaque profile identifiers; emails and account identifiers are not returned. Equal scores share rank. Completing the challenge builds a daily completion streak, including a zero-score finish. The current streak remains through the following day until that day is missed.
 - Result badges: Daily Finisher, Perfect Five, Three-Day Streak, Seven-Day Streak. Practice stays explicitly unranked and does not award server achievements.
 - Guest practice runs entirely in the browser and remains available if the API is unavailable. Practice does not consume the ranked attempt. Fair Play guidance asks players not to look up answers; the feature cannot prevent another device or shared answers.
@@ -35,3 +35,7 @@ See `site-growth-ideas-2026-10-20.md` for researched follow-ons. Friend leaderbo
 ## Game-show presentation
 
 A new navy-and-gold stage asset frames the game. Ambient sections dim during active questions; the question and answers remain bright, with lighting restored on reveal. Reduced-motion settings remove lighting transitions and wheel motion. Each new ranked round requires one server-random bonus-wheel spin before question one. The saved outcome cannot be rerolled by refreshing; incorrect answers earn no bonus. Maximum round score is 500–750, while Perfect Five uses the actual correct-answer count. Existing rounds that have started keep their original scoring; saved ready rounds can spin before question one. Completed rounds offer an unranked practice replay with the wheel, without changing saved scores. Practice uses an explicitly unranked local wheel.
+
+## Temporary graphics testing
+
+Unlimited completed-round replays are enabled. Play again returns to the server bonus wheel with a new round identifier; stale or concurrent restarts are rejected. The best completed score for each account/day remains on global and venue boards while replays are in progress, and a worse replay never replaces it. Replays use the same daily questions and do not make more provider calls. Venue attribution remains fixed for the day. Remove the temporary restart option when graphics testing ends.
