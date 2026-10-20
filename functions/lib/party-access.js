@@ -1,7 +1,7 @@
 import {FREE_GAME_TESTING} from './testing-access.js';
 import {accountSession} from './commissioner-account.js';
 import {complimentaryAccess} from './party-grants.js';
-export const PARTY_PLANS={day:{label:'24-Hour Game Pass',amount:499,hours:24},annual:{label:'Annual Party Pack',amount:3999,hours:365*24},host_day:{label:'24-Hour Hosted Event Pass',amount:499,hours:24}};
+export const PARTY_PLANS={day:{label:'24-Hour Game Pass',amount:99,hours:24},annual:{label:'Annual Party Pack',amount:3999,hours:365*24},host_day:{label:'24-Hour Hosted Event Pass',amount:499,hours:24}};
 export const PARTY_GAMES=['poker-night','trivia-rally','million-point','dead-air','say-what','last-alibi','captain-clash','friend-challenge'];
 export const partyEnabled=env=>env.PARTY_PACK_ENABLED==='true';
 export async function ensureParty(db){await db.batch([

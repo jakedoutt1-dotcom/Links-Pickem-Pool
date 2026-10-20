@@ -2,7 +2,7 @@ const $=id=>document.getElementById(id),key='links-account-token',query=new URLS
 async function api(body,endpoint='party-pack'){const r=await fetch('./api/'+endpoint,{method:body?'POST':'GET',headers:{'Content-Type':'application/json','x-links-account':localStorage.getItem(key)||''},cache:'no-store',...(body?{body:JSON.stringify(body)}:{})});const data=await r.json();if(!r.ok)throw Error(data.error||'Please try again.');return data}
 function render(){
  const signed=!!state?.email,ready=(state?.purchases||[]).some(p=>p.plan==='day'&&p.status==='PAID'&&!p.expires_at);
- $('launch').textContent=state?.freeTesting?'Regular party games are free during testing. The paid Game Pass will be $4.99 for 24 hours. Hosted events use separate access. One player pays; invited guests join free.':state?.checkoutReady?'One player buys and activates the pass. Invited guests join free.':'Game Pass checkout is not open yet. Existing access and invited guest play remain available.';
+ $('launch').textContent=state?.freeTesting?'Regular party games are free during testing. The paid Game Pass will be $0.99 for 24 hours. Hosted events use separate access. One player pays; invited guests join free.':state?.checkoutReady?'One player buys and activates the pass. Invited guests join free.':'Game Pass checkout is not open yet. Existing access and invited guest play remain available.';
  $('buyDay').disabled=busy||!state?.checkoutReady||!!state?.access||ready;
  $('emailForm').hidden=signed;$('codeForm').hidden=signed||!email;$('signout').hidden=!signed;
  $('accessText').textContent=signed?state.email+(state.access?' · Active until '+new Date(state.access.expires_at).toLocaleString():ready?' · Paid pass ready to activate':' · No active Game Pass'):'';
