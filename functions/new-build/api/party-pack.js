@@ -19,7 +19,7 @@ export async function onRequest({request,env}){try{
  const db=env.DB,enabled=partyEnabled(env),session=await partySession(request,db);
  if(request.method==='GET'){
   const access=session?await partyAccess(db,session.email):null;
-  const purchases=session?(await db.prepare('SELECT id,plan,status,created_at,expires_at FROM links_party_purchases WHERE email=? ORDER BY created_at DESC LIMIT 10').bind(session.email).all()).results:[];
+  const purchases=session?(await db.prepare("SELECT id,plan,status,created_at,expires_at FROM links_party_purchases WHERE email=? ORDER BY CASE WHEN plan='day' AND status='PAID' AND expires_at IS NULL THEN 0 ELSE 1 END,created_at DESC LIMIT 30").bind(session.email).all()).results:[];
   const venueEnabled=hostBillingEnabled(env),venueReady=venueEnabled&&!!env.PAYPAL_TRIVIA_MONTHLY_PLAN_ID&&!!env.PAYPAL_CLIENT_ID&&!!env.PAYPAL_CLIENT_SECRET;
   const venueAccess=session?await hostAccess(env,session.email,paypal):null;
   const response=json({freeTesting:FREE_GAME_TESTING,enabled,checkoutReady:!FREE_GAME_TESTING&&enabled&&!!env.PAYPAL_CLIENT_ID&&!!env.PAYPAL_CLIENT_SECRET,plans:PARTY_PLANS,email:session?.email||null,access,purchases,venueEnabled,venueReady,venueDayReady:venueEnabled&&!!env.PAYPAL_CLIENT_ID&&!!env.PAYPAL_CLIENT_SECRET,venueAccess});
@@ -36,7 +36,7 @@ export async function onRequest({request,env}){try{
   if(await hostAccess(env,session.email,paypal))throw fail('Your Trivia Night subscription is already active.',409);
   const plan=await paypal(env,'/v1/billing/plans/'+encodeURIComponent(env.PAYPAL_TRIVIA_MONTHLY_PLAN_ID));if(!validateHostPlan(plan))throw fail('The monthly plan must be $29.99 USD with no trial or setup fee. Please contact LINKS.',503);
   const recent=await db.prepare('SELECT COUNT(*) AS n FROM links_trivia_subscriptions WHERE email=? AND created_at>?').bind(session.email,new Date(Date.now()-3600000).toISOString()).first();if(recent.n>=3)throw fail('Check your existing subscription before trying again.',429);
-  const id=crypto.randomUUID(),sub=await paypal(env,'/v1/billing/subscriptions',{method:'POST',headers:{'PayPal-Request-Id':id},body:JSON.stringify({plan_id:env.PAYPAL_TRIVIA_MONTHLY_PLAN_ID,custom_id:id,application_context:{brand_name:'LINKS Trivia Night',user_action:'SUBSCRIBE_NOW',return_url:url.origin+'/new-build/trivia-host-pass.html?subscription='+id,cancel_url:url.origin+'/new-build/trivia-host-pass.html?checkout=canceled'}})});
+  const id=crypto.randomUUID(),sub=await paypal(env,'/v1/billing/subscriptions',{method:'POST',headers:{'PayPal-Request-Id':id},body:JSON.stringify({plan_id:env.PAYPAL_TRIVIA_MONTHLY_PLAN_ID,custom_id:id,application_context:{brand_name:'LINKS Hosted Events',user_action:'SUBSCRIBE_NOW',return_url:url.origin+'/new-build/trivia-host-pass.html?subscription='+id,cancel_url:url.origin+'/new-build/trivia-host-pass.html?checkout=canceled'}})});
   const approval=sub.links?.find(x=>x.rel==='approve')?.href;if(!sub.id||!approval||!/^https:\/\/(?:www\.)?(?:sandbox\.)?paypal\.com\//.test(approval))throw fail('Subscription approval could not be opened.',502);
   await db.prepare('INSERT INTO links_trivia_subscriptions(id,email,subscription_id,status,created_at) VALUES(?,?,?,?,?)').bind(id,session.email,sub.id,sub.status||'APPROVAL_PENDING',new Date().toISOString()).run();return json({url:approval});
  }
@@ -48,9 +48,10 @@ export async function onRequest({request,env}){try{
  if(FREE_GAME_TESTING&&b.plan!=='host_day')throw fail('Party games are free during testing. No Party Pass is needed.',409);
   if(b.plan==='host_day'?!hostBillingEnabled(env):!enabled)throw fail('Checkout is not available yet. Please try again later.',503);
   const plan=Object.hasOwn(PARTY_PLANS,b.plan)?PARTY_PLANS[b.plan]:null;if(!plan)throw fail('Choose a Party Pass.');
-  if(b.plan==='host_day'){if(await hostAccess(env,session.email,paypal))throw fail('Your hosted Trivia Night access is already active.',409)}else if(await partyAccess(db,session.email))throw fail('You already have active party access. Enjoy your games!',409);
+  if(b.plan==='host_day'){if(await hostAccess(env,session.email,paypal))throw fail('Your hosted event access is already active.',409)}else if(await partyAccess(db,session.email))throw fail('You already have active game access. Enjoy your games!',409);
+  if(b.plan==='day'&&await db.prepare("SELECT id FROM links_party_purchases WHERE email=? AND plan='day' AND status='PAID' AND expires_at IS NULL LIMIT 1").bind(session.email).first())throw fail('You already have a pass ready to activate.',409);
   const recent=await db.prepare("SELECT COUNT(*) AS n FROM links_party_purchases WHERE email=? AND created_at>?").bind(session.email,new Date(Date.now()-3600000).toISOString()).first();if(recent.n>=5)throw fail('Check your existing payment or try again in an hour.',429);
-  const id=crypto.randomUUID(),order=await paypal(env,'/v2/checkout/orders',{method:'POST',headers:{'PayPal-Request-Id':id},body:JSON.stringify({intent:'CAPTURE',purchase_units:[{reference_id:id,description:'LINKS '+plan.label+' — '+(plan.hours===24?'24 hours':'365 days')+', one-time payment',amount:{currency_code:'USD',value:(plan.amount/100).toFixed(2)}}],application_context:{brand_name:'LINKS',user_action:'PAY_NOW',return_url:url.origin+'/new-build/'+(b.plan==='host_day'?'trivia-host-pass.html':'party-room.html')+'?purchase='+id,cancel_url:url.origin+'/new-build/'+(b.plan==='host_day'?'trivia-host-pass.html':'party-room.html')+'?checkout=canceled'}})});
+  const id=crypto.randomUUID(),order=await paypal(env,'/v2/checkout/orders',{method:'POST',headers:{'PayPal-Request-Id':id},body:JSON.stringify({intent:'CAPTURE',purchase_units:[{reference_id:id,description:'LINKS '+plan.label+' — '+(plan.hours===24?'24 hours':'365 days')+', one-time payment',amount:{currency_code:'USD',value:(plan.amount/100).toFixed(2)}}],application_context:{brand_name:'LINKS',user_action:'PAY_NOW',return_url:url.origin+'/new-build/'+(b.plan==='host_day'?'trivia-host-pass.html':'party-pack.html')+'?purchase='+id,cancel_url:url.origin+'/new-build/'+(b.plan==='host_day'?'trivia-host-pass.html':'party-pack.html')+'?checkout=canceled'}})});
   const approval=order.links?.find(x=>x.rel==='approve')?.href;if(!order.id||!approval||!/^https:\/\/(?:www\.)?(?:sandbox\.)?paypal\.com\//.test(approval))throw fail('Checkout did not return a valid payment link.',502);
   await db.prepare("INSERT INTO links_party_purchases(id,email,plan,amount_cents,order_id,status,created_at) VALUES(?,?,?,?,?,'CREATED',?)").bind(id,session.email,b.plan,plan.amount,order.id,new Date().toISOString()).run();return json({url:approval});
  }
@@ -58,8 +59,15 @@ export async function onRequest({request,env}){try{
   const p=await db.prepare('SELECT * FROM links_party_purchases WHERE id=? AND email=?').bind(String(b.purchase||''),session.email).first();if(!p)throw fail('Payment not found in this account.',404);if(p.status==='PAID')return json({ok:true});
   let order=await paypal(env,'/v2/checkout/orders/'+encodeURIComponent(p.order_id));if(order.status!=='COMPLETED')order=await paypal(env,'/v2/checkout/orders/'+encodeURIComponent(p.order_id)+'/capture',{method:'POST',headers:{'PayPal-Request-Id':p.id.slice(0,28)+'-capture'},body:'{}'});
   if(!validPayment(order,p))throw fail('Payment is not complete or the amount does not match.',409);
-  const now=Date.now(),expires=new Date(now+PARTY_PLANS[p.plan].hours*3600000).toISOString();
+  const now=Date.now(),expires=p.plan==='day'?null:new Date(now+PARTY_PLANS[p.plan].hours*3600000).toISOString();
   await db.prepare("UPDATE links_party_purchases SET status='PAID',paid_at=?,expires_at=? WHERE id=? AND status='CREATED'").bind(new Date(now).toISOString(),expires,p.id).run();return json({ok:true});
+ }
+ if(b.action==='activate'){
+  if(await partyAccess(db,session.email))throw fail('Your game access is already active.',409);
+  const now=Date.now(),expires=new Date(now+86400000).toISOString();
+  const result=await db.prepare("UPDATE links_party_purchases SET expires_at=? WHERE id=? AND email=? AND plan='day' AND status='PAID' AND expires_at IS NULL").bind(expires,String(b.purchase||''),session.email).run();
+  if(!result.meta?.changes)throw fail('This pass is not available to activate. Refresh your access.',409);
+  return json({ok:true,expires_at:expires});
  }
  throw fail('Unsupported action.');
  }catch(e){return json({error:e.status?e.message:'Party Pack could not complete the request. Please try again.'},e.status||500)}

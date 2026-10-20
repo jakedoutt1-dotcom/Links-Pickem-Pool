@@ -30,7 +30,7 @@ const paidPolicy=registerHooks({load(url,context,nextLoad){const result=nextLoad
  assert.equal((await call()).status,401);assert.equal((await create('forged')).status,401);
  const a=await verify('First.Last+pool@gmail.com','1');assert.equal(lib.emailKey('firstlast@googlemail.com'),'firstlast@gmail.com');
  assert.equal((await call({action:'verify',email:'firstlast@gmail.com',code:a.code})).status,401,'Code cannot be replayed');
- let snapshot=(await call(null,a.token)).data;assert.equal(snapshot.plan.slots,0);assert.equal((await create(a.token)).status,402,'First pool requires paid access');sql.prepare('INSERT INTO links_account_plans VALUES(?,?,?,?)').run('firstlast@gmail.com','plus','2099-01-01','fixture');
+ let snapshot=(await call(null,a.token)).data;assert.equal(snapshot.plan.slots,1);const free=await create(a.token,'Free starter');assert.equal(free.status,200,'First pool is free');assert.equal((await create(a.token,'Over free allowance')).status,402);assert.equal((await call({action:'archive',pool:free.data.pool.id,game:'nfl'},a.token)).status,200);sql.prepare('INSERT INTO links_account_plans VALUES(?,?,?,?)').run('firstlast@gmail.com','plus','2099-01-01','fixture');
  const {ensurePartners}=await import('../functions/lib/partners.js');await ensurePartners(db);sql.exec("INSERT INTO links_partners VALUES('partner','Bar','https://test/logo','Main St',40,-90,50,'Offer','https://test',0,1,'2026-01-01');INSERT INTO links_partner_links VALUES('partner','ref-token')");partnerRef='ref-token';let made=await create(a.token);assert.equal(made.status,200,JSON.stringify(made));const pool=made.data.pool.id;assert.equal(sql.prepare('SELECT partner_id FROM links_partner_referrals WHERE pool_id=?').get(pool).partner_id,'partner');partnerRef='';assert.equal(made.data.pool.games[0],'NFL Pick’em');
 
  sql.prepare('INSERT INTO pool_picks VALUES(?,?)').run(pool,'BUF');
@@ -55,10 +55,10 @@ const paidPolicy=registerHooks({load(url,context,nextLoad){const result=nextLoad
  assert.equal((await create(c.token,'Mixed',['nfl','college'])).status,200);assert.equal((await call(null,c.token)).data.used,2,'Each selected game consumes one slot');
  const mixed=(await call(null,c.token)).data.pools[0];
  sql.prepare('UPDATE links_account_plans SET expires_at=? WHERE email=?').run('2000-01-01','multi@example.com');
- let expired=(await call(null,c.token)).data;assert.equal(expired.plan.plan,'free');assert.equal(expired.expired,true);assert.equal(expired.pools[0].games.filter(g=>g.readOnly).length,2);
- assert.equal((await call({action:'choose-free',pool:mixed.id,game:'nfl'},c.token)).status,402);
+ let expired=(await call(null,c.token)).data;assert.equal(expired.plan.plan,'free');assert.equal(expired.expired,true);assert.equal(expired.pools[0].games.filter(g=>g.readOnly).length,1);
+ assert.equal((await call({action:'choose-free',pool:mixed.id,game:'nfl'},c.token)).status,200);
  assert.equal((await slotWriteGuard(new Request('https://test/new-build/api/college',{method:'POST',body:JSON.stringify({pool:mixed.id,game:'nfl',action:'pick'})}),env)).status,402,'Cannot spoof the effective game to bypass expired access');
- assert.equal((await slotWriteGuard(new Request('https://test/new-build/api/picks',{method:'POST',body:JSON.stringify({pool:mixed.id,game:'NFL Pick’em'})}),env)).status,402);
+ assert.equal(await slotWriteGuard(new Request('https://test/new-build/api/picks',{method:'POST',body:JSON.stringify({pool:mixed.id,game:'NFL Pick’em'})}),env),null,'Chosen free slot remains writable');
  assert.equal((await call({action:'checkout',plan:'plus'},b.token)).status,200);const badPurchase=sql.prepare('SELECT id,order_id FROM links_account_purchases WHERE email=?').get('other@example.com');orders.get(badPurchase.order_id).purchase_units[0].amount.value='0.01';
  assert.equal((await call({action:'capture',purchase:badPurchase.id},b.token)).status,409,'Incorrect amount cannot grant a package');assert.equal((await call(null,b.token)).data.plan.plan,'free');
  assert.equal((await call({action:'send-code',email:'attempts@example.com'},'','4')).status,200);const attemptCode=sent.at(-1).text.match(/code is (\d{8})/)[1];

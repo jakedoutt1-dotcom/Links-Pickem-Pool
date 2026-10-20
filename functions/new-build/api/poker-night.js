@@ -1,4 +1,5 @@
-import {requirePartyPass} from '../../lib/party-access.js';
+import {pokerCreateAccess} from '../../lib/poker-access.js';
+import {paypal} from './party-pack.js';
 import {savePartyRoom} from '../../lib/party-scoreboard.js';
 import {ensureVenue} from '../../lib/venue-scoreboard.js';
 import {createTournament,joinTournament,advanceTournament,startTournament,betTournament,rebuyTournament,showTournamentHand,pauseTournament,resumeTournament,tournamentView,playerName} from '../../lib/poker-tournament.js';
@@ -45,7 +46,7 @@ export async function onRequest({request,env}){
   }
   if(action!=='state'&&!await rate(db,await hash(ip+':'+(action==='create'?'create':action==='join'?'join':'action')),action,now))return json({error:'Please wait a minute before trying again.'},429);
   if(action==='create'){
-   const gate=await requirePartyPass(request,env);if(gate)return gate;
+   const gate=await pokerCreateAccess(request,env,body.mode,paypal);if(gate)return gate;
    const name=playerName(body.name),playerToken=token(),hostToken=token(),playerId=crypto.randomUUID();
    const code=crypto.randomUUID().replace(/-/g,'').slice(0,10).toUpperCase(),seat=await hash(playerToken);
    const state=createTournament({code,mode:body.mode,ownerSeat:seat,hostHash:await hash(hostToken),displayKey:token(),player:{id:playerId,name},settings:body.settings,hostOnly:body.hostOnly===true},now);

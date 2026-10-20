@@ -2,6 +2,7 @@ import {createPokerAudio} from './poker-audio.mjs';
 import {pokerSeatPosition} from './poker-seats.mjs';
 import {raisePreset,validRaise} from './poker-controls.mjs';
 import {createActionLog,renderActionLog} from './poker-action-log.mjs';
+import {createHandRecap,recapLines} from './poker-recap.mjs';
 import qrcode from './vendor/qrcode.mjs';
 import {rememberPartySeat} from './party-score-link.mjs';
 import {updateVenueRoom} from './venue-link.mjs';
@@ -16,11 +17,12 @@ let selectedTvTable = isTv ? url.searchParams.get('table') || '' : '';
 let code = (url.searchParams.get('room') || url.searchParams.get('code') || '').trim().toUpperCase();
 let room = null, session = {}, busy = false, fetching = false, generation = 0, offset = 0, cardsHidden = false, raiseOpen = false, tableSignature = '', playerSignature = '', lastTurn = '', lastWin = '', connectionFailures = 0;
 let muted = readStorage('links-poker-muted') === '1', confirmResolve = null;
-const pokerAudio = createPokerAudio({getMuted:()=>muted});
+const pokerAudio = createPokerAudio({getMuted:()=>muted,getVolume:()=>Number($('effectsVolume').value)/100,getCrowd:()=>$('crowdEffects').checked,getVoice:()=>$('voiceEffects').checked});
 let tableAudio = null, lastWarning = '', lastNotifiedTurn = '';
-let rememberedCode = '', potSignature = '', lastFinishedPoll = 0;
+let rememberedCode = '', lastPotState = null, lastFinishedPoll = 0, lastChampion = '';
 let preselection = null, preRaiseOpen = false, syncNeeded = false, exactDirty = false;
 const actionLog = createActionLog();
+const handRecap = createHandRecap();
 const read = key => { try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; } };
 function readStorage(key) { try { return localStorage.getItem(key); } catch { return null; } }
 function writeStorage(key, value) { try { localStorage.setItem(key, value); } catch { /* The live seat still works without browser storage. */ } }
@@ -41,6 +43,24 @@ document.addEventListener('keydown', wakeAudio);
 function updateMute() { $('muteButton').textContent = muted ? 'Sound on' : 'Mute'; $('muteButton').setAttribute('aria-pressed', String(muted)); }
 $('muteButton').onclick = () => { muted = !muted; writeStorage('links-poker-muted', muted ? '1' : '0'); updateMute(); if (muted) pokerAudio.silence(); if (!muted) { wakeAudio(); sound(); } };
 updateMute();
+const savedEffects = read('links-poker-effects') || {};
+$('effectsVolume').value = String(Number.isFinite(savedEffects.volume) ? Math.max(0,Math.min(100,savedEffects.volume)) : 70);
+$('crowdEffects').checked = savedEffects.crowd !== false;
+$('voiceEffects').checked = savedEffects.voice !== false;
+$('motionEffects').checked = savedEffects.motion !== false;
+$('fourColorDeck').checked = savedEffects.fourColor === true;
+function applyEffects(save = false) {
+  document.body.classList.toggle('poker-still',!$('motionEffects').checked);
+  document.body.classList.toggle('four-color-deck',$('fourColorDeck').checked);
+  $('effectsVolumeValue').textContent = $('effectsVolume').value+'%';
+  if (save) {
+    pokerAudio.silence();
+    writeStorage('links-poker-effects',JSON.stringify({volume:Number($('effectsVolume').value),crowd:$('crowdEffects').checked,voice:$('voiceEffects').checked,motion:$('motionEffects').checked,fourColor:$('fourColorDeck').checked}));
+  }
+}
+for (const id of ['effectsVolume','crowdEffects','voiceEffects','motionEffects','fourColorDeck']) $(id).oninput=()=>applyEffects(true);
+$('previewEffects').onclick=()=>{wakeAudio();$('effectsStatus').textContent=sound($('crowdEffects').checked?'crowdWin':'chips')?'Sound preview.':muted?'Unmute to hear the preview.':'Turn the volume up and tap again to hear the preview.';};
+applyEffects();
 
 const suitSymbols = {s:'♠',h:'♥',d:'♦',c:'♣'}, rankNames = {A:'Ace',K:'King',Q:'Queen',J:'Jack',T:'10'};
 function cardData(value) {
@@ -55,7 +75,7 @@ function cardHtml(value, {back = false, empty = false, animate = false, winning 
   if (!card || empty) return '<span class="card empty" aria-hidden="true"></span>';
   const suit = suitSymbols[card.suit], rank = card.rank === 'T' ? '10' : card.rank;
   const label = `${rankNames[card.rank] || rank} of ${{s:'spades',h:'hearts',d:'diamonds',c:'clubs'}[card.suit]}`;
-  return `<span class="card ${'hd'.includes(card.suit) ? 'red' : ''} ${animate ? 'deal' : ''} ${winning ? 'winning' : ''}" role="img" aria-label="${label}${winning ? ', winning hand' : ''}"><span class="rank">${rank}</span><span class="suit">${suit}</span><span class="large-suit" aria-hidden="true">${suit}</span></span>`;
+  return `<span class="card suit-${card.suit} ${'hd'.includes(card.suit) ? 'red' : ''} ${animate ? 'deal' : ''} ${winning ? 'winning' : ''}" role="img" aria-label="${label}${winning ? ', winning hand' : ''}"><span class="rank">${rank}</span><span class="suit">${suit}</span><span class="large-suit" aria-hidden="true">${suit}</span></span>`;
 }
 const hands = [
   ['Royal flush',['As','Ks','Qs','Js','Ts'],'Ace-high straight flush. The highest possible hand.'],
@@ -241,6 +261,10 @@ function render() {
   $('phaseLabel').textContent = ({preflop:'BEFORE THE FLOP',flop:'THE FLOP',turn:'THE TURN',river:'THE RIVER',showdown:'SHOWDOWN',complete:'HAND COMPLETE',waiting:'NEXT HAND SOON'})[table?.phase] || String(table?.phase || 'WAITING FOR THE DEAL').toUpperCase();
   renderTable(table); renderHand(table); renderStandings(ranking);
   $('finishedPanel').hidden = room.status !== 'finished'; $('championName').textContent = room.winnerId ? `${nameOf(room.winnerId)} wins Poker Night!` : 'Thanks for playing.';
+  if (room.status === 'finished' && room.winnerId) {
+    const champion = `${code}:${room.winnerId}`;
+    if (champion !== lastChampion) { sound('champion'); lastChampion = champion; }
+  }
   const tables = room.tables || [];
   $('tableCount').textContent = `${tables.length} table${tables.length === 1 ? '' : 's'}`;
   if (host) setHtml('tableList',tables.map(t => `<article class="table-status ${t.id === room.featuredTableId ? 'featured' : ''}"><h3>${esc(String(t.id).replace(/^table[-_]?/i,'Table '))}${t.id === room.featuredTableId ? ' · Featured' : ''}</h3><p>${t.players?.length || 0} players · ${esc(t.phase || 'Waiting')}<br>Pot ${chips(t.pot)}</p><button type="button" data-feature="${esc(t.id)}" ${t.id === room.featuredTableId || busy ? 'disabled' : ''}>Feature on TV</button></article>`).join(''));
@@ -253,6 +277,12 @@ function render() {
 function renderTable(table) {
   renderActionLog($('recentActions'),actionLog.update(code,table));
   $('recentActionPanel').hidden = !table;
+  const recap = handRecap.update(code,table);
+  $('handRecapPanel').hidden = !recap;
+  if (recap) {
+    $('handRecapTitle').textContent = `Last result · ${String(recap.tableId).replace(/^table[-_]?/i,'Table ')} · Hand ${recap.handNumber}`;
+    renderActionLog($('handRecapResults'),recapLines(recap).map((text,i)=>({key:recap.key+':'+i,text})));
+  }
   const myId = !isTv ? session.playerId : '', players = (table?.players || []).slice();
   const ownSeat = players.find(p => p.id === myId)?.seat;
   const mobile = matchMedia('(max-width:600px)').matches;
@@ -260,23 +290,34 @@ function renderTable(table) {
   const fresh = signature !== tableSignature; tableSignature = signature;
   const handKey = `${table?.id}:${table?.handNumber}`, actionKey = `${handKey}:${table?.turnId}`;
   const ended = ['showdown','complete'].includes(table?.phase);
+  const freshAllIn = tableAudio?.hand === handKey && tableAudio.action !== actionKey && table?.lastAction?.allIn;
+  if (freshAllIn) sound('allin');
   if (table && !ended) {
     if (tableAudio?.hand !== handKey || tableAudio?.board !== board.join(',')) sound('deal');
-    else if (tableAudio.action !== actionKey && table.lastAction) sound(table.lastAction.allIn ? 'allin' : table.lastAction.type);
+    else if (!freshAllIn && tableAudio.action !== actionKey && table.lastAction) sound(table.lastAction.type);
   }
   tableAudio = table ? {hand:handKey,action:actionKey,board:board.join(',')} : null;
   const winningCards = table?.phase === 'showdown' && table?.showCards ? (table.winners || []).flatMap(w => w.cards || []) : [];
   setHtml('board',Array.from({length:5},(_,i) => cardHtml(board[i],{empty:!board[i],animate:fresh && !!board[i],winning:winningCards.includes(board[i])})).join(''));
   $('potValue').textContent = chips(table?.phase === 'showdown' ? table.lastPot : table?.pot);
-  const nextPot = `${table?.id}:${table?.handNumber}:${table?.pot}`;
-  if (nextPot !== potSignature) { const pot = $('potValue').closest('.pot'); pot.classList.remove('chips-moving'); if (potSignature && table?.pot) { void pot.offsetWidth; pot.classList.add('chips-moving'); } potSignature = nextPot; }
+  const potScope = `${code}:${table?.id}:${table?.handNumber}`;
+  const potAmount = Number(table?.pot || 0), pot = $('potValue').closest('.pot');
+  if (lastPotState?.scope !== potScope || potAmount !== lastPotState.amount) {
+    pot.classList.remove('chips-moving');
+    // Animate confirmed new chips only, not reconnect snapshots or a new deal.
+    if (lastPotState?.scope === potScope && potAmount > lastPotState.amount && !ended && !document.hidden) {
+      void pot.offsetWidth; pot.classList.add('chips-moving');
+    }
+    lastPotState = {scope:potScope,amount:potAmount};
+  }
   const seatHtml = players.map(p => {
     const position = pokerSeatPosition(p.seat,ownSeat,room.settings?.tableSize,mobile);
     const revealed = (isTv || p.id !== myId) && ['showdown','complete'].includes(table?.phase) && (!p.folded || p.voluntaryShown);
     const cards = revealed && p.holeCards?.length ? p.holeCards.map(c => cardHtml(c)).join('') : (!p.folded ? cardHtml(null,{back:true}) + cardHtml(null,{back:true}) : '');
     const markers = `${p.seat === table.buttonSeat ? '<b class="marker" title="Dealer">D</b>' : ''}${p.seat === table.smallBlindSeat ? '<b class="marker blind" title="Small blind">SB</b>' : ''}${p.seat === table.bigBlindSeat ? '<b class="marker blind" title="Big blind">BB</b>' : ''}`;
-    const status = p.voluntaryShown ? (p.folded ? 'Folded · Shown' : 'Hand shown') : p.folded ? 'Folded' : p.allIn ? 'All in' : p.away ? 'Away' : '';
-    return `<div class="seat ${p.id === myId ? 'you' : ''} ${p.id === table.actorId ? 'active' : ''} ${p.folded && !p.voluntaryShown ? 'folded' : ''}" style="left:${position[0]}%;top:${position[1]}%"><div class="seat-cards">${cards}</div><div class="seat-label"><span class="markers">${markers}</span><span class="seat-name">${esc(p.name)}${p.id === myId ? ' · You' : ''}</span><span class="seat-stack">${chips(p.stack)}</span>${status ? `<span class="seat-status">${status}</span>` : ''}</div>${p.bet ? `<span class="seat-bet">Bet ${chips(p.bet)}</span>` : ''}</div>`;
+    const won = ended && table.winners?.some(w=>w.playerId===p.id);
+    const status = won ? 'Pot winner' : p.voluntaryShown ? (p.folded ? 'Folded · Shown' : 'Hand shown') : p.folded ? 'Folded' : p.allIn ? 'All in' : p.away ? 'Away' : '';
+    return `<div class="seat ${won ? 'pot-winner' : ''} ${p.id === myId ? 'you' : ''} ${p.id === table.actorId ? 'active' : ''} ${p.folded && !p.voluntaryShown ? 'folded' : ''}" style="left:${position[0]}%;top:${position[1]}%"><div class="seat-cards">${cards}</div><div class="seat-label"><span class="markers">${markers}</span><span class="seat-name">${esc(p.name)}${p.id === myId ? ' · You' : ''}</span><span class="seat-stack">${chips(p.stack)}</span>${status ? `<span class="seat-status">${status}</span>` : ''}</div>${p.bet ? `<span class="seat-bet">Bet ${chips(p.bet)}</span>` : ''}</div>`;
   }).join('');
   setHtml('seats',seatHtml);
   const winners = table?.winners || [];
@@ -286,13 +327,16 @@ function renderTable(table) {
     const texts = winners.map(w => typeof w === 'string' ? nameOf(w) : `${w.name || nameOf(w.playerId || w.id)}${w.amount ? ' +' + chips(w.amount) : ''}`);
     const handNames = [...new Set(winners.map(w => w.handName).filter(name => name && name !== 'Uncontested'))];
     $('winnerToast').textContent = texts.join(' · ') + (winners.length > 1 ? ' · Pot awarded' : ' wins this hand!') + (handNames.length ? ' · ' + handNames.join(' / ') : '');
-    const win = `${table?.id}:${table?.handNumber}:${texts.join(',')}`; if (win !== lastWin) { sound('win'); lastWin = win; }
+    const win = `${code}:${table?.id}:${table?.handNumber}:${texts.join(',')}`; if (win !== lastWin) { if(room.status !== 'finished')sound(table.showCards ? 'crowdWin' : 'win'); lastWin = win; }
   }
 }
 function renderHand(table) {
   const player = myPlayer(), seat = table?.players?.find(p => p.id === session.playerId);
   $('myHand').hidden = isTv || !player || (room.status === 'finished' && !seat?.holeCards?.length);
-  $('myStack').textContent = `${chips(player?.stack)} chips`;
+  const blind = Number(table?.bigBlind || room.bigBlind || 0);
+  const stackBB = blind > 0 ? ` · ${(Number(player?.stack || 0)/blind).toLocaleString(undefined,{maximumFractionDigits:1})} BB` : '';
+  $('myStack').textContent = `${chips(player?.stack)} chips${stackBB}`;
+  $('myStack').title = 'BB means big blinds: your remaining stack divided by the big blind for this hand.';
   const privateCards = cardsHidden ? [null,null] : seat?.holeCards || [];
   const signature = JSON.stringify([privateCards,cardsHidden]);
   if (signature !== playerSignature) { const html = privateCards.length ? privateCards.map(c => cardHtml(c,{back:cardsHidden,animate:!cardsHidden})).join('') : cardHtml(null,{back:true}) + cardHtml(null,{back:true}); $('privateCards').innerHTML = html; $('bettingHand').innerHTML = html; $('preselectHand').innerHTML = html; playerSignature = signature; }

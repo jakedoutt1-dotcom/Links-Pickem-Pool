@@ -1,32 +1,19 @@
-const $=id=>document.getElementById(id),key='links-account-token',query=new URLSearchParams(location.search),games=new Set(['trivia-rally.html','million-point.html','dead-air.html','say-what.html','last-alibi.html','captain-clash.html','friend-challenge.html','trivia-night.html']);
-let state=null,busy=false,chosen='',email='';
-if(games.has(query.get('next')))sessionStorage.setItem('links-party-next',query.get('next'));
-const date=value=>new Date(value).toLocaleString();
-async function api(body,endpoint='party-pack'){
- const r=await fetch('./api/'+endpoint,{method:body?'POST':'GET',headers:{'Content-Type':'application/json','x-links-account':localStorage.getItem(key)||''},cache:'no-store',signal:AbortSignal.timeout(15000),...(body?{body:JSON.stringify(body)}:{})});let j;try{j=await r.json()}catch{throw Error('Could not reach LINKS. Please try again.')}
- if(!r.ok)throw Error(j.error||'Unable to complete that request.');return j;
-}
-function message(text){$('status').textContent=text;}
-async function run(task){if(busy)return;busy=true;document.querySelectorAll('#account button,[data-plan],#venueBuy').forEach(b=>b.disabled=true);try{await task()}catch(e){message(e.message);$('status').scrollIntoView({block:'center',behavior:'smooth'})}finally{busy=false;render();}}
+const $=id=>document.getElementById(id),key='links-account-token',query=new URLSearchParams(location.search);let state,email='',busy=false;
+async function api(body,endpoint='party-pack'){const r=await fetch('./api/'+endpoint,{method:body?'POST':'GET',headers:{'Content-Type':'application/json','x-links-account':localStorage.getItem(key)||''},cache:'no-store',...(body?{body:JSON.stringify(body)}:{})});const data=await r.json();if(!r.ok)throw Error(data.error||'Please try again.');return data}
 function render(){
- const signed=!!state?.email,active=!!state?.access;
- if(state?.freeTesting){$('passes').innerHTML='<p class="eyebrow">FREE DURING TESTING</p><h2>Bring your friends. Play for free.</h2><p>Pool and party games are free to host while we test. Hosted Trivia Night requires separate paid access.</p><a class="button gold" href="./party-room.html#partyGames">Choose a party game →</a>';}
- $('emailForm').hidden=signed;$('codeForm').hidden=signed||!email;$('access').hidden=!signed;$('accountTitle').textContent=signed?'Your LINKS access':'Verify your email';
- $('accessText').textContent=signed?state.email+(active?' · Party Pack active until '+date(state.access.expires_at):' · Choose a pass to host. Guests join free.'):'';
- const next=sessionStorage.getItem('links-party-next');$('play').href=active&&games.has(next)&&next!=='trivia-night.html'?'./'+next:'./party-room.html#partyGames';$('play').hidden=!active&&!state?.enabled;
- $('launch').textContent=!state?'Unable to check availability. Refresh to try again.':state.freeTesting?'Party games are free during testing. Hosted Trivia Night is sold separately.':state.enabled?'Only the room creator buys access. Guests join free.':'A paid pass is required to host. Checkout is temporarily unavailable. Guests with an invitation can still join.';
- document.querySelectorAll('[data-plan]').forEach(b=>b.disabled=busy||!state?.checkoutReady||active);
- document.querySelectorAll('#account button').forEach(b=>b.disabled=busy);
- $('venueBuy').disabled=busy||!state?.venueReady||!!state?.venueAccess;
- $('venueStatus').textContent=state?.venueAccess?'Subscribed · Paid through '+date(state.venueAccess.paid_until):state?.venueReady?'$29.99 USD billed monthly. Renews automatically until canceled. One active room per host account. Cancel in PayPal.':'Monthly subscriptions open soon. Hosted Trivia Night is separate from the Party Pack.';
- $('receipts').replaceChildren();for(const p of state?.purchases||[]){const row=document.createElement('p');row.textContent=(p.plan==='host_day'?'Trivia Night Day Pass':p.plan==='day'?'Party Pass':'Annual Party Pack')+' · '+(p.status==='PAID'?'Paid · access through '+date(p.expires_at):'Awaiting payment confirmation');if(p.status==='CREATED'){const b=document.createElement('button');b.textContent='Check payment';b.onclick=()=>run(async()=>{await api({action:'capture',purchase:p.id});await refresh();message('Payment confirmed. Your pass is ready.');});row.append(b)}$('receipts').append(row)}
+ const signed=!!state?.email,ready=(state?.purchases||[]).some(p=>p.plan==='day'&&p.status==='PAID'&&!p.expires_at);
+ $('launch').textContent=state?.freeTesting?'Regular party games are free during testing. The paid Game Pass will be $4.99 for 24 hours. Hosted events use separate access. One player pays; invited guests join free.':state?.checkoutReady?'One player buys and activates the pass. Invited guests join free.':'Game Pass checkout is not open yet. Existing access and invited guest play remain available.';
+ $('buyDay').disabled=busy||!state?.checkoutReady||!!state?.access||ready;
+ $('emailForm').hidden=signed;$('codeForm').hidden=signed||!email;$('signout').hidden=!signed;
+ $('accessText').textContent=signed?state.email+(state.access?' · Active until '+new Date(state.access.expires_at).toLocaleString():ready?' · Paid pass ready to activate':' · No active Game Pass'):'';
+ $('receipts').replaceChildren();for(const p of state?.purchases||[]){if(!['day','annual'].includes(p.plan))continue;const row=document.createElement('p');row.textContent=(p.plan==='day'?'24-Hour Game Pass':'Annual Party Pack')+' · '+(p.status==='PAID'?p.expires_at?'Expires '+new Date(p.expires_at).toLocaleString():'Paid · not activated':'Awaiting payment confirmation');if(p.status==='CREATED'||p.status==='PAID'&&!p.expires_at&&p.plan==='day'){const b=document.createElement('button');b.disabled=busy||p.status==='PAID'&&!!state.access;b.textContent=p.status==='CREATED'?'Check payment':'Activate my 24 hours';b.onclick=()=>run(async()=>{await api({action:p.status==='CREATED'?'capture':'activate',purchase:p.id});await refresh();$('status').textContent=p.status==='CREATED'?'Payment confirmed. Activate when you are ready.':'Your 24 hours have started. The exact expiration is shown above.'});row.append(b)}$('receipts').append(row)}
 }
-async function refresh(){state=await api();render();}
-async function finish(){const purchase=query.get('purchase'),subscription=query.get('subscription');if(!state?.email||(!purchase&&!subscription))return;if(purchase)await api({action:'capture',purchase});else await api({action:'venue-verify',subscription});query.delete('purchase');query.delete('subscription');history.replaceState(null,'',location.pathname+(query.size?'?'+query:'')+'#account');await refresh();message('Payment confirmed. You are ready to play.');}
-async function purchase(plan){if(!state?.email){chosen=plan;message('First verify your email so you can restore your purchase on any device.');$('account').scrollIntoView({behavior:'smooth'});$('email').focus({preventScroll:true});return}const result=await api(plan==='venue'?{action:'venue-checkout'}:{action:'checkout',plan});location.assign(result.url);}
-document.querySelectorAll('[data-plan]').forEach(b=>b.onclick=()=>run(()=>purchase(b.dataset.plan)));$('venueBuy').onclick=()=>run(()=>purchase('venue'));
-document.getElementById('emailForm').onsubmit=e=>{e.preventDefault();run(async()=>{const response=await api({action:'send-code',email:$('email').value},'account');email=response.email;message('Check your email for the eight-digit code.');render();$('code').focus();})};
-$('codeForm').onsubmit=e=>{e.preventDefault();run(async()=>{const j=await api({action:'verify',email,code:$('code').value,remember:true},'account');localStorage.setItem(key,j.token);await refresh();await finish();message(chosen?'Email verified. Choose your pass again to continue to PayPal.':'Email verified. Your existing access is shown here.');chosen='';})};
-$('signout').onclick=()=>run(async()=>{await api({action:'logout'});localStorage.removeItem(key);email='';$('code').value='';await refresh();message('Enter the email used for your purchase.');});
-if(query.get('checkout')==='canceled')message('Checkout canceled. No new access was activated.');
-await run(async()=>{await refresh();await finish();});
+async function refresh(){state=await api();render()}
+async function run(fn){if(busy)return;busy=true;render();try{await fn()}catch(e){$('status').textContent=e.message}finally{busy=false;render()}}
+$('buyDay').onclick=()=>run(async()=>{if(!state?.email){$('status').textContent='Verify the buying player’s email first. Guests do not need to purchase.';$('account').scrollIntoView();$('email').focus();return}const result=await api({action:'checkout',plan:'day'});location.assign(result.url)});
+async function finish(){if(state?.email&&query.get('purchase')){await api({action:'capture',purchase:query.get('purchase')});query.delete('purchase');history.replaceState(null,'',location.pathname+'#account');await refresh();$('status').textContent='Payment confirmed. Activate your 24 hours when you are ready.'}}
+$('emailForm').onsubmit=e=>{e.preventDefault();run(async()=>{const result=await api({action:'send-code',email:$('email').value},'account');email=result.email;$('status').textContent='Check your email for the eight-digit code.';render();$('code').focus()})};
+$('codeForm').onsubmit=e=>{e.preventDefault();run(async()=>{const result=await api({action:'verify',email,code:$('code').value,remember:true},'account');localStorage.setItem(key,result.token);await refresh();await finish()})};
+$('signout').onclick=()=>run(async()=>{const r=await fetch('./api/player-account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'logout'})});if(!r.ok&&r.status!==401)throw Error('Could not sign out. Please try again.');await api({action:'logout'});localStorage.removeItem(key);email='';await refresh()});
+if(query.get('checkout')==='canceled')$('status').textContent='Checkout canceled. No pass was activated.';
+await run(async()=>{await refresh();await finish()});

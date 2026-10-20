@@ -1,4 +1,4 @@
-const games=new Set(['trivia-rally','million-point','dead-air','say-what','last-alibi','captain-clash','friend-challenge','trivia-night']);
+const games=new Set(['trivia-rally','million-point','dead-air','say-what','last-alibi','captain-clash','friend-challenge','trivia-night','poker-night']);
 const query=new URLSearchParams(location.search);
 const candidate=query.get('returnTo') || (query.get('next') ? './'+query.get('next') : '');
 if(candidate){

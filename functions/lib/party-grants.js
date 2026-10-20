@@ -1,4 +1,4 @@
-export const GRANT_PRODUCTS={party_day:'Party Pass',party_annual:'Annual Party Pack',trivia_host:'Hosted Trivia Night'};
+export const GRANT_PRODUCTS={party_day:'24-Hour Game Pass',party_annual:'Annual Party Pack',trivia_host:'Hosted Events · Trivia & Poker'};
 export async function ensurePartyGrants(db){await db.batch([
  db.prepare('CREATE TABLE IF NOT EXISTS links_party_grants(id TEXT PRIMARY KEY,email TEXT NOT NULL,product TEXT NOT NULL,days INTEGER NOT NULL,created_at TEXT NOT NULL,expires_at TEXT NOT NULL,revoked_at TEXT,note TEXT NOT NULL,actor TEXT NOT NULL)'),
  db.prepare('CREATE INDEX IF NOT EXISTS links_party_grants_email ON links_party_grants(email,expires_at)')

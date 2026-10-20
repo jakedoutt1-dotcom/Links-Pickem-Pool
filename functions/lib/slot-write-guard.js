@@ -1,5 +1,5 @@
 import {FREE_GAME_TESTING} from './testing-access.js';
-import {allowance,ensureAccounts,emailKey} from './commissioner-account.js';
+import {allowance,ensureAccounts,emailKey,retainedFreeSlot} from './commissioner-account.js';
 // Archived slots remain readable for history but cannot accept game mutations.
 export async function slotWriteGuard(request,env){
  if(!env.DB||['GET','HEAD','OPTIONS'].includes(request.method))return null;
@@ -31,6 +31,11 @@ export async function slotWriteGuard(request,env){
  const contact=(!owner&&!rows.length)?await env.DB.prepare("SELECT value FROM pool_settings WHERE pool_id=? AND key='commissioner_email'").bind(pool.id).first():null;
  const email=emailKey(owner?.email||rows[0]?.email||contact?.value||'');
  const plan=email?await allowance(env.DB,email):null;
+ if(plan?.plan==='free'){
+  const retained=await retainedFreeSlot(env.DB,email);
+  if(rows.some(r=>r.id===retained&&r.active&&(!game||r.game_type===game)))return null;
+  return Response.json({error:'One active game-pool slot is free. Choose your free game in My Pools, or upgrade for more. Saved picks and history are preserved.'},{status:402,headers:{'Cache-Control':'no-store'}});
+ }
  if(!plan||plan.slots===0)return Response.json({error:'The host needs an active pool package. Saved picks and history are preserved. Invited players do not need to purchase a package.'},{status:402,headers:{'Cache-Control':'no-store'}});
 
  }catch(e){throw e}return null;

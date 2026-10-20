@@ -1,7 +1,7 @@
 import {FREE_GAME_TESTING} from './testing-access.js';
 import {accountSession} from './commissioner-account.js';
 import {complimentaryAccess} from './party-grants.js';
-export const PARTY_PLANS={day:{label:'Party Pass',amount:499,hours:24},annual:{label:'Annual Party Pack',amount:3999,hours:365*24},host_day:{label:'Trivia Night Day Pass',amount:499,hours:24}};
+export const PARTY_PLANS={day:{label:'24-Hour Game Pass',amount:499,hours:24},annual:{label:'Annual Party Pack',amount:3999,hours:365*24},host_day:{label:'24-Hour Hosted Event Pass',amount:499,hours:24}};
 export const PARTY_GAMES=['poker-night','trivia-rally','million-point','dead-air','say-what','last-alibi','captain-clash','friend-challenge'];
 export const partyEnabled=env=>env.PARTY_PACK_ENABLED==='true';
 export async function ensureParty(db){await db.batch([
@@ -20,5 +20,5 @@ export async function requirePartyPass(request,env){
  // Checkout configuration must never grant free room creation.
  const session=await partySession(request,env.DB);
  if(session&&await partyAccess(env.DB,session.email))return null;
- return Response.json({error:'The room creator needs a Party Pass. Friends join free.',code:'PARTY_PASS_REQUIRED',url:'/new-build/party-pack.html'},{status:402,headers:{'Cache-Control':'no-store'}});
+ return Response.json({error:'One player buys and activates a Game Pass to create the room. Everyone they invite joins free.',code:'PARTY_PASS_REQUIRED',url:'/new-build/party-pack.html'},{status:402,headers:{'Cache-Control':'no-store'}});
 }

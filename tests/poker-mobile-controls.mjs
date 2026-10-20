@@ -49,6 +49,12 @@ try{
   await page.locator('#bettingControls').waitFor({state:'visible'});await fits(page);
   assert.equal(await page.locator('#turnProgress').isVisible(),true,'Active turn has a visible countdown bar');
   assert.match(await page.locator('#turnClock').getAttribute('aria-label'),/seconds to act/,'Clock announces whose turn it is');
+  if(width===390){
+   await page.evaluate(()=>{for(const id of ['fourColorDeck','motionEffects','voiceEffects']){const el=document.getElementById(id);el.checked=id==='fourColorDeck';el.dispatchEvent(new Event('input'));}document.getElementById('effectsVolume').value='35';document.getElementById('effectsVolume').dispatchEvent(new Event('input'));});
+   assert.equal(await page.locator('body').evaluate(el=>el.classList.contains('four-color-deck')&&el.classList.contains('poker-still')),true);
+   const prefs=await page.evaluate(()=>JSON.parse(localStorage.getItem('links-poker-effects')));assert.equal(prefs.volume,35);assert.equal(prefs.voice,false);
+   await page.evaluate(()=>{const el=document.getElementById('motionEffects');el.checked=true;el.dispatchEvent(new Event('input'));});
+  }
   const inViewport=async selector=>page.locator(selector).evaluate(el=>{const r=el.getBoundingClientRect();return r.x>=0&&r.right<=innerWidth+1&&r.y>=0&&r.bottom<=innerHeight+1;});
   if(width<=600)assert.equal(await inViewport('#bettingControls'),true,'Phone turn dock fits '+width);
   assert.ok((await page.locator('#callButton').boundingBox()).height>=44,'Thumb-sized action');
@@ -69,6 +75,9 @@ try{
   await page.screenshot({path:out+`/controls-${width}.png`});
   const response=page.waitForResponse(r=>r.url().includes('/api/poker-night')&&r.request().method()==='POST');await page.locator('#raiseButton').click();assert.equal((await response).status(),200);
   assert.equal(posts.filter(p=>p.action==='bet').length,1);assert.equal(posts.find(p=>p.action==='bet').amount,amount);
+  await page.waitForFunction(()=>document.querySelector('.pot').classList.contains('chips-moving'));
+  assert.equal(await page.locator('.chip-stack').isVisible(),true,'Branded chips remain visible on phones');
+  if(width===390){await page.emulateMedia({reducedMotion:'no-preference'});assert.equal(await page.locator('.bet-chip').evaluate(el=>getComputedStyle(el).animationName),'links-chip-bet');await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await page.locator('.bet-chip').evaluate(el=>getComputedStyle(el).animationName),'none','Reduced motion disables the spin');}
   await page.locator('#recentActionPanel summary').click();
   await page.waitForFunction(()=>document.querySelector('#recentActions').textContent.includes('raises to'));
   assert.match(await page.locator('#recentActions').textContent(),new RegExp(`raises to ${amount.toLocaleString()}`),'Action list shows the submitted total, not just added chips');

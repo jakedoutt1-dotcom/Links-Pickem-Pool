@@ -165,6 +165,9 @@ try{
  assert.equal((await api(null,hostSession,{code})).room.status,'playing','A hand winner does not end the game');
  assert.equal(await tv.locator('#seats .card:not(.back)').count(),0,'An uncontested pot reveals no cards automatically');
  const settledRoom=(await api(null,hostSession,{code})).room,settled=settledRoom.table;
+ await host.locator('#handRecapPanel').waitFor({state:'visible'});
+ assert.match(await host.locator('#handRecapResults').textContent(),/chips awarded/,'Result recap explains the chip award');
+ assert.ok(await host.locator('.seat.pot-winner').count()>0,'Showdown highlights the player awarded the pot');
  if(settledRoom.featuredTableId!==settled.id)await host.locator('[data-feature="'+settled.id+'"]').click();
  await host.locator('#showHandButton').waitFor({state:'visible'});await host.locator('#showHandButton').click();
  await tv.waitForFunction(()=>document.querySelectorAll('#seats .card:not(.back)').length===2);
@@ -173,6 +176,8 @@ try{
  await tv.waitForFunction(()=>document.getElementById('tableLabel').textContent.includes('HAND 2'),null,{timeout:20000});
  await host.waitForFunction(()=>document.getElementById('tableLabel').textContent.includes('HAND 2'));
  await guest.waitForFunction(()=>document.getElementById('tableLabel').textContent.includes('HAND 2'));
+ assert.equal(await host.locator('#handRecapPanel').isVisible(),true,'Last result stays available after the next deal');
+ assert.match(await host.locator('#handRecapTitle').textContent(),/Hand 1/);
  assert.equal(await host.locator('#nextButton').isVisible(),false,'No host click is required to continue');
  assert.equal(await host.locator('#showHandPanel').isVisible(),false,'Show-hand choice resets with the new hand');
  assert.equal(await tv.locator('#seats .card:not(.back)').count(),0,'Shown cards are private again on the next deal');
