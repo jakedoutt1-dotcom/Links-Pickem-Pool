@@ -24,12 +24,12 @@ try{for(const width of [390,1280]){
  });
  try{
   await page.goto(origin+'/new-build/daily-challenge.html');await page.locator('#start:visible').waitFor();await page.locator('#start').click();await page.locator('#spin:visible').waitFor();assert.equal(await page.locator('#next').isVisible(),false);mkdirSync('output/daily-challenge',{recursive:true});await page.locator('#challenge').screenshot({path:`output/daily-challenge/wheel-${width}.png`});await page.locator('#spin').click();await page.locator('#next:visible').waitFor();const spun=JSON.parse(db.raw.prepare('SELECT state FROM links_daily_attempts').get().state),maxScore=5*(100+spun.bonusPerCorrect);await page.reload();await page.locator('#next:visible').waitFor();assert.equal(JSON.parse(db.raw.prepare('SELECT state FROM links_daily_attempts').get().state).wheelIndex,spun.wheelIndex);assert.equal(await page.locator('#spin').isVisible(),false);await page.locator('#next:visible').click();await page.locator('#choices button').first().waitFor();
-  const deck=JSON.parse(db.raw.prepare('SELECT deck FROM links_daily_decks').get().deck);
+  const deck=JSON.parse(db.raw.prepare('SELECT state FROM links_daily_attempts').get().state).deck;
   await page.locator('#challenge').screenshot({path:`output/daily-challenge/question-active-${width}.png`});const before=JSON.parse(db.raw.prepare('SELECT state FROM links_daily_attempts').get().state);
   await page.reload();await page.locator('#choices button').first().waitFor();assert.equal(JSON.parse(db.raw.prepare('SELECT state FROM links_daily_attempts').get().state).deadline,before.deadline,'Reload never resets server timer');
   for(let i=0;i<5;i++){
    await page.waitForFunction(index=>document.querySelector('#counter').textContent===`QUESTION ${index+1} / 5`&&!document.querySelector('#submit').hidden,i);
-   assert.equal(await page.locator('#difficultyBadge').innerText(),['Warm-up','Medium','Challenging','Hard','Expert Final'][i]);if(i===4)assert.equal(await page.locator('#finalBoss').isVisible(),true);
+   assert.equal(await page.locator('#difficultyBadge').innerText(),['Medium','Hard','Hard','Expert','Expert Final'][i]);if(i===4)assert.equal(await page.locator('#finalBoss').isVisible(),true);
    assert.equal(await page.locator('body').evaluate(el=>el.classList.contains('question-active')),true);await page.locator('#choices button').nth(deck[i].answer).click();await page.locator('#submit').click();await page.locator('#feedback:visible').waitFor();assert.match(await page.locator('#feedback').innerText(),/Correct/);assert.equal(await page.locator('body').evaluate(el=>el.classList.contains('question-active')),false);await page.locator('#next').click();
    if(i<4)await page.locator('#choices button').first().waitFor();
   }

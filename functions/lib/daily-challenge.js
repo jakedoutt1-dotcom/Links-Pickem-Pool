@@ -69,8 +69,8 @@ export function dailyDeck(day){
  const dayIndex=Math.floor(Date.parse(day+'T00:00:00Z')/86400000),epoch=Math.floor(dayIndex/12),offset=((dayIndex%12)+12)%12;
  const shuffled=(items,label)=>{let seed=2166136261;for(const c of String(epoch)+label)seed=Math.imul(seed^c.charCodeAt(0),16777619);const random=()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296};const out=[...items];for(let i=out.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[out[i],out[j]]=[out[j],out[i]]}return out};
  const tier=(d,stage)=>shuffled(BANK.filter(q=>q.difficulty===d&&(!stage||q.stage===stage)),d+(stage||''));
- const selected=[tier('easy')[offset],tier('medium',2)[offset],tier('medium',3)[offset],tier('hard')[offset],tier('expert')[offset]];
- // Each tier rotates without replacement across twelve days; the final is always expert.
+ const selected=[tier('medium',3)[offset],tier('hard')[offset],tier('hard')[(offset+6)%12],tier('expert')[(offset+6)%12],tier('expert')[offset]];
+ // Harder progression: medium, hard, hard, expert, expert. Paired tiers use distinct questions.
  return selected.map((q,index)=>{const order=shuffled([0,1,2,3],day+'-'+index);return {...q,level:index+1,choices:order.map(i=>q.choices[i]),answer:order.indexOf(q.answer)}})
 }
 export async function ensureDaily(db){for(const statement of [

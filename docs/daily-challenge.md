@@ -39,3 +39,7 @@ A new navy-and-gold stage asset frames the game. Ambient sections dim during act
 ## Temporary graphics testing
 
 Unlimited completed-round replays are enabled. Play again returns to the server bonus wheel with a new round identifier; stale or concurrent restarts are rejected. The best completed score for each account/day remains on global and venue boards while replays are in progress, and a worse replay never replaces it. Replays use the same daily questions and do not make more provider calls. Venue attribution remains fixed for the day. Remove the temporary restart option when graphics testing ends.
+
+## Higher difficulty update
+
+New rounds and testing replays now use medium, hard, hard, expert, expert. The provider supplies one medium and two hard questions in two shared requests; the final two come from the verified expert bank. Existing pinned easy daily sets use the harder local set for new rounds without replacing in-progress questions. Each new attempt stores its private deck so future changes cannot alter its answers. Practice follows the same difficulty curve. Rotations avoid repeating a question within a round and within the same slot over twelve days; paired tiers can recur in different slots across days.

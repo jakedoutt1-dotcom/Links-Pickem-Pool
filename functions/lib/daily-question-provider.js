@@ -21,7 +21,7 @@ export async function pinnedDailyDeck(env,day,{fetcher=fetch,now=()=>Date.now(),
  if(!key)return pin(fallback);
  await db.prepare('CREATE TABLE IF NOT EXISTS links_daily_question_leases(day TEXT PRIMARY KEY,owner TEXT NOT NULL,until_ms INTEGER NOT NULL,requested INTEGER NOT NULL DEFAULT 0)').run();
  const owner=crypto.randomUUID(),start=now();await db.prepare('INSERT OR IGNORE INTO links_daily_question_leases(day,owner,until_ms,requested) VALUES(?,?,?,0)').bind(day,owner,start+10000).run();
- // A day may launch one three-request batch only. Expired leases recover using backup,
+ // A day may launch one two-request batch only. Expired leases recover using backup,
  // never another paid batch, even if the original Worker stopped before pinning.
  const claim=await db.prepare('UPDATE links_daily_question_leases SET requested=1 WHERE day=? AND owner=? AND requested=0').bind(day,owner).run();
  if(claim.meta?.changes!==1){
@@ -30,14 +30,14 @@ export async function pinnedDailyDeck(env,day,{fetcher=fetch,now=()=>Date.now(),
  }
  const controller=new AbortController();let timeout;
  try{
-  const groups=[['easy',1],['medium',2],['hard',1]];
+  const groups=[['medium',1],['hard',2]];
   const load=Promise.all(groups.map(async([difficulty,count])=>{
    const url=new URL('https://the-trivia-api.com/v2/questions');url.search=new URLSearchParams({limit:String(count),difficulties:difficulty,types:'text_choice',region:'US',contentFilter:'family'}).toString();
    try{const response=await triviaFetch(env,'daily-'+difficulty,fetcher,url.href,{headers:{'X-API-Key':key,Accept:'application/json'},signal:controller.signal,redirect:'error'});await triviaHealth(env,'daily-'+difficulty,response.status);if(!response.ok)return [];const questions=normalizeDailyQuestions(await response.json(),difficulty,count);await triviaHealth(env,'daily-'+difficulty,response.status,questions.length);return questions}catch{return []}
   }));
   const loaded=await Promise.race([load,new Promise(resolve=>{timeout=setTimeout(()=>{controller.abort();resolve(null)},Math.max(1,Math.min(7200,Number(timeoutMs)||7200)))})]);
   let deck=fallback;
-  if(loaded){const fresh=[loaded[0][0],loaded[1][0],loaded[1][1],loaded[2][0]],used=new Set(fallback.map(q=>q.text.toLowerCase()));deck=fallback.map((backup,i)=>{if(i===4)return backup;const q=fresh[i];if(!q||used.has(q.text.toLowerCase()))return backup;used.add(q.text.toLowerCase());return {...q,level:i+1}})}
+  if(loaded){const fresh=[loaded[0][0],loaded[1][0],loaded[1][1]],used=new Set(fallback.map(q=>q.text.toLowerCase()));deck=fallback.map((backup,i)=>{if(i>=3)return backup;const q=fresh[i];if(!q||used.has(q.text.toLowerCase()))return backup;used.add(q.text.toLowerCase());return {...q,level:i+1}})}
   return await pin(deck);
  }finally{clearTimeout(timeout);controller.abort()}
 }
