@@ -1,0 +1,24 @@
+import assert from 'node:assert/strict';
+import {fixture} from './helpers/pool-format-fixture.mjs';
+import {ensureDaily,dailyDeck} from '../functions/lib/daily-challenge.js';
+import {pinnedDailyDeck,normalizeDailyQuestions} from '../functions/lib/daily-question-provider.js';
+import {dailyRequest} from '../functions/new-build/api/daily-challenge.js';
+const {db}=fixture();const env={DB:db,TRIVIA_API_KEY:'private-test-key'};let calls=[];
+const row=(difficulty,i)=>({id:difficulty+i,type:'text_choice',difficulty,category:'science',question:{text:`Which ${difficulty} answer is correct for example ${i}?`},correctAnswer:'Right '+i,incorrectAnswers:['Wrong A '+i,'Wrong B '+i,'Wrong C '+i]});
+const fetcher=async(url,options)=>{calls.push({url,options});await new Promise(r=>setTimeout(r,15));const q=new URL(url).searchParams;return Response.json(Array.from({length:Number(q.get('limit'))},(_,i)=>row(q.get('difficulties'),i)))};
+try{
+ await ensureDaily(db);const decks=await Promise.all(Array.from({length:8},()=>pinnedDailyDeck(env,'2026-10-20',{fetcher})));assert.equal(calls.length,3);for(const d of decks)assert.deepEqual(d,decks[0]);assert.deepEqual(decks[0].map(q=>q.difficulty),['easy','medium','medium','hard','expert']);assert.deepEqual(decks[0].map(q=>q.level),[1,2,3,4,5]);assert.deepEqual(decks[0][4],dailyDeck('2026-10-20')[4]);assert(decks[0].slice(0,4).every(q=>q.source==='The Trivia API'));
+ for(const c of calls){const q=new URL(c.url).searchParams;assert.equal(q.get('types'),'text_choice');assert.equal(q.get('region'),'US');assert.equal(q.get('contentFilter'),'family');assert.equal(c.options.headers['X-API-Key'],'private-test-key');assert(c.options.signal instanceof AbortSignal)}
+ await pinnedDailyDeck(env,'2026-10-20',{fetcher:()=>{throw Error('Cached deck must not fetch')}});assert.equal(calls.length,3);
+ const bad=[{...row('hard',0),adultContent:true},{...row('medium',1),difficulty:'easy'},{...row('medium',2),category:'unknown'},{...row('medium',3),incorrectAnswers:['same','same','same']},{...row('medium',4),question:{text:'<script>unsafe</script>'}}];assert.equal(normalizeDailyQuestions(bad,'medium',2).length,0);
+ let failures=0;const fallback=await pinnedDailyDeck(env,'2026-10-21',{fetcher:async()=>{failures++;throw Error('Temporary provider failure')}});assert.equal(failures,3);assert.deepEqual(fallback,dailyDeck('2026-10-21'));await pinnedDailyDeck(env,'2026-10-21',{fetcher});assert.equal(calls.length,3);
+ const malformed=await pinnedDailyDeck(env,'2026-10-22',{fetcher:async()=>Response.json(bad.map(q=>({...q,category:'unknown'})))});assert.deepEqual(malformed,dailyDeck('2026-10-22'));
+ const noKey=await pinnedDailyDeck({DB:db},'2026-10-23',{fetcher:()=>{throw Error('No key must not fetch')}});assert.deepEqual(noKey,dailyDeck('2026-10-23'));
+ let hungCalls=0;const signals=[];const timed=await pinnedDailyDeck(env,'2026-10-27',{timeoutMs:10,fetcher:async(_url,options)=>{hungCalls++;signals.push(options.signal);return new Promise(()=>{})}});assert.equal(hungCalls,3);assert(signals.every(s=>s.aborted));assert.deepEqual(timed,dailyDeck('2026-10-27'));
+ await db.prepare('INSERT INTO links_daily_question_leases VALUES(?,?,?,1)').bind('2026-10-24','expired-worker',1).run();const recovered=await pinnedDailyDeck(env,'2026-10-24',{fetcher:()=>{throw Error('Expired request batch must not repeat')}});assert.deepEqual(recovered,dailyDeck('2026-10-24'));
+ const legacy=[{text:'Pinned legacy question',choices:['A','B','C','D'],answer:0}];await db.prepare('INSERT INTO links_daily_decks VALUES(?,?)').bind('2026-10-25',JSON.stringify(legacy)).run();assert.deepEqual(await pinnedDailyDeck(env,'2026-10-25',{fetcher}),legacy);assert.equal(calls.length,3);
+ // Authentication, input, and venue validation precede any paid provider access.
+ async function request(body,signed){const response=await dailyRequest({env,request:new Request('https://test/new-build/api/daily-challenge',{method:body?'POST':'GET',headers:{Origin:'https://test'},...(body?{body:JSON.stringify(body)}:{})})},{now:()=>Date.parse('2026-10-26T17:00:00Z'),session:async()=>signed?{email:'signed@example.com'}:null,fetcher:()=>{throw Error('Invalid request must not fetch')}});return {status:response.status,...await response.json()}}
+ assert.equal((await request(null,false)).status,200);assert.equal((await request({action:'start'},false)).status,401);assert.equal((await request({action:'start',partnerId:'missing'},true)).status,400);assert.equal(db.raw.prepare('SELECT COUNT(*) n FROM links_daily_decks WHERE day=?').get('2026-10-26').n,0);assert(!JSON.stringify(await request(null,false)).includes('private-test-key'));
+ console.log('PASS tiered Daily provider: three shared paid requests across eight concurrent players, 7.2s deadline signals, strict normalization/family filters, immutable daily pin, no-key/failure/malformed/expired-lease backup, expert final, auth and invalid-venue no-fetch privacy.');
+}finally{db.raw.close()}

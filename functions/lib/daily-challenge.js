@@ -1,5 +1,6 @@
-// Original evergreen question bank. Answers never leave the server before grading.
-const rows = [
+import {EXPERT_BANK} from './daily-expert-bank.js';
+// Original backup questions are assigned real difficulty tiers, not randomly relabeled.
+const easyRows=[
 ['Sports','How many points is a touchdown worth before the extra try?','6|3|7|2',0,'A touchdown scores six points.'],
 ['Sports','How many players does one basketball team have on court during normal play?','5|6|7|9',0,'Five players per team take the court.'],
 ['Sports','In baseball, what is it called when a batter receives three strikes?','Strikeout|Turkey|Spare|Hat trick',0,'Three strikes result in a strikeout.'],
@@ -12,67 +13,65 @@ const rows = [
 ['Sports','How many bases form a baseball diamond, counting home plate?','4|3|5|6',0,'First, second, third, and home make four.'],
 ['Sports','Which chess piece can jump over other pieces?','Knight|Bishop|Rook|Queen',0,'The knight can jump over pieces.'],
 ['Sports','How many holes are in a standard full round of golf?','18|9|12|20',0,'A standard full round has 18 holes.'],
-['Science','Which planet is known as the Red Planet?','Mars|Venus|Jupiter|Mercury',0,'Iron minerals give Mars its reddish appearance.'],
-['Science','What gas do plants take in during photosynthesis?','Carbon dioxide|Helium|Hydrogen|Neon',0,'Plants use carbon dioxide and water to make sugars.'],
-['Science','What is the chemical symbol for gold?','Au|Ag|Fe|Pb',0,'Gold is represented by Au.'],
-['Science','How many bones does a typical adult human skeleton have?','206|106|306|406',0,'The typical adult skeleton has 206 bones.'],
-['Science','Which force keeps planets in orbit around the Sun?','Gravity|Friction|Magnetism|Buoyancy',0,'Gravity attracts planets toward the Sun.'],
-['Science','Which organ pumps blood around the body?','Heart|Liver|Lung|Kidney',0,'The heart pumps blood through the circulatory system.'],
-['Science','What is the largest planet in our solar system?','Jupiter|Earth|Saturn|Neptune',0,'Jupiter is the largest planet.'],
-['Science','What is the boiling point of pure water at standard sea-level pressure?','100°C|90°C|80°C|120°C',0,'At standard atmospheric pressure, water boils at 100°C.'],
-['Science','Which animal is a mammal?','Dolphin|Shark|Trout|Octopus',0,'Dolphins breathe air and nurse their young.'],
-['Science','How many sides does a hexagon have?','6|5|7|8',0,'A hexagon has six sides.'],
-['Science','What does a thermometer measure?','Temperature|Pressure|Speed|Mass',0,'A thermometer measures temperature.'],
-['Science','Which part of a plant usually absorbs water from soil?','Roots|Flowers|Fruit|Petals',0,'Roots absorb water from the soil.'],
-['Movies','Which movie features the character Buzz Lightyear?','Toy Story|Shrek|Finding Nemo|Cars',0,'Buzz Lightyear appears in Toy Story.'],
-['Movies','What is the name of the fictional school in the Harry Potter stories?','Hogwarts|Narnia|Neverland|Camelot',0,'Harry attends Hogwarts School of Witchcraft and Wizardry.'],
-['Movies','Which character famously carries a shield with a star?','Captain America|Thor|Hulk|Iron Man',0,'Captain America carries the star-emblazoned shield.'],
-['Movies','What kind of animal is Simba in The Lion King?','Lion|Tiger|Leopard|Cheetah',0,'Simba is a lion.'],
-['Movies','Which movie features a snowman named Olaf?','Frozen|Tangled|Moana|Brave',0,'Olaf is the snowman in Frozen.'],
-['Movies','Who is the friendly ghost in the film named after him?','Casper|Shrek|Gizmo|Stitch',0,'Casper is known as the friendly ghost.'],
-['Movies','Which film series features a DeLorean time machine?','Back to the Future|Jurassic Park|The Matrix|Men in Black',0,'The DeLorean is the time machine in Back to the Future.'],
-['Movies','Which movie features the song Hakuna Matata?','The Lion King|Aladdin|Cinderella|Mulan',0,'Timon and Pumbaa sing Hakuna Matata in The Lion King.'],
-['Movies','Which superhero is also known as Peter Parker?','Spider-Man|Batman|Superman|Aquaman',0,'Peter Parker is Spider-Man.'],
-['Movies','Which fictional archaeologist uses a whip and wears a fedora?','Indiana Jones|James Bond|Sherlock Holmes|Han Solo',0,'Those are signature items of Indiana Jones.'],
-['Movies','What is the name of the green ogre who befriends Donkey?','Shrek|Sulley|Hulk|Grinch',0,'Shrek befriends Donkey.'],
-['Movies','Which Pixar movie follows a clownfish searching for his son?','Finding Nemo|Up|WALL-E|Inside Out',0,'Marlin searches for Nemo in Finding Nemo.'],
-['Music','How many strings does a standard guitar usually have?','6|4|5|8',0,'A standard guitar has six strings.'],
-['Music','Which instrument has black and white keys?','Piano|Trumpet|Violin|Flute',0,'Pianos have black and white keys.'],
-['Music','Which band recorded the album Abbey Road?','The Beatles|Queen|U2|ABBA',0,'Abbey Road is a Beatles album.'],
-['Music','Which instrument is played with drumsticks?','Snare drum|Harp|Clarinet|Trombone',0,'A snare drum is commonly played with drumsticks.'],
-['Music','In written music, what does a rest tell a musician to do?','Be silent|Play louder|Play faster|Repeat forever',0,'A rest indicates a period of silence.'],
-['Music','Which singer was known as the King of Rock and Roll?','Elvis Presley|Frank Sinatra|Johnny Cash|Ray Charles',0,'Elvis Presley earned that nickname.'],
-['Music','How many musicians are in a quartet?','4|3|5|6',0,'A quartet has four performers.'],
-['Music','Which family of instruments includes the trumpet?','Brass|Strings|Woodwind|Keyboard',0,'The trumpet belongs to the brass family.'],
-['Music','Which symbol raises a musical note by a semitone?','Sharp|Flat|Rest|Clef',0,'A sharp raises a note by a semitone.'],
-['Music','Which instrument typically has 88 keys?','Piano|Violin|Ukulele|Saxophone',0,'A standard full-size piano has 88 keys.'],
-['Music','What does the musical term tempo describe?','Speed|Pitch|Volume|Instrument size',0,'Tempo describes the speed of the music.'],
-['Music','Which instrument is associated with a bow and four strings?','Violin|Trumpet|Flute|Tuba',0,'A violin is commonly bowed and has four strings.'],
-['World','What is the capital of France?','Paris|Rome|Madrid|Berlin',0,'Paris is the capital of France.'],
-['World','On which continent are the pyramids at Giza?','Africa|Europe|South America|Australia',0,'The pyramids at Giza are in the African part of Egypt.'],
-['World','What is the largest ocean on Earth?','Pacific|Atlantic|Indian|Arctic',0,'The Pacific is the largest ocean.'],
-['World','Which country is home to the ancient city of Machu Picchu?','Peru|Mexico|Chile|Brazil',0,'Machu Picchu is in Peru.'],
-['History','Who was the first president of the United States?','George Washington|Abraham Lincoln|John Adams|Thomas Jefferson',0,'George Washington was the first U.S. president.'],
-['History','In which year did Apollo 11 land people on the Moon?','1969|1959|1979|1989',0,'Apollo 11 landed in July 1969.'],
-['World','Which country is famous for the Great Barrier Reef?','Australia|Canada|Japan|Norway',0,'The Great Barrier Reef lies off Australia.'],
-['World','Which city is home to the Colosseum?','Rome|Athens|Paris|London',0,'The Colosseum is in Rome.'],
-['World','Which language is primarily spoken in Brazil?','Portuguese|Spanish|French|Italian',0,'Portuguese is the official language of Brazil.'],
-['History','Which ancient civilization built the pyramids at Giza?','Egyptians|Romans|Vikings|Aztecs',0,'The pyramids at Giza were built by ancient Egyptians.'],
-['World','Which U.S. state is known as the Aloha State?','Hawaii|Alaska|Florida|California',0,'Hawaii is nicknamed the Aloha State.'],
-['World','What is the tallest land animal?','Giraffe|Elephant|Camel|Ostrich',0,'Giraffes are the tallest living land animals.']
 ];
-export const BANK=rows.map(([category,text,choices,answer,explanation])=>({category,text,choices:choices.split('|'),answer,explanation}));
+const mediumRows=[
+["Science","Which part of a cell contains most of its genetic material?","Nucleus|Ribosome|Cell membrane|Cytoplasm",0,"In eukaryotic cells, most genetic material is in the nucleus."],
+["Science","What is the chemical symbol for potassium?","K|P|Po|Pt",0,"Potassium has the symbol K, from kalium."],
+["Science","What is the process by which a solid changes directly into a gas?","Sublimation|Condensation|Freezing|Deposition",0,"Sublimation skips the liquid phase."],
+["Science","Which blood vessels carry blood away from the heart?","Arteries|Veins|Capillaries|Venules",0,"Arteries carry blood away from the heart."],
+["Music","Which composer wrote The Four Seasons?","Antonio Vivaldi|Johann Sebastian Bach|Frederic Chopin|Franz Schubert",0,"Vivaldi composed the four violin concertos known as The Four Seasons."],
+["Music","What interval spans eight notes of a diatonic scale?","Octave|Perfect fifth|Major third|Tritone",0,"An octave spans eight scale degrees, including both endpoints."],
+["Music","Which jazz musician was nicknamed Satchmo?","Louis Armstrong|Duke Ellington|Miles Davis|Charlie Parker",0,"Satchmo was a nickname of Louis Armstrong."],
+["Movies","Who directed the 1975 film Jaws?","Steven Spielberg|George Lucas|Ridley Scott|Martin Scorsese",0,"Steven Spielberg directed Jaws."],
+["Movies","Which film won the first Academy Award for Best Animated Feature?","Shrek|Toy Story|Spirited Away|Finding Nemo",0,"Shrek won the inaugural award at the 2002 ceremony."],
+["Movies","In The Lord of the Rings, what is the name of Frodo’s gardener?","Samwise Gamgee|Peregrin Took|Meriadoc Brandybuck|Bilbo Baggins",0,"Samwise Gamgee is Frodo’s gardener and companion."],
+["History","Which treaty formally ended World War I between Germany and the Allied powers?","Treaty of Versailles|Treaty of Paris of 1783|Treaty of Ghent|Treaty of Tordesillas",0,"The Treaty of Versailles was signed in 1919."],
+["History","Which empire was ruled by Suleiman the Magnificent?","Ottoman Empire|Roman Empire|Mongol Empire|Persian Achaemenid Empire",0,"Suleiman was an Ottoman sultan."],
+["World","Which strait separates Spain from Morocco?","Strait of Gibraltar|Strait of Hormuz|Bering Strait|Strait of Malacca",0,"The Strait of Gibraltar links the Atlantic and Mediterranean."],
+["World","What is the capital of New Zealand?","Wellington|Auckland|Christchurch|Dunedin",0,"Wellington is New Zealand’s capital."],
+["World","Which river flows through Budapest?","Danube|Rhine|Seine|Po",0,"The Danube runs through Budapest."],
+["Literature","Who wrote the novel Pride and Prejudice?","Jane Austen|Charlotte Bronte|Mary Shelley|George Eliot",0,"Jane Austen wrote Pride and Prejudice."],
+["Literature","Who created the fictional detective Hercule Poirot?","Agatha Christie|Arthur Conan Doyle|Dorothy L. Sayers|Raymond Chandler",0,"Hercule Poirot was created by Agatha Christie."],
+["Art","Which artist painted The Persistence of Memory?","Salvador Dali|Pablo Picasso|Claude Monet|Vincent van Gogh",0,"Salvador Dali painted the work featuring melting clocks."],
+["Sports","Which city hosted the 1992 Summer Olympics?","Barcelona|Atlanta|Seoul|Sydney",0,"Barcelona hosted the 1992 Summer Olympics."],
+["Sports","In snooker, how many points is the black ball worth?","7|6|5|4",0,"The black ball is worth seven points."],
+["Sports","What is the maximum break in a standard snooker frame without a free ball?","147|155|180|170",0,"Fifteen reds with fifteen blacks, then all colors, total 147."],
+["Sports","Which country won the 2010 men’s FIFA World Cup?","Spain|Netherlands|Germany|Brazil",0,"Spain defeated the Netherlands in the final."],
+["Food","What is the main ingredient in traditional hummus?","Chickpeas|Lentils|White rice|Potatoes",0,"Traditional hummus is made primarily from chickpeas."],
+["Science","Which SI unit measures electrical resistance?","Ohm|Watt|Volt|Ampere",0,"Electrical resistance is measured in ohms."]
+];
+const hardRows=[
+["Science","Which physicist introduced the exclusion principle named after him?","Wolfgang Pauli|Max Planck|Niels Bohr|Erwin Schrodinger",0,"Wolfgang Pauli formulated the exclusion principle in 1925."],
+["Science","Which element has atomic number 72?","Hafnium|Tantalum|Rhenium|Tungsten",0,"Hafnium, symbol Hf, has atomic number 72."],
+["Science","In humans, which cranial nerve is the tenth?","Vagus|Trigeminal|Facial|Hypoglossal",0,"The vagus nerve is cranial nerve X."],
+["Space","Which moon of Saturn has a dense atmosphere and liquid methane lakes?","Titan|Enceladus|Rhea|Iapetus",0,"Titan has a dense atmosphere and lakes of liquid hydrocarbons."],
+["History","In what year was the Magna Carta first issued?","1215|1066|1297|1415",0,"King John first issued Magna Carta in 1215."],
+["History","Which Byzantine emperor commissioned the sixth-century rebuilding of Hagia Sophia?","Justinian I|Constantine XI|Alexios I|Basil II",0,"Justinian I commissioned the church completed in 537."],
+["World","Which landlocked country lies entirely within South Africa?","Lesotho|Eswatini|Botswana|Malawi",0,"Lesotho is completely surrounded by South Africa."],
+["Literature","Which author wrote the novel The Master and Margarita?","Mikhail Bulgakov|Boris Pasternak|Vladimir Nabokov|Ivan Turgenev",0,"Mikhail Bulgakov wrote The Master and Margarita."],
+["Music","Which composer wrote the opera Wozzeck?","Alban Berg|Anton Webern|Gustav Mahler|Richard Strauss",0,"Alban Berg composed Wozzeck."],
+["Art","Which Dutch painter created The Garden of Earthly Delights?","Hieronymus Bosch|Pieter Bruegel the Elder|Jan Vermeer|Frans Hals",0,"The triptych was painted by Hieronymus Bosch."],
+["Sports","Which athlete won the Olympic men’s marathon in Rome in 1960 while running barefoot?","Abebe Bikila|Emil Zatopek|Kip Keino|Lasse Viren",0,"Ethiopia’s Abebe Bikila won barefoot in Rome."],
+["Movies","Who directed the 1954 film Seven Samurai?","Akira Kurosawa|Yasujiro Ozu|Kenji Mizoguchi|Ishiro Honda",0,"Akira Kurosawa directed Seven Samurai."]
+];
+const convert=(rows,difficulty)=>rows.map(([category,text,choices,answer,explanation])=>({category,text,choices:choices.split('|'),answer,explanation,difficulty,source:'LINKS question library'}));
+const moderateIndices=new Set([0,1,2,3,4,5,7,9,13,15,16,22]);
+export const BANK=[...convert(easyRows,'easy'),...convert(mediumRows,'medium').map((q,i)=>({...q,stage:moderateIndices.has(i)?2:3})),...convert(hardRows,'hard'),...EXPERT_BANK.map(q=>({...q,difficulty:'expert'}))];
 export const centralDay=(now)=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Chicago',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(now));
 export function resetAt(now){const day=centralDay(now);let low=now,high=now+27*3600000;while(high-low>1){const mid=Math.floor((low+high)/2);if(centralDay(mid)===day)low=mid;else high=mid}return new Date(high).toISOString()}
 export function previousDay(day){return new Date(Date.parse(day+'T12:00:00Z')-86400000).toISOString().slice(0,10)}
+export const DAILY_WHEEL_BONUSES=Object.freeze([0,10,20,30,40,50]);
+export function spinDailyWheel(draw=()=>crypto.getRandomValues(new Uint32Array(1))[0]){
+ // Rejection sampling avoids modulo bias across six equal wheel sectors.
+ let value;do{value=draw()}while(value>=4294967292);const wheelIndex=value%DAILY_WHEEL_BONUSES.length,bonusPerCorrect=DAILY_WHEEL_BONUSES[wheelIndex];return {wheelIndex,bonusPerCorrect,maxScore:5*(100+bonusPerCorrect)}
+}
 export function dailyDeck(day){
- const dayIndex=Math.floor(Date.parse(day+'T00:00:00Z')/86400000),epochDays=Math.floor(BANK.length/5),epoch=Math.floor(dayIndex/epochDays),offset=((dayIndex%epochDays)+epochDays)%epochDays;
- let seed=2166136261;for(const c of String(epoch))seed=Math.imul(seed^c.charCodeAt(0),16777619);
- const rand=()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296};
- const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(rand()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
- // Each epoch deals every question once before starting another shuffled bank.
- const selected=shuffle([...BANK]).slice(offset*5,offset*5+5);seed^=dayIndex;
- return shuffle(selected).map(q=>{const order=shuffle([0,1,2,3]);return {...q,choices:order.map(i=>q.choices[i]),answer:order.indexOf(q.answer)}})
+ const dayIndex=Math.floor(Date.parse(day+'T00:00:00Z')/86400000),epoch=Math.floor(dayIndex/12),offset=((dayIndex%12)+12)%12;
+ const shuffled=(items,label)=>{let seed=2166136261;for(const c of String(epoch)+label)seed=Math.imul(seed^c.charCodeAt(0),16777619);const random=()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296};const out=[...items];for(let i=out.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[out[i],out[j]]=[out[j],out[i]]}return out};
+ const tier=(d,stage)=>shuffled(BANK.filter(q=>q.difficulty===d&&(!stage||q.stage===stage)),d+(stage||''));
+ const selected=[tier('easy')[offset],tier('medium',2)[offset],tier('medium',3)[offset],tier('hard')[offset],tier('expert')[offset]];
+ // Each tier rotates without replacement across twelve days; the final is always expert.
+ return selected.map((q,index)=>{const order=shuffled([0,1,2,3],day+'-'+index);return {...q,level:index+1,choices:order.map(i=>q.choices[i]),answer:order.indexOf(q.answer)}})
 }
 export async function ensureDaily(db){for(const statement of [
  db.prepare('CREATE TABLE IF NOT EXISTS links_daily_profiles(owner TEXT PRIMARY KEY,id TEXT UNIQUE NOT NULL,name TEXT NOT NULL)'),
