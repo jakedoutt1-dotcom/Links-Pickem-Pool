@@ -34,6 +34,18 @@ try{await mkdir('output/workbook-web-sync/previews',{recursive:true});for(const 
  await livePage.goto(origin+'/new-build/barnes-pool-results.html?week=1');await livePage.locator('#content').waitFor({state:'visible'});assert.equal(await livePage.locator('td.correct').count(),0);
  Object.assign(live.weeks[0].games[0],{winner:'Patriots',awayScore:24,homeScore:20});live.weeks[0].finalTotal=44;
  await livePage.locator('#refresh').click();await livePage.waitForFunction(()=>document.querySelector('td.correct'));
- assert.equal(await livePage.locator('td.correct').count(),1);assert.equal(await livePage.locator('td.incorrect').count(),1);assert.equal(await livePage.locator('tfoot .weekly-winner').textContent(),'WINNER');assert.match(await livePage.locator('.leader.winner').textContent(),/Alex/);await livePage.close();
+ assert.equal(await livePage.locator('td.correct').count(),1);assert.equal(await livePage.locator('td.incorrect').count(),1);assert.equal(await livePage.locator('tfoot .weekly-winner').textContent(),'WINNER');assert.match(await livePage.locator('.leader.winner').textContent(),/Alex/);
+ // A stalled request must release Refresh without erasing already displayed results.
+ await livePage.evaluate(()=>{
+  window.savedBoardFetch=window.fetch;window.savedBoardTimeout=AbortSignal.timeout;
+  window.fetch=(url,options)=>String(url).includes('/api/workbook-board')?new Promise((resolve,reject)=>{options?.signal?.addEventListener('abort',()=>reject(options.signal.reason),{once:true});}):window.savedBoardFetch(url,options);
+  AbortSignal.timeout=()=>window.savedBoardTimeout(30);
+ });
+ await livePage.locator('#refresh').click();await livePage.getByText(/The weekly board is taking too long/).waitFor();
+ assert.equal(await livePage.locator('#refresh').isEnabled(),true);
+ assert.equal(await livePage.locator('td.correct').count(),1,'Last confirmed results survive a timeout');
+ await livePage.evaluate(()=>{window.fetch=window.savedBoardFetch;AbortSignal.timeout=window.savedBoardTimeout;});
+ await livePage.locator('#refresh').click();await livePage.waitForFunction(()=>document.querySelector('#notice').textContent==='');
+ await livePage.close();
  assert.deepEqual(errors,[]);console.log('PASS Barnes public board: real 22-week/14-player data, results colors, pending standings, player filter, shareable week URL, homepage button and phone/desktop layouts.');
 }finally{await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));raw.close();}

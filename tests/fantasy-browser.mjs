@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import {fantasyFixture} from './helpers/fantasy-fixture.mjs';
 const require=createRequire(import.meta.url),{chromium}=require('playwright'),root=resolve('public'),origin='http://fantasy.test',output=process.env.FANTASY_SCREENSHOT_DIR;
 if(output)mkdirSync(output,{recursive:true});
+const openAdminTool=require('./helpers/open-admin-tool.cjs');
 const browser=await chromium.launch({headless:true,channel:'msedge'});
 try{for(const width of [1280,390]){
  const fx=fantasyFixture();await fx.setup('fantasy');await fx.setup('dynasty');
@@ -31,11 +32,11 @@ try{for(const width of [1280,390]){
  for(const game of ['fantasy','dynasty']){
   fx.runtime.now=Date.parse('2026-09-01T00:00:00Z');fx.runtime.final=false;
   await role('admin');await go(game);await page.getByRole('button',{name:'ADMIN',exact:true}).click();while(await page.locator('details.admin-task:not([open]) > summary').count())await page.locator('details.admin-task:not([open]) > summary').first().click();
-  await page.getByRole('button',{name:'Open draft',exact:true}).click();await saved();await page.getByRole('button',{name:'Draft',exact:true}).click();
+  await openAdminTool(page,page.getByRole('button',{includeHidden:true,name:'Open draft',exact:true}));await page.getByRole('button',{name:'Open draft',exact:true}).click();await saved();await page.getByRole('button',{name:'Draft',exact:true}).click();
   for(const id of ['p1','p2','p3','p4','p5','p6']){await page.locator('[data-pick="'+id+'"]').click();await saved()}
   await page.getByText('Draft complete',{exact:true}).waitFor();
-  await page.getByRole('button',{name:'ADMIN',exact:true}).click();while(await page.locator('details.admin-task:not([open]) > summary').count())await page.locator('details.admin-task:not([open]) > summary').first().click();await page.getByRole('button',{name:'Start season',exact:true}).click();await saved();
-  await page.getByRole('button',{name:'Refresh NFL schedule',exact:true}).click();await saved();
+  await page.getByRole('button',{name:'ADMIN',exact:true}).click();while(await page.locator('details.admin-task:not([open]) > summary').count())await page.locator('details.admin-task:not([open]) > summary').first().click();await openAdminTool(page,page.getByRole('button',{includeHidden:true,name:'Start season',exact:true}));await page.getByRole('button',{name:'Start season',exact:true}).click();await saved();
+  await openAdminTool(page,page.getByRole('button',{includeHidden:true,name:'Refresh NFL schedule',exact:true}));await page.getByRole('button',{name:'Refresh NFL schedule',exact:true}).click();await saved();
   await role('alice');await go(game);assert.equal(await page.getByRole('button',{name:'ADMIN',exact:true}).count(),0);
   await page.locator('[id="QB-1"]').selectOption('p1');await page.locator('[id="RB-1"]').selectOption('p4');await page.getByRole('button',{name:'Save lineup',exact:true}).click();await saved();
   await page.reload();await page.getByText('League saved across your devices.',{exact:true}).waitFor();assert.equal(await page.locator('[id="QB-1"]').inputValue(),'p1');
@@ -48,9 +49,9 @@ try{for(const width of [1280,390]){
   await role('admin');await go(game);await page.getByRole('button',{name:'Trades',exact:true}).click();await page.getByRole('button',{name:'Approve',exact:true}).click();await saved();
   fx.runtime.now=Date.parse(fx.runtime.kickoff)+1000;fx.runtime.final=true;
   await page.getByRole('button',{name:'ADMIN',exact:true}).click();while(await page.locator('details.admin-task:not([open]) > summary').count())await page.locator('details.admin-task:not([open]) > summary').first().click();
-  for(const id of ['p1','p4']){await page.locator('#stats #player').selectOption(id);await page.locator('#points').fill('15.5');await page.locator('#reason').fill('Verified official box score');await page.getByRole('button',{name:'Save verified score',exact:true}).click();await saved();}
-  await page.getByRole('button',{name:'Finalize scores',exact:true}).click();await saved();
-  await page.getByRole('button',{name:'Advance week',exact:true}).click();await saved();
+  for(const id of ['p1','p4']){await openAdminTool(page,page.locator('#stats'));await page.locator('#stats #player').selectOption(id);await page.locator('#points').fill('15.5');await page.locator('#reason').fill('Verified official box score');await page.getByRole('button',{name:'Save verified score',exact:true}).click();await saved();}
+  await openAdminTool(page,page.getByRole('button',{includeHidden:true,name:'Finalize scores',exact:true}));await page.getByRole('button',{name:'Finalize scores',exact:true}).click();await saved();
+  await openAdminTool(page,page.getByRole('button',{includeHidden:true,name:'Advance week',exact:true}));await page.getByRole('button',{name:'Advance week',exact:true}).click();await saved();
   await page.getByRole('button',{name:'League',exact:true}).click();await page.getByRole('heading',{name:'Standings',exact:true}).waitFor();
   if(output)await page.screenshot({path:resolve(output,game+'-standings-'+width+'.png'),fullPage:true});
  }

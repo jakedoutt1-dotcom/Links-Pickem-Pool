@@ -9,6 +9,6 @@ for(const mode of ['hotseat','duel']){
  answer((correct+1)%4);answer(correct);assert.equal(s.phase,'question');assert.equal(view(s,'a',s.deadline-1).choice,correct);assert.equal(view(s,'b',s.deadline-1).choice,null);assert.equal(view(s,'a',s.deadline-1,true).choice,null);assert.equal(view(s,'a',s.deadline-1).question.correct,undefined);
  assert.throws(()=>act(s,'a',{action:'answer',game:1,phaseId:s.phaseId,choice:correct},s.deadline));advance(s,s.deadline);assert.equal(s.phase,'reveal');if(mode==='duel')assert.equal(s.duel.a.out,false);else assert.equal(s.correct,true);
 }
-const d={phase:'question',startsAt:1000,deadline:16000,question:{correct:1},players:{a:{name:'A',lives:3,score:0}},responses:{}};
+const d={phase:'question',startsAt:1000,deadline:16000,question:{correct:1,options:["Wrong","Correct","Wrong B","Wrong C"]},players:{a:{name:'A',lives:3,score:0}},responses:{}};
 respond(d,'a',0,2000);respond(d,'a',1,5000);respond(d,'a',1,6000);assert.equal(d.responses.a.at,5000);assert.throws(()=>respond(d,'a',0,16000));advanceDead(d,16000);assert.equal(d.players.a.score,136);
 console.log('PASS latest choice wins, no early answer leaks, private choices, exact-deadline lock, repeat-tap bonus preserved and shorter timers');

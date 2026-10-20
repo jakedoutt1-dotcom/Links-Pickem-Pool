@@ -135,6 +135,7 @@ export async function runMysteryFlow(mode) {
         assert.equal(await reader.locator('#notes').inputValue(),'My private working theory — revised while saving'); assert.equal(await tv.locator('#notes').inputValue(),'');
         await tv.locator('#tvBoard:visible').waitFor(); await tv.screenshot({path:output + '/tv-board.png',fullPage:true});
         assert.ok(await tv.locator('#tvBoard').evaluate(e => e.getBoundingClientRect().bottom <= innerHeight + 1)); await noOverflow(tv);
+        assert.equal(await tv.locator('.pass-info').isVisible(),false,'TV spectators do not need purchase help taking evidence space.');
         assert.ok(await tv.locator('#tvClueText').evaluate(e => e.scrollHeight <= e.clientHeight + 1),'A TV record page must be completely readable.');
         await tv.locator('#tvAuto').click(); assert.equal(await tv.locator('#tvAuto').getAttribute('aria-pressed'),'false');
       }
