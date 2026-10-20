@@ -4,7 +4,7 @@ import {activeDailyVenues,venueSnapshot} from '../../lib/daily-venues.js';
 import {pinnedDailyDeck} from '../../lib/daily-question-provider.js';
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const fail=(message,status=400)=>Object.assign(new Error(message),{status});
-function visible(s,deck){if(!s)return null;const {id,version,status,index,score,correct,deadline,feedback}=s,bonusPerCorrect=s.wheelRequired?s.bonusPerCorrect||0:0;return {id,version,status,index,score,correct,needsSpin:s.wheelRequired===true&&!Number.isInteger(s.wheelIndex),wheelIndex:Number.isInteger(s.wheelIndex)?s.wheelIndex:null,bonusPerCorrect,maxScore:5*(100+bonusPerCorrect),venue:venueSnapshot(s),deadline:deadline?new Date(deadline).toISOString():null,question:['question','reveal'].includes(status)?{text:deck[index].text,choices:deck[index].choices,category:deck[index].category,...(deck[index].difficulty?{difficulty:deck[index].difficulty,level:deck[index].level}:{} )}:null,feedback:status==='reveal'?feedback:null}}
+function visible(s,deck){if(!s)return null;const {id,version,status,index,score,correct,deadline,feedback}=s,bonusPerCorrect=s.wheelRequired?s.bonusPerCorrect||0:0;return {id,version,status,index,score,correct,needsSpin:(s.wheelRequired===true||s.status==='ready')&&!Number.isInteger(s.wheelIndex),wheelIndex:Number.isInteger(s.wheelIndex)?s.wheelIndex:null,bonusPerCorrect,maxScore:5*(100+bonusPerCorrect),venue:venueSnapshot(s),deadline:deadline?new Date(deadline).toISOString():null,question:['question','reveal'].includes(status)?{text:deck[index].text,choices:deck[index].choices,category:deck[index].category,...(deck[index].difficulty?{difficulty:deck[index].difficulty,level:deck[index].level}:{} )}:null,feedback:status==='reveal'?feedback:null}}
 export async function dailyRequest({request,env},services={}){try{
  if(!['GET','POST'].includes(request.method))return json({error:'Method not allowed.'},405);
  if(!env.DB)return json({error:'Daily Challenge is temporarily unavailable.'},503);
@@ -31,15 +31,15 @@ export async function dailyRequest({request,env},services={}){try{
    if(!attempt||b.id!==attempt.id||!Number.isInteger(b.version)||b.version!==attempt.version)throw fail('Your challenge changed. Refresh to resume.',409);
    const s=JSON.parse(attempt.state);if(s.status==='complete')throw fail('Today’s ranked challenge is complete.',409);
    if(b.action==='spin'){
-    if(s.status!=='ready'||s.wheelRequired!==true||Number.isInteger(s.wheelIndex))throw fail('This round cannot spin again.',409);
-    Object.assign(s,spinDailyWheel());
+    if(s.status!=='ready'||Number.isInteger(s.wheelIndex))throw fail('This round cannot spin again.',409);
+    Object.assign(s,spinDailyWheel(),{wheelRequired:true});
    }else if(b.action==='answer'){
     if(s.status!=='question')throw fail('This question was already answered.',409);
     if(!(now>=s.deadline&&b.choice===null)&&(!Number.isInteger(b.choice)||b.choice<0||b.choice>3))throw fail('Choose one of the four answers.');
     const q=deck[s.index],correct=now<s.deadline&&b.choice===q.answer;s.correct+=correct?1:0;s.score=s.correct*(100+(s.wheelRequired?s.bonusPerCorrect||0:0));s.status='reveal';s.feedback={correct,answer:q.answer,choice:now<s.deadline?b.choice:null,explanation:q.explanation,...(q.source?{source:q.source}:{})};
    }else{
     if(!['ready','reveal'].includes(s.status))throw fail('Answer the current question first.',409);
-    if(s.wheelRequired&&!Number.isInteger(s.wheelIndex))throw fail('Spin your bonus wheel before starting the questions.',409);
+    if((s.wheelRequired||s.status==='ready')&&!Number.isInteger(s.wheelIndex))throw fail('Spin your bonus wheel before starting the questions.',409);
     if(s.status==='reveal')s.index++;delete s.feedback;
     if(s.index>=5){s.index=4;s.status='complete';s.deadline=null}else{s.status='question';s.deadline=now+20000}
    }
