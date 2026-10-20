@@ -1,0 +1,41 @@
+/* Homepage destination hub. Scoped so existing pool and game pages keep their styles. */
+.home-destinations{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;width:calc(100% - 72px);max-width:1190px;margin:46px auto 28px;align-items:stretch}
+.home-destinations .destination-card{isolation:isolate;position:relative;display:flex;flex-direction:column;min-width:0;overflow:hidden;border:1px solid #b99b5e99;border-radius:20px;background:linear-gradient(140deg,#142632,#0b151e 80%);color:#f8f5ed;text-decoration:none;box-shadow:0 16px 48px #0005;transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease}
+.home-destinations .destination-card:after{content:"";pointer-events:none;position:absolute;bottom:0;left:18%;right:18%;height:1px;background:linear-gradient(90deg,transparent,#f4d48988,transparent)}
+.home-destinations .destination-card>img{display:block;flex:none;width:100%;height:auto;aspect-ratio:16/7;object-fit:cover;object-position:center 53%;border-bottom:1px solid #b99b5e66;background:#0b1720;transition:filter .3s ease}
+.home-destinations .destination-copy{display:flex;flex:1;flex-direction:column;align-items:flex-start;min-width:0;padding:27px 29px 28px;position:relative}
+.home-destinations .destination-copy .eyebrow{font-size:9px;line-height:1.5;letter-spacing:2.3px;font-weight:800;color:#f0cc7d;margin:0 0 11px}
+.home-destinations .destination-copy h2{font-size:clamp(29px,3vw,39px);font-weight:800;letter-spacing:-1.1px;line-height:1.1;margin:0 0 14px;color:#fbf8ee}
+.home-destinations .destination-copy>p:not(.eyebrow){font-size:14px;line-height:1.65;color:#becbd2;max-width:440px;margin:0 0 18px}
+.home-destinations .destination-cta{display:inline-flex;align-items:center;gap:16px;min-height:44px;margin-top:auto;padding:11px 16px;border:1px solid #d2af6380;border-radius:9px;background:linear-gradient(110deg,#d7ad53,#f2d48b);font-size:12px;font-weight:800;letter-spacing:.1px;line-height:1.3;color:#111d25}
+.home-destinations .destination-copy p .destination-cta{margin-top:18px}
+.home-destinations .destination-card:hover{transform:translateY(-3px);border-color:#f0d18b;box-shadow:0 20px 50px #0007,0 0 28px #d7b26013}
+.home-destinations .destination-card:hover>img{filter:brightness(1.08)}
+.home-destinations .destination-card:focus-visible{outline:3px solid #78e4eb;outline-offset:5px}
+.home-destinations .destination-card:hover .destination-cta{background:linear-gradient(110deg,#edc76b,#ffe6aa)}
+.home-shortcuts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;width:calc(100% - 72px);max-width:1190px;margin:24px auto 38px}
+.home-shortcuts .home-shortcut{display:flex;align-items:center;gap:18px;min-width:0;min-height:128px;padding:18px;border:1px solid #6e82714f;border-radius:15px;background:linear-gradient(120deg,#102431,#0c1720);color:#f8f5ed;text-decoration:none;transition:border-color .2s ease,background .2s ease}
+.home-shortcuts .home-shortcut>img{display:block;flex:0 0 100px;width:100px;height:88px;object-fit:cover;object-position:center;border:1px solid #b99b5e66;border-radius:9px;background:#07131b}
+.home-shortcuts .home-shortcut>div{flex:1;min-width:0}
+.home-shortcuts .home-shortcut .eyebrow{font-size:8px;letter-spacing:1.5px;line-height:1.45;margin:0 0 7px;color:#f0cc7d}
+.home-shortcuts .home-shortcut h2,.home-shortcuts .home-shortcut h3{font-size:20px;line-height:1.13;letter-spacing:-.4px;margin:0 0 7px;color:#f8f5ed}
+.home-shortcuts .home-shortcut p:not(.eyebrow){font-size:12px;line-height:1.5;margin:0;color:#b9c8d0}
+.home-shortcuts .home-shortcut .destination-cta,.home-shortcuts .home-shortcut .shortcut-cta{display:inline-block;font-size:11px;font-weight:800;line-height:1.4;color:#f0cc7d;margin-top:9px}
+.home-shortcuts .home-shortcut:hover{border-color:#d5b46999;background:linear-gradient(120deg,#163342,#0c1720)}
+.home-shortcuts .home-shortcut:focus-visible{outline:3px solid #78e4eb;outline-offset:4px}
+@media(max-width:760px){.home-destinations{width:calc(100% - 36px);gap:18px;margin:30px auto 22px;grid-template-columns:1fr}.home-destinations .destination-card{border-radius:16px}.home-destinations .destination-card>img{aspect-ratio:16/7}.home-destinations .destination-copy{padding:22px}.home-destinations .destination-copy h2{font-size:31px;margin-bottom:12px}.home-destinations .destination-copy>p:not(.eyebrow){font-size:13px;margin-bottom:16px}.home-destinations .destination-copy .eyebrow{font-size:8px;letter-spacing:1.8px}.home-destinations .destination-cta{min-height:44px;font-size:12px}.home-shortcuts{width:calc(100% - 36px);grid-template-columns:1fr;gap:12px;margin:22px auto 30px}.home-shortcuts .home-shortcut{padding:14px;gap:15px;min-height:112px}.home-shortcuts .home-shortcut>img{flex-basis:88px;width:88px;height:80px}.home-shortcuts .home-shortcut h2,.home-shortcuts .home-shortcut h3{font-size:19px}.home-shortcuts .home-shortcut p:not(.eyebrow){font-size:11px}}
+@media(max-width:350px){.home-destinations,.home-shortcuts{width:calc(100% - 28px)}.home-destinations .destination-copy{padding:19px}.home-shortcuts .home-shortcut{padding:12px;gap:12px}.home-shortcuts .home-shortcut>img{flex-basis:72px;width:72px;height:74px}.home-shortcuts .home-shortcut h2,.home-shortcuts .home-shortcut h3{font-size:17px}.home-shortcuts .home-shortcut .eyebrow{font-size:7px;letter-spacing:1.1px}}
+@media(prefers-reduced-motion:reduce){.home-destinations .destination-card,.home-destinations .destination-card>img,.home-shortcuts .home-shortcut{transition:none!important}.home-destinations .destination-card:hover{transform:none}}
+/* Compact homepage intro and supporting previews; the catalogs keep their own layout. */
+body[data-home="stadium"] .hero{height:auto;min-height:0;padding:64px 5% 60px;align-items:center;background-size:cover;background-position:center 38%}
+body[data-home="stadium"] .hero h1{font-size:clamp(40px,4.4vw,64px);max-width:790px}
+body[data-home="stadium"] .hero-description{max-width:570px;margin:18px 0 24px}
+body[data-home="stadium"] .hero-note{margin-bottom:0}
+body[data-home="stadium"] .explore{display:none}
+.destination-previews{display:flex;gap:10px;margin:0 0 20px;width:100%}.home-destinations .destination-previews img{width:calc(50% - 5px);height:64px;object-fit:cover;object-position:center;border:1px solid #d4b56744;border-radius:7px}
+.home-shortcuts .daily-promo__action{background:none;border:0;border-radius:0;padding:0;min-height:0;box-shadow:none;color:#f0cc7d}.home-shortcuts .daily-promo__board{display:block;font-size:11px;margin-top:10px;color:#c2d0d5}.home-shortcuts #circuitRush>img{object-fit:contain}
+.catalog-intro{max-width:1190px;padding:58px 36px 24px;margin:auto}.catalog-intro h1{font-size:clamp(42px,5vw,68px);line-height:1.05;margin:15px 0 20px}.catalog-intro h1 em{font-style:normal;color:var(--gold)}.catalog-intro>p:not(.eyebrow){max-width:650px;font-size:16px;line-height:1.7;color:var(--muted)}.catalog-intro .hero-actions{display:flex;gap:12px;flex-wrap:wrap}.pool-catalog #games{padding-top:32px}
+@media(max-width:700px){body[data-home="stadium"] .hero{padding:32px 22px 30px;background-position:center top}body[data-home="stadium"] .hero h1{font-size:40px;letter-spacing:-1.5px}body[data-home="stadium"] .hero-description{font-size:14px;margin:16px 0 20px}.catalog-intro{padding:36px 18px 16px}.catalog-intro>p:not(.eyebrow){font-size:14px}.catalog-intro .hero-actions .button{width:100%}.home-destinations .destination-previews img{height:60px}}
+
+.home-destinations .destination-previews img{height:auto;aspect-ratio:3/2;object-fit:contain;background:#07131b}
+body[data-home="stadium"] .hero{background-image:linear-gradient(90deg,#080b0ee8,#080b0e80),url('./assets/links-all-sports-hero-v4.png')}

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+ <title id="title">LINKS Circuit Rush</title><desc id="desc">A premium black and gold circuit arena with bright connected tracks and glowing terminals.</desc>
+ <defs>
+  <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#152b35"/><stop offset=".48" stop-color="#071016"/><stop offset="1" stop-color="#14232b"/></linearGradient>
+  <linearGradient id="gold" x2=".3" y2="1"><stop stop-color="#fff0bd"/><stop offset=".4" stop-color="#e8bf64"/><stop offset=".7" stop-color="#b57a29"/><stop offset="1" stop-color="#ffe6a0"/></linearGradient>
+  <linearGradient id="shade"><stop stop-color="#071016" stop-opacity=".99"/><stop offset=".48" stop-color="#071016" stop-opacity=".89"/><stop offset="1" stop-color="#071016" stop-opacity="0"/></linearGradient>
+  <radialGradient id="halo"><stop stop-color="#e8c65f" stop-opacity=".25"/><stop offset="1" stop-color="#e8c65f" stop-opacity="0"/></radialGradient>
+  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7"/></filter>
+  <pattern id="mesh" width="36" height="36" patternUnits="userSpaceOnUse"><path d="M36 0H0V36" fill="none" stroke="#7d9aa3" stroke-opacity=".08"/></pattern>
+  <pattern id="tiles" width="94" height="94" patternUnits="userSpaceOnUse"><rect x="5" y="5" width="84" height="84" rx="14" fill="#10212b" stroke="#59727b" stroke-opacity=".35"/><circle cx="47" cy="47" r="4" fill="#7d9da5" fill-opacity=".6"/></pattern>
+ </defs>
+ <rect width="1200" height="675" fill="url(#bg)"/><rect width="1200" height="675" fill="url(#mesh)"/><ellipse cx="875" cy="285" rx="455" ry="390" fill="url(#halo)"/>
+ <g transform="translate(640 47) rotate(10 280 280)">
+  <rect x="-15" y="-15" width="596" height="596" rx="37" fill="#02080d" stroke="#b89753" stroke-width="3"/><rect width="564" height="564" rx="18" fill="url(#tiles)"/>
+  <path d="M0 47H141V141H329V329H235V423H423V517H564" fill="none" stroke="#f9cf65" stroke-width="23" opacity=".48" filter="url(#glow)"/>
+  <path d="M0 47H141V141H329V329H235V423H423V517H564" fill="none" stroke="url(#gold)" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M47 235H141V329M423 47V141H517M47 423V517H141M423 235H517V329" fill="none" stroke="#435e68" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M423 235H517V329" fill="none" stroke="#63e2ea" stroke-width="5" opacity=".65"/>
+  <g fill="#07141c" stroke="#ffdc83" stroke-width="5"><circle cx="141" cy="47" r="17"/><circle cx="329" cy="141" r="17"/><circle cx="235" cy="329" r="17"/><circle cx="423" cy="423" r="17"/></g>
+  <g fill="#fff1b3"><circle cx="141" cy="47" r="6"/><circle cx="329" cy="141" r="6"/><circle cx="235" cy="329" r="6"/><circle cx="423" cy="423" r="6"/></g>
+  <circle cx="0" cy="47" r="22" fill="#ffe7a0"/><circle cx="564" cy="517" r="22" fill="#75edf2"/>
+ </g>
+ <rect width="1200" height="675" fill="url(#shade)"/>
+ <path d="M55 55H1145M55 620H1145" stroke="#d4ac57" stroke-opacity=".5"/>
+ <text x="64" y="122" font-family="Arial,sans-serif" font-size="27" font-weight="800" letter-spacing="8" fill="#f4d588">LINKS</text>
+ <text x="59" y="285" font-family="Arial,sans-serif" font-size="104" font-weight="900" letter-spacing="-4" fill="url(#gold)">CIRCUIT</text>
+ <text x="59" y="402" font-family="Arial,sans-serif" font-size="128" font-weight="900" letter-spacing="-5" fill="url(#gold)">RUSH</text>
+ <path d="M64 440H230" stroke="#75edf2" stroke-width="5"/>
+ <text x="64" y="495" font-family="Arial,sans-serif" font-size="24" font-weight="700" letter-spacing="3" fill="#e9e8de">ROTATE. CONNECT. CONQUER.</text>
+ <text x="64" y="558" font-family="Arial,sans-serif" font-size="17" font-weight="700" letter-spacing="4" fill="#8fb2be">A NEW DAILY BRAIN CHALLENGE</text>
+</svg>
