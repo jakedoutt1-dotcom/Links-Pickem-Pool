@@ -1,0 +1,4 @@
+.home-destinations .destination-card>img.catalog-banner{display:block;width:100%;height:auto;aspect-ratio:auto;object-fit:contain;background:#07121b;flex:none}
+.catalog-page-hero{width:100%;max-width:1240px;margin:0 auto;overflow:hidden;border-bottom:1px solid #b99b5e66;background:#07121b}
+.catalog-page-hero img{display:block;width:100%;height:auto;object-fit:contain}
+.arcade.catalog-page-hero{min-height:0;background:#07121b}
