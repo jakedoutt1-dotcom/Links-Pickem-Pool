@@ -34,7 +34,7 @@ async function readFeed(league, path) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
     try {
-      const response = await fetch('https://site.api.espn.com/apis/site/v2/sports/' + path + '/scoreboard', {
+      const response = await fetch('https://site.web.api.espn.com/apis/site/v2/sports/' + path + '/scoreboard', {
         signal: controller.signal, headers: {Accept: 'application/json'}, redirect: 'error',
       });
       if (!response.ok) throw Error('Score provider unavailable.');

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {onRequest, normalizeLiveEvents} from '../functions/new-build/api/live-scores.js';
-import {validLiveSnapshot} from '../public/new-build/home-live.mjs';
+import {validLiveSnapshot,loadBackupScores,normalizeBackupEvents} from '../public/new-build/home-live.mjs';
 
 const event = (state = 'in') => ({id: '123', date: '2026-10-17T18:00:00Z',
   status: {type: {state, shortDetail: '2nd quarter'}}, competitions: [{competitors: [
@@ -26,8 +26,8 @@ globalThis.caches = {default: {
 }};
 globalThis.fetch = async (url, options) => {
   calls.push(String(url));
-  assert.equal(new URL(url).hostname, 'site.api.espn.com');
-  assert.equal(options.headers.Authorization, undefined);
+  assert.equal(new URL(url).hostname, 'site.web.api.espn.com');
+  assert.equal(options.headers?.Authorization, undefined);
   assert.ok(options.signal);
   if (mode === 'down' || mode === 'partial' && String(url).includes('/nfl/')) throw Error('offline');
   if (mode === 'timeout' && String(url).includes('/nfl/')) return new Promise((resolve, reject) => options.signal.addEventListener('abort', () => reject(Error('timed out')), {once: true}));
@@ -56,7 +56,8 @@ try {
   response = await onRequest({request: request('GET')}); payload = await response.json();
   assert.equal(response.status, 200); assert.deepEqual(payload.events, []); assert.deepEqual(payload.unavailable, []);
   mode = 'bad'; assert.equal((await onRequest({request: request('GET')})).status, 503);
-  mode = 'healthy'; response = await onRequest({request: request('HEAD')});
+  mode = 'healthy'; const backup=await loadBackupScores();assert.equal(backup.events.length,7);assert.equal(backup.source,'public-backup');assert.equal(validLiveSnapshot(backup),true);assert.equal(normalizeBackupEvents([event('post'),event('pre'),event()], 'NBA')[0].state,'in');
+  mode='down';await assert.rejects(loadBackupScores);mode = 'healthy'; response = await onRequest({request: request('HEAD')});
   assert.equal(response.status, 200); assert.equal(await response.text(), '');
 } finally {globalThis.fetch = originalFetch; globalThis.caches = originalCaches; globalThis.setTimeout = originalTimeout;}
 console.log('PASS public live feed: seven allowlisted leagues, cache reuse, partial/outage/empty handling, normalized scores, expiry and safe methods.');

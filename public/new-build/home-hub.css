@@ -26,16 +26,18 @@
 @media(max-width:760px){.home-destinations{width:calc(100% - 36px);gap:18px;margin:30px auto 22px;grid-template-columns:1fr}.home-destinations .destination-card{border-radius:16px}.home-destinations .destination-card>img{aspect-ratio:16/7}.home-destinations .destination-copy{padding:22px}.home-destinations .destination-copy h2{font-size:31px;margin-bottom:12px}.home-destinations .destination-copy>p:not(.eyebrow){font-size:13px;margin-bottom:16px}.home-destinations .destination-copy .eyebrow{font-size:8px;letter-spacing:1.8px}.home-destinations .destination-cta{min-height:44px;font-size:12px}.home-shortcuts{width:calc(100% - 36px);grid-template-columns:1fr;gap:12px;margin:22px auto 30px}.home-shortcuts .home-shortcut{padding:14px;gap:15px;min-height:112px}.home-shortcuts .home-shortcut>img{flex-basis:88px;width:88px;height:80px}.home-shortcuts .home-shortcut h2,.home-shortcuts .home-shortcut h3{font-size:19px}.home-shortcuts .home-shortcut p:not(.eyebrow){font-size:11px}}
 @media(max-width:350px){.home-destinations,.home-shortcuts{width:calc(100% - 28px)}.home-destinations .destination-copy{padding:19px}.home-shortcuts .home-shortcut{padding:12px;gap:12px}.home-shortcuts .home-shortcut>img{flex-basis:72px;width:72px;height:74px}.home-shortcuts .home-shortcut h2,.home-shortcuts .home-shortcut h3{font-size:17px}.home-shortcuts .home-shortcut .eyebrow{font-size:7px;letter-spacing:1.1px}}
 @media(prefers-reduced-motion:reduce){.home-destinations .destination-card,.home-destinations .destination-card>img,.home-shortcuts .home-shortcut{transition:none!important}.home-destinations .destination-card:hover{transform:none}}
-/* Compact homepage intro and supporting previews; the catalogs keep their own layout. */
-body[data-home="stadium"] .hero{height:auto;min-height:0;padding:64px 5% 60px;align-items:center;background-size:cover;background-position:center 38%}
-body[data-home="stadium"] .hero h1{font-size:clamp(40px,4.4vw,64px);max-width:790px}
-body[data-home="stadium"] .hero-description{max-width:570px;margin:18px 0 24px}
-body[data-home="stadium"] .hero-note{margin-bottom:0}
-body[data-home="stadium"] .explore{display:none}
+/* Supporting homepage previews; the original hero keeps its own layout. */
+
+
+
+
+
 .destination-previews{display:flex;gap:10px;margin:0 0 20px;width:100%}.home-destinations .destination-previews img{width:calc(50% - 5px);height:64px;object-fit:cover;object-position:center;border:1px solid #d4b56744;border-radius:7px}
 .home-shortcuts .daily-promo__action{background:none;border:0;border-radius:0;padding:0;min-height:0;box-shadow:none;color:#f0cc7d}.home-shortcuts .daily-promo__board{display:block;font-size:11px;margin-top:10px;color:#c2d0d5}.home-shortcuts #circuitRush>img{object-fit:contain}
 .catalog-intro{max-width:1190px;padding:58px 36px 24px;margin:auto}.catalog-intro h1{font-size:clamp(42px,5vw,68px);line-height:1.05;margin:15px 0 20px}.catalog-intro h1 em{font-style:normal;color:var(--gold)}.catalog-intro>p:not(.eyebrow){max-width:650px;font-size:16px;line-height:1.7;color:var(--muted)}.catalog-intro .hero-actions{display:flex;gap:12px;flex-wrap:wrap}.pool-catalog #games{padding-top:32px}
-@media(max-width:700px){body[data-home="stadium"] .hero{padding:32px 22px 30px;background-position:center top}body[data-home="stadium"] .hero h1{font-size:40px;letter-spacing:-1.5px}body[data-home="stadium"] .hero-description{font-size:14px;margin:16px 0 20px}.catalog-intro{padding:36px 18px 16px}.catalog-intro>p:not(.eyebrow){font-size:14px}.catalog-intro .hero-actions .button{width:100%}.home-destinations .destination-previews img{height:60px}}
+@media(max-width:700px){.catalog-intro{padding:36px 18px 16px}.catalog-intro>p:not(.eyebrow){font-size:14px}.catalog-intro .hero-actions .button{width:100%}.home-destinations .destination-previews img{height:60px}}
 
 .home-destinations .destination-previews img{height:auto;aspect-ratio:3/2;object-fit:contain;background:#07131b}
-body[data-home="stadium"] .hero{background-image:linear-gradient(90deg,#080b0ee8,#080b0e80),url('./assets/links-all-sports-hero-v4.png')}
+
+
+.home-destinations .destination-pool-art{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;aspect-ratio:16/7;background:#08131c;border-bottom:1px solid #b99b5e66}.home-destinations .destination-pool-art img{display:block;width:100%;height:100%;min-width:0;min-height:0;object-fit:contain;background:#08131c}

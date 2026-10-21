@@ -13,10 +13,11 @@ let mode = 'healthy', hits = 0;
 const snapshot = () => ({asOf: Date.now(), unavailable: [], events: [{id: 'one', league: 'NFL', state: 'in',
   away: {name: '<img src=x onerror=alert(1)>', score: '17'}, home: {name: 'DAL', score: '10'}, detail: '2nd quarter'}]});
 await page.route('**/*', async route => {
-  const path = new URL(route.request().url()).pathname;
+  const url = new URL(route.request().url()),path=url.pathname;
+  if(url.hostname==='site.web.api.espn.com')return route.fulfill({status:mode==='backup'?200:503,contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*'},body:JSON.stringify({events:mode==='backup'?[{id:'backup',status:{type:{state:'in',shortDetail:'3rd quarter'}},competitions:[{competitors:[{homeAway:'away',team:{abbreviation:'BUF'},score:'21'},{homeAway:'home',team:{abbreviation:'NYJ'},score:'7'}]}]}]:[]})});
   if (path === '/new-build/api/live-scores') {
     hits++;
-    return route.fulfill({status: mode === 'offline' ? 503 : 200, contentType: 'application/json',
+    return route.fulfill({status: ['offline','backup'].includes(mode) ? 503 : 200, contentType: 'application/json',
       body: JSON.stringify(mode === 'offline' ? {error: 'offline'} : mode === 'empty' ? {...snapshot(), events: []} : snapshot())});
   }
   if (path === '/home-live.mjs') return route.fulfill({contentType: 'text/javascript', body: source});
@@ -28,6 +29,7 @@ try {
   assert.equal(await page.locator('#liveTrackHome img').count(), 0, 'score text cannot inject HTML');
   assert.equal(await page.locator('#liveTrackHome [aria-hidden="true"]').count(), 1, 'duplicate ticker row hidden from screen readers');
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+  mode='backup';await page.getByRole('button',{name:'Refresh live scores'}).click();await page.getByRole('status').filter({hasText:/^Updated.*Backup score feed/}).waitFor();assert.match(await page.locator('#liveTrackHome').innerText(),/BUF 21/);
   mode = 'offline'; await page.getByRole('button', {name: 'Refresh live scores'}).click();
   await page.getByRole('status').filter({hasText: 'Scores may have changed'}).waitFor();
   assert.equal(await page.locator('.livebar-home').getAttribute('data-live-state'), 'cached');
