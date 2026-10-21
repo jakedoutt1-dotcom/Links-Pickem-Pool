@@ -40,6 +40,7 @@ export async function runMysteryFlow(mode) {
     const count = mode === 'solo' ? 1 : mode === 'secret' ? 4 : 2;
     const host = await page(mode === 'secret' ? 1360 : mode === 'solo' ? 360 : 390);
     await host.goto('https://alibi.local/new-build/last-alibi.html');
+    await host.locator('#caseId').selectOption('blackthorn');
     assert.equal(await host.locator('#mode').inputValue(),'together');
     await noOverflow(host); await host.screenshot({path:output + '/entry.png',fullPage:true});
     await host.locator('#createName').fill('Host'); await host.locator('#mode').selectOption(mode);
