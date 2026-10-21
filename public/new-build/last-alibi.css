@@ -39,3 +39,7 @@ body[data-case="midnight-desk"]{--gold:#edce8b;--line:#b39b625b;--paper:#f7f0df;
 body[data-case-loading=true] #createForm,body[data-case-loading=true] #entry .cover,body[data-case-loading=true] #entry .how-to-play{display:none!important}
 
 .form-pair label[hidden]{display:none!important}body[data-case-setup=true] #caseDescription{display:none}
+
+#caseObjectiveFields{display:grid;gap:14px;grid-column:1/-1}#caseObjectiveFields[hidden],#legacyObjectiveLabel[hidden],.private-resume[hidden]{display:none}.records-only .scene-window,.records-only .scene-tools{display:none}.private-resume{margin:16px 0}.private-resume summary{color:#edcf8c;font-weight:700}.private-resume p{max-width:760px;line-height:1.65}.private-resume button{max-width:100%;white-space:normal}
+
+.scene-progress{overflow-x:auto;overscroll-behavior-x:contain;padding-bottom:8px;scrollbar-width:thin}.scene-progress li,body[data-case="midnight-desk"] .scene-progress li{flex:0 0 auto;min-width:68px;font-size:11px;white-space:nowrap;line-height:1.4;padding-right:10px}#caseObjectiveFields label{margin:7px 0}#caseObjectiveFields{gap:7px}

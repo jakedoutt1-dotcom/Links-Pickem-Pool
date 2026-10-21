@@ -1,4 +1,5 @@
 import {DOSSIERS,packetCount} from './last-alibi-dossiers.js';
+import {NIGHT_TRAIN_OBJECTIVES} from './last-alibi-night-train-investigation.js';
 // Original, case-specific deductions. Answers and required proof remain server-side.
 const gate=(title,prompt,answers,evidence,hints)=>({title,prompt,answers,evidence,hints});
 export const CASE_OBJECTIVES={
@@ -23,10 +24,19 @@ export const CASE_OBJECTIVES={
  gate('Account for the launch crew','Name both people continuously recorded at the jetty throughout the incident.',['rafi quinn tess flint','tess flint rafi quinn'],['obs-gallery','obs-jetty'],['A vessel schedule is not a personal alibi.','Read the safety camera’s exact coverage and compare it with the incident.']),
  gate('Trace the substitution','Give the credential holder’s name and the survey crate serial recovered at the exit.',['cal ward sc8'],['obs-register','obs-seal'],['Combine identity with the physical movement of the object.','The key registry and telescope mount test alternatives; the crate seal supplies the positive link.'])]
 };
-export function caseObjectives(s){const core=CASE_OBJECTIVES[s.caseId];if(!core||!(s.dossierVersion>=2))return core;const extra=DOSSIERS[s.caseId].tasks;return [core[0],extra[0],core[1],extra[1],extra[2],core[2]].map(g=>({...g,discovery:g.evidence[0]}))}
+export function caseObjectives(s){if(s.caseId==='night-train-investigation')return NIGHT_TRAIN_OBJECTIVES;const core=CASE_OBJECTIVES[s.caseId];if(!core||!(s.dossierVersion>=2))return core;const extra=DOSSIERS[s.caseId].tasks;return [core[0],extra[0],core[1],extra[1],extra[2],core[2]].map(g=>({...g,discovery:g.evidence[0]}))}
 export const objectiveFor=s=>s.dossierVersion>=1&&s.phase==='investigate'?caseObjectives(s)?.[s.chapter-1]:null;
 export const normalizeAnswer=value=>String(value||'').toLowerCase().replace(/[^a-z0-9]/g,'');
-export function objectiveView(s){const g=objectiveFor(s);if(!g)return null;const found=s.dossierVersion<2||(s.published||[]).includes(g.discovery)||Object.values(s.players).some(p=>Object.values(p.searched||{}).flat().includes(g.discovery));return {id:s.chapter,discovered:found,title:found?g.title:'Find the next lead',prompt:found?g.prompt:'This packet contains a lead to the next archive release. Inspect the records and find what needs to be established.',hints:g.hints.slice(0,s.objectiveHints?.[s.chapter]||0),packet:s.chapter,packets:packetCount(s)}}
+export function objectiveDiscovered(s,g,seat,display=false){
+ if(s.dossierVersion<3)return s.dossierVersion<2||(s.published||[]).includes(g.discovery)||Object.values(s.players).some(p=>Object.values(p.searched||{}).flat().includes(g.discovery));
+ return (s.published||[]).includes(g.discovery)||(!display&&s.mode==='solo'&&Object.values(s.players[seat]?.searched||{}).flat().includes(g.discovery));
+}
+export function objectiveView(s,seat,display=false){const g=objectiveFor(s);if(!g)return null;const found=objectiveDiscovered(s,g,seat,display);return {id:s.chapter,discovered:found,title:found?g.title:'Find the next lead',prompt:found?g.prompt:'This packet contains a lead to the next archive release. Inspect the records and find what needs to be established.',hints:(found||s.dossierVersion<3)?g.hints.slice(0,s.objectiveHints?.[s.chapter]||0):[],fields:found&&g.fields?g.fields.map(({id,label,type})=>({id,label,type})):undefined,proofSlots:3,packet:s.chapter,packets:packetCount(s)}}
 
-// Permit connective words and punctuation without turning the check into a name-only guess.
-export function answerMatches(value,alternatives){const text=normalizeAnswer(value);return alternatives.some(a=>a.split(/\s+/).map(normalizeAnswer).filter(Boolean).every(part=>text.includes(part)))}
+const connective=new Set('the a an and at in on of to from with was were is are give time room credential minutes minute network reference return visit recorded named both person people during between earliest latest verified window offset by plus pm am'.split(' '));
+const tokens=value=>String(value||'').toLowerCase().normalize('NFKC').replace(/\b([a-z]+)-(?=\d)/g,'$1').replace(/\b([a-z]) (?=\d)/g,'$1').replace(/\.(?!\d)/g,' ').replace(/[^a-z0-9:.]+/g,' ').trim().split(/\s+/).filter(Boolean);
+// Compare bounded tokens, not digit/name substrings; reject extra content or answer dumps.
+export function answerMatches(value,alternatives){if(typeof value!=='string'||value.length>240)return false;const actual=tokens(value);return alternatives.some(expected=>{const remaining=[...actual];for(const word of tokens(expected)){const i=remaining.indexOf(word);if(i<0)return false;remaining.splice(i,1)}return remaining.every(word=>connective.has(word))})}
+const canonical=(value,type)=>{if(typeof value!=='string'||value.length>80)return null;const v=value.normalize('NFKC').trim().toLowerCase();if(type==='code')return /^[a-z0-9 -]+$/.test(v)?v.replace(/[ -]/g,''):null;if(type==='time'){const m=/^(\d{1,2}):(\d{2})(?::00)?$/.exec(v);return m&&+m[1]<24&&+m[2]<60?String(+m[1]).padStart(2,'0')+':'+m[2]:null}if(type==='set')return v.split(/[,;]+/).map(x=>x.trim().replace(/\s+/g,' ')).sort().join('|');return /^[a-z0-9 .'-]+$/.test(v)?v.replace(/\s+/g,' '):null};
+export function objectiveAnswerMatches(g,body){if(!g.fields)return answerMatches(body.answer,g.answers);const values=body.answers;if(!values||Array.isArray(values)||typeof values!=='object'||Object.keys(values).length!==g.fields.length)return false;return g.fields.every(f=>Object.hasOwn(values,f.id)&&canonical(values[f.id],f.type)!==null&&(f.answers||[]).some(a=>canonical(values[f.id],f.type)===canonical(a,f.type)))}
+export function objectiveProofMatches(g,selected,known){if(!Array.isArray(selected)||selected.length>3||new Set(selected).size!==selected.length||selected.some(id=>typeof id!=='string'||!known.has(id)))return false;return (g.evidenceBundles||[g.evidence]).some(bundle=>bundle.every(id=>selected.includes(id)&&known.has(id)))}

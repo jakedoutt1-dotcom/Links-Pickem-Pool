@@ -3,7 +3,7 @@ import {fixture} from './helpers/pool-format-fixture.mjs';
 import {onRequest} from '../functions/new-build/api/last-alibi.js';
 import {begin,next,finish,solve,view,theoryRequired} from '../functions/lib/last-alibi.js';
 import {EXTRA_QUICK_CASES} from '../functions/lib/last-alibi-quick-cases.js';
-const cases=['midnight-desk',...Object.keys(EXTRA_QUICK_CASES)];
+const cases=['midnight-desk',...Object.keys(EXTRA_QUICK_CASES).filter(id=>id!=='night-train-investigation')];
 for(const caseId of cases)for(const difficulty of ['standard','expert'])for(const mode of ['solo','together']){
  const s={caseId,mode,difficulty,minutes:8,guided:true,flowVersion:2,game:1,owner:'host',players:{host:{id:'h',name:'Host'},...(mode==='together'?{guest:{id:'g',name:'Guest'}}:{})}};begin(s,1000);const killer=s.suspects[s.case.killer].id;assert.deepEqual(solve(s),[killer]);assert.equal(s.cooperative,true);assert.equal(s.leadCredits,3);assert(s.case.proofRecords.some(id=>s.case.evidence.some(e=>e.id===id&&!e.cost)));assert(s.case.evidence.every(e=>e.chapter>=1&&e.chapter<=3));
  let elapsed=s.deadline-1000;for(let chapter=1;chapter<=3;chapter++){next(s,1000+elapsed);assert.equal(s.chapter,chapter);assert.equal(theoryRequired(s),false);assert(s.case.evidence.filter(e=>e.chapter<=chapter&&!e.cost&&!e.unlock).every(e=>s.published.includes(e.id)));assert(!s.case.evidence.filter(e=>e.cost||e.unlock).some(e=>s.published.includes(e.id)));elapsed+=s.deadline-(1000+elapsed);const tv=view(s,'',1000,true);assert.equal(tv.privateRole,null);assert.equal(tv.notes,'');assert(!JSON.stringify(tv).includes('eliminates'));assert(!JSON.stringify(tv).includes('proofRecords'));assert.equal(tv.chapterCount,3)}next(s,1000+elapsed);elapsed+=s.deadline-(1000+elapsed);assert.equal(elapsed,480000);assert.equal(s.phase,'accuse');
@@ -23,7 +23,7 @@ try{
  console.log(`PASS ${cases.length} original quick mysteries, two difficulties and Solo/Together: unique evidence solution, free published core, no mandatory theory, 8-minute pacing, private optional leads/shared idempotent favors, single-action Solo, strict full-proof conclusion/reveal, rematch reset and cooperative readiness.`);
 }finally{db.raw.close()}
 // Every additional catalog choice completes through its actual API and phone-proof path.
-for(const caseId of Object.keys(EXTRA_QUICK_CASES)){
+for(const caseId of Object.keys(EXTRA_QUICK_CASES).filter(id=>id!=='night-train-investigation')){
  const {db:caseDb}=fixture();let room='',token='';
  const invoke=async body=>{const response=await onRequest({env:{DB:caseDb},request:new Request('https://case.test/new-build/api/last-alibi',{method:'POST',headers:{Origin:'https://case.test','x-alibi-token':token},body:JSON.stringify({code:room,game:1,...body})})});return {status:response.status,...await response.json()}};
  try{

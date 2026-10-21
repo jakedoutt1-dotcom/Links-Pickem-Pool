@@ -1,6 +1,8 @@
 // Original LINKS case files. Fictional people, records and extensions; this module initiates no calls.
+import {NIGHT_TRAIN_INVESTIGATION} from './last-alibi-night-train-investigation.js';
 import {EXPEDITION_CASE} from './last-alibi-expedition.js';
 export const EXTRA_QUICK_CASES={
+ 'night-train-investigation':NIGHT_TRAIN_INVESTIGATION,
  'sunken-observatory':EXPEDITION_CASE,
  "final-encore": {
   "title": "The Final Encore",

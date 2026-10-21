@@ -118,7 +118,7 @@ export const DOSSIERS={
  task('Reconstruct the star sequence','Enter the three plate coordinates in the original observation order.',['b2 d4 c1'],['obs-notebook','obs-star-plate'],['The catalogue’s order is not the observation order.','Preserve the field notebook’s sequence and look up each coordinate separately.']),
  task('Align the custody transmission','Give the radio entry’s island time and the number of minutes added to UTC.',['18:15 60'],['obs-time-convention','obs-radio-log'],['Both records state their time convention.','One hour is a conversion, not an unexplained interval.'])]}
 };
-export const packetCount=s=>s.dossierVersion>=2?6:3;
+export const packetCount=s=>s.caseId==='night-train-investigation'?7:s.dossierVersion>=2?6:3;
 export function expandDossier(s){
  const d=DOSSIERS[s.caseId];if(!(s.dossierVersion>=2)||!d||!s.case)return;
  const remap=n=>({1:1,2:3,3:6}[n]||n);
@@ -128,7 +128,7 @@ export function expandDossier(s){
  const rooms=s.case.scene.id;
  for(const r of d.records){const e={...r,room:rooms,inspect:[{label:'Read the recovered document',text:r.text},{label:'Record provenance',text:'An original case-file exhibit. Compare its source, date and limits against other evidence; inclusion is not a claim that every detail is relevant.'}]};s.case.evidence.push(e)}
 }
-export function dossierChapters(base,s){if(!(s.dossierVersion>=2))return base;const d=DOSSIERS[s.caseId];return [base[0],base[1],{title:d.chapters[0][0],label:'Packet 2',story:d.chapters[0][1]},base[2],{title:d.chapters[1][0],label:'Packet 4',story:d.chapters[1][1]},{title:d.chapters[2][0],label:'Packet 5',story:d.chapters[2][1]},base[3]]}
+export function dossierChapters(base,s){if(!(s.dossierVersion>=2)||!DOSSIERS[s.caseId])return base;const d=DOSSIERS[s.caseId];return [base[0],base[1],{title:d.chapters[0][0],label:'Packet 2',story:d.chapters[0][1]},base[2],{title:d.chapters[1][0],label:'Packet 4',story:d.chapters[1][1]},{title:d.chapters[2][0],label:'Packet 5',story:d.chapters[2][1]},base[3]]}
 
 // Exact, accessible document tables: generated scene art never supplies a required digit.
 const TABLES={
