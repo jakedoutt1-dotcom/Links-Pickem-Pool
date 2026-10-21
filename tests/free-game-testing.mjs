@@ -17,6 +17,6 @@ try{
  assert.equal((await slotWriteGuard(request,{DB:db})).status,403);
  db.raw.exec("DELETE FROM links_pool_slots; INSERT INTO links_pool_slots(id,email,pool_id,game_type,active) VALUES('nfl','tester@example.com',1,'nfl',1)");
  assert.equal(await slotWriteGuard(request,{DB:db}),null);
- const response=await party({env:{DB:db},request:new Request('https://test/new-build/api/party-pack')});const state=await response.json();assert.equal(state.freeTesting,true);assert.equal(state.checkoutReady,false);assert.equal(state.venueAccess,null);
- console.log('PASS free party creation, unpaid pool allowance, reservations, archived-game protection and disabled party checkout; hosted access remains absent.');
+ const response=await party({env:{DB:db},request:new Request('https://test/new-build/api/party-pack')});const state=await response.json();assert.equal(state.freeTesting,true);assert.equal(state.hostFreeTesting,true);assert.equal(state.checkoutReady,false);assert.equal(state.venueReady,false);assert.equal(state.venueDayReady,false);assert.equal(state.venueAccess,null,'Anonymous visitors still need host verification');
+ console.log('PASS free party creation, unpaid pool allowance, reservations, archived-game protection, promotion flags and disabled new checkout; host identity remains required.');
 }finally{db.raw.close()}

@@ -10,13 +10,13 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
   });
   await page.goto('https://fixture/new-build/commissioner-hub.html');assert.equal(await page.locator('#accountArea').isVisible(),false);
   await page.locator('#accountEmail').fill('owner@example.com');await page.locator('#emailForm button').click();await page.locator('#accountCode').fill('12345678');await page.locator('#codeForm button').click();await page.locator('#ownedPools [data-open]').waitFor();
-  assert.match(await page.locator('#capacity').textContent(),/1 of 3/);assert.equal(await page.locator('[data-plan]').count(),3);assert.match(await page.locator('#packageCards').textContent(),/6 separate NFL pools/);
+  assert.match(await page.locator('#capacity').textContent(),/1 active games.*Free during testing/);assert.equal(await page.locator('[data-plan]').count(),0);assert.match(await page.locator('#packageCards').textContent(),/No package purchase needed/);assert.match(await page.locator('#planNote').textContent(),/hosted events are free/);assert.equal(await page.locator('#packages').getByText(/\$\d/).count(),0);assert.equal(await page.locator('#packageCards a[href=".\/game-room.html"]').count(),1);
   await page.locator('[name=name]').fill('Family NFL');await page.locator('[name=displayName]').fill('Owner');await page.locator('[name=password]').fill('longpassword');await page.locator('[name=password2]').fill('longpassword');await page.locator('#gameChoices input[value=nfl]').check();await page.getByRole('button',{name:'CREATE POOL',exact:true}).click();await page.getByText('Fixture full capacity').waitFor();assert.deepEqual(payload.games,['nfl']);assert.ok(!JSON.stringify(await page.evaluate(()=>({...localStorage}))).includes('longpassword'),'No plaintext password saved');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'No horizontal page overflow');
   await page.screenshot({path:path.join(process.env.TEMP||'.','links-commissioner-hub-'+width+'.png'),fullPage:true});
   await page.locator('#accountLogout').click();await page.locator('#emailForm').waitFor({state:'visible'});assert.deepEqual(errors,[]);await context.close();
  }
- console.log('PASS mobile/desktop account verification, package copy, repeated NFL creation, server error handling, no password persistence, sign-out and responsive layout');
+ console.log('PASS mobile/desktop account verification, free promotional copy with no public prices or buy buttons, repeated NFL creation, server error handling, no password persistence, sign-out and responsive layout');
  }finally{await browser.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});
 

@@ -1,8 +1,11 @@
 import assert from 'node:assert/strict';
-import {fixture} from './helpers/pool-format-fixture.mjs';
-import {onRequest} from '../functions/new-build/api/trivia-night.js';
-import {ensureAccounts,digest} from '../functions/lib/commissioner-account.js';
-import {grantTestHost} from './helpers/trivia-host-access.mjs';
+import {registerHooks} from 'node:module';
+// Paid-policy regression; free hosted promotion is tested separately.
+registerHooks({load(url,context,next){const r=next(url,context);return url.endsWith('/functions/lib/testing-access.js')?{...r,source:String(r.source).replace('FREE_HOST_GAME_TESTING=true','FREE_HOST_GAME_TESTING=false')}:r}});
+const {fixture}=await import('./helpers/pool-format-fixture.mjs');
+const {onRequest}=await import('../functions/new-build/api/trivia-night.js');
+const {ensureAccounts,digest}=await import('../functions/lib/commissioner-account.js');
+const {grantTestHost}=await import('./helpers/trivia-host-access.mjs');
 const {db}=fixture();await ensureAccounts(db);await grantTestHost(db);
 for(const [token,email]of [['standalone','newhost@example.com'],['other','other@example.com']])await db.prepare('INSERT INTO links_account_sessions(token_hash,email,expires_at) VALUES(?,?,?)').bind(await digest(token),email,'2099-01-01').run();
 const call=async(token,body,code='')=>{const r=await onRequest({env:{DB:db},request:new Request('https://test/new-build/api/trivia-night?'+(code?'code='+code:'action=library'),{method:body?'POST':'GET',headers:{Origin:'https://test','x-links-account':token},...(body?{body:JSON.stringify(body)}:{})})});return {status:r.status,...await r.json()}};

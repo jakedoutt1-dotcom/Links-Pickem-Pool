@@ -1,4 +1,4 @@
-import {FREE_GAME_TESTING} from '../../lib/testing-access.js';
+import {FREE_GAME_TESTING,FREE_HOST_GAME_TESTING} from '../../lib/testing-access.js';
 import {PARTY_PLANS,partyEnabled,partySession,ensureParty,partyAccess} from '../../lib/party-access.js';
 import {hostBillingEnabled,ensureHostBilling,validateHostPlan,refreshHostSubscription,hostAccess} from '../../lib/trivia-host-billing.js';
 const fail=(message,status=400)=>Object.assign(new Error(message),{status});
@@ -20,9 +20,9 @@ export async function onRequest({request,env}){try{
  if(request.method==='GET'){
   const access=session?await partyAccess(db,session.email):null;
   const purchases=session?(await db.prepare("SELECT id,plan,status,created_at,expires_at FROM links_party_purchases WHERE email=? ORDER BY CASE WHEN plan='day' AND status='PAID' AND expires_at IS NULL THEN 0 ELSE 1 END,created_at DESC LIMIT 30").bind(session.email).all()).results:[];
-  const venueEnabled=hostBillingEnabled(env),venueReady=venueEnabled&&!!env.PAYPAL_TRIVIA_MONTHLY_PLAN_ID&&!!env.PAYPAL_CLIENT_ID&&!!env.PAYPAL_CLIENT_SECRET;
+  const venueEnabled=hostBillingEnabled(env),venueReady=!FREE_HOST_GAME_TESTING&&venueEnabled&&!!env.PAYPAL_TRIVIA_MONTHLY_PLAN_ID&&!!env.PAYPAL_CLIENT_ID&&!!env.PAYPAL_CLIENT_SECRET;
   const venueAccess=session?await hostAccess(env,session.email,paypal):null;
-  const response=json({freeTesting:FREE_GAME_TESTING,enabled,checkoutReady:!FREE_GAME_TESTING&&enabled&&!!env.PAYPAL_CLIENT_ID&&!!env.PAYPAL_CLIENT_SECRET,plans:PARTY_PLANS,email:session?.email||null,access,purchases,venueEnabled,venueReady,venueDayReady:venueEnabled&&!!env.PAYPAL_CLIENT_ID&&!!env.PAYPAL_CLIENT_SECRET,venueAccess});
+  const response=json({freeTesting:FREE_GAME_TESTING,hostFreeTesting:FREE_HOST_GAME_TESTING,enabled,checkoutReady:!FREE_GAME_TESTING&&enabled&&!!env.PAYPAL_CLIENT_ID&&!!env.PAYPAL_CLIENT_SECRET,plans:PARTY_PLANS,email:session?.email||null,access,purchases,venueEnabled,venueReady,venueDayReady:!FREE_HOST_GAME_TESTING&&venueEnabled&&!!env.PAYPAL_CLIENT_ID&&!!env.PAYPAL_CLIENT_SECRET,venueAccess});
   const token=request.headers.get('x-links-account');if(session&&/^[a-f0-9-]{72}$/.test(token||''))response.headers.set('Set-Cookie','links_party_session='+token+'; Path=/new-build/; HttpOnly; SameSite=Lax; Max-Age='+Math.max(0,Math.floor((Date.parse(session.expires_at)-Date.now())/1000))+(url.protocol==='https:'?'; Secure':''));
   return response;
  }
@@ -31,6 +31,7 @@ export async function onRequest({request,env}){try{
  if(!session)throw fail('Verify your email to purchase or restore your Party Pack.',401);
  await ensureParty(db);
  if(b.action==='venue-checkout'){
+  if(FREE_HOST_GAME_TESTING)throw fail('Hosted events are free during the promotion. No purchase is needed.',409);
   if(!hostBillingEnabled(env)||!env.PAYPAL_TRIVIA_MONTHLY_PLAN_ID)throw fail('Trivia Night subscriptions open soon.',503);
   await ensureHostBilling(db);
   if(await hostAccess(env,session.email,paypal))throw fail('Your Trivia Night subscription is already active.',409);
@@ -45,7 +46,7 @@ export async function onRequest({request,env}){try{
   const access=await refreshHostSubscription(env,row,paypal);if(!access.active)throw fail('Payment is still pending. Check again after PayPal confirms it.',409);return json({ok:true});
  }
  if(b.action==='checkout'){
- if(FREE_GAME_TESTING&&b.plan!=='host_day')throw fail('Party games are free during testing. No Party Pass is needed.',409);
+ if(b.plan==='host_day'?FREE_HOST_GAME_TESTING:FREE_GAME_TESTING)throw fail('Games and hosted events are free during the promotion. No purchase is needed.',409);
   if(b.plan==='host_day'?!hostBillingEnabled(env):!enabled)throw fail('Checkout is not available yet. Please try again later.',503);
   const plan=Object.hasOwn(PARTY_PLANS,b.plan)?PARTY_PLANS[b.plan]:null;if(!plan)throw fail('Choose a Party Pass.');
   if(b.plan==='host_day'){if(await hostAccess(env,session.email,paypal))throw fail('Your hosted event access is already active.',409)}else if(await partyAccess(db,session.email))throw fail('You already have active game access. Enjoy your games!',409);

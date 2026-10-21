@@ -1,11 +1,14 @@
-import {FREE_GAME_TESTING} from '../functions/lib/testing-access.js';
 import assert from 'node:assert/strict';
-import {fixture} from './helpers/pool-format-fixture.mjs';
-import {ensureOwner} from '../functions/lib/owner-auth.js';
-import {ensureAccounts,digest} from '../functions/lib/commissioner-account.js';
-import {onRequest} from '../functions/new-build/api/party-grants.js';
-import {partyAccess,requirePartyPass} from '../functions/lib/party-access.js';
-import {hostAccess} from '../functions/lib/trivia-host-billing.js';
+import {registerHooks} from 'node:module';
+// Grant expiry remains enforced when the temporary hosted promotion is off.
+registerHooks({load(url,context,next){const r=next(url,context);return url.endsWith('/functions/lib/testing-access.js')?{...r,source:String(r.source).replace('FREE_HOST_GAME_TESTING=true','FREE_HOST_GAME_TESTING=false')}:r}});
+const {FREE_GAME_TESTING}=await import('../functions/lib/testing-access.js');
+const {fixture}=await import('./helpers/pool-format-fixture.mjs');
+const {ensureOwner}=await import('../functions/lib/owner-auth.js');
+const {ensureAccounts,digest}=await import('../functions/lib/commissioner-account.js');
+const {onRequest}=await import('../functions/new-build/api/party-grants.js');
+const {partyAccess,requirePartyPass}=await import('../functions/lib/party-access.js');
+const {hostAccess}=await import('../functions/lib/trivia-host-billing.js');
 const {db}=fixture(),env={DB:db,PARTY_PACK_ENABLED:'true'},email='jane@example.com',token=crypto.randomUUID()+crypto.randomUUID();await ensureOwner(db);await ensureAccounts(db);await db.prepare('INSERT INTO links_admin_sessions VALUES(?,?)').bind('owner','2099-01-01').run();await db.prepare('INSERT INTO links_account_sessions VALUES(?,?,?)').bind(await digest(token),email,'2099-01-01').run();
 async function call(body,owner='owner',origin='https://test'){const r=await onRequest({env,request:new Request('https://test/new-build/api/party-grants',{method:body?'POST':'GET',headers:{Origin:origin,Authorization:'Bearer '+owner},...(body?{body:JSON.stringify(body)}:{})})});return {status:r.status,...await r.json()}}
 const grant=(product,days)=>({action:'grant',id:crypto.randomUUID(),email:'Jane@Example.com',product,days,note:'Partner trial',confirm:true});

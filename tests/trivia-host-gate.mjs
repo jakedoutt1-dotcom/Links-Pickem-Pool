@@ -1,6 +1,10 @@
-import assert from 'node:assert/strict';import {fixture} from './helpers/pool-format-fixture.mjs';
-import {onRequest} from '../functions/new-build/api/trivia-night.js';import {onRequest as rally} from '../functions/new-build/api/trivia-rally.js';
-import {ensureAccounts} from '../functions/lib/commissioner-account.js';import {ensureParty,partyAccess} from '../functions/lib/party-access.js';import {grantTestHost} from './helpers/trivia-host-access.mjs';
+import assert from 'node:assert/strict';
+import {registerHooks} from 'node:module';
+// Paid-policy regression; free hosted promotion is tested separately.
+registerHooks({load(url,context,next){const r=next(url,context);return url.endsWith('/functions/lib/testing-access.js')?{...r,source:String(r.source).replace('FREE_HOST_GAME_TESTING=true','FREE_HOST_GAME_TESTING=false')}:r}});
+const {fixture}=await import('./helpers/pool-format-fixture.mjs');
+const {onRequest}=await import('../functions/new-build/api/trivia-night.js');const {onRequest:rally}=await import('../functions/new-build/api/trivia-rally.js');
+const {ensureAccounts}=await import('../functions/lib/commissioner-account.js');const {ensureParty,partyAccess}=await import('../functions/lib/party-access.js');const {grantTestHost}=await import('./helpers/trivia-host-access.mjs');
 const {db}=fixture(),env={DB:db},origin='https://test';let code='',state;
 async function call(body,admin='admin',guest=''){const r=await onRequest({env,request:new Request(origin+'/new-build/api/trivia-night?code='+code,{method:body?'POST':'GET',headers:{Origin:origin,Authorization:'Bearer '+admin,'x-trivia-token':guest},...(body?{body:JSON.stringify({code,gameNumber:state?.game,index:state?.index,phase:state?.phase,...body})}:{})})});return {status:r.status,...await r.json()}}
 const create={action:'create',categories:['football'],difficulty:'easy'};

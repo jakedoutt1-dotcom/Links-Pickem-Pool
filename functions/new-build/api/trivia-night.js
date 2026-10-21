@@ -4,6 +4,7 @@ import {questionSet,approvedQuestions,selectHostQuestions} from '../../lib/host-
 import {withTriviaSession} from '../../lib/trivia-sessions.js';
 import {ensureVenue,venueStatements} from '../../lib/venue-scoreboard.js';
 import {hostAccess} from '../../lib/trivia-host-billing.js';
+import {FREE_HOST_GAME_TESTING} from '../../lib/testing-access.js';
 import {paypal} from './party-pack.js';
 import {loadFreshGameQuestions,normalizedQuestionText} from '../../lib/trivia-provider.js';
 import {ensureAccounts,emailKey} from '../../lib/commissioner-account.js';
@@ -63,7 +64,7 @@ async function handleRequest({request,env}){
    const pools=[...new Set([admin.pool_id,...(standalone?[-standalone.id]:[]),...(email?ownership.filter(p=>emailKey(p.email)===email).map(p=>p.pool_id):[]),...(email?contacts.filter(p=>emailKey(p.value)===email&&!ownership.some(o=>o.pool_id===p.pool_id&&emailKey(o.email)!==email)).map(p=>p.pool_id):[])])];
    const placeholders=pools.map(()=>'?').join(',');
    const active=(await db.prepare(`SELECT code,pool_id,host_name FROM links_trivia_night_rooms WHERE pool_id IN (${placeholders}) AND expires>?`).bind(...pools,Date.now()).all()).results||[];
-   if(action==='library')return json({providerConfigured:!!env.TRIVIA_API_KEY,count:(await bank()).length,roomLimit:plan.slots,plan:plan.label,activeRooms:active.length,rooms:active.filter(r=>admin.verifiedHost||r.pool_id===admin.pool_id&&r.host_name===admin.player_name).map(r=>({code:r.code}))});
+   if(action==='library')return json({hostFreeTesting:FREE_HOST_GAME_TESTING,providerConfigured:!!env.TRIVIA_API_KEY,count:(await bank()).length,roomLimit:plan.slots,plan:plan.label,activeRooms:active.length,rooms:active.filter(r=>admin.verifiedHost||r.pool_id===admin.pool_id&&r.host_name===admin.player_name).map(r=>({code:r.code}))});
    if(b.mode!==undefined&&!['individual','teams'].includes(b.mode))return json({error:'Choose Individual or Teams.'},400);
    if(b.fairPlay!==undefined&&!['off','warn','strict'].includes(b.fairPlay))return json({error:'Choose a Fair Play setting.'},400);
    if(!['easy','medium','hard','mixed'].includes(b.difficulty))return json({error:'Choose a valid difficulty.'},400);

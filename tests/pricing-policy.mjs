@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {registerHooks} from 'node:module';
-registerHooks({load(url,context,next){const r=next(url,context);return url.endsWith('/functions/lib/testing-access.js')?{...r,source:String(r.source).replace('FREE_GAME_TESTING=true','FREE_GAME_TESTING=false')}:r}});
+registerHooks({load(url,context,next){const r=next(url,context);return url.endsWith('/functions/lib/testing-access.js')?{...r,source:String(r.source).replace('FREE_GAME_TESTING=true','FREE_GAME_TESTING=false').replace('FREE_HOST_GAME_TESTING=true','FREE_HOST_GAME_TESTING=false')}:r}});
 const {fixture}=await import('./helpers/pool-format-fixture.mjs');
 const {ensureAccounts,digest,PLANS}=await import('../functions/lib/commissioner-account.js');
 const {requirePartyPass,partyAccess,PARTY_PLANS}=await import('../functions/lib/party-access.js');
