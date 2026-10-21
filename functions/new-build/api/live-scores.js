@@ -9,7 +9,7 @@ const FEEDS = [
   ['NCAAM', 'basketball/mens-college-basketball'],
 ];
 const text = (value, max = 100) => String(value ?? '').trim().slice(0, max);
-const rank = state => state === 'in' ? 0 : state === 'pre' ? 1 : 2;
+const rank = state => state === 'in' ? 0 : state === 'post' ? 1 : 2;
 export function normalizeLiveEvents(events, league) {
   return events.flatMap(event => {
     const competition = event?.competitions?.[0];
@@ -30,18 +30,23 @@ export function normalizeLiveEvents(events, league) {
 }
 
 async function readFeed(league, path) {
-  return sharedScoreFeed('home-live-v2:' + league, async () => {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
-    try {
-      const response = await fetch('https://site.web.api.espn.com/apis/site/v2/sports/' + path + '/scoreboard', {
-        signal: controller.signal, headers: {Accept: 'application/json'}, redirect: 'error',
-      });
-      if (!response.ok) throw Error('Score provider unavailable.');
-      const data = await response.json();
-      if (!Array.isArray(data.events)) throw Error('Invalid score feed.');
-      return {events: normalizeLiveEvents(data.events, league), asOf: Date.now()};
-    } finally { clearTimeout(timeout); }
+  return sharedScoreFeed('home-live-v3:' + league, async () => {
+    let lastError;
+    for (const host of ['site.api.espn.com', 'site.web.api.espn.com']) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
+      try {
+        const response = await fetch('https://' + host + '/apis/site/v2/sports/' + path + '/scoreboard', {
+          signal: controller.signal, headers: {Accept: 'application/json'}, redirect: 'error',
+        });
+        if (!response.ok) throw Error('Score provider unavailable.');
+        const data = await response.json();
+        if (!Array.isArray(data.events)) throw Error('Invalid score feed.');
+        return {events: normalizeLiveEvents(data.events, league), asOf: Date.now()};
+      } catch (error) { lastError = error; }
+      finally { clearTimeout(timeout); }
+    }
+    throw lastError;
   }, {ttl: 45});
 }
 

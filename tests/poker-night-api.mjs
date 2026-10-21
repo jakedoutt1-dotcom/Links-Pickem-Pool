@@ -59,7 +59,7 @@ function tour(n,options={}){
  const s=createTournament({code:'ABCDEF1234',mode:'tournament',ownerSeat:'s0',hostHash:'hash',displayKey:'key',player:{id:'p0',name:'Player 0'},settings:{startingChips:1000,tableSize:9,blindMinutes:2,turnSeconds:10,...options}},time);
  for(let i=1;i<n;i++)joinTournament(s,'s'+i,{id:'p'+i,name:'Player '+i},time);startTournament(s,time);return s;
 }
-let s=tour(90);assert.equal(s.tables.length,10);assert.ok(s.tables.every(t=>t.players.length===9));assert.throws(()=>joinTournament(s,'s90',{id:'p90',name:'Late'}));
+let s=tour(90);assert.equal(s.tables.length,10);assert.ok(s.tables.every(t=>t.players.length===9));const full=tour(360);assert.equal(full.tables.length,40);assert.ok(full.tables.every(t=>t.players.length===9));assert.throws(()=>joinTournament(full,'s360',{id:'p360',name:'Over capacity'}));
 const totals=s=>s.tables.reduce((sum,t)=>sum+t.pot+t.players.reduce((v,p)=>v+p.stack,0),0)+Object.values(s.players).filter(p=>p.status==='waiting').reduce((v,p)=>v+p.stack,0);
 assert.equal(totals(s),90000);
 const initialSeats=s.tables.map(t=>t.players.map(p=>p.id));
@@ -184,4 +184,4 @@ assert.equal(db.raw.prepare("SELECT COUNT(*) n FROM links_party_results WHERE ga
 await call(null,endHost.session,{code:endCode});assert.equal(db.raw.prepare("SELECT COUNT(*) n FROM links_party_results WHERE game='poker-night' AND room=?").get(endCode).n,2);
 assert.deepEqual(db.raw.prepare("SELECT score,win FROM links_party_results WHERE game='poker-night' AND room=? ORDER BY score DESC").all(endCode).map(r=>({...r})),[{score:1000,win:1},{score:0,win:0}]);
 Date.now=realNow;db.raw.close();
-console.log('PASS private/host/TV API, create/join/action idempotence, CAS retry, stale-turn rejection, 90-player balancing, no mid-hand moves, virtual rebuy conservation, blinds/pauses/expiry, and atomic placement leaderboard results.');
+console.log('PASS private/host/TV API, create/join/action idempotence, CAS retry, stale-turn rejection, 360-player capacity and 90-player balancing, no mid-hand moves, virtual rebuy conservation, blinds/pauses/expiry, and atomic placement leaderboard results.');

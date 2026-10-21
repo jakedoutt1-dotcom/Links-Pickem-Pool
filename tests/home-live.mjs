@@ -26,9 +26,10 @@ globalThis.caches = {default: {
 }};
 globalThis.fetch = async (url, options) => {
   calls.push(String(url));
-  assert.equal(new URL(url).hostname, 'site.web.api.espn.com');
+  assert.ok(['site.api.espn.com','site.web.api.espn.com'].includes(new URL(url).hostname));
   assert.equal(options.headers?.Authorization, undefined);
   assert.ok(options.signal);
+  if (mode === 'alternate' && new URL(url).hostname==='site.api.espn.com') throw Error('primary unavailable');
   if (mode === 'down' || mode === 'partial' && String(url).includes('/nfl/')) throw Error('offline');
   if (mode === 'timeout' && String(url).includes('/nfl/')) return new Promise((resolve, reject) => options.signal.addEventListener('abort', () => reject(Error('timed out')), {once: true}));
   if (mode === 'bad') return Response.json({error: 'not a scoreboard'});
@@ -42,10 +43,14 @@ try {
   assert.ok(payload.asOf > Date.now() - 1000);
   await onRequest({request: request('GET')}); assert.equal(calls.length, 7, 'repeat request reuses server cache');
   assert.equal((await onRequest({request: request('POST')})).status, 405);
+  entries.clear(); mode = 'alternate';
+  response = await onRequest({request: request('GET')}); payload = await response.json();
+  assert.equal(response.status,200); assert.equal(payload.events.length,7);
+  assert.ok(calls.some(url=>new URL(url).hostname==='site.web.api.espn.com'));
   entries.clear(); mode = 'partial';
   response = await onRequest({request: request('GET')}); payload = await response.json();
   assert.equal(response.status, 200); assert.equal(payload.events.length, 6); assert.deepEqual(payload.unavailable, ['NFL']);
-  entries.clear(); mode = 'timeout'; globalThis.setTimeout = (callback, ms) => originalTimeout(callback, ms === 5000 ? 5 : ms);
+  entries.clear(); mode = 'timeout'; globalThis.setTimeout = (callback, ms) => originalTimeout(callback, ms === 3000 ? 5 : ms);
   response = await onRequest({request: request('GET')}); payload = await response.json();
   assert.equal(response.status, 200); assert.equal(payload.events.length, 6); assert.deepEqual(payload.unavailable, ['NFL']);
   globalThis.setTimeout = originalTimeout;

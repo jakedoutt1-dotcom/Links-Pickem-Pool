@@ -33,7 +33,7 @@
  }
  function render(){
  if(locker){const b=document.getElementById('connectPools');if(b){b.disabled=false;b.onclick=connect}window.dispatchEvent(new CustomEvent('links:pools-ready',{detail:state}));return}
- if(!bar){const main=document.querySelector('main');if(main){const anchor=document.createElement('div');anchor.hidden=true;main.prepend(anchor);import('./partner-banner.mjs').then(m=>m.mountPartners(anchor)).catch(()=>{})}bar=document.createElement('nav');bar.id='linksPoolTabs';bar.setAttribute('aria-label','Locker Room');bar.style.cssText='display:flex;gap:8px;align-items:center;box-sizing:border-box;min-width:0;max-width:100%';place()}
+ if(!bar){const main=document.querySelector('main');if(main){const anchor=document.createElement('div');anchor.hidden=true;main.prepend(anchor);import('./partner-banner.mjs?v=carousel1').then(m=>m.mountPartners(anchor)).catch(()=>{})}bar=document.createElement('nav');bar.id='linksPoolTabs';bar.setAttribute('aria-label','Locker Room');bar.style.cssText='display:flex;gap:8px;align-items:center;box-sizing:border-box;min-width:0;max-width:100%';place()}
  bar.replaceChildren();
  const current=state.pools.find(p=>p.id===state.currentPool);
  const pagePool=new URLSearchParams(location.search).get('pool');

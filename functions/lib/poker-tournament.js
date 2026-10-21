@@ -55,7 +55,7 @@ export function joinTournament(s,seat,{id,name},now=Date.now()){
  if(s.players[seat])return s;
  if(s.mode==='practice')fail('Practice is just for you and the computer opponents. Create a friends table to invite others.');
  if(!['lobby','playing','paused'].includes(s.status))fail('This game has ended. Join the host’s next game.');
- if(Object.keys(s.players).length>=(s.mode==='tournament'?90:s.settings.tableSize))fail('This game is full.');
+ if(Object.keys(s.players).length>=(s.mode==='tournament'?360:s.settings.tableSize))fail('This game is full.');
  name=playerName(name);
  if(Object.values(s.players).some(p=>p.name.toLocaleLowerCase()===name.toLocaleLowerCase()))fail('That name is taken. Add an initial or choose another name.');
  accountMissedBlinds(s);

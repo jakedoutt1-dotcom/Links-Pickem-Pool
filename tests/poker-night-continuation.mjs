@@ -88,7 +88,7 @@ function playToWinner(mode,count){
 }
 
 try{
- playToWinner('friends',2);playToWinner('friends',9);playToWinner('tournament',20);playToWinner('tournament',90);
+ playToWinner('friends',2);playToWinner('friends',9);playToWinner('tournament',20);playToWinner('tournament',90);playToWinner('tournament',360);
  playToWinner('practice',2);playToWinner('practice',3);playToWinner('practice',9);
 
  // A real heads-up elimination leaves a buy-back opportunity before ending.
