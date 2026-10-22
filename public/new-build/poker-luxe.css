@@ -93,3 +93,5 @@ body:not(.tv) #bettingControls,body:not(.tv) #preselectControls{background:radia
  body:not(.tv) #bettingControls:has(#raisePanel:not([hidden])),body:not(.tv) #preselectControls:has(#preRaisePanel:not([hidden])){max-height:76dvh}
  body:not(.tv) #raiseButton,body:not(.tv) #queueRaise{position:sticky;bottom:0;z-index:2;box-shadow:0 -4px 12px #102437}
 }
+
+#pokerTable .seat.you .seat-cards .card{width:29px;height:41px}#pokerTable .seat.you .seat-cards .rank,#pokerTable .seat.you .seat-cards .suit{font-size:15px}

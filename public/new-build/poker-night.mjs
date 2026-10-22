@@ -326,7 +326,8 @@ function renderTable(table) {
   const seatHtml = players.map(p => {
     const position = pokerSeatPosition(p.seat,ownSeat,room.settings?.tableSize,mobile);
     const revealed = (isTv || p.id !== myId) && ['showdown','complete'].includes(table?.phase) && (!p.folded || p.voluntaryShown);
-    const cards = revealed && p.holeCards?.length ? p.holeCards.map(c => cardHtml(c)).join('') : (!p.folded ? cardHtml(null,{back:true}) + cardHtml(null,{back:true}) : '');
+    const ownCards=!isTv&&p.id===myId&&p.holeCards?.length===2;
+    const cards = ownCards ? p.holeCards.map(c=>cardHtml(c,{back:cardsHidden})).join('') : revealed && p.holeCards?.length ? p.holeCards.map(c => cardHtml(c)).join('') : (!p.folded ? cardHtml(null,{back:true}) + cardHtml(null,{back:true}) : '');
     const markers = `${p.seat === table.buttonSeat ? '<b class="marker" title="Dealer">D</b>' : ''}${p.seat === table.smallBlindSeat ? '<b class="marker blind" title="Small blind">SB</b>' : ''}${p.seat === table.bigBlindSeat ? '<b class="marker blind" title="Big blind">BB</b>' : ''}`;
     const won = ended && table.winners?.some(w=>w.playerId===p.id);
     const portrait=[...String(p.id)].reduce((n,c)=>n+c.charCodeAt(0),0)%9;
@@ -509,7 +510,7 @@ async function bet(move, amount, {preselected = false} = {}) {
 $('foldButton').onclick = () => bet('fold');
 $('callButton').onclick = () => bet(room?.table?.legalActions?.canCheck ? 'check' : 'call');
 $('raiseButton').onclick = () => bet('raise',Number($('raiseAmount').value));
-$('hideCardsButton').onclick = () => { cardsHidden = !cardsHidden; renderHand(room?.table); };
+$('hideCardsButton').onclick = () => { cardsHidden = !cardsHidden; renderTable(room?.table); renderHand(room?.table); };
 for(const id of ['preHideCards','dockHideCards'])$(id).onclick=()=>$('hideCardsButton').click();
 $('showHandButton').onclick = () => { if (room?.table?.canShowHand) void act('show',{tableId:room.table.id,handNumber:room.table.handNumber}); };
 $('startButton').onclick = () => act('start');
