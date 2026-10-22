@@ -167,7 +167,11 @@ export function advanceTournament(s,now=Date.now()){
  if(s.status!=='playing')return s;
  for(const table of s.tables){
   const options={turnSeconds:s.settings.turnSeconds};
-  if(!idle(table))advanceTimeout(table,options,now);
+  if(!idle(table)){
+   const expired=playerById(s,table.actorId),actionBefore=table.actionNumber;
+   advanceTimeout(table,options,now);
+   if(expired&&!expired.bot&&table.actionNumber!==actionBefore){expired.away=true;expired.awayReason='inactive';}
+  }
   const actor=playerById(s,table.actorId);
   if(actor?.away&&!idle(table)){
    const view=publicTable(table,actor.id);act(table,actor.id,{type:!actor.removed&&view.legalActions?.canCheck?'check':'fold'},options,now);
@@ -198,6 +202,7 @@ export function betTournament(s,seat,input,now=Date.now()){
  if(s.status!=='playing')fail('Wait until the host starts or resumes play.');
  const p=s.players[seat],table=s.tables.find(t=>t.id===p?.tableId);
  if(!table||p.status!=='active')fail('You are not seated in this hand.');
+ if(p.away)fail('You are sitting out. Sit back down before playing.','SITTING_OUT');
  if(input.handNumber!==table.handNumber||input.tableId!==table.id)fail('The hand changed. Check your cards and try again.','STALE_HAND');
  if(input.turnId!==table.actionNumber)fail('The action changed. Check the current bet and try again.','STALE_TURN');
  act(table,p.id,{type:input.move,amount:input.amount},{turnSeconds:s.settings.turnSeconds},now);
@@ -242,7 +247,7 @@ export function tournamentView(s,seat='',{host=false,tv=false,venue=null,tableId
  standings.forEach((p,i)=>p.rank=p.place||i+1);
  const allowShow=s.mode!=='practice'&&['playing','paused','finished'].includes(s.status);
  const tables=s.tables.map(t=>publicTable(t,tv?null:self?.id,{tv,allowShow}));
- for(const t of tables){for(const p of t.players)p.avatar=playerById(s,p.id)?.avatar||null;const internal=s.tables.find(x=>x.id===t.id);t.turnId=internal.actionNumber;t.waitingForTables=idle(internal)&&s.tables.some(x=>!idle(x));}
+ for(const t of tables){for(const p of t.players){const record=playerById(s,p.id);p.avatar=record?.avatar||null;p.away=!!record?.away;}const internal=s.tables.find(x=>x.id===t.id);t.turnId=internal.actionNumber;t.waitingForTables=idle(internal)&&s.tables.some(x=>!idle(x));}
  const table=tables.find(t=>t.id===(tv?(tableId||s.featuredTableId):self?.tableId))||tables.find(t=>t.id===s.featuredTableId)||tables[0]||null;
  return {...(!tv?{chat:tableChatView(s,seat,{host})}:{}),code:s.code,mode:s.mode,status:s.status,settings:s.settings,serverNow:now,...blinds,remaining:alive(s).length,players:standings,standings,tables,table,featuredTableId:s.featuredTableId,canRebuy:canRebuy(s,self,now),isHost:host,isTv:tv,playerId:self?.id||null,missedBlinds:self?.missedBlinds||0,expiresAt:s.expiresAt,winnerId:s.winnerId||null,nextHandAt:s.nextHandAt||0,pausedAt:s.pausedAt||0,autoResumeAt:s.autoResumeAt||0,venue,...(host?{displayKey:s.displayKey}:{})};
 }

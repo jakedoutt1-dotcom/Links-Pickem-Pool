@@ -1,4 +1,5 @@
-import {createPokerProfile} from './poker-profile.mjs?v=luxe2';
+import {presetAvatar,presetStyle} from './poker-avatars.mjs';
+import {createPokerProfile} from './poker-profile.mjs?v=accounts-away5';
 import {createTableChat} from './poker-chat.mjs?v=compact5';
 import {createPokerAudio} from './poker-audio.mjs?v=rich2';
 import {pokerSeatPosition} from './poker-seats.mjs?v=luxe3';
@@ -328,8 +329,9 @@ function renderTable(table) {
     const markers = `${p.seat === table.buttonSeat ? '<b class="marker" title="Dealer">D</b>' : ''}${p.seat === table.smallBlindSeat ? '<b class="marker blind" title="Small blind">SB</b>' : ''}${p.seat === table.bigBlindSeat ? '<b class="marker blind" title="Big blind">BB</b>' : ''}`;
     const won = ended && table.winners?.some(w=>w.playerId===p.id);
     const portrait=[...String(p.id)].reduce((n,c)=>n+c.charCodeAt(0),0)%9;
-    const avatar=p.avatar?`<img class="seat-avatar" src="${esc(p.avatar)}" alt="">`:`<span class="seat-avatar avatar-character" style="--avatar-x:${portrait%3*50}%;--avatar-y:${Math.floor(portrait/3)*50}%" aria-hidden="true"></span>`;
-    const status = won ? 'Pot winner' : p.voluntaryShown ? (p.folded ? 'Folded · Shown' : 'Hand shown') : p.folded ? 'Folded' : p.allIn ? 'All in' : p.away ? 'Away' : '';
+    const chosen=presetAvatar(p.avatar);
+    const avatar=chosen?`<span class="seat-avatar avatar-preset" style="${esc(presetStyle(chosen))}" aria-hidden="true"></span>`:p.avatar?`<img class="seat-avatar" src="${esc(p.avatar)}" alt="">`:`<span class="seat-avatar avatar-character" style="--avatar-x:${portrait%3*50}%;--avatar-y:${Math.floor(portrait/3)*50}%" aria-hidden="true"></span>`;
+    const status = won ? 'Pot winner' : p.voluntaryShown ? (p.folded ? 'Folded · Shown' : 'Hand shown') : p.away ? 'Sitting out' : p.folded ? 'Folded' : p.allIn ? 'All in' : '';
     return `<div class="seat ${won ? 'pot-winner' : ''} ${p.id === myId ? 'you' : ''} ${p.id === table.actorId ? 'active' : ''} ${p.folded && !p.voluntaryShown ? 'folded' : ''}" style="left:${position[0]}%;top:${position[1]}%"><span class="markers">${markers}</span>${avatar}<div class="seat-label"><span class="seat-name">${esc(p.name)}${p.id === myId ? ' · You' : ''}</span><span class="seat-stack">${chips(p.stack)}</span>${status ? `<span class="seat-status">${status}</span>` : ''}</div><div class="seat-cards">${cards}</div>${p.bet ? `<span class="seat-bet">Bet ${chips(p.bet)}</span>` : ''}</div>`;
   }).join('');
   setHtml('seats',seatHtml);
@@ -361,7 +363,8 @@ function renderHand(table) {
   $('showHandButton').textContent = seat?.voluntaryShown ? 'Hand shown to everyone' : 'Show hand to everyone';
   $('showHandButton').disabled = busy || !table?.canShowHand;
   $('showHandHelp').textContent = seat?.voluntaryShown ? 'These cards are visible to the other players and the TV.' : 'Optional after the hand ends. Keep your cards private, or show both to the table and TV.';
-  $('sitOutButton').textContent = player?.away || seat?.away ? 'I’m back' : 'Sit out'; $('sitOutButton').disabled = busy || !['playing','paused'].includes(room.status);
+  const away=!!(player?.away||seat?.away);$('awayNotice').hidden=isTv||!away||!['playing','paused'].includes(room.status);$('returnToSeat').disabled=busy;
+  $('sitOutButton').textContent = player?.away || seat?.away ? 'Sit back down' : 'Sit out'; $('sitOutButton').disabled = busy || !['playing','paused'].includes(room.status);
   $('myStatus').textContent = room.status === 'paused' ? 'The host paused the game.' : player?.status === 'eliminated' ? room.canRebuy ? 'Your stack is out. You can buy back in below.' : 'Your stack is out. Stay to watch the rest of the game.' : player?.away || seat?.away ? 'Sitting out. Blinds continue; turns automatically check or fold.' : seat?.folded ? 'You folded. Watch this hand and get ready for the next.' : seat?.allIn ? 'You’re all in. Good luck.' : table?.actorId === session.playerId ? 'Your turn. Choose your move below.' : !seat ? 'Waiting to be seated for the next hand.' : 'Your cards are private. Watch the table for your turn.';
   if (seat?.voluntaryShown) $('myStatus').textContent = 'You chose to show this hand to everyone.';
   if (!isTv && room.missedBlinds) $('myStatus').textContent += ` Late entry: ${chips(room.missedBlinds)} chips deducted for your share of missed small and big blinds.`;
@@ -376,7 +379,7 @@ function renderStandings(players) {
 }
 function updateControls() {
   if (!room) return;
-  const table = room.table, legal = table?.legalActions || {}, turn = !isTv && room.status === 'playing' && table?.actorId === session.playerId && !busy && !syncNeeded && (!table.deadline || dateValue(table.deadline) > now());
+  const table = room.table, legal = table?.legalActions || {}, turn = !myPlayer()?.away && !isTv && room.status === 'playing' && table?.actorId === session.playerId && !busy && !syncNeeded && (!table.deadline || dateValue(table.deadline) > now());
   document.body.dataset.pokerTurn = String(turn);
   $('bettingControls').hidden = !turn;
   $('foldButton').disabled = !turn || !legal.canFold;
@@ -402,7 +405,8 @@ function updateControls() {
 function updatePreselection() {
   const options = preselectOptions(room,session.playerId), decision = resolvePreselection(preselection,room,session.playerId);
   if (decision.state === 'cancel') { preselection = null; preRaiseOpen = false; note(decision.reason); }
-  $('preselectControls').hidden = isTv || syncNeeded || !options.waiting;
+  $('preselectControls').hidden = isTv || !!myPlayer()?.away || syncNeeded || !options.waiting;
+  if(myPlayer()?.away){preselection=null;preRaiseOpen=false;}
   $('preCall').textContent = options.callAmount ? `Call ${chips(options.callAmount)}` : 'Check';
   for (const [id,move] of [['preFold','fold'],['preCall','call'],['preRaise','raise']]) {
     $(id).setAttribute('aria-pressed',String(preselection?.move === move));
@@ -509,7 +513,8 @@ for(const id of ['preHideCards','dockHideCards'])$(id).onclick=()=>$('hideCardsB
 $('showHandButton').onclick = () => { if (room?.table?.canShowHand) void act('show',{tableId:room.table.id,handNumber:room.table.handNumber}); };
 $('startButton').onclick = () => act('start');
 $('rebuyButton').onclick = async () => { if (await confirmAction('Back in the game?', `Use one of your allowed buy backs to receive ${chips(room.settings.startingChips)} virtual chips. No payment is involved.`, 'Buy back in')) await act('rebuy'); };
-$('sitOutButton').onclick = async () => { const away = !!(myPlayer()?.away || room?.table?.players?.find(p => p.id === session.playerId)?.away); if (away || await confirmAction('Step away from the table?', 'Your blinds still apply. While you’re away, turns automatically check when allowed or fold. Press “I’m back” when ready.', 'Sit out')) await act('sitout',{away:!away}); };
+$('returnToSeat').onclick=()=>act('sitout',{away:false});
+$('sitOutButton').onclick = async () => { const away = !!(myPlayer()?.away || room?.table?.players?.find(p => p.id === session.playerId)?.away); if (away || await confirmAction('Step away from the table?', 'Your blinds still apply. While you’re away, turns automatically check when allowed or fold. Press “Sit back down” when ready.', 'Sit out')) await act('sitout',{away:!away}); };
 $('pauseButton').onclick = () => act(room?.status === 'paused' ? 'resume' : 'pause');
 $('nextButton').onclick = () => act('next');
 $('closeButton').onclick = async () => { if (await confirmAction('Close this poker room?', 'This ends the room for everyone. Current hands cannot continue after closing.', 'Close room')) await act('close'); };

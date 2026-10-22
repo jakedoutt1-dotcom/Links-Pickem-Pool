@@ -86,6 +86,10 @@ export async function onRequest({request,env}){
     if(action==='profile'){
      const player=s.players[seat];if(!player)return json({error:'Take a seat before uploading your avatar.'},403);
      if(body.avatar===null)delete player.avatar;
+     else if(typeof body.avatar==='string'&&body.avatar.startsWith('preset:')){
+      const m=/^preset:(classic|people|fun)-(0|[1-9]\d?)$/.exec(body.avatar);if(!m||Number(m[2])>=({classic:9,people:16,fun:16})[m[1]])return json({error:'Choose an avatar from the gallery.'},400);
+      player.avatar=body.avatar;
+     }
      else{
       if(typeof body.avatar!=='string'||body.avatar.length>6000||!/^data:image\/jpeg;base64,[A-Za-z0-9+/]+=*$/.test(body.avatar))return json({error:'Choose a small JPEG avatar.'},400);
       let bytes;try{bytes=Uint8Array.from(atob(body.avatar.split(',')[1]),c=>c.charCodeAt(0))}catch{return json({error:'Invalid avatar.'},400)}
@@ -108,7 +112,7 @@ export async function onRequest({request,env}){
     else if(action==='feature'){
      if(!s.tables.some(table=>table.id===body.tableId))return json({error:'Choose a current table.'},400);s.featuredTableId=body.tableId;
     }else if(action==='sitout'){
-     if(!s.players[seat]||typeof body.away!=='boolean')return json({error:'Choose whether to sit out.'},400);s.players[seat].away=body.away;
+     if(!s.players[seat]||typeof body.away!=='boolean')return json({error:'Choose whether to sit out.'},400);s.players[seat].away=body.away;delete s.players[seat].awayReason;
     }else if(action==='next'){
      if(!previousNextHandAt||time<previousNextHandAt)return json({error:'Wait for every table and the between-hand countdown.'},409);
     }else if(action==='close'){s.status='closed';s.phase='closed';s.closedAt=time;}

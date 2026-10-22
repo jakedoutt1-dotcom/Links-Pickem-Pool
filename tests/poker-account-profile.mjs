@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import {DatabaseSync} from 'node:sqlite';
+import {onRequest} from '../functions/new-build/api/poker-profile.js';
+const raw=new DatabaseSync(':memory:');
+const db={prepare(sql){let args=[];return {bind(...v){args=v;return this},async run(){return raw.prepare(sql).run(...args)},async first(){return raw.prepare(sql).get(...args)||null}}}};
+raw.exec('CREATE TABLE links_id_accounts(id TEXT,display_name TEXT);CREATE TABLE links_id_sessions(token_hash TEXT,account_id TEXT,expires_at INTEGER)');
+const token='private-test-session';const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token))),x=>x.toString(16).padStart(2,'0')).join('');
+raw.prepare('INSERT INTO links_id_accounts VALUES(?,?)').run('one','Player One');raw.prepare('INSERT INTO links_id_accounts VALUES(?,?)').run('two','Player Two');
+raw.prepare('INSERT INTO links_id_sessions VALUES(?,?,?)').run(hash,'one',Date.now()+60000);
+async function call(body,cookie=token,origin='https://links.test'){const r=await onRequest({env:{DB:db},request:new Request('https://links.test/new-build/api/poker-profile',{method:body?'POST':'GET',headers:{cookie:'__Host-links_identity='+cookie,origin},...(body?{body:JSON.stringify(body)}:{})})});return {status:r.status,...await r.json()}}
+assert.equal((await call(null,'bad')).status,401);
+assert.equal((await call({name:'Joe',avatar:'preset:fun-0'},token,'https://evil.test')).status,403);
+assert.equal((await call({name:'Joe',avatar:'preset:fun-0'})).status,200);
+assert.deepEqual((await call(null)).profile,{name:'Joe',avatar:'preset:fun-0'});
+assert.equal(raw.prepare('SELECT COUNT(*) AS n FROM links_poker_profiles WHERE account_id=?').get('two').n,0);
+for(const avatar of ['preset:fun-16','preset:classic-9','https://evil.test/image.jpg','data:image/jpeg;base64,bad'])assert.equal((await call({name:'Joe',avatar})).status,400);
+assert.equal((await call({name:'',avatar:''})).status,400);
+assert.equal((await call({name:'New Name',avatar:''})).status,200);
+assert.deepEqual((await call(null)).profile,{name:'New Name',avatar:''});
+raw.prepare('UPDATE links_id_sessions SET expires_at=0').run();assert.equal((await call(null)).status,401);
+console.log('PASS account profile: authenticated persistence, per-account isolation, origin checks, validation, removal, expired sessions.');

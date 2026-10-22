@@ -4,8 +4,9 @@ import {identityReady,enabled,rollout,accountApi,savePool,clearPool,legacyToken}
 try{await identityReady()}catch(e){const notice=document.getElementById('accountStatus');notice.textContent=e.message;const retry=document.createElement('button');retry.type='button';retry.className='action primary';retry.textContent='Try again';retry.onclick=()=>location.reload();document.getElementById('accountForm').replaceChildren(retry);await new Promise(()=>{})}
 if(!enabled)location.replace('./pool-login.html');
 const box=document.getElementById('accountForm'),status=document.getElementById('accountStatus'),title=document.getElementById('accountTitle'),intro=document.getElementById('accountIntro'),params=new URLSearchParams(location.search);
-const gameEntry=['game-room','daily-challenge'].includes(params.get('next'));
-const destination=params.get('next')==='daily-challenge'?'./daily-challenge.html':params.get('next')==='game-room'?'./game-room.html':'./control-center.html';
+const gameEntry=['game-room','daily-challenge','poker-night'].includes(params.get('next'));
+let pokerReturn='./poker-night.html';try{const u=new URL(sessionStorage.getItem('links-poker-login-return')||pokerReturn,location.href);if(u.origin===location.origin&&u.pathname===new URL('./poker-night.html',location.href).pathname)pokerReturn=u.pathname+u.search+u.hash}catch{}
+const destination=params.get('next')==='poker-night'?pokerReturn:params.get('next')==='daily-challenge'?'./daily-challenge.html':params.get('next')==='game-room'?'./game-room.html':'./control-center.html';
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));let signed=null,poolProof='',pendingPool=false,stopAutofill=()=>{};
 function show(name,description,html){stopAutofill();title.textContent=name;intro.textContent=description;status.textContent='';box.innerHTML=html;box.querySelector('input')?.focus({preventScroll:true})}
 function link(label,id){return '<button type="button" class="account-link" id="'+id+'">'+label+'</button>'}
