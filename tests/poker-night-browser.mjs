@@ -76,7 +76,7 @@ try{
  const guestSession=await guest.evaluate(code=>JSON.parse(localStorage.getItem('links-poker-session-'+code)),code),sessions=[hostSession,guestSession];
  for(let i=3;i<=18;i++)sessions.push((await api({action:'join',code,name:'Player '+i})).session);
  await host.locator('#startButton').click();await host.waitForFunction(()=>!document.getElementById('gameArea').hidden);await guest.waitForFunction(()=>document.querySelectorAll('#privateCards .card:not(.back)').length===2);
- assert.equal(await host.locator('#privateCards .card:not(.back)').count(),2);assert.equal(await host.locator('#seats .seat').count(),9);
+ assert.equal(await host.locator('#privateCards .card:not(.back)').count(),2);assert.equal(await host.locator('#seats .seat').count(),9);assert.equal(await host.locator('#seats .avatar-character').count(),9);assert.match(await host.locator('#pokerTable').evaluate(el=>getComputedStyle(el).backgroundImage),/poker-luxe-table-portrait/);assert.equal(await host.locator('#pokerTable .center-table .table-logo').count(),1);
  // Private table chat: unread badge, plain-text rendering and working send form.
  const chatRoom=(await api(null,hostSession,{code})).room;
  const chatter=sessions.find(s=>s.playerId!==hostSession.playerId&&chatRoom.table.players.some(p=>p.id===s.playerId));

@@ -1,0 +1,46 @@
+/* Live game pieces over clean, generated casino artwork. No baked cards or names. */
+#pokerTable{isolation:isolate;border:0!important;border-radius:22px!important;background:url('./assets/poker-luxe-table-landscape-v1.png') center/100% 100% no-repeat!important;box-shadow:0 14px 35px #0008!important;overflow:visible}
+#pokerTable::before,#pokerTable::after,#pokerTable .felt::after{display:none!important}
+#pokerTable .felt{inset:0!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;overflow:visible}
+#pokerTable .seat{display:flex;flex-direction:column;align-items:center;gap:3px;filter:drop-shadow(0 3px 3px #0008)}
+#pokerTable .seat-avatar{display:block!important;width:43px;height:43px;flex:none;border-radius:50%;object-fit:cover;border:2px solid #ffe7a1;margin:0 0 -5px;position:relative;z-index:2;background-color:#11273d;box-shadow:0 0 0 2px #8d632c,0 4px 10px #0009}
+#pokerTable .avatar-character{background-image:url('./assets/poker-character-portraits-v1.png');background-size:300% 300%;background-position:var(--avatar-x) var(--avatar-y)}
+#pokerTable .seat-label{position:relative;isolation:isolate;box-sizing:border-box;width:100%;padding:5px 7px 4px;border:0!important;border-radius:0!important;background:linear-gradient(110deg,#fff1b2,#ac762b 20%,#ffe8a5 49%,#a7722b 80%,#fff0ab)!important;clip-path:polygon(8% 0,92% 0,100% 24%,100% 76%,92% 100%,8% 100%,0 76%,0 24%);box-shadow:none!important;min-height:34px}
+#pokerTable .seat-label::before{content:'';position:absolute;inset:2px;z-index:-1;clip-path:inherit;background:linear-gradient(160deg,#1b3146,#030c18 75%)}
+#pokerTable .seat.active .seat-label::before,#pokerTable .seat.pot-winner .seat-label::before{background:linear-gradient(145deg,#665021,#111b26)}
+#pokerTable .seat.active,#pokerTable .seat.pot-winner{filter:drop-shadow(0 0 9px #ffd777aa)}
+#pokerTable .seat-name{display:block;font-family:Georgia,serif;font-weight:600;line-height:1.1;color:#fff5d8!important;text-shadow:0 1px 2px #000;font-size:.82rem}
+#pokerTable .seat-stack{font-family:Georgia,serif;font-size:.8rem;font-weight:500;color:#ffe5a0!important;margin-top:1px}
+#pokerTable .seat-status{font-size:.52rem;line-height:1.2;margin-top:2px;letter-spacing:.04em;color:#d8dce1}
+#pokerTable .seat .markers{position:absolute;top:32px;right:-3px;z-index:4}
+#pokerTable .seat-cards{order:2;display:flex;justify-content:center;gap:4px;margin:2px 0 0;min-height:0}
+#pokerTable .seat-bet{position:static;order:3;transform:none;margin:0;padding:1px 5px;font-size:.58rem;line-height:1.2;background:#07111dd9;border:1px solid #c5a463;border-radius:4px;color:#ffe8aa;white-space:nowrap}
+#pokerTable .card.back{background:linear-gradient(135deg,#1e4269,#0a1e3d 65%,#24446e)!important;border:1px solid #f6d797!important;box-shadow:inset 0 0 0 2px #102b48,inset 0 0 0 3px #b6995266,0 3px 4px #0006}
+#pokerTable .center-table{inset:27% 18% 13%!important}
+#pokerTable .center-table>.table-logo{width:130px!important;height:45px!important;margin-bottom:6px!important;filter:drop-shadow(0 2px 3px #0009)}
+#pokerTable .phase-label{font-size:.56rem;letter-spacing:.18em;color:#fff0c0;text-shadow:0 1px 3px #000}
+#pokerTable .pot{margin-top:10px;gap:6px}
+#pokerTable .pot>span:last-child{padding:4px 10px;border:1px solid #dec17d;border-radius:7px;background:linear-gradient(#152c3c,#030c17);box-shadow:0 2px 5px #0008}
+#pokerTable .pot small{font-size:.45rem;letter-spacing:.09em;color:#f2dcaa}
+#pokerTable .pot strong{font-family:Georgia,serif;font-size:1.4rem;color:#ffe8b3;text-shadow:0 1px 3px #000}
+#pokerTable .chip-stack{filter:drop-shadow(0 2px 3px #0009)}
+@media(max-width:600px) and (orientation:portrait){
+ body:not(.tv) #pokerTable{height:clamp(520px,150vw,680px);margin:26px 0 44px;background-image:url('./assets/poker-luxe-table-portrait-v1.png')!important;border-radius:18px!important}
+ body:not(.tv) #pokerTable .seat{width:clamp(70px,22vw,86px);gap:2px}
+ body:not(.tv) #pokerTable .seat-avatar{width:35px;height:35px}
+ body:not(.tv) #pokerTable .seat-label{padding:4px 6px 3px;min-height:33px}
+ body:not(.tv) #pokerTable .seat-name{font-size:.72rem}
+ body:not(.tv) #pokerTable .seat-stack{font-size:.72rem}
+ body:not(.tv) #pokerTable .seat .markers{top:27px;right:-2px}
+ body:not(.tv) #pokerTable .center-table{inset:35% 19% 24%!important}
+ body:not(.tv) #pokerTable .center-table>.table-logo{width:120px!important;height:42px!important}
+ body:not(.tv) #pokerTable .community-cards{gap:3px;min-height:40px}
+ body:not(.tv) #pokerTable .community-cards .card{width:clamp(22px,7vw,31px);height:clamp(33px,10.2vw,46px)}
+ body:not(.tv) #pokerTable .seat-cards .card{width:22px;height:32px}
+ body:not(.tv) #pokerTable .pot strong{font-size:1.25rem}
+ body:not(.tv) #pokerTable .seat-status{font-size:.46rem}
+}
+@media(max-height:500px) and (orientation:landscape){#pokerTable .seat-avatar{width:24px;height:24px;margin-bottom:-3px}#pokerTable .seat-label{padding:3px 5px;min-height:25px}#pokerTable .seat-name,#pokerTable .seat-stack{font-size:.57rem}#pokerTable .seat .markers{top:17px}#pokerTable .center-table>.table-logo{width:80px!important;height:27px!important}#pokerTable .pot strong{font-size:1rem}}
+.tv #pokerTable .seat-avatar{width:32px;height:32px}.tv #pokerTable .seat-name,.tv #pokerTable .seat-stack{font-size:.65rem}
+
+#pokerTable .pot{flex-direction:column;gap:4px}#pokerTable .chip-stack{display:block!important;width:130px;height:68px;transform:none!important;flex-shrink:0;background:url('./assets/poker-luxe-chip-stacks-v1.png') center/contain no-repeat;filter:drop-shadow(0 3px 4px #0009)}#pokerTable .chip-stack i,#pokerTable .chip-stack .bet-chip{display:none}#pokerTable .pot>span:last-child{min-width:90px;text-align:center}#pokerTable .pot small{display:none}#pokerTable .center-table>.table-logo{width:140px!important;height:49px!important}#pokerTable .pot strong{font-size:1.2rem}@media(max-width:600px) and (orientation:portrait){body:not(.tv) #pokerTable .chip-stack{width:120px;height:61px}body:not(.tv) #pokerTable .center-table{inset:31% 19% 22%!important}body:not(.tv) #pokerTable .center-table>.table-logo{width:134px!important;height:47px!important}body:not(.tv) #pokerTable .pot strong{font-size:1.12rem}}@media(max-height:500px) and (orientation:landscape){#pokerTable .chip-stack{width:66px;height:32px}#pokerTable .pot{gap:1px;margin-top:3px}#pokerTable .pot>span:last-child{padding:1px 6px}#pokerTable .center-table>.table-logo{width:75px!important;height:25px!important}#pokerTable .pot strong{font-size:.8rem}}

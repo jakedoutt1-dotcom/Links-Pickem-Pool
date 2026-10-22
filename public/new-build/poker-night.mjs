@@ -1,7 +1,7 @@
-import {createPokerProfile} from './poker-profile.mjs?v=1';
+import {createPokerProfile} from './poker-profile.mjs?v=luxe2';
 import {createTableChat} from './poker-chat.mjs?v=compact5';
 import {createPokerAudio} from './poker-audio.mjs?v=rich2';
-import {pokerSeatPosition} from './poker-seats.mjs?v=clear2';
+import {pokerSeatPosition} from './poker-seats.mjs?v=luxe3';
 import {raisePreset,validRaise} from './poker-controls.mjs';
 import {createActionLog,renderActionLog} from './poker-action-log.mjs';
 import {createHandRecap,recapLines} from './poker-recap.mjs';
@@ -327,8 +327,10 @@ function renderTable(table) {
     const cards = revealed && p.holeCards?.length ? p.holeCards.map(c => cardHtml(c)).join('') : (!p.folded ? cardHtml(null,{back:true}) + cardHtml(null,{back:true}) : '');
     const markers = `${p.seat === table.buttonSeat ? '<b class="marker" title="Dealer">D</b>' : ''}${p.seat === table.smallBlindSeat ? '<b class="marker blind" title="Small blind">SB</b>' : ''}${p.seat === table.bigBlindSeat ? '<b class="marker blind" title="Big blind">BB</b>' : ''}`;
     const won = ended && table.winners?.some(w=>w.playerId===p.id);
+    const portrait=[...String(p.id)].reduce((n,c)=>n+c.charCodeAt(0),0)%9;
+    const avatar=p.avatar?`<img class="seat-avatar" src="${esc(p.avatar)}" alt="">`:`<span class="seat-avatar avatar-character" style="--avatar-x:${portrait%3*50}%;--avatar-y:${Math.floor(portrait/3)*50}%" aria-hidden="true"></span>`;
     const status = won ? 'Pot winner' : p.voluntaryShown ? (p.folded ? 'Folded · Shown' : 'Hand shown') : p.folded ? 'Folded' : p.allIn ? 'All in' : p.away ? 'Away' : '';
-    return `<div class="seat ${won ? 'pot-winner' : ''} ${p.id === myId ? 'you' : ''} ${p.id === table.actorId ? 'active' : ''} ${p.folded && !p.voluntaryShown ? 'folded' : ''}" style="left:${position[0]}%;top:${position[1]}%"><div class="seat-cards">${cards}</div><div class="seat-label">${p.avatar?`<img class="seat-avatar" src="${esc(p.avatar)}" alt="">`:`<span class="seat-avatar avatar-initial" aria-hidden="true">${esc(p.name?.slice(0,1)||"?")}</span>`}<span class="markers">${markers}</span><span class="seat-name">${esc(p.name)}${p.id === myId ? ' · You' : ''}</span><span class="seat-stack">${chips(p.stack)}</span>${status ? `<span class="seat-status">${status}</span>` : ''}</div>${p.bet ? `<span class="seat-bet">Bet ${chips(p.bet)}</span>` : ''}</div>`;
+    return `<div class="seat ${won ? 'pot-winner' : ''} ${p.id === myId ? 'you' : ''} ${p.id === table.actorId ? 'active' : ''} ${p.folded && !p.voluntaryShown ? 'folded' : ''}" style="left:${position[0]}%;top:${position[1]}%"><span class="markers">${markers}</span>${avatar}<div class="seat-label"><span class="seat-name">${esc(p.name)}${p.id === myId ? ' · You' : ''}</span><span class="seat-stack">${chips(p.stack)}</span>${status ? `<span class="seat-status">${status}</span>` : ''}</div><div class="seat-cards">${cards}</div>${p.bet ? `<span class="seat-bet">Bet ${chips(p.bet)}</span>` : ''}</div>`;
   }).join('');
   setHtml('seats',seatHtml);
   const winners = table?.winners || [];
