@@ -1,3 +1,4 @@
+import {tableChatView} from './poker-chat.js';
 import {createTable,startHand,act,advanceTimeout,publicTable,showHand} from './poker-night.js';
 import {computerMove} from './poker-computer.js';
 
@@ -230,5 +231,5 @@ export function tournamentView(s,seat='',{host=false,tv=false,venue=null,tableId
  const tables=s.tables.map(t=>publicTable(t,tv?null:self?.id,{tv,allowShow}));
  for(const t of tables){const internal=s.tables.find(x=>x.id===t.id);t.turnId=internal.actionNumber;t.waitingForTables=idle(internal)&&s.tables.some(x=>!idle(x));}
  const table=tables.find(t=>t.id===(tv?(tableId||s.featuredTableId):self?.tableId))||tables.find(t=>t.id===s.featuredTableId)||tables[0]||null;
- return {code:s.code,mode:s.mode,status:s.status,settings:s.settings,serverNow:now,...blinds,remaining:alive(s).length,players:standings,standings,tables,table,featuredTableId:s.featuredTableId,canRebuy:canRebuy(s,self,now),isHost:host,isTv:tv,playerId:self?.id||null,missedBlinds:self?.missedBlinds||0,expiresAt:s.expiresAt,winnerId:s.winnerId||null,nextHandAt:s.nextHandAt||0,pausedAt:s.pausedAt||0,autoResumeAt:s.autoResumeAt||0,venue,...(host?{displayKey:s.displayKey}:{})};
+ return {...(!tv?{chat:tableChatView(s,seat,{host})}:{}),code:s.code,mode:s.mode,status:s.status,settings:s.settings,serverNow:now,...blinds,remaining:alive(s).length,players:standings,standings,tables,table,featuredTableId:s.featuredTableId,canRebuy:canRebuy(s,self,now),isHost:host,isTv:tv,playerId:self?.id||null,missedBlinds:self?.missedBlinds||0,expiresAt:s.expiresAt,winnerId:s.winnerId||null,nextHandAt:s.nextHandAt||0,pausedAt:s.pausedAt||0,autoResumeAt:s.autoResumeAt||0,venue,...(host?{displayKey:s.displayKey}:{})};
 }

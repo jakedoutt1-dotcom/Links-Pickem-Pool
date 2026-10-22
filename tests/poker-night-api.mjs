@@ -1,3 +1,4 @@
+import {tableChatView} from '../functions/lib/poker-chat.js';
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {onRequest} from '../functions/new-build/api/poker-night.js';
@@ -30,6 +31,24 @@ assert.equal((await call({action:'start',code},other.session)).http,403);
 assert.equal((await call({action:'join',code,name:'Other'})).http,409);
 const players=[host,other];for(let i=2;i<14;i++){const p=await call({action:'join',code,name:'Player '+i});assert.equal(p.http,200);players.push(p);}
 db.collide=true;let response=await call({action:'start',code},host.session);assert.equal(response.http,200,JSON.stringify(response));assert.equal(response.room.tables.length,3);assert.deepEqual(response.room.tables.map(t=>t.players.length),[5,5,4]);
+// Table chat uses authenticated seating; supplied table IDs cannot cross tables.
+const hostTable=response.room.table.id,sameTable=players.find(p=>p!==host&&response.room.table.players.some(x=>x.id===p.session.playerId)),differentTable=players.find(p=>!response.room.table.players.some(x=>x.id===p.session.playerId));
+const chatRequest=crypto.randomUUID();
+let chat=await call({action:'chat',code,text:'Nice hand! <b>plain text</b>',tableId:'other-table',requestId:chatRequest},host.session);
+assert.equal(chat.http,200);assert.equal(chat.room.chat.tableId,hostTable);assert.equal(chat.room.chat.messages.length,1);
+assert.equal((await call({action:'chat',code,text:'duplicate',requestId:chatRequest},host.session)).room.chat.messages.length,1);
+assert.equal((await call({action:'chat',code,text:'Too fast'},host.session)).http,409);
+assert.equal((await call(null,sameTable.session,{code})).room.chat.messages.length,1);
+assert.equal((await call(null,differentTable.session,{code})).room.chat.messages.length,0);
+assert.equal((await call({action:'chat-mute',code,targetPlayerId:host.session.playerId,muted:true},sameTable.session)).http,403);
+assert.equal((await call({action:'chat-mute',code,targetPlayerId:sameTable.session.playerId,muted:true},host.session)).http,200);
+assert.equal((await call({action:'chat',code,text:'Muted'},sameTable.session)).http,409);
+assert.equal((await call({action:'chat-mute',code,targetPlayerId:sameTable.session.playerId,muted:false},host.session)).http,200);
+assert.equal((await call({action:'chat',code,text:'x'.repeat(241)},sameTable.session)).http,409);
+assert.equal((await call({action:'chat',code,text:'Good luck!'},sameTable.session)).http,200);
+const moved=snapshot(code),movingSeat=Object.keys(moved.players).find(seat=>moved.players[seat].id===host.session.playerId),movingPlayer=moved.players[movingSeat],from=moved.tables.find(t=>t.id===movingPlayer.tableId),to=moved.tables.find(t=>t.id!==from.id);const moving=from.players.find(p=>p.id===movingPlayer.id);from.players=from.players.filter(p=>p.id!==movingPlayer.id);to.players.push(moving);movingPlayer.tableId=to.id;assert.equal(tableChatView(moved,movingSeat).tableId,to.id);assert.equal(tableChatView(moved,movingSeat).messages.length,0,'Moving table does not carry old-table messages');
+const chatTv=await call(null,{displayKey:host.room.displayKey},{code,tv:1});assert.equal(chatTv.room.chat,undefined);assert(!JSON.stringify(chatTv.room).includes('plain text'));
+assert.equal((await call({action:'chat',code,text:'No TV chat'},{displayKey:host.room.displayKey})).http,403);
 const liveTables=JSON.stringify(snapshot(code).tables);const late=await call({action:'join',code,name:'Late'});assert.equal(late.http,200);assert.equal(late.room.players.find(p=>p.you).status,'waiting');assert.equal(late.room.players.find(p=>p.you).stack,1000);assert.equal(JSON.stringify(snapshot(code).tables),liveTables);assert.ok(late.room.tables.every(t=>t.players.every(p=>p.holeCards.length===0)));assert.equal((await call({action:'bet',code,tableId:late.room.table.id,handNumber:1,turnId:0,move:'fold'},late.session)).http,409);
 for(const p of players){const r=await call(null,p.session,{code});assert.equal(r.http,200);for(const t of r.room.tables)for(const seat of t.players)assert.equal(seat.holeCards.length,seat.id===p.session.playerId?2:0);assert.equal(JSON.stringify(r.room).includes('"deck"'),false);assert.equal(JSON.stringify(r.room).includes('hostHash'),false);assert.equal(JSON.stringify(r.room).includes('playerToken'),false);}
 const tvSession={displayKey:host.room.displayKey};const tv=await call(null,tvSession,{code,tv:1});assert.equal(tv.http,200);assert.equal(tv.room.tables.flatMap(t=>t.players).some(p=>p.holeCards.length),false);assert.equal(tv.room.displayKey,undefined);

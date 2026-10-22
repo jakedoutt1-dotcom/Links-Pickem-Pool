@@ -1,3 +1,4 @@
+import {createTableChat} from './poker-chat.mjs';
 import {createPokerAudio} from './poker-audio.mjs';
 import {pokerSeatPosition} from './poker-seats.mjs';
 import {raisePreset,validRaise} from './poker-controls.mjs';
@@ -9,6 +10,7 @@ import {updateVenueRoom} from './venue-link.mjs';
 import {preselectOptions,choosePreselection,resolvePreselection} from './poker-preselect.mjs';
 
 const $ = id => document.getElementById(id);
+const tableChat=createTableChat(async(action,extra)=>{if(!await act(action,extra))throw Error('Message was not sent. Wait a moment and try again.');});
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const chips = value => Number(value || 0).toLocaleString();
 const url = new URL(location.href), isTv = url.searchParams.get('tv') === '1';
@@ -140,7 +142,7 @@ async function act(action, extra = {}) {
   busy = true; generation++; updateControls(); note('');
   try {
     const data = await api({action,code,playerId:session.playerId,playerToken:session.playerToken,hostToken:session.hostToken,requestId:crypto.randomUUID(),...extra});
-    adopt(data);
+    adopt(data);return true;
   } catch (error) { syncNeeded = true; note(`${error.message} Refreshing the table before another move…`,true); }
   finally { busy = false; updateControls(); if (syncNeeded) void poll(); }
 }
@@ -272,7 +274,7 @@ function render() {
   $('closeButton').disabled = busy || room.status === 'closed';
   const venue = room.venue; $('venueBanner').hidden = !venue?.logo;
   if (venue?.logo) { const logo = new URL(venue.logo,location.origin); if (['https:','http:'].includes(logo.protocol)) { $('venueLogo').src = logo.href; $('venueLogo').alt = venue.name || 'Venue logo'; } else $('venueBanner').hidden = true; }
-  updateControls(); tick();
+  tableChat.update(room);updateControls(); tick();
 }
 function renderTable(table) {
   renderActionLog($('recentActions'),actionLog.update(code,table));

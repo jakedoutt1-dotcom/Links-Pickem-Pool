@@ -75,6 +75,15 @@ try{
  for(let i=3;i<=18;i++)sessions.push((await api({action:'join',code,name:'Player '+i})).session);
  await host.locator('#startButton').click();await host.waitForFunction(()=>!document.getElementById('gameArea').hidden);await guest.waitForFunction(()=>document.querySelectorAll('#privateCards .card:not(.back)').length===2);
  assert.equal(await host.locator('#privateCards .card:not(.back)').count(),2);assert.equal(await host.locator('#seats .seat').count(),9);
+ // Private table chat: unread badge, plain-text rendering and working send form.
+ const chatRoom=(await api(null,hostSession,{code})).room;
+ const chatter=sessions.find(s=>s.playerId!==hostSession.playerId&&chatRoom.table.players.some(p=>p.id===s.playerId));
+ await api({action:'chat',code,text:'Nice hand! <img src=x onerror=alert(1)>'},chatter);
+ await host.locator('.chat-unread').filter({hasText:'1 new'}).waitFor();
+ await host.locator('.poker-chat summary').click();await host.locator('.chat-messages').getByText('Nice hand! <img src=x onerror=alert(1)>',{exact:true}).waitFor();
+ assert.equal(await host.locator('.chat-messages img').count(),0);assert.equal(await host.locator('.chat-unread').textContent(),'');
+ await host.locator('.poker-chat input').fill('Good luck, table!');await host.locator('.poker-chat button[type=submit]').click();await host.locator('.chat-messages').getByText('Good luck, table!',{exact:true}).waitFor();await fits(host);
+ await host.setViewportSize({width:1280,height:720});await fits(host);await host.setViewportSize({width:390,height:844});
  const initialHand=(await api(null,hostSession,{code})).room.table.yourHandName;
  assert.equal(await host.locator('#myHandName').textContent(),'Your hand: '+initialHand);
  await fits(host);await fits(guest);
@@ -138,9 +147,9 @@ try{
  await host.locator('#tvDialog [data-close]').click();
  const tv=await context(1920,1080);await tv.goto(tvHref);await tv.waitForFunction(()=>document.querySelectorAll('#seats .seat').length===9);
  const pinnedTv=await context(1280,720);await pinnedTv.goto(pinnedHref);await pinnedTv.waitForFunction(()=>document.getElementById('tableLabel').textContent.startsWith('TABLE 1'));
- assert.equal(await tv.locator('#privateCards .card:not(.back)').count(),0);assert.equal(await tv.locator('#myHand').isVisible(),false);assert.equal(await tv.locator('#hostDesk').isVisible(),false);assert.equal(await tv.locator('#standings li').count(),18);await fits(tv);
+ assert.equal(await tv.locator('#privateCards .card:not(.back)').count(),0);assert.equal(await tv.locator('#myHand').isVisible(),false);assert.equal(await tv.locator('.poker-chat').isVisible(),false);assert.equal(await tv.locator('#hostDesk').isVisible(),false);assert.equal(await tv.locator('#standings li').count(),18);await fits(tv);
  assert.equal(await tv.locator('#myHandName').isVisible(),false,'TV does not display a private hand label');
- const first=await tv.locator('#tableLabel').textContent();await host.locator('#hostDesk summary').click();await host.locator('[data-feature="table-2"]').click();
+ const first=await tv.locator('#tableLabel').textContent();await host.locator('#hostDesk > summary').click();await host.locator('[data-feature="table-2"]').click();
  await tv.waitForFunction(first=>document.getElementById('tableLabel').textContent!==first,first);
  assert.ok((await pinnedTv.locator('#tableLabel').textContent()).startsWith('TABLE 1'),'A second TV stays on its selected table when the featured table changes');
  assert.equal(await pinnedTv.locator('#seats .card:not(.back)').count(),0,'Independent TV does not reveal private cards');

@@ -1,3 +1,4 @@
+import {sendTableChat,muteTableChat} from '../../lib/poker-chat.js';
 import {pokerCreateAccess} from '../../lib/poker-access.js';
 import {paypal} from './party-pack.js';
 import {savePartyRoom} from '../../lib/party-scoreboard.js';
@@ -36,7 +37,7 @@ export async function onRequest({request,env}){
    if(!body||typeof body!=='object'||Array.isArray(body))return json({error:'Invalid request.'},400);
   }
   const action=request.method==='GET'?'state':body.action;
-  if(!['state','create','join','start','bet','rebuy','show','feature','pause','resume','close','next','sitout'].includes(action))return json({error:'Unknown action.'},400);
+  if(!['state','create','join','start','bet','rebuy','show','feature','pause','resume','close','next','sitout','chat','chat-mute'].includes(action))return json({error:'Unknown action.'},400);
   if(action!=='state'&&!/^[a-zA-Z0-9_-]{16,80}$/.test(String(body.requestId||'')))return json({error:'This action needs a fresh request. Please try again.'},400);
   await initialize(db);
   const ip=request.headers.get('CF-Connecting-IP')||'local',receiptId=action==='create'||action==='join'?await hash(ip+':'+action+':'+body.requestId):'';
@@ -79,9 +80,11 @@ export async function onRequest({request,env}){
      else{joinTournament(s,joinSeat,{id:issued.playerId,name:body.name},time);current=joinSeat;session=issued;s.joinReceipts||={};s.joinReceipts[receiptId]=issued;}
     }
    }else if(!already&&action!=='state'){
-    const onlyHost=['start','feature','pause','resume','close','next'].includes(action);if(onlyHost&&!host)return permission();
+    const onlyHost=['start','feature','pause','resume','close','next','chat-mute'].includes(action);if(onlyHost&&!host)return permission();
     if((s.status==='closed'||(s.status==='finished'&&action!=='show'))&&action!=='close')return json({error:'This game has ended. Create a new room to play again.'},409);
-    if(action==='start')startTournament(s,time);
+    if(action==='chat')sendTableChat(s,seat,body.text,time);
+    else if(action==='chat-mute')muteTableChat(s,body.targetPlayerId,body.muted);
+    else if(action==='start')startTournament(s,time);
     else if(action==='bet')betTournament(s,seat,body,time);
     else if(action==='rebuy')rebuyTournament(s,seat,time);
     else if(action==='show')showTournamentHand(s,seat,body);
