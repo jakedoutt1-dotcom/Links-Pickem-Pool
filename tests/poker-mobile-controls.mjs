@@ -48,6 +48,7 @@ try{
   await page.goto(origin+'/new-build/poker-night.html?room='+code);
   await page.locator('#bettingControls').waitFor({state:'visible'});await fits(page);
   if(width<=600&&height>width){await page.evaluate(()=>scrollTo(0,0));const tableTop=await page.locator('#pokerTable').evaluate(el=>el.getBoundingClientRect().top);assert.ok(tableTop<=210,'Compact header keeps phone table near top: '+tableTop);await page.screenshot({path:out+`/compact-top-${width}.png`});}
+  assert.equal(await page.locator('#board .card.empty').first().isVisible(),false,'Undealt community slots show felt');
   assert.equal(await page.locator('#turnProgress').isVisible(),true,'Active turn has a visible countdown bar');
   assert.match(await page.locator('#turnClock').getAttribute('aria-label'),/seconds to act/,'Clock announces whose turn it is');
   if(width===390){
@@ -58,6 +59,7 @@ try{
   }
   const inViewport=async selector=>page.locator(selector).evaluate(el=>{const r=el.getBoundingClientRect();return r.x>=0&&r.right<=innerWidth+1&&r.y>=0&&r.bottom<=innerHeight+1;});
   if(width<=600&&height>width)await page.locator('#bettingControls').scrollIntoViewIfNeeded();if(width<=600)assert.equal(await inViewport('#bettingControls'),true,'Phone turn dock fits '+width);
+  if(width<=600&&height>width){const before=await page.locator('#bettingControls').boundingBox();await page.evaluate(()=>scrollBy(0,180));const after=await page.locator('#bettingControls').boundingBox();assert.ok(Math.abs(before.y-after.y)<2,'Action controls stay pinned while scrolling');}
   assert.ok((await page.locator('#callButton').boundingBox()).height>=44,'Thumb-sized action');
   await page.locator('#raiseOpen').click();await page.locator('#raiseExact').waitFor({state:'visible'});
   const own=(await api(null,actor,{code})).room.table,min=own.legalActions.minRaiseTo;
@@ -88,7 +90,7 @@ try{
   await waitPage.goto(origin+'/new-build/poker-night.html?room='+code);
   // Choose a stable non-actor seat after the raise.
   const latest=(await api(null,waiting,{code})).room;
-  if(latest.table.actorId!==waiting.playerId){await waitPage.locator('#preselectControls').waitFor({state:'visible'});if(width<=600){await waitPage.locator('#preselectControls').scrollIntoViewIfNeeded();const r=await waitPage.locator('#preselectControls').boundingBox();assert.ok(r.y>=0&&r.y+r.height<=height+1,'Waiting dock fits phone');const bottom=await waitPage.locator('#seats .seat').evaluateAll(nodes=>Math.max(...nodes.map(n=>n.getBoundingClientRect().bottom)));assert.ok(bottom<=r.y+2,'All seats clear the waiting dock at '+width+'px: '+bottom+' / '+r.y);}await fits(waitPage);if(width<=600){assert.equal(await waitPage.locator('#preselectHand .card:not(.back)').count(),2);await waitPage.locator('#preHideCards').click();assert.equal(await waitPage.locator('#preselectHand .back').count(),2);await waitPage.locator('#preHideCards').click();}await waitPage.screenshot({path:out+`/waiting-${width}.png`});}
+  if(latest.table.actorId!==waiting.playerId){await waitPage.locator('#preselectControls').waitFor({state:'visible'});if(width<=600){await waitPage.locator('#preselectControls').scrollIntoViewIfNeeded();const r=await waitPage.locator('#preselectControls').boundingBox();assert.ok(r.y>=0&&r.y+r.height<=height+1,'Waiting dock fits phone');if(height>width){const before=r.y;await waitPage.evaluate(()=>scrollBy(0,200));const after=await waitPage.locator('#preselectControls').boundingBox();assert.ok(Math.abs(after.y-before)<2,'Waiting controls stay pinned while scrolling');}else{const bottom=await waitPage.locator('#seats .seat').evaluateAll(nodes=>Math.max(...nodes.map(n=>n.getBoundingClientRect().bottom)));assert.ok(bottom<=r.y+2,'Landscape seats clear controls');}}await fits(waitPage);if(width<=600){assert.equal(await waitPage.locator('#preselectHand .card:not(.back)').count(),2);await waitPage.locator('#preHideCards').click();assert.equal(await waitPage.locator('#preselectHand .back').count(),2);await waitPage.locator('#preHideCards').click();}await waitPage.screenshot({path:out+`/waiting-${width}.png`});}
   await waitPage.context().close();
  }
 

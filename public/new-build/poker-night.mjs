@@ -1,11 +1,11 @@
 import {presetAvatar,presetStyle} from './poker-avatars.mjs';
-import {createPokerProfile} from './poker-profile.mjs?v=accounts-away5';
+import {createPokerProfile} from './poker-profile.mjs?v=sticky-actions6';
 import {createTableChat} from './poker-chat.mjs?v=compact5';
 import {createPokerAudio} from './poker-audio.mjs?v=rich2';
 import {pokerSeatPosition} from './poker-seats.mjs?v=luxe3';
 import {raisePreset,validRaise} from './poker-controls.mjs';
 import {createActionLog,renderActionLog} from './poker-action-log.mjs';
-import {createHandRecap,recapLines} from './poker-recap.mjs';
+import {createHandRecap,recapLines} from './poker-recap.mjs?v=winning2';
 import qrcode from './vendor/qrcode.mjs';
 import {rememberPartySeat} from './party-score-link.mjs';
 import {updateVenueRoom} from './venue-link.mjs';
@@ -292,6 +292,7 @@ function renderTable(table) {
   const recap = handRecap.update(code,table);
   $('handRecapPanel').hidden = !recap;
   if (recap) {
+    setHtml('winningCards',recap.winners.filter(w=>w.cards?.length).map(w=>`<section class="recap-winning-hand"><strong>${esc(w.name)} · ${esc(w.handName)}</strong><div class="recap-cards" aria-label="Winning five cards">${w.cards.map(c=>cardHtml(c)).join('')}</div></section>`).join(''));
     $('handRecapTitle').textContent = `Last result · ${String(recap.tableId).replace(/^table[-_]?/i,'Table ')} · Hand ${recap.handNumber}`;
     renderActionLog($('handRecapResults'),recapLines(recap).map((text,i)=>({key:recap.key+':'+i,text})));
   }

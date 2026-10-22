@@ -1,4 +1,4 @@
-// Store only public result text and community cards, never private hole cards.
+// Retain public showdown winners only; never copy private player hole cards.
 export function createHandRecap() {
   let scope = '', result = null;
   return {
@@ -20,7 +20,7 @@ export function createHandRecap() {
           winners:ordered.map((id,i) => ({name:names(id),amount:share+(i<odd?1:0)}))};
       });
       result = {key,handNumber:table.handNumber,tableId:table.id,board:[...(table.board || [])],pots:rows,
-        winners:table.winners.map(w => ({name:w.name || names(w.playerId),amount:w.amount,handName:w.handName || ''}))};
+        winners:table.winners.map(w => ({name:w.name || names(w.playerId),amount:w.amount,handName:w.handName || '',cards:w.handName!=='Uncontested'&&Array.isArray(w.cards)&&w.cards.length===5&&w.cards.every(c=>/^[2-9TJQKA][cdhs]$/.test(c))?[...w.cards]:[]}))};
       return result;
     }
   };

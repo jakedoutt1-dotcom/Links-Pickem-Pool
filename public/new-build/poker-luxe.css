@@ -77,3 +77,19 @@ body:not(.tv) #bettingControls,body:not(.tv) #preselectControls{background:radia
  body:not(.tv):has(#gameArea:not([hidden])) #turnProgress{height:3px}
  body:not(.tv):has(#gameArea:not([hidden])) #pokerTable{margin-top:0}
 }
+
+/* Keep phone actions within reach while the table and chat scroll. */
+@media(max-width:600px) and (orientation:portrait){
+ body:not(.tv) #bettingControls,body:not(.tv) #preselectControls{position:fixed!important;inset:auto 10px max(8px,env(safe-area-inset-bottom)) 10px!important;width:auto!important;margin:0;z-index:20;max-height:48dvh;overflow:auto;overscroll-behavior:contain;box-shadow:0 -8px 24px #0009,inset 0 1px 0 #fff4}
+ body:not(.tv):is([data-poker-turn=true],[data-poker-waiting=true]) main{padding-bottom:calc(var(--poker-dock-height,220px) + 28px + env(safe-area-inset-bottom))!important}
+ body:not(.tv) #pokerTable .seat{scroll-margin-bottom:calc(var(--poker-dock-height,220px) + 20px)}
+}
+
+.recap-winning-hand{margin:14px 0;padding:12px;border:1px solid #dcb96c;border-radius:12px;background:linear-gradient(145deg,#24475e,#102437)}.recap-winning-hand strong{display:block;margin-bottom:10px;color:#ffe49d}.recap-cards{display:flex;gap:6px}.recap-cards .card{width:42px;height:60px;flex-shrink:0}.recap-cards .card .rank,.recap-cards .card .suit{font-size:18px}.recap-cards .card .large-suit{font-size:22px}
+
+/* Undealt community positions show the felt, without moving dealt cards. */
+#pokerTable #board .card.empty{visibility:hidden;pointer-events:none}
+@media(max-width:600px) and (orientation:portrait){
+ body:not(.tv) #bettingControls:has(#raisePanel:not([hidden])),body:not(.tv) #preselectControls:has(#preRaisePanel:not([hidden])){max-height:76dvh}
+ body:not(.tv) #raiseButton,body:not(.tv) #queueRaise{position:sticky;bottom:0;z-index:2;box-shadow:0 -4px 12px #102437}
+}
