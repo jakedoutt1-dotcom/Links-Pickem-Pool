@@ -68,4 +68,6 @@ async function handleRequest({request,env}){try{
  }return json({error:'Room busy. Please try again.'},409);
  }catch{return json({error:'Unable to complete that request. Please try again.'},503)}}
 
-export const onRequest=context=>withTriviaSession(context,"dead-air",handleRequest);
+// Preserve the game implementation while the rebuild is paused.
+const COMING_SOON=true;
+export const onRequest=context=>COMING_SOON?json({error:'Dead Air is coming soon. Play is paused while we rebuild the game.',comingSoon:true},503):withTriviaSession(context,"dead-air",handleRequest);

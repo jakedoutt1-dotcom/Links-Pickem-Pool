@@ -1,6 +1,6 @@
 const $=id=>document.getElementById(id),headers=()=>({'x-links-account':localStorage.getItem('links-account-token')||''});
 async function get(url){const r=await fetch('./api/'+url,{headers:headers(),cache:'no-store',signal:AbortSignal.timeout(15000)});const j=await r.json();if(!r.ok)throw Object.assign(Error(j.error||'Could not load your account.'),{status:r.status});return j}
-const games={'poker-night':'Poker Night','trivia-rally':'Trivia Rally','million-point':'Million Point Challenge','dead-air':'Dead Air','last-alibi':'Last Alibi','friend-challenge':'Challenge a Friend Trivia'};
+const games={'poker-night':'Poker Night','trivia-rally':'Trivia Rally','million-point':'Million Point Challenge','last-alibi':'Last Alibi','friend-challenge':'Challenge a Friend Trivia'};
 function roomLink(label,url){const a=document.createElement('a');a.href=url;a.textContent=label;$('roomLinks').append(a);$('savedRooms').hidden=false}
 try{const recent=JSON.parse(localStorage.getItem('links-recent-games')||'[]');for(const r of recent){if(games[r.game]&&/^[a-z0-9-]{4,80}$/i.test(r.room)&&Date.now()-r.at<86400000)roomLink(games[r.game]+' · '+r.room,'./'+r.game+'.html?room='+encodeURIComponent(r.room))}}catch{}
 async function load(){try{const session=await get('game-room');if(!session.signedIn){$('accountMessage').textContent='Create one LINKS account for your games and pools, or sign in to your existing account. You can still try the party games below.';return}
