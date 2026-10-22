@@ -56,7 +56,7 @@ export function joinTournament(s,seat,{id,name},now=Date.now()){
  if(s.players[seat])return s;
  if(s.mode==='practice')fail('Practice is just for you and the computer opponents. Create a friends table to invite others.');
  if(!['lobby','playing','paused'].includes(s.status))fail('This game has ended. Join the host’s next game.');
- if(Object.keys(s.players).length>=(s.mode==='tournament'?360:s.settings.tableSize))fail('This game is full.');
+ if(participants(s).filter(p=>!p.removed).length>=(s.mode==='tournament'?360:s.settings.tableSize))fail('This game is full.');
  name=playerName(name);
  if(Object.values(s.players).some(p=>p.name.toLocaleLowerCase()===name.toLocaleLowerCase()))fail('That name is taken. Add an initial or choose another name.');
  accountMissedBlinds(s);
@@ -75,11 +75,11 @@ export function blindState(s,now=Date.now()){
  return {level,smallBlind:Math.min(10000000,s.settings.smallBlind*multiplier),bigBlind:Math.min(20000000,s.settings.bigBlind*multiplier),nextLevelAt:s.mode==='tournament'&&s.startedAt?s.startedAt+(s.pausedMs||0)+level*s.settings.blindMinutes*60000:0};
 }
 const participants=s=>Object.values(s.players);
-const alive=s=>participants(s).filter(p=>p.status!=='eliminated');
+const alive=s=>participants(s).filter(p=>!p.removed&&p.status!=='eliminated');
 const idle=t=>['waiting','showdown'].includes(t.phase);
 const playerById=(s,id)=>participants(s).find(p=>p.id===id);
 export function canRebuy(s,p,now=Date.now()){
- return !!p&&['playing','paused'].includes(s.status)&&p.status==='eliminated'&&p.reentries<s.settings.maxReentries&&blindState(s,now).level<=s.settings.reentryLevels;
+ return !!p&&!p.removed&&['playing','paused'].includes(s.status)&&p.status==='eliminated'&&p.reentries<s.settings.maxReentries&&blindState(s,now).level<=s.settings.reentryLevels;
 }
 function advanceComputer(s,table,now){
  const player=playerById(s,table.actorId);if(!player?.bot||idle(table))return;
@@ -93,8 +93,9 @@ function syncPlayers(s,now){
   for(const seat of table.players){
    const p=playerById(s,seat.id);if(!p||p.status==='waiting')continue;
    p.stack=seat.stack;
+   if(p.removed){if(idle(table)){s.retiredChips=(s.retiredChips||0)+seat.stack;seat.stack=0;p.stack=0;p.status='eliminated';p.eliminatedAt||=now;p.eliminatedRound||=s.round||1;p.eliminatedStack||=seat.handStartStack||0;}continue;}
    if(table.phase==='showdown'&&table.accountedHand!==table.handNumber&&seat.stack===0&&p.status!=='eliminated'){
-    p.status='eliminated';p.eliminatedAt=now;p.eliminatedRound=s.round||1;p.eliminatedStack=seat.handStartStack||seat.startingStack||0;
+    p.chatTableId=p.tableId;p.status='eliminated';p.eliminatedAt=now;p.eliminatedRound=s.round||1;p.eliminatedStack=seat.handStartStack||seat.startingStack||0;
    }
   }
   if(table.phase==='showdown')table.accountedHand=table.handNumber;
@@ -151,7 +152,7 @@ function rebalance(s,now){
 function finish(s,now){
  const winner=alive(s)[0];s.status='finished';s.phase='ended';s.finishedAt=now;s.winnerId=winner?.id||null;s.nextHandAt=0;
  s.winners=Object.entries(s.players).filter(([,p])=>p.id===winner?.id).map(([seat])=>seat);
- for(const p of participants(s)){if(p.id===winner?.id)p.place=1;p.score=Math.round((participants(s).length-(p.place||participants(s).length))/Math.max(1,participants(s).length-1)*1000);}
+ for(const p of participants(s)){if(p.id===winner?.id)p.place=1;p.score=p.removed?0:Math.round((participants(s).length-(p.place||participants(s).length))/Math.max(1,participants(s).length-1)*1000);}
 }
 function dealRound(s,now){
  accountMissedBlinds(s);
@@ -169,7 +170,7 @@ export function advanceTournament(s,now=Date.now()){
   if(!idle(table))advanceTimeout(table,options,now);
   const actor=playerById(s,table.actorId);
   if(actor?.away&&!idle(table)){
-   const view=publicTable(table,actor.id);act(table,actor.id,{type:view.legalActions?.canCheck?'check':'fold'},options,now);
+   const view=publicTable(table,actor.id);act(table,actor.id,{type:!actor.removed&&view.legalActions?.canCheck?'check':'fold'},options,now);
   }
   advanceComputer(s,table,now);
  }
@@ -190,7 +191,7 @@ export function advanceTournament(s,now=Date.now()){
 }
 export function startTournament(s,now=Date.now()){
  if(s.status!=='lobby')fail('This game has already started.');
- if(participants(s).length<2)fail('At least two players must join before starting.');
+ if(alive(s).length<2)fail('At least two players must join before starting.');
  s.status='playing';s.phase='playing';s.startedAt=now;dealRound(s,now);return s;
 }
 export function betTournament(s,seat,input,now=Date.now()){
@@ -207,6 +208,18 @@ export function rebuyTournament(s,seat,now=Date.now()){
  const table=s.tables.find(t=>t.players.some(q=>q.id===p.id));
  p.returnTableId=table?.id;p.returnSeat=table?.players.find(q=>q.id===p.id)?.seat;
  p.stack=s.settings.startingChips;p.reentries++;p.status='waiting';p.tableId=null;p.away=false;delete p.place;delete p.eliminatedAt;delete p.eliminatedRound;delete p.eliminatedStack;return s;
+}
+// Revoke the seat immediately; a live all-in keeps its existing pot eligibility.
+// Uncommitted chips leave play only after the current hand is settled.
+export function kickTournamentPlayer(s,targetPlayerId,now=Date.now()){
+ const p=participants(s).find(p=>p.id===targetPlayerId);
+ if(!p||p.bot||p.id===s.players[s.owner]?.id)fail('Choose another human player to remove.');
+ if(p.removed)return s;
+ p.removed=true;p.removedAt=now;p.away=true;s.chatMuted||={};s.chatMuted[p.id]=true;
+ const table=s.tables.find(t=>t.players.some(q=>q.id===p.id));
+ if(!table){s.retiredChips=(s.retiredChips||0)+p.stack;p.stack=0;p.status='eliminated';p.eliminatedAt=now;p.eliminatedRound=s.round||0;}
+ else{if(s.status==='playing'&&table.actorId===p.id&&!idle(table))act(table,p.id,{type:'fold'},{turnSeconds:s.settings.turnSeconds},now);syncPlayers(s,now);}
+ return s;
 }
 export function showTournamentHand(s,seat,input){
  if(s.mode==='practice'||!['playing','paused','finished'].includes(s.status))fail('Showing a hand is available only after a multiplayer hand ends.','CANNOT_SHOW_HAND');
@@ -225,7 +238,7 @@ export function resumeTournament(s,now=Date.now()){
 }
 export function tournamentView(s,seat='',{host=false,tv=false,venue=null,tableId=''}={},now=Date.now()){
  const self=s.players[seat],blinds=blindState(s,now);
- const standings=participants(s).map(p=>({id:p.id,name:p.name,stack:p.stack,score:p.score,status:p.status,tableId:p.tableId,reentries:p.reentries,away:!!p.away,bot:!!p.bot,place:p.place||null,you:p.id===self?.id})).sort((a,b)=>a.status==='eliminated'?(b.status==='eliminated'?(a.place||99)-(b.place||99):1):b.status==='eliminated'?-1:b.stack-a.stack||a.name.localeCompare(b.name));
+ const standings=participants(s).map(p=>({id:p.id,name:p.name,stack:p.stack,score:p.score,status:p.status,tableId:p.tableId,reentries:p.reentries,away:!!p.away,bot:!!p.bot,removed:!!p.removed,place:p.place||null,you:p.id===self?.id})).sort((a,b)=>a.status==='eliminated'?(b.status==='eliminated'?(a.place||99)-(b.place||99):1):b.status==='eliminated'?-1:b.stack-a.stack||a.name.localeCompare(b.name));
  standings.forEach((p,i)=>p.rank=p.place||i+1);
  const allowShow=s.mode!=='practice'&&['playing','paused','finished'].includes(s.status);
  const tables=s.tables.map(t=>publicTable(t,tv?null:self?.id,{tv,allowShow}));

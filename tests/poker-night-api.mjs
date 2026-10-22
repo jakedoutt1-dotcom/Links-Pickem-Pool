@@ -1,4 +1,4 @@
-import {tableChatView} from '../functions/lib/poker-chat.js';
+import {tableChatView,sendTableChat} from '../functions/lib/poker-chat.js';
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {onRequest} from '../functions/new-build/api/poker-night.js';
@@ -33,6 +33,7 @@ const players=[host,other];for(let i=2;i<14;i++){const p=await call({action:'joi
 db.collide=true;let response=await call({action:'start',code},host.session);assert.equal(response.http,200,JSON.stringify(response));assert.equal(response.room.tables.length,3);assert.deepEqual(response.room.tables.map(t=>t.players.length),[5,5,4]);
 // Table chat uses authenticated seating; supplied table IDs cannot cross tables.
 const hostTable=response.room.table.id,sameTable=players.find(p=>p!==host&&response.room.table.players.some(x=>x.id===p.session.playerId)),differentTable=players.find(p=>!response.room.table.players.some(x=>x.id===p.session.playerId));
+assert.equal((await call({action:'kick',code,targetPlayerId:host.session.playerId},sameTable.session)).http,403);
 const chatRequest=crypto.randomUUID();
 let chat=await call({action:'chat',code,text:'Nice hand! <b>plain text</b>',tableId:'other-table',requestId:chatRequest},host.session);
 assert.equal(chat.http,200);assert.equal(chat.room.chat.tableId,hostTable);assert.equal(chat.room.chat.messages.length,1);
@@ -40,6 +41,7 @@ assert.equal((await call({action:'chat',code,text:'duplicate',requestId:chatRequ
 assert.equal((await call({action:'chat',code,text:'Too fast'},host.session)).http,409);
 assert.equal((await call(null,sameTable.session,{code})).room.chat.messages.length,1);
 assert.equal((await call(null,differentTable.session,{code})).room.chat.messages.length,0);
+const messageId=chat.room.chat.messages[0].id;let reaction=await call({action:'chat-react',code,messageId,emoji:'👍'},sameTable.session);assert.equal(reaction.http,200);assert.deepEqual(reaction.room.chat.messages[0].reactions,[{emoji:'👍',count:1}]);assert.equal(reaction.room.chat.messages[0].yourReaction,'👍');assert.equal((await call({action:'chat-react',code,messageId,emoji:'👍'},differentTable.session)).http,409);time+=501;reaction=await call({action:'chat-react',code,messageId,emoji:'👍'},sameTable.session);assert.deepEqual(reaction.room.chat.messages[0].reactions,[]);assert.equal(reaction.room.chat.messages[0].yourReaction,null);
 assert.equal((await call({action:'chat-mute',code,targetPlayerId:host.session.playerId,muted:true},sameTable.session)).http,403);
 assert.equal((await call({action:'chat-mute',code,targetPlayerId:sameTable.session.playerId,muted:true},host.session)).http,200);
 assert.equal((await call({action:'chat',code,text:'Muted'},sameTable.session)).http,409);
@@ -47,6 +49,7 @@ assert.equal((await call({action:'chat-mute',code,targetPlayerId:sameTable.sessi
 assert.equal((await call({action:'chat',code,text:'x'.repeat(241)},sameTable.session)).http,409);
 assert.equal((await call({action:'chat',code,text:'Good luck!'},sameTable.session)).http,200);
 const moved=snapshot(code),movingSeat=Object.keys(moved.players).find(seat=>moved.players[seat].id===host.session.playerId),movingPlayer=moved.players[movingSeat],from=moved.tables.find(t=>t.id===movingPlayer.tableId),to=moved.tables.find(t=>t.id!==from.id);const moving=from.players.find(p=>p.id===movingPlayer.id);from.players=from.players.filter(p=>p.id!==movingPlayer.id);to.players.push(moving);movingPlayer.tableId=to.id;assert.equal(tableChatView(moved,movingSeat).tableId,to.id);assert.equal(tableChatView(moved,movingSeat).messages.length,0,'Moving table does not carry old-table messages');
+const knockedOut=snapshot(code),knockedSeat=Object.keys(knockedOut.players).find(seat=>knockedOut.players[seat].id===host.session.playerId);knockedOut.players[knockedSeat].chatTableId=knockedOut.players[knockedSeat].tableId;knockedOut.players[knockedSeat].tableId=null;knockedOut.players[knockedSeat].status='eliminated';assert.equal(tableChatView(knockedOut,knockedSeat).enabled,true);time+=2001;sendTableChat(knockedOut,knockedSeat,'Still cheering!',time);assert.equal(tableChatView(knockedOut,knockedSeat).messages.at(-1).text,'Still cheering!');knockedOut.status='finished';assert.equal(tableChatView(knockedOut,knockedSeat).enabled,true);
 const chatTv=await call(null,{displayKey:host.room.displayKey},{code,tv:1});assert.equal(chatTv.room.chat,undefined);assert(!JSON.stringify(chatTv.room).includes('plain text'));
 assert.equal((await call({action:'chat',code,text:'No TV chat'},{displayKey:host.room.displayKey})).http,403);
 const liveTables=JSON.stringify(snapshot(code).tables);const late=await call({action:'join',code,name:'Late'});assert.equal(late.http,200);assert.equal(late.room.players.find(p=>p.you).status,'waiting');assert.equal(late.room.players.find(p=>p.you).stack,1000);assert.equal(JSON.stringify(snapshot(code).tables),liveTables);assert.ok(late.room.tables.every(t=>t.players.every(p=>p.holeCards.length===0)));assert.equal((await call({action:'bet',code,tableId:late.room.table.id,handNumber:1,turnId:0,move:'fold'},late.session)).http,409);
@@ -202,5 +205,7 @@ assert.equal(snapshot(endCode).status,'finished');assert.equal(snapshot(endCode)
 assert.equal(db.raw.prepare("SELECT COUNT(*) n FROM links_party_results WHERE game='poker-night' AND room=?").get(endCode).n,2);
 await call(null,endHost.session,{code:endCode});assert.equal(db.raw.prepare("SELECT COUNT(*) n FROM links_party_results WHERE game='poker-night' AND room=?").get(endCode).n,2);
 assert.deepEqual(db.raw.prepare("SELECT score,win FROM links_party_results WHERE game='poker-night' AND room=? ORDER BY score DESC").all(endCode).map(r=>({...r})),[{score:1000,win:1},{score:0,win:0}]);
+const finalChat=await call({action:'chat',code:endCode,text:'Good game!'},endHost.session);assert.equal(finalChat.http,200);assert.equal(finalChat.room.chat.enabled,true);assert.equal(db.raw.prepare("SELECT COUNT(*) n FROM links_party_results WHERE game='poker-night' AND room=?").get(endCode).n,2);
+assert.equal((await call({action:'kick',code:endCode,targetPlayerId:endHost.session.playerId},endHost.session)).http,409);const kickedPlayer=Object.values(snapshot(endCode).players).find(p=>p.id!==endHost.session.playerId);assert.equal((await call({action:'kick',code:endCode,targetPlayerId:kickedPlayer.id},endHost.session)).http,200);const kickedSession=kickedPlayer.id===endPlayer.session.playerId?endPlayer.session:null;assert(kickedSession);const denied=await call(null,kickedSession,{code:endCode});assert.equal(denied.http,403);assert.equal(denied.code,'REMOVED_FROM_ROOM');assert.equal((await call({action:'chat',code:endCode,text:'Blocked'},kickedSession)).http,403);assert.equal((await call({action:'rebuy',code:endCode},kickedSession)).http,403);
 Date.now=realNow;db.raw.close();
 console.log('PASS private/host/TV API, create/join/action idempotence, CAS retry, stale-turn rejection, 360-player capacity and 90-player balancing, no mid-hand moves, virtual rebuy conservation, blinds/pauses/expiry, and atomic placement leaderboard results.');

@@ -81,12 +81,12 @@ try{
  await api({action:'chat',code,text:'Nice hand! <img src=x onerror=alert(1)>'},chatter);
  await host.locator('.chat-unread').filter({hasText:'1 new'}).waitFor();
  await host.locator('.poker-chat summary').click();await host.locator('.chat-messages').getByText('Nice hand! <img src=x onerror=alert(1)>',{exact:true}).waitFor();
- assert.equal(await host.locator('.chat-messages img').count(),0);assert.equal(await host.locator('.chat-unread').textContent(),'');
+ await host.locator('.message-reactions button[data-message-reaction="👍"]').first().click();await host.locator('.message-reactions button[data-message-reaction="👍"][aria-pressed=true]').waitFor();assert.match(await host.locator('.message-reactions button[data-message-reaction="👍"]').first().textContent(),/1/);assert.equal(await host.locator('.chat-messages img').count(),0);assert.equal(await host.locator('.chat-unread').textContent(),'');
  await host.locator('.poker-chat input').fill('Good luck, table!');await host.locator('.poker-chat button[type=submit]').click();await host.locator('.chat-messages').getByText('Good luck, table!',{exact:true}).waitFor();await fits(host);
  await host.setViewportSize({width:1280,height:720});await fits(host);await host.setViewportSize({width:390,height:844});
  const initialHand=(await api(null,hostSession,{code})).room.table.yourHandName;
  assert.equal(await host.locator('#myHandName').textContent(),'Your hand: '+initialHand);
- await fits(host);await fits(guest);
+ await host.evaluate(()=>{const toast=document.getElementById('winnerToast');toast.hidden=false;toast.textContent='Alex wins this hand! · Two pair'});assert.equal(await host.locator('#winnerToast').evaluate(el=>el.getBoundingClientRect().top>=document.getElementById('pokerTable').getBoundingClientRect().bottom),true,'Winner banner is below the cards');await fits(host);await fits(guest);
  await host.locator('#hideCardsButton').click();assert.equal(await host.locator('#privateCards .back').count(),2);assert.equal(await host.locator('#seats .card:not(.back)').count(),0);
  assert.equal(await host.locator('#myHandName').isVisible(),false,'Hide cards also conceals private hand strength');
  await host.locator('#hideCardsButton').click();assert.equal(await host.locator('#privateCards .card:not(.back)').count(),2);
@@ -197,6 +197,7 @@ try{
  await desk.screenshot({path:out+'/practice-desktop.png',fullPage:true});
  assert.equal(await desk.locator('#showHandPanel').isVisible(),false,'Practice never offers voluntary public reveal');
  assert.equal(await desk.evaluate(()=>document.getElementById('myHand').getBoundingClientRect().left>=document.getElementById('pokerTable').getBoundingClientRect().right),true,'Desktop controls sit to the right of the table');
+ await host.locator('.poker-chat-moderation > summary').click();await host.getByRole('button',{name:'Remove Jordan',exact:true}).click();await host.locator('#confirmNo').click();assert.equal(await guest.locator('#room').isVisible(),true,'Cancel keeps the player seated');await host.getByRole('button',{name:'Remove Jordan',exact:true}).click();await host.locator('#confirmYes').click();await guest.locator('#welcome:visible').waitFor();assert.match(await guest.locator('#notice').textContent(),/host removed you/);assert.equal(await guest.locator('#privateCards .card').count(),0);assert.equal(await guest.evaluate(code=>localStorage.getItem('links-poker-session-'+code),code),null);await fits(host);
  assert.deepEqual(errors,[]);assert.deepEqual(missing,[]);
  console.log('PASS real API/browser:18 players,9-seat phone layout,private cards,hide/reload,raise,TV privacy/feature switch,standings,automatic next hand on all devices,pause,practice and rules/ranks.');
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve));db.raw.close();}

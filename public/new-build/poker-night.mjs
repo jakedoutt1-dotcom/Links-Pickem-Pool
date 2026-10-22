@@ -1,4 +1,4 @@
-import {createTableChat} from './poker-chat.mjs';
+import {createTableChat} from './poker-chat.mjs?v=3';
 import {createPokerAudio} from './poker-audio.mjs';
 import {pokerSeatPosition} from './poker-seats.mjs';
 import {raisePreset,validRaise} from './poker-controls.mjs';
@@ -10,7 +10,7 @@ import {updateVenueRoom} from './venue-link.mjs';
 import {preselectOptions,choosePreselection,resolvePreselection} from './poker-preselect.mjs';
 
 const $ = id => document.getElementById(id);
-const tableChat=createTableChat(async(action,extra)=>{if(!await act(action,extra))throw Error('Message was not sent. Wait a moment and try again.');});
+const tableChat=createTableChat(async(action,extra)=>{if(!await act(action,extra))throw Error('Message was not sent. Wait a moment and try again.');},name=>confirmAction('Remove '+name+'?', 'They will lose access to this room and chat immediately. Their current hand resolves safely before their remaining chips leave play. They cannot buy back in with this seat.','Remove player'));
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const chips = value => Number(value || 0).toLocaleString();
 const url = new URL(location.href), isTv = url.searchParams.get('tv') === '1';
@@ -113,7 +113,7 @@ async function api(body, retried = false) {
   try { response = await fetch('./api/poker-night' + (body ? '' : '?' + params), {method:body ? 'POST' : 'GET', headers, cache:'no-store', signal:AbortSignal.timeout(12000), ...(body ? {body:JSON.stringify(body)} : {})}); }
   catch (error) { if (!retried && ['create','join'].includes(body?.action)) return api(body,true); throw error; }
   let data; try { data = await response.json(); } catch { throw Error('The table could not connect. We’ll keep trying; your seat is saved.'); }
-  if (!response.ok || data.ok === false) throw Object.assign(Error(data.error || 'That action could not be completed.'), {status:response.status});
+  if (!response.ok || data.ok === false) throw Object.assign(Error(data.error || 'That action could not be completed.'), {status:response.status,code:data.code});
   return data;
 }
 function adopt(data) {
@@ -136,6 +136,12 @@ function adopt(data) {
   history.replaceState(null,'',clean);
   showPanel('room'); render();
 }
+function handleRemoval(error){
+ if(error.code!=='REMOVED_FROM_ROOM')return false;
+ generation++;const oldCode=code;code='';room=null;session={};preselection=null;syncNeeded=false;
+ for(const key of ['links-poker-session-'+oldCode,'links-poker-seat-'+oldCode,'links-poker-last-room'])try{localStorage.removeItem(key)}catch{}
+ $('privateCards').replaceChildren();$('seats').replaceChildren();showPanel('welcome');note('The host removed you from this room.',true);return true;
+}
 async function act(action, extra = {}) {
   if (busy || isTv) return;
   if (['bet','sitout'].includes(action)) { preselection = null; preRaiseOpen = false; }
@@ -143,7 +149,7 @@ async function act(action, extra = {}) {
   try {
     const data = await api({action,code,playerId:session.playerId,playerToken:session.playerToken,hostToken:session.hostToken,requestId:crypto.randomUUID(),...extra});
     adopt(data);return true;
-  } catch (error) { syncNeeded = true; note(`${error.message} Refreshing the table before another move…`,true); }
+  } catch (error) { if(handleRemoval(error))return false;syncNeeded = true; note(`${error.message} Refreshing the table before another move…`,true); }
   finally { busy = false; updateControls(); if (syncNeeded) void poll(); }
 }
 async function poll() {
@@ -154,6 +160,7 @@ async function poll() {
   try { const data = await api(); if (ticket !== generation) return; const recovered=syncNeeded||connectionFailures; adopt(data); if (recovered) note('Back at the table. Review your current cards and turn.'); connectionFailures = 0; }
   catch (error) {
     if (ticket !== generation) return;
+    if(handleRemoval(error))return;
     connectionFailures++; syncNeeded = true; preselection = null; preRaiseOpen = false;
     updateControls();
     if (connectionFailures === 1) note(`${error.message} Betting is paused on this screen until the table reconnects. Your seat is saved; the game clock continues.`,true);
@@ -227,7 +234,7 @@ $('exitButton').onclick = async () => {
 
 function sortedStandings() { const list = Array.isArray(room?.standings) ? room.standings : room?.players || []; return list.slice().sort((a,b) => (a.place && b.place ? a.place-b.place : a.place ? 1 : b.place ? -1 : (b.stack || 0) - (a.stack || 0))); }
 function render() {
-  const host = !isTv && !!(room.isHost || session.hostToken), lobby = room.status === 'lobby', table = room.table;
+  const host = !isTv && !!(room.isHost || session.hostToken), lobby = room.status === 'lobby', table = room.table,lobbyPlayers=(room.players||[]).filter(p=>!p.removed);
   const inviteHome = lobby ? $('lobbyInvite') : $('roomActions');
   if ($('inviteButton').parentElement !== inviteHome) inviteHome[lobby ? 'append' : 'prepend']($('inviteButton'));
   $('lobbyInvite').hidden = room.mode === 'practice';
@@ -240,9 +247,9 @@ function render() {
   $('lobbyCode').textContent = code;
   $('lobbySettings').textContent = `${chips(room.settings?.startingChips)} starting chips · ${room.settings?.tableSize || 9} seats per table · ${room.settings?.turnSeconds || 30} seconds to act`;
   $('lobbyRebuy').textContent = room.settings?.maxReentries ? `${room.settings.maxReentries} virtual-chip buy back${room.settings.maxReentries > 1 ? 's' : ''} per player${room.mode === 'tournament' ? ', through blind level ' + room.settings.reentryLevels : ''}.` : 'No buy backs. Everyone gets one starting stack.';
-  setHtml('lobbyRoster',(room.players || []).map(p => `<span>${esc(p.name)}${p.id === session.playerId ? ' · You' : ''}</span>`).join(''));
-  $('lobbyHelp').textContent = (host ? `${room.players?.length || 0} joined. Start when everyone is ready; at least two players are needed.` : 'The host will start when everyone is ready. Keep this page open.') + ' After that, hands deal automatically. Keep playing while you have chips; the last stack wins.';
-  $('startButton').hidden = !host || !lobby; $('startButton').disabled = busy || (room.players?.length || 0) < 2;
+  setHtml('lobbyRoster',lobbyPlayers.map(p => `<span>${esc(p.name)}${p.id === session.playerId ? ' · You' : ''}</span>`).join(''));
+  $('lobbyHelp').textContent = (host ? `${lobbyPlayers.length} joined. Start when everyone is ready; at least two players are needed.` : 'The host will start when everyone is ready. Keep this page open.') + ' After that, hands deal automatically. Keep playing while you have chips; the last stack wins.';
+  $('startButton').hidden = !host || !lobby; $('startButton').disabled = busy || (room.players||[]).filter(p=>!p.removed).length < 2;
   $('lobbyQr').hidden = room.mode === 'practice';
   if (lobby && room.mode !== 'practice') drawQr('lobbyQr',inviteUrl());
   const activeHand = table && ['preflop','flop','turn','river'].includes(table.phase);
@@ -383,7 +390,7 @@ function updateControls() {
   $('raiseAmount').min = String(Math.min(min,max)); $('raiseAmount').max = String(max); $('raiseAmount').step = '1';
   if (Number($('raiseAmount').value) < min || Number($('raiseAmount').value) > max) $('raiseAmount').value = String(Math.min(min,max));
   updateRaise();
-  $('rebuyButton').disabled = busy; $('startButton').disabled = busy || (room.players?.length || 0) < 2;
+  $('rebuyButton').disabled = busy; $('startButton').disabled = busy || (room.players||[]).filter(p=>!p.removed).length < 2;
   $('showHandButton').disabled = busy || !table?.canShowHand;
   $('nextButton').disabled = busy || room.status !== 'playing' || !room.nextHandAt || seconds(dateValue(room.nextHandAt)) > 0;
   updatePreselection();

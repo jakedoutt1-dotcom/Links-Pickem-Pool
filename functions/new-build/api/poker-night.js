@@ -1,9 +1,9 @@
-import {sendTableChat,muteTableChat} from '../../lib/poker-chat.js';
+import {sendTableChat,muteTableChat,reactTableChat} from '../../lib/poker-chat.js';
 import {pokerCreateAccess} from '../../lib/poker-access.js';
 import {paypal} from './party-pack.js';
 import {savePartyRoom} from '../../lib/party-scoreboard.js';
 import {ensureVenue} from '../../lib/venue-scoreboard.js';
-import {createTournament,joinTournament,advanceTournament,startTournament,betTournament,rebuyTournament,showTournamentHand,pauseTournament,resumeTournament,tournamentView,playerName} from '../../lib/poker-tournament.js';
+import {createTournament,joinTournament,advanceTournament,startTournament,betTournament,rebuyTournament,showTournamentHand,kickTournamentPlayer,pauseTournament,resumeTournament,tournamentView,playerName} from '../../lib/poker-tournament.js';
 
 const json=(value,status=200)=>Response.json(value,{status,headers:{'Cache-Control':'no-store','Referrer-Policy':'no-referrer'}});
 const hash=async value=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)))).map(x=>x.toString(16).padStart(2,'0')).join('');
@@ -37,7 +37,7 @@ export async function onRequest({request,env}){
    if(!body||typeof body!=='object'||Array.isArray(body))return json({error:'Invalid request.'},400);
   }
   const action=request.method==='GET'?'state':body.action;
-  if(!['state','create','join','start','bet','rebuy','show','feature','pause','resume','close','next','sitout','chat','chat-mute'].includes(action))return json({error:'Unknown action.'},400);
+  if(!['state','create','join','start','bet','rebuy','show','feature','pause','resume','close','next','sitout','chat','chat-mute','chat-react','kick'].includes(action))return json({error:'Unknown action.'},400);
   if(action!=='state'&&!/^[a-zA-Z0-9_-]{16,80}$/.test(String(body.requestId||'')))return json({error:'This action needs a fresh request. Please try again.'},400);
   await initialize(db);
   const ip=request.headers.get('CF-Connecting-IP')||'local',receiptId=action==='create'||action==='join'?await hash(ip+':'+action+':'+body.requestId):'';
@@ -69,6 +69,7 @@ export async function onRequest({request,env}){
    if(action!=='join'&&!s.players[seat]&&!host&&!display)return json({error:'Join this room on your phone first.'},401);
    if(display&&action!=='state')return json({error:'The TV display is read only.'},403);
    if(url.searchParams.get('tv')==='1'&&!display&&!host)return json({error:'Use the TV link from the host’s dashboard.'},403);
+   if(s.players[seat]?.removed&&!host&&!display)return json({error:'The host removed you from this room.',code:'REMOVED_FROM_ROOM'},403);
    const before=JSON.stringify(s),previousNextHandAt=s.nextHandAt;advanceTournament(s,time);let current=seat,session;
    const key=action!=='state'?`${seat||joinSeat}:${body.requestId}`:'';
    const already=key&&s.processed[key];
@@ -80,9 +81,11 @@ export async function onRequest({request,env}){
      else{joinTournament(s,joinSeat,{id:issued.playerId,name:body.name},time);current=joinSeat;session=issued;s.joinReceipts||={};s.joinReceipts[receiptId]=issued;}
     }
    }else if(!already&&action!=='state'){
-    const onlyHost=['start','feature','pause','resume','close','next','chat-mute'].includes(action);if(onlyHost&&!host)return permission();
-    if((s.status==='closed'||(s.status==='finished'&&action!=='show'))&&action!=='close')return json({error:'This game has ended. Create a new room to play again.'},409);
-    if(action==='chat')sendTableChat(s,seat,body.text,time);
+    const onlyHost=['start','feature','pause','resume','close','next','chat-mute','kick'].includes(action);if(onlyHost&&!host)return permission();
+    if((s.status==='closed'||(s.status==='finished'&&!['show','chat','chat-react','chat-mute','kick'].includes(action)))&&action!=='close')return json({error:'This game has ended. Create a new room to play again.'},409);
+    if(action==='kick')kickTournamentPlayer(s,body.targetPlayerId,time);
+    else if(action==='chat-react')reactTableChat(s,seat,body.messageId,body.emoji,time);
+    else if(action==='chat')sendTableChat(s,seat,body.text,time);
     else if(action==='chat-mute')muteTableChat(s,body.targetPlayerId,body.muted);
     else if(action==='start')startTournament(s,time);
     else if(action==='bet')betTournament(s,seat,body,time);
