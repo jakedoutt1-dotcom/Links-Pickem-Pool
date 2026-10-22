@@ -47,6 +47,7 @@ try{
   await page.addInitScript(({code,actor})=>localStorage.setItem('links-poker-session-'+code,JSON.stringify(actor)),{code,actor});
   await page.goto(origin+'/new-build/poker-night.html?room='+code);
   await page.locator('#bettingControls').waitFor({state:'visible'});await fits(page);
+  if(width<=600&&height>width){await page.evaluate(()=>scrollTo(0,0));const tableTop=await page.locator('#pokerTable').evaluate(el=>el.getBoundingClientRect().top);assert.ok(tableTop<=210,'Compact header keeps phone table near top: '+tableTop);await page.screenshot({path:out+`/compact-top-${width}.png`});}
   assert.equal(await page.locator('#turnProgress').isVisible(),true,'Active turn has a visible countdown bar');
   assert.match(await page.locator('#turnClock').getAttribute('aria-label'),/seconds to act/,'Clock announces whose turn it is');
   if(width===390){
