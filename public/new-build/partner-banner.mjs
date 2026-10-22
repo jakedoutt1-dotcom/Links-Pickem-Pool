@@ -2,7 +2,7 @@ import {nearby} from './partner-match.mjs';
 let started=false;
 export function mountPartners(panel,{host,controlsHost,brandingOnly=false,autoLocate=true,onPartner=()=>{}}={}){if(started)return;started=true;
  const box=document.createElement('section');box.id='linksPartnerBanner';box.setAttribute('aria-label','LINKS partners');box.style.cssText='box-sizing:border-box;grid-column:1/-1;width:100%;min-width:0;padding:16px;border:1px solid #304b5d;border-radius:16px;background:#0b1b27;color:#fff;margin:0 0 16px';if(host)host.append(box);else panel.after(box);
- let generation=0,enabled=false,dismissed=false,controlRow=null,matched=false,checking=false;
+ let generation=0,enabled=false,dismissed=false,controlRow=null,matched=false,checking=false,nearbyCandidates=[];
  const mobile=matchMedia('(max-width:900px)');
  function clearControls(){controlRow?.remove();controlRow=null}
  function placeControls(){if(controlRow)(controlsHost&&mobile.matches?controlsHost:box).append(controlRow)}
@@ -15,7 +15,7 @@ export function mountPartners(panel,{host,controlsHost,brandingOnly=false,autoLo
  function general(message='Discover offers from the LINKS partners you visit.'){
  base(message);box.append(button(autoLocate&&enabled?'Check location again':'Show partners near me',()=>{dismissed=false;enabled=true;try{localStorage.setItem('links-partner-location','yes')}catch{}check(true)}));box.append(text('small','Optional location access. Your coordinates stay on this device.'));if(enabled)actionControls(button('Turn off location ads',()=>{enabled=false;generation++;try{localStorage.setItem('links-partner-location','no')}catch{}general()}));
  }
- function controls(){actionControls(button('Check my location again',()=>check(true)),button('Turn off location ads',()=>{enabled=false;generation++;try{localStorage.setItem('links-partner-location','no')}catch{}general()}))}
+ function controls(){const browse=button('See nearby venues',()=>{if(nearbyCandidates.length)show(nearbyCandidates[0],{candidates:nearbyCandidates,confirmed:false});else check(true)});actionControls(browse,button('Check my location again',()=>check(true)),button('Turn off location ads',()=>{enabled=false;generation++;try{localStorage.setItem('links-partner-location','no')}catch{}general()}))}
  function show(p,{candidates=[p],index=0,confirmed=true}={}){
    base(confirmed?'Partner offer':'Nearby partner offers · GPS has not confirmed your venue.');matched=true;onPartner(confirmed?p:null);
    if(brandingOnly&&confirmed){box.replaceChildren();controls();return}
@@ -42,14 +42,14 @@ export function mountPartners(panel,{host,controlsHost,brandingOnly=false,autoLo
  if(!explicit){try{const permission=await navigator.permissions.query({name:'geolocation'});if(serial!==generation)return;if(permission.state!=='granted'){general('Allow location to see offers from the partner location you are visiting.');return}}catch{general();return}}
  try{
  const [position,response]=await Promise.all([new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(resolve,reject,{enableHighAccuracy:true,maximumAge:0,timeout:12000})),fetch('./api/partners?public=1',{cache:'no-store'})]);
- if(serial!==generation||document.hidden)return;if(!response.ok)throw Error();const data=await response.json();if(serial!==generation)return;const result=nearby(data.partners,position.coords);
+ if(serial!==generation||document.hidden)return;if(!response.ok)throw Error();const data=await response.json();if(serial!==generation)return;const result=nearby(data.partners,position.coords);nearbyCandidates=nearby(data.partners.map(p=>({...p,radius:3000})),position.coords).candidates.map(p=>({...p,radius:data.partners.find(original=>original.id===p.id)?.radius||p.radius}));
  if(!result.candidates.length){general('No nearby LINKS partner was found. Offers will appear automatically when a partner is detected.');return}
- if(result.certain){show(result.candidates[0]);return}
+ if(result.certain){show(result.candidates[0],{candidates:result.candidates});return}
  show(result.candidates[0],{candidates:result.candidates,confirmed:false});
  }catch{if(serial===generation)general('Location or partner information is unavailable. No partner location has been selected.')}
  }
  document.addEventListener('visibilitychange',()=>{generation++;if(document.hidden){clearControls();onPartner(null);box.replaceChildren();return}if(!dismissed){general();if(enabled)check()}});
  window.addEventListener('pagehide',()=>{generation++;clearControls();onPartner(null);box.replaceChildren()});window.addEventListener('pageshow',e=>{if(e.persisted&&!dismissed){general();if(enabled)check()}});
- const retryTimer=autoLocate?setInterval(()=>{if(enabled&&!dismissed&&!matched&&!checking&&!document.hidden)check()},60000):null;window.addEventListener('pagehide',()=>clearInterval(retryTimer),{once:true});
+ const retryTimer=autoLocate?setInterval(()=>{if(enabled&&!dismissed&&!checking&&!document.hidden)check(autoLocate)},60000):null;window.addEventListener('pagehide',()=>clearInterval(retryTimer),{once:true});
  const sync=()=>{box.style.display=panel.style.display==='none'?'none':''};new MutationObserver(sync).observe(panel,{attributes:true,attributeFilter:['style']});sync();general();if(enabled)check(autoLocate);
 }
