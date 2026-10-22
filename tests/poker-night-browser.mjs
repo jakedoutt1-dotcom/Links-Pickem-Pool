@@ -1,3 +1,4 @@
+import {onRequest as avatarRequest} from '../functions/new-build/api/poker-avatar.js';
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {readFile,mkdir} from 'node:fs/promises';
@@ -9,7 +10,7 @@ import {onRequest} from '../functions/new-build/api/poker-night.js';
 const require=createRequire(import.meta.url),{chromium}=require('playwright');
 class DB {
  constructor(){this.raw=new DatabaseSync(':memory:');this.queue=Promise.resolve();}
- prepare(sql){let args=[];const db=this.raw;return {bind(...values){args=values;return this;},async first(){return db.prepare(sql).get(...args)||null;},async all(){return {results:db.prepare(sql).all(...args)};},async run(){const result=db.prepare(sql).run(...args);return {meta:{changes:Number(result.changes)}};}};}
+ prepare(sql){let args=[];const db=this.raw;return {bind(...values){args=values;return this;},async first(){return db.prepare(sql).get(...args)||null;},async all(){return {results:db.prepare(sql).all(...args)};},async run(){const result=db.prepare(sql).run(...args.map(value=>value instanceof ArrayBuffer?new Uint8Array(value):value));return {meta:{changes:Number(result.changes)}};}};}
  batch(stmts){const job=this.queue.then(async()=>{this.raw.exec('BEGIN');try{const results=[];for(const stmt of stmts)results.push(await stmt.run());this.raw.exec('COMMIT');return results;}catch(error){this.raw.exec('ROLLBACK');throw error;}});this.queue=job.catch(()=>{});return job;}
 }
 const db=new DB(),root=path.resolve(fileURLToPath(new URL('../public/',import.meta.url))),out='output/poker-night-review',errors=[],missing=[];
@@ -22,6 +23,7 @@ const server=createServer(async(req,res)=>{
    const response=await onRequest({request:new Request(url,{method:req.method,headers:req.headers,...(req.method==='POST'?{body:Buffer.concat(chunks)}:{})}),env:{DB:db}});
    res.writeHead(response.status,Object.fromEntries(response.headers));return res.end(Buffer.from(await response.arrayBuffer()));
   }
+  if(url.pathname==='/new-build/api/poker-avatar'){const response=await avatarRequest({request:new Request(url),env:{DB:db}});res.writeHead(response.status,Object.fromEntries(response.headers));return res.end(Buffer.from(await response.arrayBuffer()))}
   if(url.pathname.includes('/api/')){res.writeHead(401,{'Content-Type':'application/json'});return res.end('{"error":"Local browser check has no account or venue."}');}
   const filename=path.resolve(root,'.'+decodeURIComponent(url.pathname));
   if(!filename.startsWith(root+path.sep))throw Error('Not found');
@@ -41,7 +43,7 @@ try{
  const host=await context(390,844),guest=await context(360,800);
  await host.goto(origin+'/new-build/poker-night.html');await host.locator('#showSetup').waitFor();await fits(host);
  await host.screenshot({path:out+'/welcome-phone.png',fullPage:true});
- await host.locator('#rulesButton').click();assert.equal(await host.locator('#rulesDialog').evaluate(d=>d.open),true);
+ await host.locator('#pokerProfileButton').click();await host.locator('#rulesButton').click();assert.equal(await host.locator('#rulesDialog').evaluate(d=>d.open),true);
  await host.locator('#rulesToRanks').click();assert.equal(await host.locator('#rankList li').count(),10);
  await host.locator('#ranksDialog [data-close]').click();
  await host.locator('#showSetup').click();await host.locator('#hostName').fill('Alex');await host.locator('#mode').selectOption('tournament');await host.locator('#turnSeconds').selectOption('60');
@@ -81,15 +83,16 @@ try{
  await api({action:'chat',code,text:'Nice hand! <img src=x onerror=alert(1)>'},chatter);
  await host.locator('.chat-unread').filter({hasText:'1 new'}).waitFor();
  await host.locator('.poker-chat summary').click();await host.locator('.chat-messages').getByText('Nice hand! <img src=x onerror=alert(1)>',{exact:true}).waitFor();
- await host.locator('.message-reactions button[data-message-reaction="👍"]').first().click();await host.locator('.message-reactions button[data-message-reaction="👍"][aria-pressed=true]').waitFor();assert.match(await host.locator('.message-reactions button[data-message-reaction="👍"]').first().textContent(),/1/);assert.equal(await host.locator('.chat-messages img').count(),0);assert.equal(await host.locator('.chat-unread').textContent(),'');
+ assert.equal(await host.locator('.message-reactions button[data-message-reaction]').count(),0,'Unused emoji are not shown on every comment');await host.locator('.add-reaction').first().click();await host.locator('#pokerReactionPicker [data-message-reaction="👍"]').click();await host.locator('.message-reactions button[data-message-reaction="👍"][aria-pressed=true]').waitFor();assert.match(await host.locator('.message-reactions button[data-message-reaction="👍"]').first().textContent(),/1/);assert.equal(await host.locator('.chat-messages img').count(),0);assert.equal(await host.locator('.chat-unread').textContent(),'');
  await host.locator('.poker-chat input').fill('Good luck, table!');await host.locator('.poker-chat button[type=submit]').click();await host.locator('.chat-messages').getByText('Good luck, table!',{exact:true}).waitFor();await fits(host);
  await host.setViewportSize({width:1280,height:720});await fits(host);await host.setViewportSize({width:390,height:844});
+ await host.locator('#pokerProfileButton').click();const avatarData=await host.evaluate(()=>{const c=document.createElement('canvas');c.width=c.height=80;const x=c.getContext('2d');x.fillStyle='#eac66e';x.fillRect(0,0,80,80);return c.toDataURL('image/jpeg')});await host.locator('#pokerAvatarFile').setInputFiles({name:'avatar.jpg',mimeType:'image/jpeg',buffer:Buffer.from(avatarData.split(',')[1],'base64')});await host.locator('.profile-status').filter({hasText:'Profile picture saved.'}).waitFor();await host.locator('#pokerProfile .profile-close').click();await host.locator('.seat-avatar[src*=poker-avatar]').first().evaluate(el=>el.decode());assert.equal(await host.locator('#privateCards').isVisible(),false,'Duplicate mobile hand tile is hidden');
  const initialHand=(await api(null,hostSession,{code})).room.table.yourHandName;
  assert.equal(await host.locator('#myHandName').textContent(),'Your hand: '+initialHand);
  await host.evaluate(()=>{const toast=document.getElementById('winnerToast');toast.hidden=false;toast.textContent='Alex wins this hand! · Two pair'});assert.equal(await host.locator('#winnerToast').evaluate(el=>el.getBoundingClientRect().top>=document.getElementById('pokerTable').getBoundingClientRect().bottom),true,'Winner banner is below the cards');await fits(host);await fits(guest);
- await host.locator('#hideCardsButton').click();assert.equal(await host.locator('#privateCards .back').count(),2);assert.equal(await host.locator('#seats .card:not(.back)').count(),0);
+ await host.locator('#pokerProfileButton').click();await host.locator('#hideCardsButton').click();assert.equal(await host.locator('#privateCards .back').count(),2);assert.equal(await host.locator('#seats .card:not(.back)').count(),0);
  assert.equal(await host.locator('#myHandName').isVisible(),false,'Hide cards also conceals private hand strength');
- await host.locator('#hideCardsButton').click();assert.equal(await host.locator('#privateCards .card:not(.back)').count(),2);
+ await host.locator('#pokerProfileButton').click();await host.locator('#hideCardsButton').click();assert.equal(await host.locator('#privateCards .card:not(.back)').count(),2);
  const beforeCards=await host.locator('#privateCards').textContent();await host.reload();await host.waitForFunction(()=>document.querySelectorAll('#privateCards .card:not(.back)').length===2);assert.equal(await host.locator('#privateCards').textContent(),beforeCards,'Refresh restores exact seat and private cards');
  // A waiting phone queues one call, privately, then sends it only on its turn.
  const queuedTable=(await api(null,hostSession,{code})).room.table,actor=queuedTable.players.find(p=>p.id===queuedTable.actorId);
@@ -142,7 +145,7 @@ try{
  await host.locator('#raiseButton').click();assert.equal((await hostRaise).status(),200);await host.waitForFunction(()=>document.getElementById('bettingControls').hidden);
  assert.equal((await api(null,hostSession,{code})).room.table.actionNumber,actionBefore+1);
  await host.screenshot({path:out+'/table-phone.png',fullPage:true});await host.locator('#pokerTable').screenshot({path:out+'/table-phone-close.png'});
- await host.locator('#tvButton').click();const tvHref=await host.locator('#openTv').getAttribute('href');assert.ok(tvHref.includes('#display='));assert.equal(new URL(tvHref).searchParams.has('hostToken'),false);
+ await host.locator('#pokerProfileButton').click();await host.locator('#tvButton').click();const tvHref=await host.locator('#openTv').getAttribute('href');assert.ok(tvHref.includes('#display='));assert.equal(new URL(tvHref).searchParams.has('hostToken'),false);
  await host.locator('#tvTable').selectOption('table-1');const pinnedHref=await host.locator('#openTv').getAttribute('href');assert.equal(new URL(pinnedHref).searchParams.get('table'),'table-1');
  await host.locator('#tvDialog [data-close]').click();
  const tv=await context(1920,1080);await tv.goto(tvHref);await tv.waitForFunction(()=>document.querySelectorAll('#seats .seat').length===9);
@@ -197,7 +200,7 @@ try{
  await desk.screenshot({path:out+'/practice-desktop.png',fullPage:true});
  assert.equal(await desk.locator('#showHandPanel').isVisible(),false,'Practice never offers voluntary public reveal');
  assert.equal(await desk.evaluate(()=>document.getElementById('myHand').getBoundingClientRect().left>=document.getElementById('pokerTable').getBoundingClientRect().right),true,'Desktop controls sit to the right of the table');
- const outRow=db.raw.prepare('SELECT state FROM links_poker_night_rooms WHERE code=?').get(code),outState=JSON.parse(outRow.state),outHost=Object.values(outState.players).find(p=>p.id===hostSession.playerId);outState.status='paused';outState.pausedAt=Date.now();outHost.status='eliminated';outHost.chatTableId=outHost.tableId;outHost.tableId=null;outHost.stack=0;db.raw.prepare('UPDATE links_poker_night_rooms SET state=?,version=version+1 WHERE code=?').run(JSON.stringify(outState),code);await host.reload();await host.locator('#managePlayersButton:visible').waitFor();await host.locator('#managePlayersButton').click();assert.equal(await host.locator('#pokerPlayersDialog').evaluate(el=>el.open),true,'Eliminated host keeps direct player-management access');await host.getByRole('button',{name:'Remove Jordan',exact:true}).click();await host.locator('#confirmNo').click();assert.equal(await guest.locator('#room').isVisible(),true,'Cancel keeps the player seated');await host.getByRole('button',{name:'Remove Jordan',exact:true}).click();await host.locator('#confirmYes').click();await guest.locator('#welcome:visible').waitFor();assert.match(await guest.locator('#notice').textContent(),/host removed you/);assert.equal(await guest.locator('#privateCards .card').count(),0);assert.equal(await guest.evaluate(code=>localStorage.getItem('links-poker-session-'+code),code),null);await fits(host);
+ const outRow=db.raw.prepare('SELECT state FROM links_poker_night_rooms WHERE code=?').get(code),outState=JSON.parse(outRow.state),outHost=Object.values(outState.players).find(p=>p.id===hostSession.playerId);outState.status='paused';outState.pausedAt=Date.now();outHost.status='eliminated';outHost.chatTableId=outHost.tableId;outHost.tableId=null;outHost.stack=0;db.raw.prepare('UPDATE links_poker_night_rooms SET state=?,version=version+1 WHERE code=?').run(JSON.stringify(outState),code);await host.reload();await host.locator('#pokerProfileButton:visible').waitFor();await host.locator('#pokerProfileButton').click();await host.locator('#managePlayersButton:visible').waitFor();await host.locator('#managePlayersButton').click();assert.equal(await host.locator('#pokerPlayersDialog').evaluate(el=>el.open),true,'Eliminated host keeps direct player-management access');await host.getByRole('button',{name:'Remove Jordan',exact:true}).click();await host.locator('#confirmNo').click();assert.equal(await guest.locator('#room').isVisible(),true,'Cancel keeps the player seated');await host.getByRole('button',{name:'Remove Jordan',exact:true}).click();await host.locator('#confirmYes').click();await guest.locator('#welcome:visible').waitFor();assert.match(await guest.locator('#notice').textContent(),/host removed you/);assert.equal(await guest.locator('#privateCards .card').count(),0);assert.equal(await guest.evaluate(code=>localStorage.getItem('links-poker-session-'+code),code),null);await fits(host);
  assert.deepEqual(errors,[]);assert.deepEqual(missing,[]);
  console.log('PASS real API/browser:18 players,9-seat phone layout,private cards,hide/reload,raise,TV privacy/feature switch,standings,automatic next hand on all devices,pause,practice and rules/ranks.');
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve));db.raw.close();}

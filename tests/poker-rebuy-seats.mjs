@@ -22,7 +22,7 @@ for(const mode of ['friends','tournament']){
 for(const size of [6,8,9])for(const mobile of [false,true]){
  const owner=3,positions=Array.from({length:size},(_,seat)=>pokerSeatPosition(seat,owner,size,mobile));
  assert.equal(new Set(positions.map(JSON.stringify)).size,size);
- assert.deepEqual(positions[owner],[50,95]);
+ assert.deepEqual(positions[owner],[50,mobile?91:95]);
  // Losing and restoring an earlier seat cannot move any other player.
  const survivors=[0,2,3,4].filter(seat=>seat<size);
  for(const seat of survivors)assert.deepEqual(pokerSeatPosition(seat,owner,size,mobile),positions[seat]);

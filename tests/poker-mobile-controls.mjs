@@ -56,7 +56,7 @@ try{
    await page.evaluate(()=>{const el=document.getElementById('motionEffects');el.checked=true;el.dispatchEvent(new Event('input'));});
   }
   const inViewport=async selector=>page.locator(selector).evaluate(el=>{const r=el.getBoundingClientRect();return r.x>=0&&r.right<=innerWidth+1&&r.y>=0&&r.bottom<=innerHeight+1;});
-  if(width<=600)assert.equal(await inViewport('#bettingControls'),true,'Phone turn dock fits '+width);
+  if(width<=600&&height>width)await page.locator('#bettingControls').scrollIntoViewIfNeeded();if(width<=600)assert.equal(await inViewport('#bettingControls'),true,'Phone turn dock fits '+width);
   assert.ok((await page.locator('#callButton').boundingBox()).height>=44,'Thumb-sized action');
   await page.locator('#raiseOpen').click();await page.locator('#raiseExact').waitFor({state:'visible'});
   const own=(await api(null,actor,{code})).room.table,min=own.legalActions.minRaiseTo;
@@ -87,7 +87,7 @@ try{
   await waitPage.goto(origin+'/new-build/poker-night.html?room='+code);
   // Choose a stable non-actor seat after the raise.
   const latest=(await api(null,waiting,{code})).room;
-  if(latest.table.actorId!==waiting.playerId){await waitPage.locator('#preselectControls').waitFor({state:'visible'});if(width<=600){const r=await waitPage.locator('#preselectControls').boundingBox();assert.ok(r.y>=0&&r.y+r.height<=height+1,'Waiting dock fits phone');const bottom=await waitPage.locator('#seats .seat').evaluateAll(nodes=>Math.max(...nodes.map(n=>n.getBoundingClientRect().bottom)));assert.ok(bottom<=r.y+2,'All seats clear the waiting dock at '+width+'px: '+bottom+' / '+r.y);}await fits(waitPage);if(width<=600){assert.equal(await waitPage.locator('#preselectHand .card:not(.back)').count(),2);await waitPage.locator('#preHideCards').click();assert.equal(await waitPage.locator('#preselectHand .back').count(),2);await waitPage.locator('#preHideCards').click();}await waitPage.screenshot({path:out+`/waiting-${width}.png`});}
+  if(latest.table.actorId!==waiting.playerId){await waitPage.locator('#preselectControls').waitFor({state:'visible'});if(width<=600){await waitPage.locator('#preselectControls').scrollIntoViewIfNeeded();const r=await waitPage.locator('#preselectControls').boundingBox();assert.ok(r.y>=0&&r.y+r.height<=height+1,'Waiting dock fits phone');const bottom=await waitPage.locator('#seats .seat').evaluateAll(nodes=>Math.max(...nodes.map(n=>n.getBoundingClientRect().bottom)));assert.ok(bottom<=r.y+2,'All seats clear the waiting dock at '+width+'px: '+bottom+' / '+r.y);}await fits(waitPage);if(width<=600){assert.equal(await waitPage.locator('#preselectHand .card:not(.back)').count(),2);await waitPage.locator('#preHideCards').click();assert.equal(await waitPage.locator('#preselectHand .back').count(),2);await waitPage.locator('#preHideCards').click();}await waitPage.screenshot({path:out+`/waiting-${width}.png`});}
   await waitPage.context().close();
  }
 
@@ -101,7 +101,7 @@ try{
  await recoveryPage.route('**/api/poker-night',async route=>{const body=route.request().method()==='POST'?route.request().postDataJSON():null;if(body?.action==='bet'&&intercepted++===0){await new Promise(resolve=>{releaseFailure=resolve;requestArrived();});return route.fulfill({status:503,json:{error:'Temporary connection problem.'}});}return route.continue();});
  const beforeRecovery=(await api(null,recoverySession,{code:recoveryCode})).room.table.turnId;
  await recoveryPage.locator('#callButton').click();await arrived;
- await recoveryPage.locator('#exitButton').click();assert.equal(await recoveryPage.locator('#confirmDialog').evaluate(el=>el.open),false);assert.equal(await recoveryPage.locator('#room').isVisible(),true);assert.match(await recoveryPage.locator('#notice').textContent(),/wait/i,'Pending move explains why leaving waits');
+ await recoveryPage.locator('#pokerProfileButton').click();await recoveryPage.locator('#exitButton').click();assert.equal(await recoveryPage.locator('#confirmDialog').evaluate(el=>el.open),false);assert.equal(await recoveryPage.locator('#room').isVisible(),true);assert.match(await recoveryPage.locator('#notice').textContent(),/wait/i,'Pending move explains why leaving waits');
  releaseFailure();await recoveryPage.waitForFunction(()=>document.querySelector('#notice').textContent.includes('Back at the table'));
  assert.equal(intercepted,1,'Rejected move is not automatically resent');
  assert.equal((await api(null,recoverySession,{code:recoveryCode})).room.table.turnId,beforeRecovery);

@@ -238,11 +238,11 @@ export function resumeTournament(s,now=Date.now()){
 }
 export function tournamentView(s,seat='',{host=false,tv=false,venue=null,tableId=''}={},now=Date.now()){
  const self=s.players[seat],blinds=blindState(s,now);
- const standings=participants(s).map(p=>({id:p.id,name:p.name,stack:p.stack,score:p.score,status:p.status,tableId:p.tableId,reentries:p.reentries,away:!!p.away,bot:!!p.bot,removed:!!p.removed,place:p.place||null,you:p.id===self?.id})).sort((a,b)=>a.status==='eliminated'?(b.status==='eliminated'?(a.place||99)-(b.place||99):1):b.status==='eliminated'?-1:b.stack-a.stack||a.name.localeCompare(b.name));
+ const standings=participants(s).map(p=>({id:p.id,name:p.name,avatar:p.avatar||null,stack:p.stack,score:p.score,status:p.status,tableId:p.tableId,reentries:p.reentries,away:!!p.away,bot:!!p.bot,removed:!!p.removed,place:p.place||null,you:p.id===self?.id})).sort((a,b)=>a.status==='eliminated'?(b.status==='eliminated'?(a.place||99)-(b.place||99):1):b.status==='eliminated'?-1:b.stack-a.stack||a.name.localeCompare(b.name));
  standings.forEach((p,i)=>p.rank=p.place||i+1);
  const allowShow=s.mode!=='practice'&&['playing','paused','finished'].includes(s.status);
  const tables=s.tables.map(t=>publicTable(t,tv?null:self?.id,{tv,allowShow}));
- for(const t of tables){const internal=s.tables.find(x=>x.id===t.id);t.turnId=internal.actionNumber;t.waitingForTables=idle(internal)&&s.tables.some(x=>!idle(x));}
+ for(const t of tables){for(const p of t.players)p.avatar=playerById(s,p.id)?.avatar||null;const internal=s.tables.find(x=>x.id===t.id);t.turnId=internal.actionNumber;t.waitingForTables=idle(internal)&&s.tables.some(x=>!idle(x));}
  const table=tables.find(t=>t.id===(tv?(tableId||s.featuredTableId):self?.tableId))||tables.find(t=>t.id===s.featuredTableId)||tables[0]||null;
  return {...(!tv?{chat:tableChatView(s,seat,{host})}:{}),code:s.code,mode:s.mode,status:s.status,settings:s.settings,serverNow:now,...blinds,remaining:alive(s).length,players:standings,standings,tables,table,featuredTableId:s.featuredTableId,canRebuy:canRebuy(s,self,now),isHost:host,isTv:tv,playerId:self?.id||null,missedBlinds:self?.missedBlinds||0,expiresAt:s.expiresAt,winnerId:s.winnerId||null,nextHandAt:s.nextHandAt||0,pausedAt:s.pausedAt||0,autoResumeAt:s.autoResumeAt||0,venue,...(host?{displayKey:s.displayKey}:{})};
 }

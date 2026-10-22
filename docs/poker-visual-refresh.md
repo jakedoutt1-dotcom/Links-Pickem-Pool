@@ -1,0 +1,7 @@
+# Poker visual refresh
+
+Built-in image generation: `public/new-build/assets/poker-premium-felt-v1.png`. Cards, labels, avatar frames and rail remain scalable live HTML/CSS.
+
+Prompt: Generate a high-resolution physically realistic premium poker felt texture for an actual interactive website poker table, square 2048x2048 or higher. Strict top-down macro material view, edge-to-edge seamless-looking textile. Luxurious luminous deep blue-teal navy cloth, fine dense woven casino speed-felt microfibers, tiny subtle tone-on-tone art-deco geometric jacquard pattern, soft diffuse overhead lighting with a gently brighter middle and richer navy edges, tactile realistic material, elegant high-end casino quality. Absolutely NO playing cards, NO chips, NO numbers, NO letters, NO logos, NO table rail, NO objects, NO interface, NO people. Flat clean surface designed for overlaying live crisp white cards and gold game interface. Strong navy-blue and teal rather than black or green; richly visible detailed weave at large resolution, clean enough to keep foreground cards readable.
+
+References inspected: PokerStars table appearance settings (https://www.pokerstars.uk/help/articles/table-appearance-feature/232137/), mobile portrait table presentation (https://www.pokerstars.uk/poker/learn/news/mobile-portrait-tables-now-available-on-pokerstars/), and avatar guidance (https://www.pokerstarsmi.com/help/articles/image-master/). Public documentation only; no claim of playing paid games.

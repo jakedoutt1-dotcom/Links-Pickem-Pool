@@ -1,3 +1,4 @@
+import {onRequest as avatarRequest} from '../functions/new-build/api/poker-avatar.js';
 import {tableChatView,sendTableChat} from '../functions/lib/poker-chat.js';
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
@@ -7,7 +8,7 @@ import {act,publicTable} from '../functions/lib/poker-night.js';
 
 class D1{
  constructor(){this.raw=new DatabaseSync(':memory:');this.collide=false;}
- prepare(sql){let args=[];const owner=this;return {bind(...values){args=values;return this;},async first(){return owner.raw.prepare(sql).get(...args)||null;},async all(){return {results:owner.raw.prepare(sql).all(...args)};},async run(){if(owner.collide&&sql.startsWith('UPDATE links_poker_night_rooms SET state=')){owner.collide=false;return {meta:{changes:0}};}const r=owner.raw.prepare(sql).run(...args);return {meta:{changes:Number(r.changes),last_row_id:Number(r.lastInsertRowid)}};}};}
+ prepare(sql){let args=[];const owner=this;return {bind(...values){args=values;return this;},async first(){return owner.raw.prepare(sql).get(...args)||null;},async all(){return {results:owner.raw.prepare(sql).all(...args)};},async run(){if(owner.collide&&sql.startsWith('UPDATE links_poker_night_rooms SET state=')){owner.collide=false;return {meta:{changes:0}};}const r=owner.raw.prepare(sql).run(...args.map(value=>value instanceof ArrayBuffer?new Uint8Array(value):value));return {meta:{changes:Number(r.changes),last_row_id:Number(r.lastInsertRowid)}};}};}
  async batch(statements){this.raw.exec('BEGIN');try{const results=[];for(const stmt of statements)results.push(await stmt.run());this.raw.exec('COMMIT');return results;}catch(e){this.raw.exec('ROLLBACK');throw e;}}
 }
 let time=1802800000000;const realNow=Date.now;Date.now=()=>time;
@@ -34,6 +35,7 @@ db.collide=true;let response=await call({action:'start',code},host.session);asse
 // Table chat uses authenticated seating; supplied table IDs cannot cross tables.
 const hostTable=response.room.table.id,sameTable=players.find(p=>p!==host&&response.room.table.players.some(x=>x.id===p.session.playerId)),differentTable=players.find(p=>!response.room.table.players.some(x=>x.id===p.session.playerId));
 assert.equal((await call({action:'kick',code,targetPlayerId:host.session.playerId},sameTable.session)).http,403);
+assert.equal((await call({action:'profile',code,avatar:'data:image/svg+xml;base64,PHN2Zz4='},host.session)).http,400);const sampleAvatar='data:image/jpeg;base64,'+Buffer.from([255,216,255,...Array(40).fill(0)]).toString('base64');const profileResult=await call({action:'profile',code,avatar:sampleAvatar},host.session);assert.equal(profileResult.http,200,JSON.stringify(profileResult));const avatarUrl=profileResult.room.players.find(p=>p.id===host.session.playerId).avatar;assert.match(avatarUrl,/poker-avatar/);const imageResponse=await avatarRequest({request:new Request('https://poker.local'+avatarUrl),env:{DB:db}});assert.equal(imageResponse.status,200);assert.equal(imageResponse.headers.get('Content-Type'),'image/jpeg');assert.equal((await call(null,sameTable.session,{code})).room.table.players.find(p=>p.id===host.session.playerId).avatar,avatarUrl);
 const chatRequest=crypto.randomUUID();
 let chat=await call({action:'chat',code,text:'Nice hand! <b>plain text</b>',tableId:'other-table',requestId:chatRequest},host.session);
 assert.equal(chat.http,200);assert.equal(chat.room.chat.tableId,hostTable);assert.equal(chat.room.chat.messages.length,1);

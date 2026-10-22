@@ -37,7 +37,7 @@ export async function onRequest({request,env}){
    if(!body||typeof body!=='object'||Array.isArray(body))return json({error:'Invalid request.'},400);
   }
   const action=request.method==='GET'?'state':body.action;
-  if(!['state','create','join','start','bet','rebuy','show','feature','pause','resume','close','next','sitout','chat','chat-mute','chat-react','kick'].includes(action))return json({error:'Unknown action.'},400);
+  if(!['state','create','join','start','bet','rebuy','show','feature','pause','resume','close','next','sitout','chat','chat-mute','chat-react','kick','profile'].includes(action))return json({error:'Unknown action.'},400);
   if(action!=='state'&&!/^[a-zA-Z0-9_-]{16,80}$/.test(String(body.requestId||'')))return json({error:'This action needs a fresh request. Please try again.'},400);
   await initialize(db);
   const ip=request.headers.get('CF-Connecting-IP')||'local',receiptId=action==='create'||action==='join'?await hash(ip+':'+action+':'+body.requestId):'';
@@ -82,8 +82,20 @@ export async function onRequest({request,env}){
     }
    }else if(!already&&action!=='state'){
     const onlyHost=['start','feature','pause','resume','close','next','chat-mute','kick'].includes(action);if(onlyHost&&!host)return permission();
-    if((s.status==='closed'||(s.status==='finished'&&!['show','chat','chat-react','chat-mute','kick'].includes(action)))&&action!=='close')return json({error:'This game has ended. Create a new room to play again.'},409);
-    if(action==='kick')kickTournamentPlayer(s,body.targetPlayerId,time);
+    if((s.status==='closed'||(s.status==='finished'&&!['show','chat','chat-react','chat-mute','kick','profile'].includes(action)))&&action!=='close')return json({error:'This game has ended. Create a new room to play again.'},409);
+    if(action==='profile'){
+     const player=s.players[seat];if(!player)return json({error:'Take a seat before uploading your avatar.'},403);
+     if(body.avatar===null)delete player.avatar;
+     else{
+      if(typeof body.avatar!=='string'||body.avatar.length>6000||!/^data:image\/jpeg;base64,[A-Za-z0-9+/]+=*$/.test(body.avatar))return json({error:'Choose a small JPEG avatar.'},400);
+      let bytes;try{bytes=Uint8Array.from(atob(body.avatar.split(',')[1]),c=>c.charCodeAt(0))}catch{return json({error:'Invalid avatar.'},400)}
+      if(bytes.length<24||bytes[0]!==255||bytes[1]!==216||bytes[2]!==255)return json({error:'Invalid JPEG avatar.'},400);
+      await db.prepare('CREATE TABLE IF NOT EXISTS links_poker_avatars(id TEXT PRIMARY KEY,data BLOB NOT NULL,expires INTEGER NOT NULL)').run();
+      const id=crypto.randomUUID();await db.prepare('INSERT INTO links_poker_avatars(id,data,expires) VALUES(?,?,?)').bind(id,bytes.buffer,s.expiresAt).run();
+      await db.prepare('DELETE FROM links_poker_avatars WHERE expires<=?').bind(time).run();player.avatar='/new-build/api/poker-avatar?id='+id;
+     }
+    }
+    else if(action==='kick')kickTournamentPlayer(s,body.targetPlayerId,time);
     else if(action==='chat-react')reactTableChat(s,seat,body.messageId,body.emoji,time);
     else if(action==='chat')sendTableChat(s,seat,body.text,time);
     else if(action==='chat-mute')muteTableChat(s,body.targetPlayerId,body.muted);

@@ -1,6 +1,7 @@
-import {createTableChat} from './poker-chat.mjs?v=host-tools4';
-import {createPokerAudio} from './poker-audio.mjs';
-import {pokerSeatPosition} from './poker-seats.mjs';
+import {createPokerProfile} from './poker-profile.mjs?v=1';
+import {createTableChat} from './poker-chat.mjs?v=compact5';
+import {createPokerAudio} from './poker-audio.mjs?v=rich2';
+import {pokerSeatPosition} from './poker-seats.mjs?v=clear2';
 import {raisePreset,validRaise} from './poker-controls.mjs';
 import {createActionLog,renderActionLog} from './poker-action-log.mjs';
 import {createHandRecap,recapLines} from './poker-recap.mjs';
@@ -11,6 +12,7 @@ import {preselectOptions,choosePreselection,resolvePreselection} from './poker-p
 
 const $ = id => document.getElementById(id);
 const tableChat=createTableChat(async(action,extra)=>{if(!await act(action,extra))throw Error('Message was not sent. Wait a moment and try again.');},name=>confirmAction('Remove '+name+'?', 'They will lose access to this room and chat immediately. Their current hand resolves safely before their remaining chips leave play. They cannot buy back in with this seat.','Remove player'));
+const pokerProfile=createPokerProfile(async(action,extra)=>{if(!await act(action,extra))throw Error('Could not save right now. Please try again.');});
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const chips = value => Number(value || 0).toLocaleString();
 const url = new URL(location.href), isTv = url.searchParams.get('tv') === '1';
@@ -235,7 +237,7 @@ $('exitButton').onclick = async () => {
 function sortedStandings() { const list = Array.isArray(room?.standings) ? room.standings : room?.players || []; return list.slice().sort((a,b) => (a.place && b.place ? a.place-b.place : a.place ? 1 : b.place ? -1 : (b.stack || 0) - (a.stack || 0))); }
 function render() {
   const host = !isTv && !!(room.isHost || session.hostToken), lobby = room.status === 'lobby', table = room.table,lobbyPlayers=(room.players||[]).filter(p=>!p.removed);
-  const inviteHome = lobby ? $('lobbyInvite') : $('roomActions');
+  const inviteHome = lobby ? $('lobbyInvite') : $('profileTools');
   if ($('inviteButton').parentElement !== inviteHome) inviteHome[lobby ? 'append' : 'prepend']($('inviteButton'));
   $('lobbyInvite').hidden = room.mode === 'practice';
   document.body.classList.toggle('tv',isTv);
@@ -281,7 +283,7 @@ function render() {
   $('closeButton').disabled = busy || room.status === 'closed';
   const venue = room.venue; $('venueBanner').hidden = !venue?.logo;
   if (venue?.logo) { const logo = new URL(venue.logo,location.origin); if (['https:','http:'].includes(logo.protocol)) { $('venueLogo').src = logo.href; $('venueLogo').alt = venue.name || 'Venue logo'; } else $('venueBanner').hidden = true; }
-  tableChat.update(room);updateControls(); tick();
+  tableChat.update(room);pokerProfile.update(room);updateControls(); tick();
 }
 function renderTable(table) {
   renderActionLog($('recentActions'),actionLog.update(code,table));
@@ -326,7 +328,7 @@ function renderTable(table) {
     const markers = `${p.seat === table.buttonSeat ? '<b class="marker" title="Dealer">D</b>' : ''}${p.seat === table.smallBlindSeat ? '<b class="marker blind" title="Small blind">SB</b>' : ''}${p.seat === table.bigBlindSeat ? '<b class="marker blind" title="Big blind">BB</b>' : ''}`;
     const won = ended && table.winners?.some(w=>w.playerId===p.id);
     const status = won ? 'Pot winner' : p.voluntaryShown ? (p.folded ? 'Folded · Shown' : 'Hand shown') : p.folded ? 'Folded' : p.allIn ? 'All in' : p.away ? 'Away' : '';
-    return `<div class="seat ${won ? 'pot-winner' : ''} ${p.id === myId ? 'you' : ''} ${p.id === table.actorId ? 'active' : ''} ${p.folded && !p.voluntaryShown ? 'folded' : ''}" style="left:${position[0]}%;top:${position[1]}%"><div class="seat-cards">${cards}</div><div class="seat-label"><span class="markers">${markers}</span><span class="seat-name">${esc(p.name)}${p.id === myId ? ' · You' : ''}</span><span class="seat-stack">${chips(p.stack)}</span>${status ? `<span class="seat-status">${status}</span>` : ''}</div>${p.bet ? `<span class="seat-bet">Bet ${chips(p.bet)}</span>` : ''}</div>`;
+    return `<div class="seat ${won ? 'pot-winner' : ''} ${p.id === myId ? 'you' : ''} ${p.id === table.actorId ? 'active' : ''} ${p.folded && !p.voluntaryShown ? 'folded' : ''}" style="left:${position[0]}%;top:${position[1]}%"><div class="seat-cards">${cards}</div><div class="seat-label">${p.avatar?`<img class="seat-avatar" src="${esc(p.avatar)}" alt="">`:`<span class="seat-avatar avatar-initial" aria-hidden="true">${esc(p.name?.slice(0,1)||"?")}</span>`}<span class="markers">${markers}</span><span class="seat-name">${esc(p.name)}${p.id === myId ? ' · You' : ''}</span><span class="seat-stack">${chips(p.stack)}</span>${status ? `<span class="seat-status">${status}</span>` : ''}</div>${p.bet ? `<span class="seat-bet">Bet ${chips(p.bet)}</span>` : ''}</div>`;
   }).join('');
   setHtml('seats',seatHtml);
   const winners = table?.winners || [];
