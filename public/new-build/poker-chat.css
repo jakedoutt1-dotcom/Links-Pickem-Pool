@@ -9,3 +9,5 @@
 @media(max-width:600px){.poker-chat .chat-messages{max-height:260px}.poker-chat input{font-size:16px}.poker-chat .message-reactions button{min-width:36px;min-height:38px}#winnerToast.winner-toast{font-size:.78rem;padding:9px 12px}}
 
 .poker-chat-moderation>div{max-height:340px;overflow:auto}.poker-chat-moderation>div>div{flex-wrap:wrap}.poker-chat-moderation>div>div>span{flex:1;min-width:100px}
+
+#pokerPlayersDialog{box-sizing:border-box;width:min(640px,calc(100vw - 24px));max-height:85dvh;overflow:auto;border:1px solid #c4a468;border-radius:16px;background:#0c1d29;color:#f6eedc;padding:18px}#pokerPlayersDialog::backdrop{background:#000b}#pokerPlayersDialog .players-close{display:block;margin-left:auto}#pokerPlayersDialog h2{font-size:1.35rem;margin:12px 0}#pokerPlayersDialog .poker-chat-moderation{margin-top:0}#managePlayersButton{border-color:#e2bf70;color:#ffe3a0}@media(max-width:600px){#managePlayersButton{min-height:40px;padding:8px 10px;font-size:.75rem}}

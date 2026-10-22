@@ -2,8 +2,10 @@ export function createTableChat(send,confirmRemove=async()=>false){
  const panel=document.createElement('details');panel.className='poker-chat';panel.hidden=true;
  panel.innerHTML='<summary>Table chat <span class="chat-unread"></span></summary><p class="chat-info help"></p><ol class="chat-messages" aria-label="Table messages"></ol><div class="chat-reactions"></div><form><label>Message your table<input name="message" maxlength="240" autocomplete="off" placeholder="Say something…" required></label><button type="submit">Send</button></form><p class="chat-status help" role="status"></p>';
  document.getElementById('myHand').append(panel);
- const mod=document.createElement('details');mod.className='poker-chat-moderation';mod.hidden=true;mod.innerHTML='<summary>Manage players &amp; chat</summary><p class="help">Mute applies across this tournament. Messages stay private to each table and off the TV.</p><div></div>';
- document.getElementById('hostDesk').append(mod);
+ const mod=document.createElement('section');mod.className='poker-chat-moderation';mod.hidden=true;mod.innerHTML='<h2 id="pokerPlayersTitle">Manage players &amp; chat</h2><p class="help">Mute applies across this tournament. Messages stay private to each table and off the TV.</p><div></div>';
+ const dialog=document.createElement('dialog');dialog.id='pokerPlayersDialog';dialog.setAttribute('aria-labelledby','pokerPlayersTitle');
+ const close=document.createElement('button');close.type='button';close.textContent='Close';close.className='players-close';close.onclick=()=>dialog.close();dialog.append(close,mod);document.body.append(dialog);
+ const manage=document.createElement('button');manage.id='managePlayersButton';manage.type='button';manage.textContent='Manage players';manage.hidden=true;manage.onclick=()=>dialog.showModal();document.getElementById('roomActions').append(manage);
  const $=q=>panel.querySelector(q),list=$('.chat-messages'),input=$('input'),form=$('form'),status=$('.chat-status');let room=null,sending=false,signature='',moderationSignature='';
  const read=(key,fallback='')=>{try{return localStorage.getItem(key)||fallback}catch{return fallback}},write=(key,value)=>{try{localStorage.setItem(key,value)}catch{}};
  panel.open=read('links-poker-chat-open',matchMedia('(min-width:900px)').matches?'yes':'no')==='yes';
@@ -14,7 +16,7 @@ export function createTableChat(send,confirmRemove=async()=>false){
  form.onsubmit=e=>{e.preventDefault();void submit(input.value)};
  for(const text of ['Nice hand!','Good luck!','Wow!','Good game!']){const b=document.createElement('button');b.type='button';b.textContent=text;b.onclick=()=>void submit(text);$('.chat-reactions').append(b)}
  return {update(next){
-  room=next;const chat=room.chat;const hand=document.getElementById('myHand');if(hand.hidden){if(panel.parentElement===hand)hand.after(panel)}else if(panel.parentElement!==hand)hand.append(panel);panel.hidden=room.isTv||room.mode==='practice'||!chat?.tableId;mod.hidden=room.isTv||!room.isHost;
+  room=next;const chat=room.chat;const hand=document.getElementById('myHand');if(hand.hidden){if(panel.parentElement===hand)hand.after(panel)}else if(panel.parentElement!==hand)hand.append(panel);panel.hidden=room.isTv||room.mode==='practice'||!chat?.tableId;mod.hidden=room.isTv||!room.isHost;manage.hidden=room.isTv||!room.isHost||room.mode==='practice'||room.status==='closed';if(manage.hidden&&dialog.open)dialog.close();
   if(!chat){list.replaceChildren();return}
   $('.chat-info').textContent=String(chat.tableId||'').replace('table-','Table ')+(chat.spectating?' · Watching with your table':' · Private to players at this table');
   const sig=chat.tableId+':'+JSON.stringify(chat.messages);

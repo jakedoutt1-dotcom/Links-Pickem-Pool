@@ -1,4 +1,4 @@
-import {createTableChat} from './poker-chat.mjs?v=3';
+import {createTableChat} from './poker-chat.mjs?v=host-tools4';
 import {createPokerAudio} from './poker-audio.mjs';
 import {pokerSeatPosition} from './poker-seats.mjs';
 import {raisePreset,validRaise} from './poker-controls.mjs';
