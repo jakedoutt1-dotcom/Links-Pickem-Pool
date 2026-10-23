@@ -13,10 +13,10 @@ export function validateCircuitRun(seed,events,elapsed){
  if(!Array.isArray(events)||events.length>2000||!Number.isFinite(elapsed)||elapsed<0)throw fail('Invalid run.');
  const run=createRun(seed);let boards=0,moves=0,failedPulses=0,last=0;const claimed=run.boards.map(()=>new Set());let bonus=claimNodeTime(run.boards[0],claimed[0]);
  for(const e of events){
-  if(!e||!['rotate','pulse'].includes(e.type)||!Number.isInteger(e.board)||e.board!==boards||boards>=3||!Number.isFinite(e.at)||e.at<last||e.at<0||e.at>elapsed+1500||e.at+failedPulses*3000>=(run.seconds+bonus)*1000)throw fail('Run actions do not match the clock or board.');
+  if(!e||!['rotate','pulse'].includes(e.type)||!Number.isInteger(e.board)||e.board!==boards||boards>=run.boards.length||!Number.isFinite(e.at)||e.at<last||e.at<0||e.at>elapsed+1500||e.at+failedPulses*3000>=(run.seconds+bonus)*1000)throw fail('Run actions do not match the clock or board.');
   last=e.at;const board=run.boards[boards];
   if(e.type==='rotate'){if(!Number.isInteger(e.index)||e.index<0||e.index>=board.tiles.length||board.tiles[e.index].locked)throw fail('Invalid tile rotation.');run.boards[boards]=rotateBoard(board,e.index);moves++;bonus+=claimNodeTime(run.boards[boards],claimed[boards])}
-  else if(evaluateBoard(board).won){boards++;if(boards<3){bonus+=CLOCK.boardBonus+claimNodeTime(run.boards[boards],claimed[boards])}}else failedPulses++;
+  else if(evaluateBoard(board).won){boards++;if(boards<run.boards.length){bonus+=CLOCK.boardBonus+claimNodeTime(run.boards[boards],claimed[boards])}}else failedPulses++;
  }
  const remaining=Math.max(0,run.seconds+bonus-elapsed/1000-failedPulses*3),score=Math.max(0,boards*1000+(boards?Math.floor(remaining)*10:0)-moves*2);
  return {score,boards,moves,failedPulses};

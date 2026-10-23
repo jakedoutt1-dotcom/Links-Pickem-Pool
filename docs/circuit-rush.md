@@ -1,6 +1,6 @@
 # LINKS Circuit Rush
 
-An original, free, phone-first circuit puzzle. Three boards start with a shared 180-second clock. Each gold node adds 10 seconds on its first source connection; reconnecting cannot farm time. Clearing either of the first two boards adds 30 seconds. At most 150 bonus seconds can be earned. Tap a movable tile to rotate clockwise, connect the left source through all three LINKS nodes to the right exit, then press Light it up. Every energized connection must be reciprocal with no open leaks. Failed pulses cost three seconds. The timer continues between boards and while the tab is hidden.
+An original, free, phone-first circuit puzzle. Six boards start with a shared 180-second clock. Each gold node adds 5 seconds on its first source connection; reconnecting cannot farm time. Clearing each of the first five boards adds 20 seconds. At most 190 bonus seconds can be earned. Tap a movable tile to rotate clockwise, connect the left source through all three LINKS nodes to the right exit, then press Light it up. Every energized connection must be reciprocal with no open leaks. Failed pulses cost three seconds. The timer continues between boards and while the tab is hidden.
 
 ## Difficulty and generation
 
@@ -20,8 +20,10 @@ D1 tables are initialized lazily: links_circuit_runs and links_circuit_scores. E
 
 ## Checks
 
-- tests/circuit-rush.mjs: 1,200 generated boards, solvability, increasing complexity, immutable rotations, locks, malformed inputs and complete-node/no-leak rules.
+- tests/circuit-rush.mjs: 2,400 generated boards, solvability, increasing complexity, immutable rotations, locks, malformed inputs and complete-node/no-leak rules.
 - tests/circuit-rush-api.mjs: real SQLite/D1, authentication, CSRF, server scoring, clock, event validation, duplicate submission, expiry, personal best and privacy.
 - tests/circuit-rush-browser.mjs: phone/desktop gameplay, graphics, timers, sharing, sound controls and reduced motion.
 
-- tests/circuit-rush-integration.mjs: real authenticated account, browser and API with all three boards solved, server-verified score and replay on phone and desktop.
+- tests/circuit-rush-integration.mjs: real authenticated account, browser and API with all six boards solved, server-verified score and replay on phone and desktop.
+
+Levels: Hardwired (5x5), Crossed Signals (6x6), Overload (7x7), Blackout (7x7), Deadlock (8x8), Meltdown (9x9). The last three require longer, more twisting routes, use plausible two-port decoys, and reveal fewer locked route hints. Local bests are versioned for the new rules.

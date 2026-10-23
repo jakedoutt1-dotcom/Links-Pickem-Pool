@@ -1,7 +1,9 @@
 // Shared deterministic rules. The server recreates boards and validates rotations;
 // client-reported scores, tile shapes, locks and node positions are never authoritative.
 export const PORTS=Object.freeze({N:1,E:2,S:4,W:8});
-const LEVELS=[{size:5,minRoute:14,minTurns:6},{size:6,minRoute:20,minTurns:8},{size:7,minRoute:28,minTurns:10}];
+const LEVELS=[{size:5,minRoute:14,minTurns:6},{size:6,minRoute:20,minTurns:8},{size:7,minRoute:28,minTurns:10},{size:7,minRoute:34,minTurns:14},{size:8,minRoute:42,minTurns:18},{size:9,minRoute:52,minTurns:22}];
+export const LEVEL_COUNT=LEVELS.length;
+export const LEVEL_NAMES=Object.freeze(['Hardwired','Crossed Signals','Overload','Blackout','Deadlock','Meltdown']);
 const DIRECTIONS=[[-1,0,1,4],[0,1,2,8],[1,0,4,1],[0,-1,8,2]];
 function seeded(text){let seed=2166136261;for(const c of text)seed=Math.imul(seed^c.charCodeAt(0),16777619);return ()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296}}
 const shuffle=(a,random)=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
@@ -28,16 +30,20 @@ function findRoute(config,random){
   for(const n of neighbors){const next=n.r*size+n.c;used.add(next);path.push(next);const result=visit(next,turns+(lastDirection&&lastDirection!==n.port?1:0),n.port);if(result)return result;path.pop();used.delete(next);if(budget<0)break}return null;
  };
  const found=visit(start,0,0);if(found)return found;
+ // Three woven two-row bands guarantee many bends and a right-side exit.
+ // This keeps the hard levels hard even when the randomized search runs out.
+ if(minRoute>=34){const woven=[],width=size%2?size:size-1;for(let band=0;band<3;band++){const top=band*2,reverse=band%2===1;for(let n=0;n<width;n++){const c=reverse?width-1-n:n;const first=n%2===0?top:top+1;woven.push(first*size+c,(first===top?top+1:top)*size+c)}}if(width<size)woven.push(5*size+size-1);return woven}
+
  // Deterministic emergency fallback: an odd number of serpentine rows ends right.
  const route=[];for(let r=0;r<(size%2?size:size-1);r++)for(let n=0;n<size;n++)route.push(r*size+(r%2?size-1-n:n));return route;
 }
 function generate(seed,level,solved){
- if(!Number.isInteger(level)||level<1||level>3)throw new RangeError('Choose circuit level 1, 2 or 3.');const config=LEVELS[level-1],{size}=config,random=seeded(String(seed)+':circuit-rush:v1:'+level),route=findRoute(config,random),source=route[0],sink=route.at(-1),onRoute=new Map(route.map((cell,i)=>[cell,i]));
+ if(!Number.isInteger(level)||level<1||level>LEVEL_COUNT)throw new RangeError('Choose a circuit level from 1 to 6.');const config=LEVELS[level-1],{size}=config,random=seeded(String(seed)+':circuit-rush:v1:'+level),route=findRoute(config,random),source=route[0],sink=route.at(-1),onRoute=new Map(route.map((cell,i)=>[cell,i]));
  const nodes=[1,2,3].map(n=>route[Math.floor((route.length-1)*n/4)]),solutions=[],decoys=[3,6,12,9,5,10,3,6,12,9,7,11,13,14];
  const tiles=Array.from({length:size*size},(_,index)=>{
   const position=onRoute.get(index),node=nodes.includes(index);let mask;
-  if(position!==undefined){mask=(position===0?8:direction(index,route[position-1],size))|(position===route.length-1?2:direction(index,route[position+1],size))}else mask=decoys[Math.floor(random()*decoys.length)];
-  const rotation=Math.floor(random()*4),ports=rotateMask(mask,-rotation),locked=index===source||index===sink||(!node&&position!==1&&random()<(position===undefined ? .23 : .10));solutions.push(rotation);const scrambled=Math.floor(random()*4);return {ports,rotation:locked||solved?rotation:scrambled,locked,node};
+  if(position!==undefined){mask=(position===0?8:direction(index,route[position-1],size))|(position===route.length-1?2:direction(index,route[position+1],size))}else mask=decoys[Math.floor(random()*(level>3?10:decoys.length))];
+  const rotation=Math.floor(random()*4),ports=rotateMask(mask,-rotation),locked=index===source||index===sink||(!node&&position!==1&&random()<(position===undefined ? (level>3?.08:.23) : (level>3?.02:.10)));solutions.push(rotation);const scrambled=Math.floor(random()*4);return {ports,rotation:locked||solved?rotation:scrambled,locked,node};
  });
  const board={size,level,tiles,source,sink,nodes};
  if(!solved){
@@ -48,8 +54,8 @@ function generate(seed,level,solved){
  return board;
 }
 const createSolvedBoard=(seed,level=1)=>generate(seed,level,true);
-export function createRun(seed){if(typeof seed!=='string'&&typeof seed!=='number')throw new TypeError('A circuit seed is required.');seed=String(seed);if(!seed.length||seed.length>200)throw new RangeError('Use a circuit seed of 1–200 characters.');return {seed,seconds:180,boards:[1,2,3].map(level=>generate(seed,level,false))}}
+export function createRun(seed){if(typeof seed!=='string'&&typeof seed!=='number')throw new TypeError('A circuit seed is required.');seed=String(seed);if(!seed.length||seed.length>200)throw new RangeError('Use a circuit seed of 1–200 characters.');return {seed,seconds:180,boards:Array.from({length:LEVEL_COUNT},(_,i)=>generate(seed,i+1,false))}}
 
 // A gold node awards time once per board, even if disconnected and reconnected.
-export const CLOCK=Object.freeze({seconds:180,nodeBonus:10,boardBonus:30,maxSeconds:330});
+export const CLOCK=Object.freeze({seconds:180,nodeBonus:5,boardBonus:20,maxSeconds:370});
 export function claimNodeTime(board,claimed){let seconds=0;const connected=new Set(evaluateBoard(board).connected);for(const node of board.nodes)if(connected.has(node)&&!claimed.has(node)){claimed.add(node);seconds+=CLOCK.nodeBonus}return seconds}
