@@ -1,6 +1,6 @@
 # LINKS Circuit Rush
 
-An original, free, phone-first circuit puzzle. Three boards share a 90-second clock. Tap a movable tile to rotate clockwise, connect the left source through all three LINKS nodes to the right exit, then press Light it up. Every energized connection must be reciprocal with no open leaks. Failed pulses cost three seconds. The timer continues between boards and while the tab is hidden.
+An original, free, phone-first circuit puzzle. Three boards start with a shared 180-second clock. Each gold node adds 10 seconds on its first source connection; reconnecting cannot farm time. Clearing either of the first two boards adds 30 seconds. At most 150 bonus seconds can be earned. Tap a movable tile to rotate clockwise, connect the left source through all three LINKS nodes to the right exit, then press Light it up. Every energized connection must be reciprocal with no open leaks. Failed pulses cost three seconds. The timer continues between boards and while the tab is hidden.
 
 ## Difficulty and generation
 
@@ -10,9 +10,9 @@ Daily mode shares a Central-calendar-day seed. Quick play and shared seed challe
 
 ## Saved daily scores
 
-The dedicated /new-build/api/circuit-rush endpoint uses existing verified LINKS sessions. Guests can play locally; saving daily scores requires signing in. One active server run per account is replaced by a new start. A start creates a 90-second server deadline and snapshots the optional active venue. Finish sends rotation and pulse events, never an authoritative client score. The server recreates the boards, verifies legal unlocked rotations, board order, pulses and timing, and calculates points. Three seconds are deducted per failed pulse. Points equal 1,000 per solved board plus 10 per whole remaining second (only when at least one board is solved), minus two per rotation, clamped to zero.
+The dedicated /new-build/api/circuit-rush endpoint uses existing verified LINKS sessions. Guests can play locally; saving daily scores requires signing in. One active server run per account is replaced by a new start. A start creates a 180-second server deadline and snapshots the optional active venue. Finish sends rotation and pulse events, never an authoritative client score. The server recreates the boards, verifies legal unlocked rotations, board order, pulses and timing, and calculates points. Three seconds are deducted per failed pulse. Points equal 1,000 per solved board plus 10 per whole remaining second (only when at least one board is solved), minus two per rotation, clamped to zero.
 
-Runs can be submitted up to 15 seconds after the deadline for network recovery, with zero remaining-time bonus. A run can be saved once. Each account/day keeps its best completed score; a worse repeat does not replace it or inflate totals. Today and All-time leaderboards are separate from trivia and other game scoring. Venue labels represent the player's selected venue, not a GPS attendance check. Public results use display names/opaque IDs and do not expose account emails or action logs.
+Runs can be submitted up to 15 seconds after the maximum extended deadline for network recovery, with zero remaining-time bonus. A run can be saved once. Each account/day keeps its best completed score; a worse repeat does not replace it or inflate totals. Today and All-time leaderboards are separate from trivia and other game scoring. Venue labels represent the player's selected venue, not a GPS attendance check. Public results use display names/opaque IDs and do not expose account emails or action logs.
 
 No browser puzzle can guarantee resistance to automation. Validation rejects arbitrary score payloads and illegal event sequences; these friendly leaderboards are not certified anti-cheat or prize competition systems. The reference solution helper exists only under tests and is not exported by the served engine.
 

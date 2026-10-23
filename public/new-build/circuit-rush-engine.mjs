@@ -48,4 +48,8 @@ function generate(seed,level,solved){
  return board;
 }
 const createSolvedBoard=(seed,level=1)=>generate(seed,level,true);
-export function createRun(seed){if(typeof seed!=='string'&&typeof seed!=='number')throw new TypeError('A circuit seed is required.');seed=String(seed);if(!seed.length||seed.length>200)throw new RangeError('Use a circuit seed of 1–200 characters.');return {seed,seconds:90,boards:[1,2,3].map(level=>generate(seed,level,false))}}
+export function createRun(seed){if(typeof seed!=='string'&&typeof seed!=='number')throw new TypeError('A circuit seed is required.');seed=String(seed);if(!seed.length||seed.length>200)throw new RangeError('Use a circuit seed of 1–200 characters.');return {seed,seconds:180,boards:[1,2,3].map(level=>generate(seed,level,false))}}
+
+// A gold node awards time once per board, even if disconnected and reconnected.
+export const CLOCK=Object.freeze({seconds:180,nodeBonus:10,boardBonus:30,maxSeconds:330});
+export function claimNodeTime(board,claimed){let seconds=0;const connected=new Set(evaluateBoard(board).connected);for(const node of board.nodes)if(connected.has(node)&&!claimed.has(node)){claimed.add(node);seconds+=CLOCK.nodeBonus}return seconds}
