@@ -25,7 +25,7 @@ const gameRoutes=Object.fromEntries(['nfl','college','march','golf','nascar','fa
 gameRoutes.homerun='./home-run.html?demo=1';
 gameRoutes.nba='./nba.html?demo=1';
 gameRoutes.mlb='./mlb.html?demo=1';
-const goRoutes={create:'./create-pool.html',login:'./pool-login.html',playmaker:'./playmaker.html',picks:'./my-picks.html',results:'./results.html'};
+const goRoutes={create:'./create-pool.html',login:'./pool-login.html',playmaker:'./playmaker/',picks:'./my-picks.html',results:'./results.html'};
 function press(el){if(!el)return;el.style.transform='scale(.975)';setTimeout(()=>el.style.transform='',120)}
 document.addEventListener('click',function(e){
  const game=e.target.closest('[data-game]');

@@ -1,6 +1,6 @@
 # Public LINKS Playmaker
 
-Published entry: `/new-build/playmaker/`. The homepage banner links here. This is the public adaptation of the owner's `Links AI/playmaker-redesign` PM-004 project; the original project remains unchanged. Only the browser application, pure domain rules and selected brand/visual assets were copied. Local accounting files, Node server, service adapters, docs, proposals and secrets are not public assets.
+Published entry: `/new-build/playmaker/`. The previous `/new-build/playmaker.html` entry and existing site links now open this version. The homepage banner links here. This is the public adaptation of the owner's `Links AI/playmaker-redesign` PM-004 project; the original project remains unchanged. Only the browser application, pure domain rules and selected brand/visual assets were copied. Local accounting files, Node server, service adapters, docs, proposals and secrets are not public assets.
 
 ## Web gateway
 
