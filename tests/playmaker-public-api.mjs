@@ -72,3 +72,17 @@ function setup(extra={}){
 assert.equal(providerText({status:'completed',output_text:'',output:[{content:[{type:'output_text',text:'Nested text'}]}]}),'Nested text');
 assert.equal(providerText({status:'incomplete',output_text:'Partial'}),'');
 console.log('PASS public Playmaker: canonical server prices, source freshness, fixed market requests, no automatic AI calls, atomic owner/IP/global quotas, consumed failed attempts, duplicate suppression, origin/input validation, provider output recovery and private metadata.');
+
+{
+ const s=setup();try{
+  const pick=parseEvents(board(),'all',now)[0];
+  const build=()=>({...valid(),mode:'build',risk:'aggressive',kind:'single',legs:4});
+  s.setOutput({status:'completed',output_text:JSON.stringify({analysis:'Quoted price only. Risk note: no proven edge.',picks:[{id:pick.id,reason:'Price is available; outcome remains uncertain.'}]})});
+  const result=await s.call(build());assert.equal(result.status,200);assert.equal(result.picks[0].americanOdds,-110);assert.equal(JSON.parse(JSON.parse(s.calls[0].body).input).legs,1);
+  s.setOutput({status:'completed',output_text:JSON.stringify({analysis:'Unavailable prop.',picks:[]})});assert.equal((await s.call(build())).picks.length,0);
+  s.setOutput({status:'completed',output_text:JSON.stringify({analysis:'Bad pick',picks:[{id:'invented',reason:'fake'}]})});assert.equal((await s.call(build())).status,502);
+  s.setOutput({status:'completed',output_text:JSON.stringify({analysis:'Duplicate event',picks:[{id:pick.id,reason:'one'},{id:pick.id,reason:'two'}]})});assert.equal((await s.call({...build(),kind:'parlay',legs:2})).status,502);
+  const calls=s.calls.length;assert.equal((await s.call({...build(),risk:'guaranteed'})).status,400);assert.equal(s.calls.length,calls);
+ }finally{s.db.raw.close()}
+}
+console.log('PASS Build My Bet: canonical picks, single-leg override, unsupported markets, invented selections and duplicate events.');

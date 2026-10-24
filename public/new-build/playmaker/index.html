@@ -8,8 +8,8 @@
   <title>LINKS Playmaker — Your game. Your next move.</title>
   <link rel="icon" type="image/svg+xml" href="./assets/brand/playmaker-mark.svg">
   <link rel="stylesheet" href="./styles.css">
-  <link rel="stylesheet" href="./graphics-v2.css"><link rel="stylesheet" href="../home-live.css?v=1"><link rel="stylesheet" href="./web.css?v=1"><script type="module" src="../home-live.mjs?v=playmaker-live1"></script>
-  <script type="module" src="./app.mjs?v=lifetime-pass2"></script>
+  <link rel="stylesheet" href="./graphics-v2.css"><link rel="stylesheet" href="../home-live.css?v=1"><link rel="stylesheet" href="./web.css?v=2"><script type="module" src="../home-live.mjs?v=playmaker-live1"></script>
+  <script type="module" src="./app.mjs?v=build-bet1"></script>
   <script type="module" src="./tools.mjs"></script>
 </head>
 <body id="top">
@@ -109,6 +109,15 @@
           </div>
           <div class="analysis-output" id="analysis-output" aria-live="polite"><div class="analyst-welcome"><span class="analyst-line" aria-hidden="true"></span><p>Your next question is a good place to start.<br><span>The analyst will respond here once AI is connected.</span></p></div></div>
           <form id="analysis-form" class="analysis-form">
+            <div class="bet-builder">
+              <label>What would you like?<select id="request-mode"><option value="review">Ask / review my card</option><option value="build">Build My Bet</option></select></label>
+              <div id="builder-options" hidden>
+                <label>Approach<select id="build-risk"><option value="conservative">Conservative</option><option value="balanced" selected>Balanced</option><option value="aggressive">Aggressive</option></select></label>
+                <label>Bet type<select id="build-kind"><option value="parlay">Parlay</option><option value="single">Single bet</option></select></label>
+                <label>Legs<select id="build-legs"><option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></label>
+                <p>Use the sport and sportsbook selected on the board. Describe your preferences below. Current markets: game winners, spreads and totals. Player props require another data connection. Conservative is not risk-free.</p>
+              </div>
+            </div>
             <label class="sr-only" for="question-input">Question for the AI analyst</label>
             <textarea id="question-input" name="question" rows="2" maxlength="1800" placeholder="Ask Playmaker about a market, your card, or your next move…"></textarea>
             <div class="composer-bottom"><span><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m8 1 5 3v4c0 3-5 6-5 6S3 11 3 8V4l5-3Z"/><path d="M6 7h4v4H6V7Zm1 0V5a1 1 0 0 1 2 0v2"/></svg><span id="ai-remaining">AI connection required</span></span><button type="submit" class="button button-primary analyze-button" id="analyze-button">Ask Playmaker <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 16V4m-5 5 5-5 5 5"/></svg></button></div>

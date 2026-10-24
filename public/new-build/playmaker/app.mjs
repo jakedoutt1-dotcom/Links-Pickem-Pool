@@ -273,8 +273,8 @@ async function loadOdds({ replace = false } = {}) {
 }
 
 function updateAnalyzeButton() {
-  ui.analyze.disabled = !state.analyzing && (!state.config.aiConnected || state.remaining === 0 || (state.card.length === 0 && !ui.question.value.trim()));
-  ui.analyze.textContent = state.analyzing ? 'Cancel analysis' : state.card.length ? 'Analyze my card' : 'Ask Playmaker';
+  ui.analyze.disabled = !state.analyzing && (!state.config.aiConnected || state.remaining === 0 || (document.getElementById('request-mode').value!=='build' && state.card.length === 0 && !ui.question.value.trim()));
+  ui.analyze.textContent = state.analyzing ? 'Cancel analysis' : document.getElementById('request-mode').value==='build' ? 'Build My Bet' : state.card.length ? 'Analyze my card' : 'Ask Playmaker';
   ui.analyze.setAttribute('aria-busy', String(state.analyzing));
 }
 
@@ -292,7 +292,8 @@ async function analyze(event) {
   if (state.analyzing) { state.aiController?.abort(new Error('Analysis cancelled.')); return; }
   if (!state.config.aiConnected) { setStatus(ui.analysisStatus, 'AI analysis is temporarily unavailable.'); return; }
   if (pruneCard()) { setStatus(ui.analysisStatus, 'Your card changed because a price expired. Review your card before analyzing.', true); return; }
-  const question = ui.question.value.trim();
+  const build=document.getElementById('request-mode').value==='build';
+  const question = ui.question.value.trim() || (build?'Build a bet using my selected approach, type and leg count.':'');
   if (!state.card.length && !question) { setStatus(ui.analysisStatus, 'Ask a question or add a current selection to your card.', true); return; }
   if (question.length > 1800) { setStatus(ui.analysisStatus, 'Keep your question to 1,800 characters or fewer.', true); return; }
   const card = requestCard();
@@ -307,13 +308,21 @@ async function analyze(event) {
       method: 'POST', controller: state.aiController, timeout: 65000,
       body: {
         question: question || 'Review these selected lines. Explain price, risks, assumptions, and missing information. Do not invent injuries, statistics, or win probabilities.',
-        requestId: crypto.randomUUID(), bookmaker: books.join(', '), sport: state.card[0]?.league || state.sport, mode: 'Build a Play', card, odds: card,
+        requestId: crypto.randomUUID(), bookmaker: books.join(', '), sport: state.card[0]?.league || state.sport, mode: build?'build':'review',risk:document.getElementById('build-risk').value,kind:document.getElementById('build-kind').value,legs:Number(document.getElementById('build-legs').value),book:state.book,card:build?[]:card,
       },
     });
     if (typeof payload.analysis !== 'string' || !payload.analysis.trim()) throw new Error('The analysis service returned no analysis. Please try again.');
     const output = element('div', 'analysis-text', payload.analysis);
     // Preserve plain text; provider output is never inserted as executable HTML.
     ui.analysisOutput.replaceChildren(output);
+    if(build&&Array.isArray(payload.picks)&&payload.picks.length){
+      for(const pick of payload.picks){
+        const item=element('div','card-item'),info=element('div','card-item-info');
+        info.append(element('strong','',`${pick.label} · ${oddsText(pick.americanOdds)}`),element('small','',`${pick.eventName} · ${pick.bookmakerName}`),element('p','',pick.reason));item.append(info);ui.analysisOutput.append(item);
+      }
+      const use=element('button','button button-primary','Use this card');use.type='button';
+      use.addEventListener('click',()=>{if(payload.picks.some(p=>!isFreshSelection(p))){setStatus(ui.analysisStatus,'These prices expired. Build again for fresh selections.',true);return}state.card=payload.picks.map(({reason,...pick})=>pick);saveCard();renderCard();renderBoard();setStatus(ui.cardStatus,'AI card loaded. Remove a leg or choose a replacement from the board.');use.disabled=true;});ui.analysisOutput.append(use);
+    }
     state.aiLastRequestFailed = false;
     const connectionText = ui.connection.querySelector('span:last-child') || ui.connection;
     connectionText.textContent = state.config.oddsConnected ? 'Live odds + AI connected' : 'AI connected · odds unavailable';
@@ -434,6 +443,9 @@ function initialize() {
   });
   ui.stake.addEventListener('input', renderReturn);
   ui.form.addEventListener('submit', analyze);
+  const mode=get('request-mode'),options=get('builder-options'),kind=get('build-kind');
+  mode.addEventListener('change',()=>{options.hidden=mode.value!=='build';updateAnalyzeButton();});
+  kind.addEventListener('change',()=>{get('build-legs').disabled=kind.value==='single';});
   ui.question.addEventListener('input', updateAnalyzeButton);
   ui.prompts.querySelectorAll('[data-prompt]').forEach((button) => {
     button.addEventListener('click', () => {
