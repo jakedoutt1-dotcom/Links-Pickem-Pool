@@ -334,8 +334,18 @@ async function analyze(event) {
         const item=element('div','card-item'),info=element('div','card-item-info');
         info.append(element('strong','',`${pick.label} · ${oddsText(pick.americanOdds)}`),element('small','',`${pick.eventName} · ${pick.bookmakerName}`),element('p','',pick.reason));item.append(info);ui.analysisOutput.append(item);
       }
-      const use=element('button','button button-primary','Use this card');use.type='button';
-      use.addEventListener('click',()=>{if(payload.picks.some(p=>!isFreshSelection(p))){setStatus(ui.analysisStatus,'These prices expired. Build again for fresh selections.',true);return}state.card=payload.picks.map(({reason,...pick})=>pick);saveCard();renderCard();renderBoard();setStatus(ui.cardStatus,'AI card loaded. Remove a leg or choose a replacement from the board.');use.disabled=true;});ui.analysisOutput.append(use);
+      const use=element('button','button button-primary','Add picks to My Play');use.type='button';
+      const confirmation=element('p','analysis-status');confirmation.setAttribute('role','status');
+      use.addEventListener('click',()=>{
+        if(payload.picks.some(p=>!isFreshSelection(p))){setStatus(confirmation,'These prices expired. Build again for fresh selections.',true);return}
+        state.card=payload.picks.map(({reason,...pick})=>pick);saveCard();renderCard();renderBoard();
+        const message=`${state.card.length} AI pick${state.card.length===1?'':'s'} added to My Play. Review your picks and estimate a return below.`;
+        setStatus(ui.cardStatus,message);setStatus(confirmation,message);
+        use.textContent='Card added · View my picks';
+        const panel=document.getElementById('my-play');panel.setAttribute('tabindex','-1');
+        location.hash='my-play';panel.focus({preventScroll:true});
+        panel.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});
+      });ui.analysisOutput.append(use,confirmation);
     }
     state.aiLastRequestFailed = false;
     const connectionText = ui.connection.querySelector('span:last-child') || ui.connection;
