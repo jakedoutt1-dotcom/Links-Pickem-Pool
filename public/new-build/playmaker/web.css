@@ -8,3 +8,5 @@
 .account-link{color:#bbdfff;font-size:11px;white-space:nowrap;margin-left:auto}.site-header .connection-pill{margin-left:0}@media(max-width:700px){.account-link{font-size:10px;margin-left:auto}.site-header .brand{max-width:58%}.site-header .connection-pill{margin-left:0}}
 
 .bet-builder{width:100%;margin-bottom:12px}.bet-builder label{display:block;margin:8px 0;color:#e5c975;font-weight:600}.bet-builder select{display:block;width:100%;padding:12px;margin-top:6px;background:#102535;color:#fff;border:1px solid #708895;border-radius:10px}.bet-builder p{font-size:13px;line-height:1.6;color:#b8cad3}.bet-builder [hidden]{display:none}
+
+.event-book-label{display:block;color:#b9cddc;font-size:12px;margin:12px 0}.event-book-select{display:block;width:100%;min-width:0;max-width:100%;margin-top:6px;min-height:44px;padding:10px;border:1px solid #496779;border-radius:9px;background:#142d3e;color:#fff;font:inherit}.event-market{margin-top:16px}.event-market h4{margin:0 0 8px;font-weight:500}.event-market small{display:block;margin-top:6px}

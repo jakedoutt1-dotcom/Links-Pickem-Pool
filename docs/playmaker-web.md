@@ -44,3 +44,6 @@ node tests/playmaker-worker-runtime.cjs
 An alternate dependency install can be supplied with PLAYMAKER_RUNTIME_DEPS pointing to its package.json. The test covers successful analysis and Build My Bet, redirect rejection without forwarding the key, sanitized authentication/rate errors, incomplete outputs, durable success/failure records and exactly one outbound attempt per submit.
 
 References: https://developers.cloudflare.com/workers/runtime-apis/request/#constructor and https://developers.openai.com/api/docs/guides/error-codes.
+
+## Matchup grouping
+The board shows one card per event, sorted by kickoff. Each card has a sportsbook selector when All available books is selected, with that book’s markets grouped underneath. This preserves quote IDs, odds, source timestamps and card selections while avoiding repeated matchup headings for every book. Pagination counts games, not bookmaker quotes. The global sportsbook and market filters still apply.

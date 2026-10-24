@@ -12,7 +12,7 @@ const BOOK_URLS = Object.freeze({
 });
 const MARKET_NAMES = Object.freeze({ moneyline: 'Moneyline', spread: 'Spread', total: 'Total' });
 const state = {
-  sport: 'NFL', book: 'all', market: 'all', selections: [], card: [],
+  sport: 'NFL', book: 'all', market: 'all', selections: [], card: [], eventBooks: new Map(),
   config: { mode: 'preview', oddsConnected: false, aiConnected: false },
   hasLoaded: false, loading: false, analyzing: false, storageAvailable: true,
   oddsController: null, aiController: null, remaining: null, testingPass: false, marketCount: 6, aiLastRequestFailed: false,
@@ -145,44 +145,58 @@ function renderBoard() {
     setStatus(ui.boardStatus, state.loading ? 'Loading odds…' : state.hasLoaded ? 'No fresh selections' : 'Awaiting live connection');
     return;
   }
-  const groups = new Map();
+  // One card per event. Books are alternative quotes, not separate games.
+  const events = new Map();
   for (const pick of visible) {
-    const lineKey = pick.market === 'spread' ? Math.abs(pick.line) : pick.line ?? '';
-    const key = `${pick.eventId}:${pick.market}:${pick.bookmakerId}:${lineKey}`;
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push(pick);
+    if (!events.has(pick.eventId)) events.set(pick.eventId, []);
+    events.get(pick.eventId).push(pick);
   }
-  for (const picks of [...groups.values()].slice(0, state.marketCount)) {
-    const first = picks[0];
+  const ordered = [...events.values()].sort((a,b)=>Date.parse(a[0].startTime)-Date.parse(b[0].startTime)||a[0].eventName.localeCompare(b[0].eventName));
+  for (const eventPicks of ordered.slice(0, state.marketCount)) {
+    const first = eventPicks[0], books = new Map(eventPicks.map(p=>[p.bookmakerId,p.bookmakerName]));
+    const selected = state.eventBooks.get(first.eventId);
+    const book = state.book !== 'all' ? state.book : books.has(selected) ? selected : books.has('draftkings') ? 'draftkings' : books.keys().next().value;
     const card = element('article', 'market-card');
     const meta = element('div', 'market-meta');
     meta.append(element('span', 'status-pill', `${first.league || first.sport} · Pregame`), element('span', '', dateText(first.startTime)));
-    const heading = element('h3', 'matchup', first.eventName);
-    const market = element('div', 'market-meta');
-    market.append(element('span', '', `${MARKET_NAMES[first.market]} · Full game`), element('span', 'book-label', first.bookmakerName));
-    const choices = element('div', 'market-picks');
-    for (const pick of picks) {
-      const chosen = state.card.some((item) => item.id === pick.id);
-      const button = element('button', `pick-button${chosen ? ' selected' : ''}`);
-      button.type = 'button';
-      button.setAttribute('aria-pressed', String(chosen));
-      button.setAttribute('aria-label', `${chosen ? 'Remove' : 'Add'} ${pick.label}, ${oddsText(pick.americanOdds)}, ${pick.bookmakerName}`);
-      button.append(element('span', 'pick-label', pick.label), element('strong', 'pick-odds', oddsText(pick.americanOdds)));
-      button.addEventListener('click', () => togglePick(pick));
-      choices.append(button);
+    card.append(meta,element('h3','matchup',first.eventName));
+    if (state.book === 'all') {
+      const label=element('label','event-book-label',`Compare sportsbooks · ${books.size} available`),select=element('select','event-book-select');
+      select.setAttribute('aria-label',`Sportsbook for ${first.eventName}`);
+      for(const [id,name] of [...books].sort((a,b)=>a[1].localeCompare(b[1]))){const option=element('option','',name);option.value=id;select.append(option);}
+      select.value=book;
+      select.addEventListener('change',()=>{state.eventBooks.set(first.eventId,select.value);const index=ordered.indexOf(eventPicks);renderBoard();ui.marketList.querySelectorAll('.event-book-select')[index]?.focus({preventScroll:true});});
+      label.append(select);card.append(label);
+    } else card.append(element('div','book-label',books.get(book)));
+    const groups=new Map();
+    for(const pick of eventPicks.filter(p=>p.bookmakerId===book)){
+      const lineKey=pick.market==='spread'?Math.abs(pick.line):pick.line??'';
+      const key=`${pick.market}:${lineKey}`;
+      if(!groups.has(key))groups.set(key,[]);groups.get(key).push(pick);
     }
-    const updated = element('small', 'market-meta', updatedText(first.updatedAt));
-    updated.title = `Provider update: ${dateText(first.updatedAt)}`;
-    card.append(meta, heading, market, choices, updated);
+    for(const picks of groups.values()){
+      const market=element('section','event-market');
+      market.append(element('h4','market-meta',`${MARKET_NAMES[picks[0].market]} · Full game`));
+      const choices=element('div','market-picks');
+      for(const pick of picks){
+        const chosen=state.card.some(item=>item.id===pick.id);
+        const button=element('button',`pick-button${chosen?' selected':''}`);button.type='button';
+        button.setAttribute('aria-pressed',String(chosen));
+        button.setAttribute('aria-label',`${chosen?'Remove':'Add'} ${pick.label}, ${oddsText(pick.americanOdds)}, ${pick.bookmakerName}`);
+        button.append(element('span','pick-label',pick.label),element('strong','pick-odds',oddsText(pick.americanOdds)));
+        button.addEventListener('click',()=>togglePick(pick));choices.append(button);
+      }
+      market.append(choices);
+      const oldest=picks.reduce((a,b)=>Date.parse(a.updatedAt)<Date.parse(b.updatedAt)?a:b);
+      const updated=element('small','market-meta',updatedText(oldest.updatedAt));updated.title=`Provider update: ${dateText(oldest.updatedAt)}`;
+      market.append(updated);card.append(market);
+    }
     ui.marketList.append(card);
   }
-  if (groups.size > state.marketCount) {
-    const more = element('button', 'button-icon-text', 'Show more markets');
-    more.type = 'button';
-    more.addEventListener('click', () => { state.marketCount += 6; renderBoard(); });
-    ui.marketList.append(more);
+  if(events.size>state.marketCount){
+    const more=element('button','button-icon-text','Show more games');more.type='button';more.addEventListener('click',()=>{state.marketCount+=6;renderBoard();});ui.marketList.append(more);
   }
-  setStatus(ui.boardStatus, `${visible.length} available selections · showing ${Math.min(groups.size, state.marketCount)} of ${groups.size} markets`);
+  setStatus(ui.boardStatus, `${events.size} games · showing ${Math.min(events.size,state.marketCount)} · compare sportsbook prices within each matchup`);
 }
 
 function renderReturn() {
