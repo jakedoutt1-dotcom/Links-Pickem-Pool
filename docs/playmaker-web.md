@@ -31,4 +31,16 @@ Browser captures: `output/playmaker-web/`. Live verification is reported separat
 The owner requested permanent paid-tier testing access without a purchase. A complimentary lifetime entitlement is attached to the server-verified owner account in `functions/lib/playmaker-testing-pass.js`, with no expiry. It bypasses the five-attempt account/network limit, not provider service capacity, global concurrency or external API charges. Its records do not consume guest network allowances. Guest requests, body email/paid/testing flags and expired sessions cannot activate it. No payment or paid transaction is fabricated. Playmaker supports the existing verified account cookie or session token and provides a sign-in link returning to Playmaker.
 
 ## Build My Bet
-The analyst composer offers Conservative, Balanced and Aggressive approaches, singles or 2–8 leg parlays, plus freeform preferences. The gateway loads current canonical markets for the selected sport/book, sends bounded candidates, validates exact IDs, distinct events, one book and requested leg count, and returns explanations. Unavailable requests may return no picks with an explanation. The user explicitly chooses Use this card before replacing their saved card. No bets are placed. No invented props, current statistics, probabilities or guaranteed outcomes. Build requests consume the existing AI allowance; no automatic provider calls. Production AI availability still requires diagnosis; fixture tests do not prove live provider health.
+The analyst composer offers Conservative, Balanced and Aggressive approaches, singles or 2–8 leg parlays, plus freeform preferences. The gateway loads current canonical markets for the selected sport/book, sends bounded candidates, validates exact IDs, distinct events, one book and requested leg count, and returns explanations. Unavailable requests may return no picks with an explanation. The user explicitly chooses Use this card before replacing their saved card. No bets are placed. No invented props, current statistics, probabilities or guaranteed outcomes. Build requests consume the existing AI allowance; no automatic provider calls. The Cloudflare request compatibility error is fixed; local runtime tests do not prove production provider credentials or billing health.
+
+## Cloudflare AI response fix (PM-WEB-3)
+The previous `redirect: 'error'` threw a TypeError in workerd before outbound I/O. Node fetch accepts this option, so earlier Node fixtures missed it. Use `redirect: 'manual'` and explicitly reject all 3xx responses; never follow Location with the API key. Access, rate/billing, request/model and timeout errors now have safe actionable messages, with no provider body or credentials returned. There are no automatic retries.
+
+Regression check using Cloudflare's actual workerd runtime, local D1 and an outbound-service stub (no real provider calls):
+```
+npm install --prefix tmp/playmaker-runtime-check --no-audit --no-fund miniflare esbuild
+node tests/playmaker-worker-runtime.cjs
+```
+An alternate dependency install can be supplied with PLAYMAKER_RUNTIME_DEPS pointing to its package.json. The test covers successful analysis and Build My Bet, redirect rejection without forwarding the key, sanitized authentication/rate errors, incomplete outputs, durable success/failure records and exactly one outbound attempt per submit.
+
+References: https://developers.cloudflare.com/workers/runtime-apis/request/#constructor and https://developers.openai.com/api/docs/guides/error-codes.

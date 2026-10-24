@@ -18,7 +18,7 @@ function setup(extra={}){
   const r=await s.call(null,{action:'config'});assert(r.aiConnected&&r.oddsConnected);assert.equal(r.remaining,5);assert.equal(s.calls.length,0);
   assert.equal((await s.call(null,{action:'odds',query:'&leagueID=NFL&limit=100&oddIDs=bad'})).status,200);const u=s.oddsCalls[0];assert.equal(u.searchParams.get('limit'),'20');assert.equal(u.searchParams.get('oddIDs').split(',').length,6);
   const response=await s.call(valid());assert.equal(response.status,200);assert.equal(response.remaining,4);assert.match(response.analysis,/Risk note/);
-  const sent=JSON.parse(s.calls[0].body);assert.equal(sent.max_output_tokens,2000);assert.equal(sent.reasoning.effort,'minimal');assert.equal(sent.store,false);assert.equal(s.calls[0].url,'https://api.openai.com/v1/responses');
+  const sent=JSON.parse(s.calls[0].body);assert.equal(sent.max_output_tokens,2000);assert.equal(sent.reasoning.effort,'minimal');assert.equal(sent.store,false);assert.equal(s.calls[0].redirect,'manual');assert.equal(s.calls[0].url,'https://api.openai.com/v1/responses');
   const records=s.db.raw.prepare('SELECT * FROM links_playmaker_requests').all();assert.equal(records.length,1);assert.equal(records[0].status,'succeeded');assert.equal(records[0].input_tokens,40);assert(!JSON.stringify(records).includes('Explain the uncertainty'));assert(!JSON.stringify(response).includes('private-key'));
  }finally{s.db.raw.close()}
 }
