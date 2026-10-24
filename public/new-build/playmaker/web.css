@@ -4,3 +4,5 @@
 @media(max-width:700px){.site-header{height:auto;min-height:76px;padding-top:16px;padding-bottom:12px;gap:12px;display:flex;flex-wrap:wrap}.site-header .brand{max-width:65%}.site-header .primary-nav{position:static;order:3;inset:auto;transform:none;width:100%;display:flex;justify-content:space-between;gap:3px;margin:0;padding:0}.site-header .connection-pill{position:static;order:4;inset:auto;transform:none;width:100%;max-width:100%;justify-content:center;margin:0}.livebar-home{position:relative;z-index:1}}
 
 @media(max-width:700px){.site-header .connection-pill{height:auto;font-size:10px;padding:7px 9px}.connection-pill>span:last-child{position:static;font-size:10px;line-height:1.4;white-space:normal;background:none;border:0;padding:0;backdrop-filter:none}.site-header .primary-nav{height:auto}}
+
+.account-link{color:#bbdfff;font-size:11px;white-space:nowrap;margin-left:auto}.site-header .connection-pill{margin-left:0}@media(max-width:700px){.account-link{font-size:10px;margin-left:auto}.site-header .brand{max-width:58%}.site-header .connection-pill{margin-left:0}}

@@ -15,7 +15,7 @@ const state = {
   sport: 'NFL', book: 'all', market: 'all', selections: [], card: [],
   config: { mode: 'preview', oddsConnected: false, aiConnected: false },
   hasLoaded: false, loading: false, analyzing: false, storageAvailable: true,
-  oddsController: null, aiController: null, remaining: null, marketCount: 6, aiLastRequestFailed: false,
+  oddsController: null, aiController: null, remaining: null, testingPass: false, marketCount: 6, aiLastRequestFailed: false,
 };
 let ui;
 
@@ -50,12 +50,14 @@ function updatedText(iso) {
   return minutes < 1 ? 'Source updated <1m ago' : `Source updated ${minutes}m ago`;
 }
 
+function accountHeaders(){try{const token=localStorage.getItem('links-account-token');return token&&token.length<=500?{'x-links-account':token}:{}}catch{return {}}}
+function applyAllowance(payload){state.testingPass=payload.testingPass===true;if(state.testingPass){state.remaining=payload.available===false?0:null;ui.aiRemaining.textContent=payload.available===false?'Lifetime testing pass · service capacity reached':'Lifetime testing pass · no daily analysis limit';return true}if(payload.limitEnforced===true&&Number.isSafeInteger(payload.remaining)&&payload.remaining>=0){state.remaining=payload.remaining;ui.aiRemaining.textContent=`${payload.remaining} analyses remaining`;return true}return false}
 async function requestJSON(path, { method = 'GET', body, controller = new AbortController(), timeout = 15000 } = {}) {
   const timer = setTimeout(() => controller.abort(new Error('Request timed out. Please try again.')), timeout);
   try {
     const response = await fetch(path, {
       method, signal: controller.signal, credentials: 'same-origin', cache: 'no-store',
-      headers: body ? { 'Content-Type': 'application/json', Accept: 'application/json', 'X-Playmaker-Client': 'web' } : { Accept: 'application/json', 'X-Playmaker-Client': 'web' },
+      headers: { ...accountHeaders(), Accept: 'application/json', 'X-Playmaker-Client': 'web', ...(body?{'Content-Type':'application/json'}:{}) },
       ...(body ? { body: JSON.stringify(body) } : {}),
     });
     const contentType = response.headers.get('content-type') || '';
@@ -317,10 +319,7 @@ async function analyze(event) {
     connectionText.textContent = state.config.oddsConnected ? 'Live odds + AI connected' : 'AI connected · odds unavailable';
     ui.connection.classList.toggle('is-connected', state.config.oddsConnected);
     setStatus(ui.analysisStatus, 'AI review complete. Verify current prices and facts before making a decision.');
-    if (Number.isSafeInteger(payload.remaining) && payload.remaining >= 0 && payload.limitEnforced === true) {
-      state.remaining = payload.remaining;
-      ui.aiRemaining.textContent = `${payload.remaining} analyses remaining`;
-    } else ui.aiRemaining.textContent = 'Usage allowance unavailable';
+    if(!applyAllowance(payload))ui.aiRemaining.textContent='Usage allowance unavailable';
   } catch (error) {
     ui.analysisOutput.replaceChildren(emptyState(error.name === 'AbortError' ? 'Analysis cancelled.' : 'Analysis could not be completed.', 'Your card is still here. You can review your selections and retry when the service is ready.', '⌁'));
     setStatus(ui.analysisStatus, error.message || 'Analysis is unavailable. Try again later.', error.name !== 'AbortError');
@@ -332,10 +331,7 @@ async function analyze(event) {
     }
     try {
       const health = await requestJSON('/new-build/api/playmaker-public?action=ai', { timeout: 5000 });
-      if (health.limitEnforced === true && Number.isSafeInteger(health.remaining) && health.remaining >= 0) {
-        state.remaining = health.remaining;
-        ui.aiRemaining.textContent = `${health.remaining} analyses remaining`;
-      }
+      applyAllowance(health);
     } catch { ui.aiRemaining.textContent = 'Usage allowance unavailable'; }
   } finally {
     state.analyzing = false;
@@ -357,14 +353,14 @@ async function checkConnections() {
       const health = await requestJSON('/new-build/api/playmaker-public?action=ai', { timeout: 5000 });
       state.config.aiConnected = health.aiConfigured === true;
       state.aiLastRequestFailed = ['failed', 'uncertain'].includes(health.lastRequestStatus);
-      if (health.limitEnforced === true && Number.isSafeInteger(health.remaining) && health.remaining >= 0) state.remaining = health.remaining;
+      applyAllowance(health);
     }
   } catch { state.config = { mode: 'preview', oddsConnected: false, aiConnected: false }; }
   const both = state.config.oddsConnected && state.config.aiConnected;
   const connectionText = ui.connection.querySelector('span:last-child') || ui.connection;
   connectionText.textContent = state.aiLastRequestFailed ? `${state.config.oddsConnected ? 'Odds connected' : 'Odds unavailable'} · AI request failed` : both ? 'Market feed · AI ready for requests' : state.config.oddsConnected ? 'Odds connected · AI unavailable' : state.config.aiConnected ? 'AI service ready · odds unavailable' : 'Services unavailable · retry refresh';
   ui.connection.classList.toggle('is-connected', both && !state.aiLastRequestFailed);
-  ui.aiRemaining.textContent = !state.config.aiConnected ? 'AI connection pending' : state.remaining === null ? 'Usage allowance unavailable' : `${state.remaining} analyses remaining`;
+  ui.aiRemaining.textContent = state.testingPass ? (state.remaining===0?'Lifetime testing pass · service capacity reached':'Lifetime testing pass · no daily analysis limit') : !state.config.aiConnected ? 'AI connection pending' : state.remaining === null ? 'Usage allowance unavailable' : `${state.remaining} analyses remaining`;
   setStatus(ui.analysisStatus, state.aiLastRequestFailed ? 'The last AI request did not finish. It used an attempt; you can retry deliberately when the service is available.' : state.config.aiConnected ? 'Ready for your question or card.' : 'AI analysis is temporarily unavailable.', state.aiLastRequestFailed);
   updateAnalyzeButton();
   if (state.config.oddsConnected && !state.hasLoaded && !state.loading) await loadOdds();

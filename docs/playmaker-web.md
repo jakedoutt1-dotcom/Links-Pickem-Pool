@@ -25,3 +25,7 @@ The existing `home-live.mjs` powers the Playmaker score strip, with refresh, sta
 - Original project: 102 fixture tests passed before adaptation. This does not certify current provider availability.
 
 Browser captures: `output/playmaker-web/`. Live verification is reported separately after deployment; configuration flags alone do not prove generation or quote availability.
+
+## Permanent owner testing pass
+
+The owner requested permanent paid-tier testing access without a purchase. A complimentary lifetime entitlement is attached to the server-verified owner account in `functions/lib/playmaker-testing-pass.js`, with no expiry. It bypasses the five-attempt account/network limit, not provider service capacity, global concurrency or external API charges. Its records do not consume guest network allowances. Guest requests, body email/paid/testing flags and expired sessions cannot activate it. No payment or paid transaction is fabricated. Playmaker supports the existing verified account cookie or session token and provides a sign-in link returning to Playmaker.
