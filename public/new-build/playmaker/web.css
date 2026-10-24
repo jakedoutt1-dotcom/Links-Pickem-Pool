@@ -12,3 +12,5 @@
 .event-book-label{display:block;color:#b9cddc;font-size:12px;margin:12px 0}.event-book-select{display:block;width:100%;min-width:0;max-width:100%;margin-top:6px;min-height:44px;padding:10px;border:1px solid #496779;border-radius:9px;background:#142d3e;color:#fff;font:inherit}.event-market{margin-top:16px}.event-market h4{margin:0 0 8px;font-weight:500}.event-market small{display:block;margin-top:6px}
 
 #my-play{scroll-margin-top:110px}#my-play:focus-visible{outline:2px solid #e5c975;outline-offset:4px}
+
+.optional-tools{overflow:hidden}.optional-tools>summary{cursor:pointer;padding:18px 22px;color:#deebf7;font-size:14px;font-weight:650}.optional-tools>summary span{float:right;color:#93aabb;font-size:11px;font-weight:400}.optional-tools .odds-lab{border:0;box-shadow:none}.empty-play-note{padding:12px 0 18px;margin:0;color:#b9cddc;font-size:13px;line-height:1.6}#my-play [hidden]{display:none!important}#my-play>.card-status{margin:0;padding:8px 22px;font-size:12px}#my-play>.betting-disclosure{padding-top:8px;padding-bottom:12px;font-size:10px}.optional-tools:not([open])>*:not(summary){display:none}

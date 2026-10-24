@@ -228,7 +228,9 @@ function renderCard() {
     item.append(info, remove);
     ui.cardList.append(item);
   }
-  if (!state.card.length) ui.cardList.append(emptyState('Every play starts with a pick.', 'Add a market from the odds board to compare, calculate, and review your thinking.', '+'));
+  if (!state.card.length) ui.cardList.append(element('p','empty-play-note','No picks yet. Build a bet with AI or choose a game above.'));
+  document.querySelector('#my-play .card-calculator').hidden=state.card.length===0;
+  document.querySelector('#my-play .card-meta').hidden=state.card.length===0;
   renderReturn();
   updateAnalyzeButton();
 }
@@ -406,6 +408,7 @@ function chosenBook() {
 
 function updateOpenBook() {
   ui.openBook.disabled = !BOOK_URLS[chosenBook()];
+  ui.openBook.hidden = state.card.length===0 || ui.openBook.disabled;
   ui.openBook.title = ui.openBook.disabled ? 'Choose a sportsbook in the board filter first.' : 'Open the sportsbook website. No selections or bets are transferred.';
 }
 

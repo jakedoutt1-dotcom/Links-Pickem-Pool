@@ -8,8 +8,8 @@
   <title>LINKS Playmaker — Your game. Your next move.</title>
   <link rel="icon" type="image/svg+xml" href="./assets/brand/playmaker-mark.svg">
   <link rel="stylesheet" href="./styles.css">
-  <link rel="stylesheet" href="./graphics-v2.css"><link rel="stylesheet" href="../home-live.css?v=1"><link rel="stylesheet" href="./web.css?v=4"><script type="module" src="../home-live.mjs?v=playmaker-live1"></script>
-  <script type="module" src="./app.mjs?v=use-card2"></script>
+  <link rel="stylesheet" href="./graphics-v2.css"><link rel="stylesheet" href="../home-live.css?v=1"><link rel="stylesheet" href="./web.css?v=5"><script type="module" src="../home-live.mjs?v=playmaker-live1"></script>
+  <script type="module" src="./app.mjs?v=simple-play1"></script>
   <script type="module" src="./tools.mjs"></script>
 </head>
 <body id="top">
@@ -83,7 +83,9 @@
           <div class="board-footer"><span class="small-signal" aria-hidden="true"><i></i><i></i><i></i><i></i></span><p id="board-status" role="status">Odds disconnected. No live markets are displayed.</p></div>
         </section>
 
-        <section class="odds-lab panel" id="odds-lab" aria-labelledby="odds-lab-heading">
+        <details class="optional-tools panel" id="optional-odds">
+          <summary>Odds calculator <span>Optional</span></summary>
+        <section class="odds-lab" id="odds-lab" aria-labelledby="odds-lab-heading">
           <div class="lab-heading"><div><p class="section-kicker">UNDERSTAND THE PRICE</p><h2 id="odds-lab-heading">Know your number<span class="heading-dot">.</span></h2></div><span class="lab-badge">ODDS LAB</span></div>
           <p class="lab-description">Enter a price to see its decimal odds, break-even percentage, and hypothetical return.</p>
           <form id="odds-lab-form">
@@ -94,6 +96,7 @@
           <div id="lab-results" class="lab-results" aria-live="polite" hidden><div><span>DECIMAL ODDS</span><output id="lab-decimal"></output></div><div><span>BREAK-EVEN</span><output id="lab-breakeven"></output></div><div><span>POTENTIAL PROFIT</span><output id="lab-profit"></output></div><div><span>TOTAL RETURN</span><output id="lab-return"></output></div></div>
           <p class="lab-explainer" id="lab-explainer">Break-even is the probability implied by the entered price; it is not a forecast. Total return includes your stake. No wager is placed.</p>
         </section>
+        </details>
 
         <section class="analyst-panel panel" id="analyst" aria-labelledby="analyst-heading">
           <div class="analyst-intro">
@@ -128,11 +131,12 @@
 
       <aside class="play-column" aria-label="Your selections and guidance">
         <section class="play-panel panel" id="my-play" aria-labelledby="play-heading">
-          <div class="play-heading"><div class="play-title"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z"/><path d="M9 8h6m-6 4h6"/></svg><h2 id="play-heading">My play</h2></div><span class="selection-count" id="card-count">0 selections</span></div>
-          <div class="card-meta"><span>YOUR CARD. YOUR CALL.</span><button id="clear-card" class="text-control" type="button" disabled>Clear all</button></div>
+          <div class="play-heading"><div class="play-title"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z"/><path d="M9 8h6m-6 4h6"/></svg><h2 id="play-heading">Your picks</h2></div><span class="selection-count" id="card-count">0 selections</span></div>
+          <div class="card-meta"><span>SELECTED PICKS</span><button id="clear-card" class="text-control" type="button" disabled>Clear all</button></div>
+          <p class="card-status" id="card-status" role="status"></p>
           <div class="card-list" id="card-list"><div class="empty-card"><span class="card-plus" aria-hidden="true">+</span><h3>Every play starts here.</h3><p>Add a selection from the board to build your card.</p></div></div>
-          <div class="card-calculator"><label for="stake-input">Hypothetical stake <span>USD</span></label><div class="stake-field"><span aria-hidden="true">$</span><input type="number" id="stake-input" value="10" min="0.01" max="100000" step="0.01" inputmode="decimal" aria-describedby="stake-help"></div><p class="sr-only" id="stake-help">A hypothetical calculation only. Playmaker does not accept bets.</p><div class="potential-return"><span>Potential return</span><strong id="payout-value">—</strong></div><p class="payout-note" id="payout-note">Hypothetical return includes the stake.</p><p class="card-status" id="card-status" role="status">Add a verified selection to see a hypothetical return.</p></div>
-          <a href="#analyst" class="button button-card"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m10 2 2.3 5.7L18 10l-5.7 2.3L10 18l-2.3-5.7L2 10l5.7-2.3L10 2Z"/></svg>Get an AI perspective<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12m-5-5 5 5-5 5"/></svg></a>
+          <div class="card-calculator"><label for="stake-input">Hypothetical stake <span>USD</span></label><div class="stake-field"><span aria-hidden="true">$</span><input type="number" id="stake-input" value="10" min="0.01" max="100000" step="0.01" inputmode="decimal" aria-describedby="stake-help"></div><p class="sr-only" id="stake-help">A hypothetical calculation only. Playmaker does not accept bets.</p><div class="potential-return"><span>Potential return</span><strong id="payout-value">—</strong></div><p class="payout-note" id="payout-note">Hypothetical return includes the stake.</p></div>
+
           <button class="button button-outline book-button" id="open-book" type="button" disabled>Open sportsbook<svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M11 4h5v5m0-5-8 8m0-7H4v11h11v-4"/></svg></button>
           <p class="betting-disclosure">Research here. Place bets only with a licensed sportsbook where permitted.</p>
         </section>
