@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 140" fill="none">
+  <defs>
+    <radialGradient id="glow"><stop stop-color="#71a9ec" stop-opacity=".24"/><stop offset="1" stop-color="#71a9ec" stop-opacity="0"/></radialGradient>
+    <linearGradient id="edge" x1="61" y1="26" x2="124" y2="117" gradientUnits="userSpaceOnUse"><stop stop-color="#d9b97b"/><stop offset=".4" stop-color="#647da1"/><stop offset="1" stop-color="#284568"/></linearGradient>
+    <linearGradient id="face" x1="64" y1="30" x2="116" y2="112" gradientUnits="userSpaceOnUse"><stop stop-color="#293d58"/><stop offset="1" stop-color="#101f33"/></linearGradient>
+    <filter id="shadow"><feDropShadow dx="0" dy="7" stdDeviation="5" flood-color="#000" flood-opacity=".5"/></filter>
+  </defs>
+  <ellipse cx="90" cy="83" rx="83" ry="56" fill="url(#glow)"/>
+  <g transform="rotate(-15 90 75)"><rect x="42" y="31" width="71" height="90" rx="8" fill="#13243c" stroke="#4f6990"/><path d="M53 47H96M53 57H85M53 97H100" stroke="#637e9f" stroke-opacity=".55" stroke-width="3" stroke-linecap="round"/></g>
+  <g filter="url(#shadow)" transform="rotate(8 97 74)"><path d="M70 24H122A8 8 0 0 1 130 32V82C123 82 123 94 130 94V112A8 8 0 0 1 122 120H70A8 8 0 0 1 62 112V94C69 94 69 82 62 82V32A8 8 0 0 1 70 24Z" fill="url(#face)" stroke="url(#edge)" stroke-width="1.5"/><path d="M72 88H120" stroke="#7996b9" stroke-dasharray="3 4" stroke-opacity=".6"/><path d="M74 39H115M74 47H104M74 104H94" stroke="#b6c8e0" stroke-opacity=".6" stroke-width="3" stroke-linecap="round"/><circle cx="96" cy="67" r="11" fill="#89bfff" fill-opacity=".15" stroke="#bdd5ff" stroke-opacity=".7"/><path d="M91 67L95 71L102 63" stroke="#d2e7ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>
+  <path d="M143 34V45M137.5 39.5H148.5" stroke="#e6c489" stroke-width="1.5" stroke-linecap="round"/><circle cx="38" cy="102" r="2" fill="#d6b87a"/>
+</svg>
+

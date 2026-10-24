@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="680" viewBox="0 0 1000 680" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="245" y1="50" x2="780" y2="680" gradientUnits="userSpaceOnUse"><stop stop-color="#0c2724"/><stop offset="1" stop-color="#041514"/></linearGradient>
+    <radialGradient id="halo"><stop stop-color="#4ef4be" stop-opacity=".25"/><stop offset="1" stop-color="#4ef4be" stop-opacity="0"/></radialGradient>
+    <radialGradient id="ice"><stop stop-color="#7bbdff" stop-opacity=".22"/><stop offset="1" stop-color="#7bbdff" stop-opacity="0"/></radialGradient>
+    <linearGradient id="frame" x1="265" y1="145" x2="720" y2="440" gradientUnits="userSpaceOnUse"><stop stop-color="#42665d"/><stop offset=".2" stop-color="#172e2b"/><stop offset=".8" stop-color="#0d1d1b"/><stop offset="1" stop-color="#5b8175"/></linearGradient>
+    <linearGradient id="screen" x1="300" y1="180" x2="640" y2="430" gradientUnits="userSpaceOnUse"><stop stop-color="#09272c"/><stop offset="1" stop-color="#061918"/></linearGradient>
+    <linearGradient id="metal" x1="440" y1="450" x2="545" y2="535" gradientUnits="userSpaceOnUse"><stop stop-color="#26443c"/><stop offset=".5" stop-color="#678477"/><stop offset="1" stop-color="#10231d"/></linearGradient>
+    <linearGradient id="floor" x1="250" y1="450" x2="740" y2="660" gradientUnits="userSpaceOnUse"><stop stop-color="#224333"/><stop offset="1" stop-color="#081b17"/></linearGradient>
+    <linearGradient id="glass" x1="270" y1="150" x2="695" y2="400" gradientUnits="userSpaceOnUse"><stop stop-color="#b1f9de" stop-opacity=".14"/><stop offset=".5" stop-color="#b1f9de" stop-opacity="0"/></linearGradient>
+    <linearGradient id="ball" x1="470" y1="272" x2="570" y2="350" gradientUnits="userSpaceOnUse"><stop stop-color="#dbbc7b"/><stop offset=".45" stop-color="#a4713c"/><stop offset="1" stop-color="#5c3f27"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="5"/></filter>
+    <filter id="soft"><feGaussianBlur stdDeviation="16"/></filter>
+    <filter id="shadow"><feDropShadow dx="0" dy="20" stdDeviation="16" flood-color="#000" flood-opacity=".6"/></filter>
+    <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse"><path d="M28 0H0V28" stroke="#67cda7" stroke-opacity=".1" stroke-width=".7"/></pattern>
+    <pattern id="seats" width="17" height="13" patternUnits="userSpaceOnUse"><rect x="2" y="4" width="9" height="3" rx="1" fill="#6caa95" fill-opacity=".27"/></pattern>
+    <clipPath id="main-screen"><rect x="267" y="159" width="444" height="281" rx="6"/></clipPath>
+  </defs>
+  <ellipse cx="552" cy="343" rx="450" ry="330" fill="url(#halo)"/>
+  <ellipse cx="759" cy="221" rx="250" ry="210" fill="url(#ice)"/>
+  <!-- Stadium architecture and floodlights. -->
+  <path d="M110 331C190 153 763 106 920 285L920 390C756 229 258 265 109 421Z" fill="#0b2421" stroke="#345c4c" stroke-opacity=".5"/>
+  <path d="M110 331C190 153 763 106 920 285L920 390C756 229 258 265 109 421Z" fill="url(#seats)"/>
+  <path d="M136 317C289 173 745 151 892 288M125 340C294 206 748 188 906 313M117 366C302 238 760 222 914 341" stroke="#518d70" stroke-opacity=".28" stroke-width="3"/>
+  <path d="M152 240L172 115M842 199L860 94" stroke="#3e6457" stroke-width="5"/>
+  <path d="M149 116L198 109M838 94L886 102" stroke="#b8ead8" stroke-width="7"/>
+  <path d="M149 116L198 109M838 94L886 102" stroke="#82f9c5" stroke-width="15" filter="url(#glow)"/>
+  <path d="M149 116L109 299L374 233L198 109" fill="#a2f8da" opacity=".025"/>
+  <path d="M838 94L664 239L928 296L886 102" fill="#c2e9ff" opacity=".04"/>
+  <!-- Field under the workstation. -->
+  <ellipse cx="542" cy="552" rx="369" ry="62" fill="#50f0b4" opacity=".07" filter="url(#soft)"/>
+  <path d="M232 442L678 411L939 567L426 649L120 531Z" fill="url(#floor)" stroke="#477f60" stroke-opacity=".5"/>
+  <path d="M260 456L676 430L894 558L426 628L160 529Z" stroke="#70bb89" stroke-opacity=".43"/>
+  <g stroke="#67b68c" stroke-opacity=".28">
+    <path d="M219 504L499 615M284 485L559 605M350 468L619 595M420 449L679 585M492 444L741 576M563 439L802 567M635 434L861 558"/>
+    <path d="M191 540L705 455M245 565L763 483M302 588L820 513M361 611L876 542"/>
+  </g>
+  <ellipse cx="537" cy="526" rx="56" ry="17" transform="rotate(-9 537 526)" stroke="#70bb89" stroke-opacity=".4"/>
+  <path d="M250 502L271 510M310 487L330 495M376 476L395 484M448 464L469 472M585 441L605 449M663 432L684 441" stroke="#a4dfb3" stroke-opacity=".38" stroke-width="3"/>
+  <!-- Left terminal. -->
+  <g filter="url(#shadow)">
+    <path d="M91 282L252 258L249 438L91 413Z" fill="#142c27" stroke="#48695c" stroke-width="2"/>
+    <path d="M100 291L241 272L239 425L100 405Z" fill="#071b19"/>
+    <path d="M107 308L225 295" stroke="#3a7761"/>
+    <text x="111" y="298" fill="#9ad5bd" font-family="Arial,sans-serif" font-size="8" font-weight="700" transform="rotate(-6 111 298)">MARKET SCANNER</text>
+    <path d="M113 360L132 348L146 352L160 330L176 338L194 314L226 321" stroke="#6be3b0" stroke-width="2.5"/>
+    <path d="M112 376L225 385M112 389L203 401" stroke="#335b48" stroke-width="4"/>
+    <path d="M157 425L176 427L179 467L205 479L129 470L154 461Z" fill="url(#metal)"/>
+  </g>
+  <!-- Primary desktop monitor. -->
+  <g filter="url(#shadow)">
+    <rect x="252" y="144" width="474" height="322" rx="13" fill="url(#frame)" stroke="#547b6d" stroke-width="1.5"/>
+    <rect x="261" y="153" width="456" height="296" rx="8" fill="#03130f"/>
+    <g clip-path="url(#main-screen)">
+      <rect x="267" y="159" width="444" height="281" fill="url(#screen)"/>
+      <rect x="267" y="159" width="444" height="281" fill="url(#grid)"/>
+      <path d="M267 200H711M421 200V440" stroke="#376c54" stroke-opacity=".55"/>
+      <rect x="282" y="174" width="15" height="15" rx="4" fill="#75e6ac"/>
+      <path d="M285 182L289 185L295 177" stroke="#0b281c" stroke-width="2"/>
+      <text x="306" y="186" fill="#d4eddf" font-family="Arial,sans-serif" font-size="11" font-weight="800" letter-spacing="2">PLAYMAKER</text>
+      <circle cx="685" cy="182" r="3" fill="#d9b76f"/>
+      <text x="287" y="223" fill="#72ad95" font-family="Arial,sans-serif" font-size="8" letter-spacing="1.5">SCOUT. COMPARE. ANALYZE.</text>
+      <g fill="#163c30" stroke="#397b59" stroke-opacity=".5">
+        <rect x="284" y="238" width="120" height="43" rx="5"/>
+        <rect x="284" y="290" width="120" height="43" rx="5"/>
+        <rect x="284" y="342" width="120" height="43" rx="5"/>
+      </g>
+      <g stroke-linecap="round">
+        <path d="M297 252H350M297 262H376M297 304H363M297 314H341M297 356H345M297 366H373" stroke="#82b99c" stroke-opacity=".7" stroke-width="3"/>
+        <path d="M386 252H393M386 304H393M386 356H393" stroke="#72edaa" stroke-width="4"/>
+      </g>
+      <text x="449" y="226" fill="#a5d0bf" font-family="Arial,sans-serif" font-size="8" letter-spacing="2">SPORTS INTELLIGENCE</text>
+      <!-- AI processor, network, and football in the monitor. -->
+      <g stroke="#40b98f" stroke-opacity=".65">
+        <path d="M483 258V246H459V235M502 258V231M521 258V241H540V230M540 258V244H565V234M559 258V247H587V235"/>
+        <path d="M483 363V375H457V385M502 363V393M521 363V380H541V393M540 363V374H563V386M559 363V379H590V392"/>
+        <path d="M474 277H450V260H435M474 296H446M474 315H436M474 334H450V351H435M568 277H594V261H607M568 296H614M568 315H602M568 334H590V351H608"/>
+      </g>
+      <g fill="#77f2b8"><circle cx="459" cy="235" r="2"/><circle cx="565" cy="234" r="2"/><circle cx="435" cy="260" r="2"/><circle cx="614" cy="296" r="2"/><circle cx="457" cy="385" r="2"/><circle cx="590" cy="392" r="2"/></g>
+      <rect x="472" y="256" width="99" height="108" rx="13" fill="#5aecad" opacity=".13" filter="url(#glow)"/>
+      <rect x="474" y="258" width="94" height="103" rx="12" fill="#0e392c" stroke="#6ce0ad" stroke-width="1.5"/>
+      <rect x="481" y="265" width="80" height="89" rx="8" stroke="#499d76"/>
+      <ellipse cx="521" cy="308" rx="40" ry="24" transform="rotate(-31 521 308)" fill="url(#ball)" stroke="#e8cc94" stroke-width="1.5"/>
+      <path d="M486 329C499 322 539 298 555 287" stroke="#503a24" stroke-width="1.5"/>
+      <path d="M509 316L534 300M511 310L515 317M518 306L522 313M525 302L529 309M531 298L535 305" stroke="#f0e7cf" stroke-width="2" stroke-linecap="round"/>
+      <path d="M491 307L500 321M542 288L551 302" stroke="#f0e7cf" stroke-width="4"/>
+      <path d="M449 414H688" stroke="#326d54"/>
+      <path d="M449 414L471 404L488 408L504 392L523 400L548 382L564 390L582 369L605 376L623 358L647 365L665 347L688 352" stroke="#70e8b2" stroke-width="2"/>
+      <text x="288" y="419" fill="#659581" font-family="Arial,sans-serif" font-size="7" letter-spacing="1.5">CONCEPT VISUAL / NOT LIVE DATA</text>
+      <rect x="267" y="159" width="444" height="281" fill="url(#glass)"/>
+    </g>
+    <circle cx="490" cy="457" r="2" fill="#8df0bb"/>
+    <path d="M461 467H519L529 511L571 528L570 536H410L409 529L450 511Z" fill="url(#metal)" stroke="#4c6d5b"/>
+    <path d="M451 511H529M410 528H570" stroke="#80a38b" stroke-opacity=".65"/>
+  </g>
+  <!-- Right portrait terminal. -->
+  <g filter="url(#shadow)">
+    <path d="M749 243L891 274V448L749 466Z" fill="url(#frame)" stroke="#507265" stroke-width="1.5"/>
+    <path d="M757 256L883 284V437L757 452Z" fill="#071d1b"/>
+    <path d="M768 284L870 303M768 336L870 344M768 397L870 392" stroke="#2b5847"/>
+    <text x="769" y="275" fill="#a6d1bf" font-family="Arial,sans-serif" font-size="8" font-weight="700" transform="rotate(12 769 275)">AI ANALYST</text>
+    <circle cx="817" cy="319" r="11" stroke="#76dfb0"/><path d="M813 319H821M817 315V323" stroke="#76dfb0"/>
+    <path d="M769 357L860 358M769 369L852 369M769 381L832 380M769 416L859 410M769 428L838 422" stroke="#6b9b88" stroke-opacity=".6" stroke-width="3"/>
+    <path d="M812 459L835 455L837 487L869 498L787 509L788 501L814 488Z" fill="url(#metal)"/>
+  </g>
+  <!-- Keyboard and trackpad. -->
+  <path d="M376 547L559 541L634 574L435 591L365 557Z" fill="#1b352b" stroke="#61816b"/>
+  <path d="M385 551L552 546L608 572L437 585Z" fill="#0a2119"/>
+  <g stroke="#5a7962" stroke-width="2"><path d="M389 556L560 552M405 564L577 560M420 572L594 567M435 579L609 573"/><path d="M400 551L452 582M420 551L472 580M440 550L492 578M460 549L512 576M480 549L532 574M500 548L552 573M520 547L572 571M540 547L591 569"/></g>
+  <path d="M669 535C688 529 705 533 708 545L713 556C713 565 682 573 675 562L666 549C663 543 663 538 669 535Z" fill="#254b39" stroke="#658e73"/>
+  <path d="M682 536L687 546" stroke="#8eb594"/>
+  <!-- Floating interface accents are abstract, not market data. -->
+  <path d="M342 105H462M342 110H396" stroke="#71e8ad" stroke-opacity=".5"/>
+  <text x="343" y="96" fill="#91bba5" font-family="Arial,sans-serif" font-size="9" font-weight="700" letter-spacing="3">SPORTS INTELLIGENCE</text>
+  <path d="M764 172L774 162H840M783 181H823" stroke="#88c4aa" stroke-opacity=".6"/>
+  <g fill="#78dca8"><circle cx="213" cy="214" r="2"/><circle cx="752" cy="124" r="2"/><circle cx="920" cy="439" r="2"/><circle cx="192" cy="570" r="2"/></g>
+</svg>
