@@ -20,3 +20,7 @@ body[data-view="builder"] #board,body[data-view="builder"] #optional-odds,body[d
 .browse-heading{max-width:1400px;margin:25px auto 0;padding:0 5%;display:flex;align-items:center;gap:18px;flex-wrap:wrap}.browse-heading h1{font-size:24px;margin:0 auto 0 0}.browse-heading>a{color:#b9d9ed;font-size:13px}
 
 .builder-pick{display:flex;justify-content:space-between;gap:15px;padding:12px 0;border-bottom:1px solid #58758d44;font-size:14px}.builder-pick span{color:#efd083;font-weight:800}.analysis-output>.button{margin-top:16px}
+
+.builder-team{display:flex;align-items:center;gap:8px;min-width:0}.builder-team .badge{display:grid;place-items:center;width:34px;height:34px;border:1px solid #b69c60;border-radius:50%;font-size:10px;flex-shrink:0}.builder-team strong{font-size:13px}.builder-pick>span{align-self:center;white-space:nowrap}
+
+.badge.has-logo{background:#f5f8fc;border-color:#bdd2df}.badge img{display:block;width:90%;height:90%;object-fit:contain;filter:drop-shadow(0 1px 2px #0003)}

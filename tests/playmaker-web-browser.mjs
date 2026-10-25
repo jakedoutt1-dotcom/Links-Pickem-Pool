@@ -19,6 +19,8 @@ try{for(const width of [320,390,1440]){
  const page=await browser.newPage({viewport:{width,height:1000},reducedMotion:'reduce'});page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/*',async route=>{const req=route.request(),u=new URL(req.url());
   if(u.pathname.endsWith('/api/playmaker-public')){const r=await playmakerPublic({env,request:new Request(req.url(),{method:req.method(),headers:{...req.headers(),'CF-Connecting-IP':'192.0.2.1'},...(req.method()==='POST'?{body:req.postData()}:{})})},services);return route.fulfill({status:r.status,body:await r.text(),headers:Object.fromEntries(r.headers)})}
+  if(u.pathname.endsWith('/api/playmaker-logos'))return route.fulfill({json:{logos:{testhome:'https://a.espncdn.com/i/teamlogos/nfl/500/home.png',testaway1:'https://a.espncdn.com/i/teamlogos/nfl/500/away.png'}}});
+  if(u.hostname==='a.espncdn.com')return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50"><circle cx="25" cy="25" r="24" fill="gold"/></svg>'});
   if(u.pathname.endsWith('/api/live-scores')){liveCalls++;return route.fulfill({json:{asOf:Date.now(),events:[{league:'NFL',state:'in',away:{name:'AWAY',score:7},home:{name:'HOME',score:liveCalls*10},detail:'Q2'}]}})}
   if(u.pathname.includes('/api/'))return route.fulfill({json:{signedIn:false,events:[],pools:[],rooms:[]}});
   if(u.origin!==origin)return route.abort();
@@ -34,10 +36,10 @@ try{for(const width of [320,390,1440]){
   await page.locator('#how-it-works').click();assert(await page.locator('#guide-dialog').isVisible());await page.locator('#close-guide').click();
   await page.locator('#build-risk').selectOption('aggressive');await page.locator('#build-kind').selectOption('single');assert(await page.locator('#build-legs').isDisabled());
   await page.locator('#question-input').fill('Build an aggressive NFL pick.');await page.locator('#analyze-button').click();await page.getByRole('button',{name:'View my card',exact:true}).waitFor();
-  assert.equal(aiCalls,1);const sent=JSON.parse(providerInput.input);assert.equal(sent.risk,'aggressive');assert.equal(sent.kind,'single');assert.equal(sent.legs,1);assert(sent.candidates.length>0);assert.match(await page.locator('#ai-remaining').innerText(),/4 requests/);
+  await page.locator('.builder-team .badge img').first().waitFor();assert.equal(await page.locator('.builder-team .badge img').count(),2);assert.equal(aiCalls,1);const sent=JSON.parse(providerInput.input);assert.equal(sent.risk,'aggressive');assert.equal(sent.kind,'single');assert.equal(sent.legs,1);assert(sent.candidates.length>0);assert.match(await page.locator('#ai-remaining').innerText(),/4 requests/);
   await page.locator('#analyst').screenshot({path:`${out}/builder-only-${width}.png`});
   await page.getByRole('button',{name:'View my card',exact:true}).click();await page.waitForURL('**/playmaker/card.html');
-  assert.equal(await page.locator('#results-count').innerText(),'1 pick');assert.match(await page.locator('#results-picks').innerText(),/Test Away 1/);assert.equal(await page.locator('.badge').count(),2);
+  assert.equal(await page.locator('#results-count').innerText(),'1 pick');assert.match(await page.locator('#results-picks').innerText(),/Test Away 1/);assert.equal(await page.locator('.badge').count(),2);await page.locator('.badge img').first().waitFor();assert.equal(await page.locator('.badge img').count(),2);
   assert(!(await page.locator('#results-analysis').isVisible()));assert(!(await page.locator('.pick details p').isVisible()));await page.locator('.pick summary').click();assert.match(await page.locator('.pick details p').innerText(),/Fixture selection/);
   await page.locator('#results-stake').fill('20');assert.equal(await page.locator('#results-return').innerText(),'$38.18');assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await page.screenshot({path:`${out}/card-results-${width}.png`});await page.reload();assert.match(await page.locator('#results-picks').innerText(),/Test Away 1/);assert.equal(aiCalls,1);

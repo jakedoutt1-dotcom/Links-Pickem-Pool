@@ -1,3 +1,4 @@
+import {teamBadge} from './team-logos.mjs';
 import {CARD_STORAGE_KEY,isFreshSelection} from './domain.mjs';
 const get=id=>document.getElementById(id),node=(tag,cls,text)=>{const el=document.createElement(tag);el.className=cls;el.textContent=text;return el};
 let sport='NFL',busy=false,controller,remaining=null,connected=false;
@@ -18,7 +19,7 @@ form.addEventListener('submit',async event=>{
   const picks=Array.isArray(data.picks)?data.picks:[];
   if(!picks.length){output.append(node('p','analysis-text',data.analysis||'No matching picks are available. Try different preferences.'));status.textContent='No card built. Adjust your preferences.';return}
   output.append(node('h3','',`${picks.length}-pick card ready`));
-  for(const pick of picks){const row=node('div','builder-pick','');row.append(node('strong','',pick.label),node('span','',`${pick.americanOdds>0?'+':''}${pick.americanOdds}`));output.append(row)}
+  for(const pick of picks){const row=node('div','builder-pick','');const identity=node('div','builder-team','');identity.append(teamBadge(pick.awayTeam,pick.league),teamBadge(pick.homeTeam,pick.league),node('strong','',pick.label));row.append(identity,node('span','',`${pick.americanOdds>0?'+':''}${pick.americanOdds}`));output.append(row)}
   const view=node('button','button button-primary','View my card');view.type='button';const notice=node('p','analysis-status','');notice.setAttribute('role','status');
   view.addEventListener('click',()=>{
    if(picks.some(p=>!isFreshSelection(p))){notice.textContent='These prices expired. Build a fresh card.';return}

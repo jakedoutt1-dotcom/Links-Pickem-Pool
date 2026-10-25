@@ -1,3 +1,4 @@
+import {teamBadge} from './team-logos.mjs';
 import {CARD_STORAGE_KEY,validateCard,calculateReturn} from './domain.mjs';
 const get=id=>document.getElementById(id),money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n),node=(tag,cls,text)=>{const el=document.createElement(tag);el.className=cls;el.textContent=text;return el};
 let packet={},raw=[],card=[];
@@ -11,7 +12,7 @@ get('results-count').textContent=`${card.length} pick${card.length===1?'':'s'}`;
 const markets={moneyline:'Game winner',spread:'Point spread',total:'Game total'},stamp=iso=>new Date(iso).toLocaleString(undefined,{weekday:'short',hour:'numeric',minute:'2-digit',month:'short',day:'numeric'});
 card.forEach((pick,index)=>{
  const article=document.createElement('article');article.className='pick';const top=node('div','pick-top','');top.append(node('span','leg',`LEG ${index+1} · ${pick.league}`),node('span','',stamp(pick.startTime)));
- const teams=node('div','teams','');for(const [i,name] of [pick.awayTeam,pick.homeTeam].entries()){if(i)teams.append(node('span','versus','AT'));const team=node('div','team','');team.append(node('span','badge',name.split(/\s+/).map(w=>w[0]).join('').slice(0,3).toUpperCase()),node('span','',name));teams.append(team)}
+ const teams=node('div','teams','');for(const [i,name] of [pick.awayTeam,pick.homeTeam].entries()){if(i)teams.append(node('span','versus','AT'));const team=node('div','team','');team.append(teamBadge(name,pick.league),node('span','',name));teams.append(team)}
  const selection=node('div','selection','');selection.append(node('h2','',pick.label),node('strong','odds',pick.americanOdds>0?`+${pick.americanOdds}`:String(pick.americanOdds)));
  article.append(top,teams,selection,node('p','market',`${markets[pick.market]} · ${pick.bookmakerName}`),node('p','pick-foot',`Price updated ${stamp(pick.updatedAt)}`));
  const reason=matches&&packet.reasons?.[pick.id];if(typeof reason==='string'&&reason){const detail=document.createElement('details');detail.append(node('summary','','Why this pick?'),node('p','',reason.slice(0,2000)));article.append(detail)}get('results-picks').append(article);

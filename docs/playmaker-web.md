@@ -56,3 +56,6 @@ The Playmaker landing page defaults to Build My Bet with visible sport/book and 
 
 ## Builder-only experience
 The market board and optional calculator are removed from the active Playmaker page. builder.mjs submits explicit build requests with sport, sportsbook, risk, type and preferences. No odds list or board request is made by this UI; the server still resolves fresh candidates before analysis. browse.html redirects old bookmarks to the builder. Results only link back to change preferences/build another card.
+
+## Team logos
+Generated pick previews and card results use team-logos.mjs to load the cached public team directory at /new-build/api/playmaker-logos. Supported leagues: NFL, NCAAF, NBA, NCAAB, MLB and NHL. Exact normalized names/aliases map to ESPN team artwork; ambiguous nicknames are omitted, and image errors/unknown teams retain initials. Only HTTPS artwork on a.espncdn.com/i/teamlogos is accepted. The fixed ESPN directory paths use no AI/provider keys and are cached for one day. NFL Pick’em files are unchanged.

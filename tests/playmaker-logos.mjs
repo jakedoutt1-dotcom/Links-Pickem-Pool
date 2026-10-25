@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {logoMap,teamLogos} from '../functions/new-build/api/playmaker-logos.js';
+const logo='https://a.espncdn.com/i/teamlogos/nfl/500/no.png';
+const data={sports:[{leagues:[{teams:[{team:{id:'1',displayName:'New Orleans Saints',nickname:'Saints',abbreviation:'NO',logos:[{href:logo}]}},{team:{id:'2',displayName:'Other Wildcats',nickname:'Wildcats',logos:[{href:logo}]}},{team:{id:'3',displayName:'Second Wildcats',nickname:'Wildcats',logos:[{href:logo}]}},{team:{id:'4',displayName:'Unsafe',logos:[{href:'https://evil.test/fake.png'}]}}]}]}]};
+const map=logoMap(data);assert.equal(map.saints,logo);assert.equal(map.neworleanssaints,logo);assert.equal(map.wildcats,undefined);assert.equal(map.unsafe,undefined);
+let calls=0;const store=new Map(),cache={match:async key=>store.get(key.url)?.clone(),put:async(key,value)=>store.set(key.url,value)};
+const request=league=>({request:new Request('https://links.test/new-build/api/playmaker-logos?league='+league)});
+const fetch=async url=>{calls++;assert.match(url,/football\/nfl\/teams\?limit=1000$/);return Response.json(data)};
+assert.equal((await teamLogos(request('NFL'),{fetch,cache})).status,200);const second=await teamLogos(request('NFL'),{fetch,cache});assert.equal((await second.json()).logos.saints,logo);assert.equal(calls,1);
+assert.equal((await teamLogos(request('bad'),{fetch,cache})).status,400);assert.equal(calls,1);
+assert.equal((await teamLogos(request('NBA'),{cache:null,fetch:async()=>new Response(null,{status:302,headers:{Location:'https://evil.test'}})})).status,503);
+console.log('PASS Playmaker team logos: exact aliases, ambiguous names omitted, safe image host, fixed league paths, cached directory and redirect failure.');
