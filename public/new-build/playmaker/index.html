@@ -8,20 +8,20 @@
   <title>LINKS Playmaker — Your game. Your next move.</title>
   <link rel="icon" type="image/svg+xml" href="./assets/brand/playmaker-mark.svg">
   <link rel="stylesheet" href="./styles.css">
-  <link rel="stylesheet" href="./graphics-v2.css"><link rel="stylesheet" href="../home-live.css?v=1"><link rel="stylesheet" href="./web.css?v=5"><script type="module" src="../home-live.mjs?v=playmaker-live1"></script>
-  <script type="module" src="./app.mjs?v=card-page1"></script>
+  <link rel="stylesheet" href="./graphics-v2.css"><link rel="stylesheet" href="../home-live.css?v=1"><link rel="stylesheet" href="./web.css?v=6"><script type="module" src="../home-live.mjs?v=playmaker-live1"></script>
+  <script type="module" src="./app.mjs?v=builder-home1"></script>
   <script type="module" src="./tools.mjs"></script>
 </head>
-<body id="top">
-  <a class="skip-link" href="#board">Skip to the market board</a>
+<body id="top" data-view="builder">
+  <a class="skip-link" href="#analyst">Skip to Build My Bet</a>
   <header class="site-header">
     <a class="brand" href="#top" aria-label="LINKS Playmaker home">
       <img class="brand-lockup" src="./assets/brand/playmaker-logo-light.svg" alt="LINKS PLAYMAKER" width="488" height="128">
     </a>
     <nav class="primary-nav" aria-label="Main navigation">
-      <a class="nav-link is-active" href="#board"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="12" y="3" width="5" height="5" rx="1"/><rect x="3" y="12" width="5" height="5" rx="1"/><rect x="12" y="12" width="5" height="5" rx="1"/></svg>The board</a>
+      <a class="nav-link is-active" href="./browse.html"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="12" y="3" width="5" height="5" rx="1"/><rect x="3" y="12" width="5" height="5" rx="1"/><rect x="12" y="12" width="5" height="5" rx="1"/></svg>Browse games</a>
       <a class="nav-link" href="./card.html"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 3h10v14l-2-1.5L10 17l-3-1.5L5 17V3Z"/><path d="M8 7h4M8 10h4"/></svg>My play</a>
-      <a class="nav-link" href="#analyst"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m10 2 2.3 5.7L18 10l-5.7 2.3L10 18l-2.3-5.7L2 10l5.7-2.3L10 2Z"/></svg>AI analyst</a>
+      <a class="nav-link" href="#analyst"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m10 2 2.3 5.7L18 10l-5.7 2.3L10 18l-2.3-5.7L2 10l5.7-2.3L10 2Z"/></svg>Build My Bet</a>
     </nav>
     <a class="account-link" href="../links-login.html?next=playmaker">Sign in / My account</a><div class="connection-pill" id="connection-status" role="status"><span class="status-dot"></span><span>Checking odds + AI connection…</span></div>
   </header>
@@ -32,13 +32,13 @@
       <div class="hero-content">
         <p class="eyebrow"><span class="eyebrow-line"></span>SPORTS INSTINCT. AI PERSPECTIVE.</p>
         <h1 id="hero-heading">READ THE GAME.<br><span>BUILD YOUR PLAY.</span></h1>
-        <p class="hero-description">Your sports intelligence command center. Compare the markets, shape your card, and ask better questions before your next move.</p>
+        <p class="hero-description">Choose your sport and approach. Let Playmaker build a card, then review your picks.</p>
         <div class="hero-actions">
-          <a class="button button-primary" href="#board">Enter the board <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12m-5-5 5 5-5 5"/></svg></a>
+          <a class="button button-primary" href="#analyst">Build My Bet <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12m-5-5 5 5-5 5"/></svg></a>
           <button class="button button-text" id="how-it-works" type="button"><span class="play-circle"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="m4 2 6 4-6 4V2Z" fill="currentColor"/></svg></span>How it works</button>
         </div>
         <div class="hero-capabilities" aria-label="Playmaker workflow">
-          <span><b>01</b> SCOUT THE MARKET</span><span><b>02</b> BUILD YOUR CARD</span><span><b>03</b> GET PERSPECTIVE</span>
+          <span><b>01</b> CHOOSE YOUR SPORT</span><span><b>02</b> BUILD YOUR BET</span><span><b>03</b> VIEW YOUR CARD</span>
         </div>
       </div>
       <div class="hero-visual">
@@ -56,20 +56,8 @@
             <div><p class="section-kicker">THE STARTING LINEUP</p><h2 id="board-heading">The market board<span class="heading-dot">.</span></h2><p class="section-description">Find your sport. Compare the lines. Make it your play.</p></div>
             <button class="button-icon-text" type="button" id="refresh-odds"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M16 8a6 6 0 1 0 .1 4M16 3v5h-5"/></svg><span>Refresh</span></button>
           </div>
-          <div class="sport-filters" id="sport-filters" role="group" aria-label="Choose a sport">
-            <button class="sport-chip is-active" data-sport="NFL" aria-pressed="true" type="button"><svg class="sport-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 20C1 11 11 1 20 4c3 9-7 19-16 16Z"/><path d="m8 16 8-8m-7 3 4 4m-1-7 4 4M4 14l6 6m4-16 6 6"/></svg><span>NFL</span></button>
-            <button class="sport-chip" data-sport="NCAAF" aria-pressed="false" type="button"><svg class="sport-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 20C1 11 11 1 20 4c3 9-7 19-16 16Z"/><path d="m8 16 8-8m-7 3 4 4m-1-7 4 4M4 14l6 6m4-16 6 6"/></svg><span>NCAAF</span></button>
-            <button class="sport-chip" data-sport="NBA" aria-pressed="false" type="button"><svg class="sport-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3v18M6 5.3a9 9 0 0 1 0 13.4m12-13.4a9 9 0 0 0 0 13.4"/></svg><span>NBA</span></button>
-            <button class="sport-chip" data-sport="MLB" aria-pressed="false" type="button"><svg class="sport-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M6.5 4.8c6 3.4 5 10.8 0 14.4m11-14.4c-6 3.4-5 10.8 0 14.4M8 7l-2 1m4 2-2 1m2 3-2-1m0 4-2-1m10-9 2 1m-4 2 2 1m-2 3 2-1m0 4 2-1"/></svg><span>MLB</span></button>
-            <button class="sport-chip" data-sport="NHL" aria-pressed="false" type="button"><svg class="sport-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m4 3 9 14h6l2 3H11L2 5m18-2-4.3 7M8 15l-4 5h5"/><ellipse cx="17" cy="12" rx="3" ry="1.3"/><path d="M14 12v2c0 1.7 6 1.7 6 0v-2"/></svg><span>NHL</span></button>
-            <button class="sport-chip" data-sport="NCAAB" aria-pressed="false" type="button"><svg class="sport-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3v18M6 5.3a9 9 0 0 1 0 13.4m12-13.4a9 9 0 0 0 0 13.4"/></svg><span>NCAAB</span></button>
-            <button class="sport-chip" data-sport="MMA" aria-pressed="false" type="button"><svg class="sport-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 16c-3-1-4-3-4-6V6a2 2 0 0 1 4 0V4a2 2 0 0 1 4 0 2 2 0 0 1 4 0v1a2 2 0 0 1 4 0v6l1-1c2-2 4 0 2 3l-4 5v3H7v-5Z"/><path d="M7 16h11M11 4v5m4-4v4M7 6v4M7 19h11"/></svg><span>MMA</span></button>
-          </div>
-          <div class="board-toolbar">
-            <label class="select-field"><span>SPORTSBOOK</span><select id="book-filter"><option value="all">All available books</option><option value="draftkings">DraftKings</option><option value="fanduel">FanDuel</option><option value="betmgm">BetMGM</option><option value="caesars">Caesars</option><option value="bet365">bet365</option></select><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></label>
-            <label class="select-field"><span>MARKET</span><select id="market-filter"><option value="all">All markets</option><option value="moneyline">Moneyline</option><option value="spread">Spread</option><option value="total">Total</option></select><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></label>
-            <span class="verified-label"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m8 1 6 3v4c0 3-6 6-6 6S2 11 2 8V4l6-3Z"/><path d="m5 7 2 2 4-4"/></svg>Source-led selections</span>
-          </div>
+
+
           <p id="board-error" class="error-banner" role="alert" hidden></p>
           <div class="market-list" id="market-list">
             <div class="empty-board">
@@ -101,10 +89,25 @@
         <section class="analyst-panel panel" id="analyst" aria-labelledby="analyst-heading">
           <div class="analyst-intro">
             <div class="analyst-avatar" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none"><rect x="7" y="7" width="14" height="14" rx="3"/><path d="M10 3v4m8-4v4M10 21v4m8-4v4M3 10h4m-4 8h4m14-8h4m-4 8h4m-15-5 3-3 4 4m-4-4v7m-4-4 4 4 4-3"/><circle cx="11" cy="13" r="1" fill="currentColor" stroke="none"/><circle cx="14" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="18" cy="14" r="1" fill="currentColor" stroke="none"/><circle cx="14" cy="17" r="1" fill="currentColor" stroke="none"/></svg></div>
-            <div><p class="section-kicker">ANOTHER ANGLE ON YOUR GAME</p><h2 id="analyst-heading">Meet your AI analyst<span class="heading-dot">.</span></h2></div>
+            <div><p class="section-kicker">ANOTHER ANGLE ON YOUR GAME</p><h2 id="analyst-heading">Build My Bet<span class="heading-dot">.</span></h2></div>
             <span class="analyst-label">PLAYMAKER AI</span>
           </div>
-          <p class="analyst-description">Pressure-test a selection. Explore the risk. Understand the numbers. Start with a question, and let the evidence lead.</p>
+          <p class="analyst-description">Tell Playmaker what you want, or choose your approach below.</p>
+          <div class="sport-filters" id="sport-filters" role="group" aria-label="Choose a sport">
+            <button class="sport-chip is-active" data-sport="NFL" aria-pressed="true" type="button"><svg class="sport-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 20C1 11 11 1 20 4c3 9-7 19-16 16Z"/><path d="m8 16 8-8m-7 3 4 4m-1-7 4 4M4 14l6 6m4-16 6 6"/></svg><span>NFL</span></button>
+            <button class="sport-chip" data-sport="NCAAF" aria-pressed="false" type="button"><svg class="sport-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 20C1 11 11 1 20 4c3 9-7 19-16 16Z"/><path d="m8 16 8-8m-7 3 4 4m-1-7 4 4M4 14l6 6m4-16 6 6"/></svg><span>NCAAF</span></button>
+            <button class="sport-chip" data-sport="NBA" aria-pressed="false" type="button"><svg class="sport-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3v18M6 5.3a9 9 0 0 1 0 13.4m12-13.4a9 9 0 0 0 0 13.4"/></svg><span>NBA</span></button>
+            <button class="sport-chip" data-sport="MLB" aria-pressed="false" type="button"><svg class="sport-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M6.5 4.8c6 3.4 5 10.8 0 14.4m11-14.4c-6 3.4-5 10.8 0 14.4M8 7l-2 1m4 2-2 1m2 3-2-1m0 4-2-1m10-9 2 1m-4 2 2 1m-2 3 2-1m0 4 2-1"/></svg><span>MLB</span></button>
+            <button class="sport-chip" data-sport="NHL" aria-pressed="false" type="button"><svg class="sport-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m4 3 9 14h6l2 3H11L2 5m18-2-4.3 7M8 15l-4 5h5"/><ellipse cx="17" cy="12" rx="3" ry="1.3"/><path d="M14 12v2c0 1.7 6 1.7 6 0v-2"/></svg><span>NHL</span></button>
+            <button class="sport-chip" data-sport="NCAAB" aria-pressed="false" type="button"><svg class="sport-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3v18M6 5.3a9 9 0 0 1 0 13.4m12-13.4a9 9 0 0 0 0 13.4"/></svg><span>NCAAB</span></button>
+            <button class="sport-chip" data-sport="MMA" aria-pressed="false" type="button"><svg class="sport-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 16c-3-1-4-3-4-6V6a2 2 0 0 1 4 0V4a2 2 0 0 1 4 0 2 2 0 0 1 4 0v1a2 2 0 0 1 4 0v6l1-1c2-2 4 0 2 3l-4 5v3H7v-5Z"/><path d="M7 16h11M11 4v5m4-4v4M7 6v4M7 19h11"/></svg><span>MMA</span></button>
+          </div>
+          <div class="board-toolbar">
+            <label class="select-field"><span>SPORTSBOOK</span><select id="book-filter"><option value="all">All available books</option><option value="draftkings">DraftKings</option><option value="fanduel">FanDuel</option><option value="betmgm">BetMGM</option><option value="caesars">Caesars</option><option value="bet365">bet365</option></select><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></label>
+            <label class="select-field"><span>MARKET</span><select id="market-filter"><option value="all">All markets</option><option value="moneyline">Moneyline</option><option value="spread">Spread</option><option value="total">Total</option></select><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></label>
+            <span class="verified-label"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m8 1 6 3v4c0 3-6 6-6 6S2 11 2 8V4l6-3Z"/><path d="m5 7 2 2 4-4"/></svg>Source-led selections</span>
+          </div>
+          <a class="browse-shortcut" href="./browse.html">Browse games and compare odds →</a>
           <div class="quick-prompts" id="quick-prompts" aria-label="Suggested questions">
             <button type="button" data-prompt="Review my selections and explain the main risks, missing information, and any correlations."><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m3 8 3 3 7-7"/></svg>Review my card</button>
             <button type="button" data-prompt="Explain how to compare moneyline, spread, and total markets, and how sportsbook margin affects the prices."><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 13V8m5 5V3m5 10V6"/></svg>Explain the markets</button>
@@ -113,12 +116,12 @@
           <div class="analysis-output" id="analysis-output" aria-live="polite"><div class="analyst-welcome"><span class="analyst-line" aria-hidden="true"></span><p>Your next question is a good place to start.<br><span>The analyst will respond here once AI is connected.</span></p></div></div>
           <form id="analysis-form" class="analysis-form">
             <div class="bet-builder">
-              <label>What would you like?<select id="request-mode"><option value="review">Ask / review my card</option><option value="build">Build My Bet</option></select></label>
-              <div id="builder-options" hidden>
+              <label>What would you like?<select id="request-mode"><option value="build" selected>Build My Bet</option><option value="review">Ask / review my card</option></select></label>
+              <div id="builder-options">
                 <label>Approach<select id="build-risk"><option value="conservative">Conservative</option><option value="balanced" selected>Balanced</option><option value="aggressive">Aggressive</option></select></label>
                 <label>Bet type<select id="build-kind"><option value="parlay">Parlay</option><option value="single">Single bet</option></select></label>
                 <label>Legs<select id="build-legs"><option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></label>
-                <p>Use the sport and sportsbook selected on the board. Describe your preferences below. Current markets: game winners, spreads and totals. Player props require another data connection. Conservative is not risk-free.</p>
+                <p>Game winners, spreads and totals. Describe your preferences below. Player props are not available yet. Every bet carries risk.</p>
               </div>
             </div>
             <label class="sr-only" for="question-input">Question for the AI analyst</label>

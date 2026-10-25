@@ -470,7 +470,7 @@ function initialize() {
   ui.form.addEventListener('submit', analyze);
   const mode=get('request-mode'),options=get('builder-options'),kind=get('build-kind');
   mode.addEventListener('change',()=>{options.hidden=mode.value!=='build';updateAnalyzeButton();});
-  kind.addEventListener('change',()=>{get('build-legs').disabled=kind.value==='single';});
+  kind.addEventListener('change',()=>{get('build-legs').disabled=kind.value==='single';get('build-legs').closest('label').hidden=kind.value==='single';});
   ui.question.addEventListener('input', updateAnalyzeButton);
   ui.prompts.querySelectorAll('[data-prompt]').forEach((button) => {
     button.addEventListener('click', () => {
@@ -485,7 +485,7 @@ function initialize() {
   ui.guideClose.addEventListener('click', () => ui.guide.close());
   ui.guide.addEventListener('click', (event) => { if (event.target === ui.guide) ui.guide.close(); });
   const updateNavigation = () => {
-    const current = ['#board', '#my-play', '#analyst'].includes(location.hash) ? location.hash : '#board';
+    const current = ['#board', '#my-play', '#analyst'].includes(location.hash) ? location.hash : document.body.dataset.view==='builder'?'#analyst':'#board';
     document.querySelectorAll('.primary-nav .nav-link').forEach((link) => {
       const active = link.getAttribute('href') === current;
       link.classList.toggle('is-active', active);

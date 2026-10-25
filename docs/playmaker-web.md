@@ -50,3 +50,6 @@ The board shows one card per event, sorted by kickoff. Each card has a sportsboo
 
 ## Visual card results
 `playmaker/card.html` opens after View my card and from the My play navigation link. Card data remains in existing browser-local storage; the optional AI overview and per-pick reasons are stored in sessionStorage for this tab, never in a URL. The page uses the shared card validator and return calculation, refuses a partially expired card rather than silently recalculating fewer legs, and renders explanations as text. Team monogram badges, leg numbers, market names and large odds make the picks scannable. Reasons and the full AI overview are collapsed. Opening or reloading results generates no AI requests. Storage-blocked browsers stay on the builder with an actionable message if neither transfer method works.
+
+## Builder-first entry
+The Playmaker landing page defaults to Build My Bet with visible sport/book and risk/type controls. The full market board and optional calculator are on browse.html, reached through Browse games. card.html remains the saved-card destination; Change picks returns to browse.html. Both entry pages share app.mjs and the existing API, quotas and storage.
