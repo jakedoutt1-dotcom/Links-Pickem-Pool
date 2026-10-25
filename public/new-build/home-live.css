@@ -5,3 +5,6 @@
 .livebar-home[data-live-state="empty"] .live-track-home>span{padding:0 12px}
 .livebar-home[data-live-state="cached"] .livebrand-home i,.livebar-home[data-live-state="empty"] .livebrand-home i{background:#9ca8b1;box-shadow:none}
 @media(max-width:500px){.live-refresh-home{margin:0 6px;padding:6px 8px;font-size:10px}.livebar-home[data-live-state="empty"] .live-track-home{font-size:10px}.live-status-home{padding-right:10px;font-size:9px}}
+
+/* Keep refresh announcements accessible without a visible footer below LINKS LIVE. */
+.live-status-home{position:absolute!important;width:1px!important;height:1px!important;min-height:0!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important;border:0!important}
