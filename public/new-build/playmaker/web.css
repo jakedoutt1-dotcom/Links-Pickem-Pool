@@ -24,3 +24,5 @@ body[data-view="builder"] #board,body[data-view="builder"] #optional-odds,body[d
 .builder-team{display:flex;align-items:center;gap:8px;min-width:0}.builder-team .badge{display:grid;place-items:center;width:34px;height:34px;border:1px solid #b69c60;border-radius:50%;font-size:10px;flex-shrink:0}.builder-team strong{font-size:13px}.builder-pick>span{align-self:center;white-space:nowrap}
 
 .badge.has-logo{background:#f5f8fc;border-color:#bdd2df}.badge img{display:block;width:90%;height:90%;object-fit:contain;filter:drop-shadow(0 1px 2px #0003)}
+
+body[data-playmaker-signed-in="false"] #analyst :is(.sport-filters,.board-toolbar,.analyst-description,.analysis-output,.analysis-form){display:none}#signin-gate[hidden]{display:none}#signin-gate{padding:20px 0;color:#c4d9e8}#signin-gate p{font-size:14px;line-height:1.7}

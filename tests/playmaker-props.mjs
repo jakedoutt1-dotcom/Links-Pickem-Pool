@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {categories,categoryOddIds,categoryMatches} from '../public/new-build/playmaker/markets.mjs';
 import {parseEvents,validateCard,calculateReturn} from '../public/new-build/playmaker/domain.mjs';
 import {playmakerPublic} from '../functions/new-build/api/playmaker-public.js';
-import {fixture} from './helpers/pool-format-fixture.mjs';
+import {fixture} from './helpers/playmaker-fixture.mjs';
 const now=Date.now(),origin='https://links.test';
 function eventFor(league,category){const odds={};for(const oddID of categoryOddIds(league,category).split(',')){const id=oddID.replace('PLAYER_ID','ALEX_EXAMPLE_1_'+league),[statID,statEntityID,periodID,betTypeID,sideID]=id.split('-');odds[id]={oddID:id,statID,statEntityID,periodID,betTypeID,sideID,byBookmaker:{draftkings:{available:true,odds:'+130',overUnder:'25.5',spread:sideID==='home'?'-3.5':'3.5',lastUpdatedAt:new Date(now-60000).toISOString()}}}}return {eventID:'props-event',leagueID:league,sportID:league,status:{startsAt:new Date(now+86400000).toISOString(),started:false,ended:false},teams:{home:{name:'Home'},away:{name:'Away'}},players:{['ALEX_EXAMPLE_1_'+league]:{name:'Alex Example'}},odds}}
 function harness(event){const {db}=fixture(),calls=[],queries=[];let malicious=false;

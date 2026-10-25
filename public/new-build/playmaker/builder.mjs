@@ -1,21 +1,21 @@
 import {categories} from './markets.mjs';
-import {saveBuiltCard,visitId} from './card-history.mjs';
+import {saveBuiltCard,visitId,setHistoryAccount} from './card-history.mjs';
 import {teamBadge} from './team-logos.mjs';
 import {CARD_STORAGE_KEY,isFreshSelection} from './domain.mjs';
 const get=id=>document.getElementById(id),node=(tag,cls,text)=>{const el=document.createElement(tag);el.className=cls;el.textContent=text;return el};
 visitId();
-let sport='NFL',busy=false,controller,remaining=null,connected=false;
+let sport='NFL',busy=false,controller,remaining=null,connected=false,available=false;
 const form=get('analysis-form'),button=get('analyze-button'),output=get('analysis-output'),status=get('analysis-status');
 const headers=()=>{try{const token=localStorage.getItem('links-account-token');return token&&token.length<=500?{'x-links-account':token}:{}}catch{return {}}};
-function usage(data){if(data.testingPass===true){remaining=data.available===false?0:null;get('ai-remaining').textContent=remaining===0?'Service capacity reached':'Lifetime testing pass'}else if(Number.isSafeInteger(data.remaining)){remaining=data.remaining;get('ai-remaining').textContent=`${remaining} requests remaining`}else get('ai-remaining').textContent='Usage unavailable'}
+function usage(data){available=data.available!==false;const signed=data.signedIn===true;setHistoryAccount(signed?data.account?.id:null);document.body.dataset.playmakerSignedIn=String(signed);get('signin-gate').hidden=signed;if(!signed){connected=false;remaining=0;get('ai-remaining').textContent='Sign in to build cards';return}if(data.testingPass===true){remaining=null;get('ai-remaining').textContent='Lifetime testing pass'}else if(Number.isSafeInteger(data.remaining)){remaining=data.remaining;get('ai-remaining').textContent=`${remaining} cards left · ${data.freeRemaining} free + ${data.creditsRemaining} extra`}else get('ai-remaining').textContent='Usage unavailable'}
 function categoryOptions(){const field=get('build-category'),previous=field.value;field.replaceChildren();for(const category of categories(sport)){const option=node('option','',category.label);option.value=category.id;field.append(option)}if(categories(sport).some(c=>c.id===previous))field.value=previous}
-function controls(){button.disabled=!busy&&(!connected||remaining===0);button.textContent=busy?'Cancel request':'Build My Bet';button.setAttribute('aria-busy',String(busy));}
+function controls(){button.disabled=!busy&&(!connected||!available||remaining===0);button.textContent=busy?'Cancel request':'Build My Bet';button.setAttribute('aria-busy',String(busy));}
 async function json(method='GET',body){const response=await fetch('/new-build/api/playmaker-public?action='+ (method==='GET'?'config':'ai'),{method,credentials:'same-origin',cache:'no-store',headers:{...headers(),...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body),signal:controller.signal}:{})});const data=await response.json();if(!response.ok||data.success===false)throw Error(data.error||'Playmaker is temporarily unavailable.');return data}
-async function health(){try{const data=await json();connected=data.aiConnected===true;usage(data);const label=get('connection-status').querySelector('span:last-child');label.textContent=connected?'Ready to build your bet':'AI temporarily unavailable';status.textContent=connected?'Choose your preferences and build your card.':'The AI service is temporarily unavailable.'}catch{connected=false;status.textContent='Unable to connect. Reload to try again.'}controls()}
+async function health(){try{const data=await json();connected=data.aiConnected===true;usage(data);const label=get('connection-status').querySelector('span:last-child');label.textContent=!data.signedIn?'Sign in to build your bet':connected?'Ready to build your bet':'AI temporarily unavailable';status.textContent=!data.signedIn?'A LINKS account keeps your daily builds and extra credits together.':connected?'Choose your preferences and build your card.':'The AI service is temporarily unavailable.'}catch{connected=false;status.textContent='Unable to connect. Reload to try again.'}controls()}
 get('sport-filters').querySelectorAll('[data-sport]').forEach(el=>el.addEventListener('click',()=>{sport=el.dataset.sport;categoryOptions();get('sport-filters').querySelectorAll('[data-sport]').forEach(other=>{other.classList.toggle('is-active',other===el);other.setAttribute('aria-pressed',String(other===el))})}));
 get('build-kind').addEventListener('change',()=>{const single=get('build-kind').value==='single';get('build-legs').disabled=single;get('build-legs').closest('label').hidden=single});
 form.addEventListener('submit',async event=>{
- event.preventDefault();if(busy){controller.abort();return}if(!connected||remaining===0)return;
+ event.preventDefault();if(busy){controller.abort();return}if(!connected||!available||remaining===0)return;
  busy=true;controller=new AbortController();controls();status.textContent='Building your card from current sportsbook prices…';output.replaceChildren();
  const timeout=setTimeout(()=>controller.abort(),65000);
  try{

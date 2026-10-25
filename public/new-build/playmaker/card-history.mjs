@@ -1,5 +1,6 @@
 import {validateCard} from './domain.mjs';
-const KEY='links-playmaker:history:v1',VISIT='links-playmaker:visit:v1';
+const BASE='links-playmaker:history:v1';let KEY=BASE;export function setHistoryAccount(id){KEY=/^[a-f0-9]{64}$/.test(id||'')?BASE+':'+id:BASE+':signed-out'}
+const VISIT='links-playmaker:visit:v1';
 export function visitId(){try{let id=sessionStorage.getItem(VISIT);if(!id){id=crypto.randomUUID();sessionStorage.setItem(VISIT,id)}return id}catch{return ''}}
 function storage(){const entries=new Map();for(const name of ['localStorage','sessionStorage'])try{const text=globalThis[name].getItem(KEY);if(!text||text.length>2000000)continue;const values=JSON.parse(text);if(Array.isArray(values))for(const item of values.slice(0,50))if(item?.id)entries.set(item.id,item)}catch{}return JSON.stringify([...entries.values()].sort((a,b)=>b.createdAt-a.createdAt).slice(0,50))}
 export function cards(now=Date.now()){
@@ -15,3 +16,6 @@ export function saveBuiltCard(data,preferences){
  try{sessionStorage.setItem(KEY,text);saved=true}catch{}
  return saved?item:null;
 }
+
+export function legacyCards(){const active=KEY;try{KEY=BASE;return cards()}finally{KEY=active}}
+export function importLegacyCards(){const merged=new Map();for(const item of [...legacyCards(),...cards()])merged.set(item.id,item);const text=JSON.stringify([...merged.values()].sort((a,b)=>b.createdAt-a.createdAt).slice(0,50));let saved=false;try{localStorage.setItem(KEY,text);saved=true}catch{}try{sessionStorage.setItem(KEY,text);saved=true}catch{}return saved}

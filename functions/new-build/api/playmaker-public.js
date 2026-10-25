@@ -2,7 +2,7 @@ import {categoryOddIds,categoryMatches,validCategory,categories} from '../../../
 import {onRequestGet as legacyOdds} from './playmaker-odds.js';
 import {parseEvents,isFreshSelection} from '../../../public/new-build/playmaker/domain.mjs';
 import {accountSession,digest,emailKey} from '../../lib/commissioner-account.js';
-import {PLAYMAKER_TEST_OWNER,playmakerTestingPass} from '../../lib/playmaker-testing-pass.js';
+import {playmakerTestingPass} from '../../lib/playmaker-testing-pass.js';
 
 const LIMIT=5,SPORTS=new Set(['NFL','NCAAF','NBA','MLB','NHL','NCAAB','MMA']);
 const reply=(value,status=200)=>Response.json(value,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
@@ -18,22 +18,34 @@ async function boundedText(body,max){
 }
 export async function ensurePlaymaker(db){
  await db.prepare('CREATE TABLE IF NOT EXISTS links_playmaker_requests(id TEXT PRIMARY KEY,owner TEXT NOT NULL,ip_hash TEXT NOT NULL,day TEXT NOT NULL,status TEXT NOT NULL,created_at INTEGER NOT NULL,completed_at INTEGER,model TEXT,input_tokens INTEGER,output_tokens INTEGER)').run();
+ await db.prepare('CREATE TABLE IF NOT EXISTS links_playmaker_credit_grants(id TEXT PRIMARY KEY,owner TEXT NOT NULL,amount INTEGER NOT NULL CHECK(amount>0),created_at INTEGER NOT NULL)').run();
+ await db.prepare('CREATE TABLE IF NOT EXISTS links_playmaker_credit_uses(request_id TEXT PRIMARY KEY,owner TEXT NOT NULL,used_at INTEGER NOT NULL)').run();
+ await db.prepare('CREATE INDEX IF NOT EXISTS links_playmaker_credits_owner ON links_playmaker_credit_grants(owner)').run();
+ await db.prepare('CREATE INDEX IF NOT EXISTS links_playmaker_credit_uses_owner ON links_playmaker_credit_uses(owner)').run();
  await db.prepare('CREATE INDEX IF NOT EXISTS links_playmaker_owner_day ON links_playmaker_requests(owner,day)').run();
  await db.prepare('CREATE INDEX IF NOT EXISTS links_playmaker_ip_day ON links_playmaker_requests(ip_hash,day)').run();
 }
+// Only call from a trusted payment/admin server flow. There is no public grant action.
+export async function grantPlaymakerCredits(db,owner,amount,sourceId){
+ if(!/^[a-f0-9]{64}$/.test(owner)||!Number.isSafeInteger(amount)||amount<1||amount>10000||typeof sourceId!=='string'||sourceId.length<8||sourceId.length>160)throw Error('Invalid credit grant');
+ await ensurePlaymaker(db);
+ const existing=await db.prepare('SELECT owner,amount FROM links_playmaker_credit_grants WHERE id=?').bind(sourceId).first();
+ if(existing){if(existing.owner!==owner||existing.amount!==amount)throw Error('Credit grant already assigned');return false}
+ const saved=await db.prepare('INSERT OR IGNORE INTO links_playmaker_credit_grants(id,owner,amount,created_at) VALUES(?,?,?,?)').bind(sourceId,owner,amount,Date.now()).run();return saved.meta?.changes===1;
+}
 async function identity(request,env,session){
+ const account=await session(request,env.DB);if(!account?.email)return null;
  const ip=request.headers.get('CF-Connecting-IP');
  if(!ip)throw fail('IDENTITY_UNAVAILABLE','Usage protection is temporarily unavailable. Please try again later.');
- const ipHash=await digest('playmaker-ip:'+ip);
- const account=await session(request,env.DB);
- const owner=account?.email?await digest('playmaker-account:'+emailKey(account.email)):ipHash;
- return {ipHash,owner,testingPass:playmakerTestingPass(owner,account?.email)};
+ const ipHash=await digest('playmaker-ip:'+ip),email=emailKey(account.email),owner=await digest('playmaker-account:'+email);
+ return {ipHash,owner,email,testingPass:playmakerTestingPass(owner,true)};
 }
 async function allowance(db,who,day,cap){
- const row=await db.prepare("SELECT COUNT(*) AS total,COALESCE(SUM(CASE WHEN owner=? THEN 1 ELSE 0 END),0) AS owned,COALESCE(SUM(CASE WHEN ip_hash=? AND owner<>? THEN 1 ELSE 0 END),0) AS network FROM links_playmaker_requests WHERE day=?").bind(who.owner,who.ipHash,PLAYMAKER_TEST_OWNER,day).first();
- const used=Math.max(Number(row.owned),Number(row.network));
+ const row=await db.prepare('SELECT COUNT(*) AS total,COALESCE(SUM(CASE WHEN owner=? THEN 1 ELSE 0 END),0) AS owned FROM links_playmaker_requests WHERE day=?').bind(who.owner,day).first();
+ const wallet=await db.prepare('SELECT COALESCE((SELECT SUM(amount) FROM links_playmaker_credit_grants WHERE owner=?),0)-COALESCE((SELECT COUNT(*) FROM links_playmaker_credit_uses WHERE owner=?),0) AS balance').bind(who.owner,who.owner).first();
+ const used=Number(row.owned),freeRemaining=Math.max(0,LIMIT-used),creditsRemaining=Math.max(0,Number(wallet.balance));
  const last=await db.prepare('SELECT status FROM links_playmaker_requests WHERE owner=? AND day=? ORDER BY created_at DESC,id DESC LIMIT 1').bind(who.owner,day).first();
- return {dailyLimit:who.testingPass?null:LIMIT,used:who.testingPass?Number(row.owned):used,remaining:who.testingPass?null:Math.max(0,Math.min(LIMIT-used,cap-Number(row.total))),limitEnforced:true,testingPass:who.testingPass,passName:who.testingPass?'Lifetime testing pass':null,expiresAt:null,available:Number(row.total)<cap,lastRequestStatus:last?.status||'unverified'};
+ return {signedIn:true,account:{id:who.owner,email:who.email},dailyLimit:who.testingPass?null:LIMIT,used,freeRemaining:who.testingPass?null:freeRemaining,creditsRemaining,remaining:who.testingPass?null:freeRemaining+creditsRemaining,resetAt:new Date(Date.parse(day+'T00:00:00Z')+86400000).toISOString(),limitEnforced:true,testingPass:who.testingPass,passName:who.testingPass?'Lifetime testing pass':null,expiresAt:null,available:Number(row.total)<cap,lastRequestStatus:last?.status||'unverified'};
 }
 async function getOdds(context,sport,services,category='game',book='all'){
  const url=new URL(context.request.url);url.pathname='/new-build/api/playmaker-odds';url.search='';
@@ -71,20 +83,22 @@ export async function playmakerPublic(context,services={}){
   if(request.headers.get('sec-fetch-site')==='cross-site'||request.method==='POST'&&request.headers.get('Origin')!==new URL(request.url).origin)throw fail('ORIGIN_REJECTED','Open Playmaker on LINKS to submit a question.',403);
   if(!['config','odds','ai'].includes(action))throw fail('INVALID_ACTION','Unknown Playmaker request.',404);
   if(request.method==='POST'&&action!=='ai')throw fail('INVALID_ACTION','This action is read-only.',405);
+  if(!env.DB)throw fail('BUDGET_UNAVAILABLE','Account tracking is temporarily unavailable.');
+  await ensurePlaymaker(env.DB);who=await identity(request,env,services.session||accountSession);
+  if(!who){if(request.method==='GET'&&action==='config')return reply({build:'PM-WEB-5',requiresAccount:true,signedIn:false,aiConnected:false,remaining:0,available:false});throw fail('SIGN_IN_REQUIRED','Sign in or create a LINKS account to use Playmaker.',401)}
   if(action==='odds'){
    const sport=new URL(request.url).searchParams.get('leagueID')||'NFL';if(!SPORTS.has(sport))throw fail('INVALID_SPORT','Choose a supported sport.',400);
    return reply(await getOdds(context,sport,services));
   }
-  if(!env.DB)throw fail('BUDGET_UNAVAILABLE','AI usage protection is temporarily unavailable. The Odds Lab still works.');
-  await ensurePlaymaker(env.DB);who=await identity(request,env,services.session||accountSession);
   const quota=await allowance(env.DB,who,day,globalLimit(env));
-  if(action==='config')return reply({mode:'connected',build:'PM-WEB-4',oddsConnected:!!oddsKey(env),aiConnected:!!aiKey(env),...quota});
-  if(request.method==='GET')return reply({success:true,build:'PM-WEB-4',aiConfigured:!!aiKey(env),...quota});
+  if(action==='config')return reply({mode:'connected',build:'PM-WEB-5',oddsConnected:!!oddsKey(env),aiConnected:!!aiKey(env),...quota});
+  if(request.method==='GET')return reply({success:true,build:'PM-WEB-5',aiConfigured:!!aiKey(env),...quota});
   if(!aiKey(env))throw fail('AI_UNAVAILABLE','AI analysis is temporarily unavailable. Please try again later.');
   if(!(request.headers.get('Content-Type')||'').startsWith('application/json'))throw fail('JSON_REQUIRED','Send a JSON request.',415);
   let body;try{body=JSON.parse(await boundedText(request.body,24576))}catch(e){if(e.code)throw e;throw fail('INVALID_JSON','The request could not be read.',400)}
   const clean=input(body);
-  if(quota.remaining===0||!quota.available)throw fail('DAILY_LIMIT','Today\u2019s AI allowance has been reached. Please try again tomorrow.',429);
+  if(!quota.available)throw fail('SERVICE_CAPACITY','Playmaker has reached today’s service capacity. Your extra credits remain available.',429);
+  if(quota.remaining===0)throw fail('DAILY_LIMIT','Your five free daily requests have been used. Check My Account for your balance and reset time.',429);
   let card=[],candidates=[];
   if(clean.ids.length||clean.build){
    const data=await getOdds(context,clean.sport,services,clean.build?clean.category:'game',clean.build?clean.book:'all'),rows=parseEvents(data,'all',now),byId=new Map(rows.map(row=>[row.id,row]));
@@ -107,15 +121,21 @@ export async function playmakerPublic(context,services={}){
   if(await env.DB.prepare('SELECT id FROM links_playmaker_requests WHERE id=?').bind(id).first())throw fail('DUPLICATE_REQUEST','This question was already submitted. No automatic retry was made.',409);
   // One atomic INSERT reserves all allowances BEFORE a provider call. Failed and
   // interrupted calls retain their reservation; browser identities are ignored.
-  const saved=await env.DB.prepare(`INSERT OR IGNORE INTO links_playmaker_requests(id,owner,ip_hash,day,status,created_at)
-   SELECT ?,?,?,?,'reserved',? WHERE
-   (?=1 OR (SELECT COUNT(*) FROM links_playmaker_requests WHERE day=? AND owner=?)<5) AND
-   (?=1 OR (SELECT COUNT(*) FROM links_playmaker_requests WHERE day=? AND ip_hash=? AND owner<>?)<5) AND
-   (SELECT COUNT(*) FROM links_playmaker_requests WHERE day=?)<? AND
-   (SELECT COUNT(*) FROM links_playmaker_requests WHERE status='reserved' AND created_at>?)<3 AND
-   NOT EXISTS(SELECT 1 FROM links_playmaker_requests WHERE ip_hash=? AND status='reserved' AND created_at>?)`)
-   .bind(id,who.owner,who.ipHash,day,now,who.testingPass?1:0,day,who.owner,who.testingPass?1:0,day,who.ipHash,PLAYMAKER_TEST_OWNER,day,globalLimit(env),now-70000,who.ipHash,now-70000).run();
-  if(saved.meta?.changes!==1){const current=await allowance(env.DB,who,day,globalLimit(env));throw fail(current.remaining?'AI_BUSY':'DAILY_LIMIT',current.remaining?'An analysis is already running. Please wait before submitting another.':'Today\u2019s AI allowance has been reached.',current.remaining?409:429)}
+  const saved=await env.DB.batch([
+   env.DB.prepare(`INSERT OR IGNORE INTO links_playmaker_requests(id,owner,ip_hash,day,status,created_at)
+    SELECT ?,?,?,?,'reserved',? WHERE
+    (?=1 OR (SELECT COUNT(*) FROM links_playmaker_requests WHERE day=? AND owner=?)<5 OR
+      (SELECT COALESCE(SUM(amount),0) FROM links_playmaker_credit_grants WHERE owner=?)>(SELECT COUNT(*) FROM links_playmaker_credit_uses WHERE owner=?)) AND
+    (SELECT COUNT(*) FROM links_playmaker_requests WHERE day=?)<? AND
+    (SELECT COUNT(*) FROM links_playmaker_requests WHERE status='reserved' AND created_at>?)<3 AND
+    NOT EXISTS(SELECT 1 FROM links_playmaker_requests WHERE owner=? AND status='reserved' AND created_at>?)`)
+    .bind(id,who.owner,who.ipHash,day,now,who.testingPass?1:0,day,who.owner,who.owner,who.owner,day,globalLimit(env),now-70000,who.owner,now-70000),
+   env.DB.prepare(`INSERT OR IGNORE INTO links_playmaker_credit_uses(request_id,owner,used_at)
+    SELECT id,owner,? FROM links_playmaker_requests WHERE changes()=1 AND id=? AND owner=? AND ?=0 AND
+    (SELECT COUNT(*) FROM links_playmaker_requests WHERE owner=? AND day=?)>5`)
+    .bind(now,id,who.owner,who.testingPass?1:0,who.owner,day)
+  ]);
+  if(saved[0].meta?.changes!==1){const current=await allowance(env.DB,who,day,globalLimit(env));if(!current.available)throw fail('SERVICE_CAPACITY','Playmaker has reached today’s service capacity. Your extra credits remain available.',429);throw fail(current.remaining===0?'DAILY_LIMIT':'AI_BUSY',current.remaining===0?'Your daily requests and extra credits have been used.':'An analysis is already running or service capacity has been reached. No extra credit was used.',current.remaining===0?429:409)}
   reservation=id;
   const model=String(env.PLAYMAKER_AI_MODEL||'gpt-5-mini').trim().slice(0,80),controller=new AbortController(),timer=setTimeout(()=>controller.abort(),45000);
   let response,data;
@@ -143,7 +163,7 @@ export async function playmakerPublic(context,services={}){
   const tokens=v=>Number.isSafeInteger(v)&&v>=0&&v<=1000000?v:null;
   await env.DB.prepare("UPDATE links_playmaker_requests SET status='succeeded',completed_at=?,model=?,input_tokens=?,output_tokens=? WHERE id=?").bind(now,model,tokens(data.usage?.input_tokens),tokens(data.usage?.output_tokens),id).run();
   reservation=null;
-  return reply({success:true,build:'PM-WEB-4',analysis:analysis.slice(0,20000),...(clean.build?{picks:builtPicks}:{}),model,...await allowance(env.DB,who,day,globalLimit(env))});
+  return reply({success:true,build:'PM-WEB-5',analysis:analysis.slice(0,20000),...(clean.build?{picks:builtPicks}:{}),model,...await allowance(env.DB,who,day,globalLimit(env))});
  }catch(e){
   if(reservation)try{await env.DB.prepare("UPDATE links_playmaker_requests SET status='failed',completed_at=? WHERE id=?").bind(now,reservation).run()}catch{}
   return reply({success:false,code:e.code||'AI_UNAVAILABLE',error:e.status?e.message:'Playmaker is temporarily unavailable. Your card is saved; no automatic retry was made.'},e.status||503);

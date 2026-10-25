@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {fixture} from './helpers/pool-format-fixture.mjs';
+import {fixture} from './helpers/playmaker-fixture.mjs';
 import {playmakerPublic,providerText} from '../functions/new-build/api/playmaker-public.js';
 import {ensureAccounts,digest} from '../functions/lib/commissioner-account.js';
 import {parseEvents} from '../public/new-build/playmaker/domain.mjs';
@@ -9,7 +9,7 @@ const valid=()=>({sport:'NFL',question:'Explain the uncertainty in this price.',
 function setup(extra={}){
  const {db}=fixture(),calls=[],oddsCalls=[];let output={status:'completed',model:'gpt-5-mini',output:[{content:[{type:'output_text',text:'Test analysis. Risk note: uncertain outcomes.'}]}],usage:{input_tokens:40,output_tokens:30}};
  const env={DB:db,OPENAI_API_KEY:'fixture-private-key',SPORTS_GAME_ODDS_API_KEY:'fixture-odds-key',...extra};
- const services={now:()=>now,session:async()=>null,odds:async c=>{oddsCalls.push(new URL(c.request.url));return Response.json(board())},fetch:async(url,options)=>{calls.push({url,...options});return Response.json(output)}};
+ const services={now:()=>now,session:async()=>({email:'fixture@example.test'}),odds:async c=>{oddsCalls.push(new URL(c.request.url));return Response.json(board())},fetch:async(url,options)=>{calls.push({url,...options});return Response.json(output)}};
  async function call(body,options={}){const action=options.action||'ai',request=new Request(origin+'/new-build/api/playmaker-public?action='+action+(options.query||''),{method:body?'POST':'GET',headers:{Origin:options.origin||origin,'CF-Connecting-IP':options.ip||'192.0.2.1','Content-Type':'application/json',...(options.headers||{})},...(body?{body:JSON.stringify(body)}:{})});const r=await playmakerPublic({request,env},services);return {status:r.status,...await r.json()}}
  return {db,env,services,calls,oddsCalls,call,setOutput:v=>output=v};
 }
@@ -58,10 +58,11 @@ function setup(extra={}){
   const headers={'x-links-account':token};
   const health=await s.call(null,{headers});assert.equal(health.testingPass,true);assert.equal(health.remaining,null);assert.equal(health.dailyLimit,null);assert.equal(health.expiresAt,null);
   for(let i=0;i<7;i++){const response=await s.call(valid(),{headers});assert.equal(response.status,200);assert.equal(response.testingPass,true)}
-  assert.equal(s.calls.length,7);assert.equal((await s.call(null)).remaining,5,'Owner tests do not consume guest network allowance');
-  const fake=await s.call({...valid(),email:'jakedoutt@yahoo.com',testingPass:true,paid:true});assert.equal(fake.testingPass,false);assert.equal(fake.remaining,4);
+  assert.equal(s.calls.length,7);assert.equal((await s.call(null)).status,401,'Anonymous use is rejected even on the owner network');
+  const regular='verified-regular-token';s.db.raw.prepare('INSERT INTO links_account_sessions(token_hash,email,expires_at) VALUES(?,?,?)').run(await digest(regular),'regular@example.test','2099-01-01');assert.equal((await s.call(null,{headers:{'x-links-account':regular}})).remaining,5,'Other accounts on the same network have their own allowance');
+  const fake=await s.call({...valid(),email:'jakedoutt@yahoo.com',testingPass:true,paid:true},{headers:{'x-links-account':regular}});assert.equal(fake.testingPass,false);assert.equal(fake.remaining,4);
   s.db.raw.prepare("UPDATE links_account_sessions SET expires_at='2000-01-01' WHERE token_hash=?").run(await digest(token));
-  assert.equal((await s.call(null,{headers})).testingPass,false,'Expired sessions cannot use the pass');
+  assert.equal((await s.call(null,{headers})).status,401,'Expired sessions cannot use Playmaker');
  }finally{s.db.raw.close()}
 }
 {
@@ -71,7 +72,7 @@ function setup(extra={}){
 }
 assert.equal(providerText({status:'completed',output_text:'',output:[{content:[{type:'output_text',text:'Nested text'}]}]}),'Nested text');
 assert.equal(providerText({status:'incomplete',output_text:'Partial'}),'');
-console.log('PASS public Playmaker: canonical server prices, source freshness, fixed market requests, no automatic AI calls, atomic owner/IP/global quotas, consumed failed attempts, duplicate suppression, origin/input validation, provider output recovery and private metadata.');
+console.log('PASS public Playmaker: canonical server prices, source freshness, fixed market requests, no automatic AI calls, atomic account/global quotas, consumed failed attempts, duplicate suppression, origin/input validation, provider output recovery and private metadata.');
 
 {
  const s=setup();try{

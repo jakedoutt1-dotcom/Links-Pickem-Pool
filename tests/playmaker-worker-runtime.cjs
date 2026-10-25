@@ -4,7 +4,7 @@ const {resolve}=require('node:path');
 const dependencies=createRequire(resolve(process.env.PLAYMAKER_RUNTIME_DEPS||'tmp/playmaker-runtime-check/package.json'));
 const {Miniflare}=dependencies('miniflare'),{build}=dependencies('esbuild');
 (async()=>{
- const bundle=await build({stdin:{contents:`import {playmakerPublic} from './functions/new-build/api/playmaker-public.js';export default {fetch(request,env,ctx){return playmakerPublic({request,env,waitUntil:ctx.waitUntil.bind(ctx)})}}`,resolveDir:process.cwd()},bundle:true,format:'esm',write:false,platform:'browser'});
+ const bundle=await build({stdin:{contents:`import {playmakerPublic} from './functions/new-build/api/playmaker-public.js';export default {fetch(request,env,ctx){return playmakerPublic({request,env,waitUntil:ctx.waitUntil.bind(ctx)},{session:async()=>({email:request.headers.get('x-test-normal')?'normal@example.test':'jakedoutt@yahoo.com'})})}}`,resolveDir:process.cwd()},bundle:true,format:'esm',write:false,platform:'browser'});
  let scenario='success',calls=0,leaked=0;
  const now=Date.now();const board={success:true,data:[{eventID:'runtime-event',leagueID:'NFL',sportID:'FOOTBALL',status:{startsAt:new Date(now+86400000).toISOString(),started:false,ended:false},teams:{home:{name:'Home'},away:{name:'Away'}},odds:{'points-home-game-ml-home':{byBookmaker:{draftkings:{odds:'-110',lastUpdatedAt:new Date(now).toISOString()}}}}}]};
  const player='TEST_PLAYER_1_NFL';board.data[0].players={[player]:{name:'Test Player'}};board.data[0].odds[`touchdowns-${player}-game-yn-yes`]={statID:'touchdowns',statEntityID:player,periodID:'game',betTypeID:'yn',sideID:'yes',byBookmaker:{draftkings:{odds:'+150',lastUpdatedAt:new Date(now).toISOString()}}};
@@ -21,7 +21,7 @@ const {Miniflare}=dependencies('miniflare'),{build}=dependencies('esbuild');
  };
  const mf=new Miniflare({modules:true,script:bundle.outputFiles[0].text,compatibilityDate:'2026-07-01',d1Databases:['DB'],bindings:{OPENAI_API_KEY:'fake-private-key',SPORTS_GAME_ODDS_API_KEY:'fake-odds-key'},outboundService,cf:false});
  try{
-  let n=0;async function call(body={}){const response=await mf.dispatchFetch('https://links.test/new-build/api/playmaker-public?action=ai',{method:'POST',headers:{Origin:'https://links.test','Content-Type':'application/json','CF-Connecting-IP':`192.0.2.${++n}`},body:JSON.stringify({sport:'NFL',question:'Explain -110.',card:[],requestId:crypto.randomUUID(),...body})});const data=await response.json();assert(!JSON.stringify(data).includes('fake-private-key'));assert(!JSON.stringify(data).includes('private-provider-detail'));return {status:response.status,...data}}
+  let n=0;async function call(body={},normal=false){const response=await mf.dispatchFetch('https://links.test/new-build/api/playmaker-public?action=ai',{method:'POST',headers:{Origin:'https://links.test','Content-Type':'application/json','CF-Connecting-IP':`192.0.2.${++n}`,...(normal?{'x-test-normal':'1'}:{})},body:JSON.stringify({sport:'NFL',question:'Explain -110.',card:[],requestId:crypto.randomUUID(),...body})});const data=await response.json();assert(!JSON.stringify(data).includes('fake-private-key'));assert(!JSON.stringify(data).includes('private-provider-detail'));return {status:response.status,...data}}
   let r=await call();assert.equal(r.status,200);assert.match(r.analysis,/Fixture answer/);assert.equal(calls,1);
   scenario='redirect';r=await call();assert.equal(r.status,502);assert.match(r.error,/redirect/);assert.equal(leaked,0);assert.equal(calls,2,'No retry after redirect');
   scenario='auth';r=await call();assert.equal(r.status,502);assert.match(r.error,/API access/);
@@ -30,6 +30,10 @@ const {Miniflare}=dependencies('miniflare'),{build}=dependencies('esbuild');
   scenario='build';r=await call({mode:'build',risk:'aggressive',kind:'single',legs:4});assert.equal(r.status,200);assert.equal(r.picks.length,1);assert.equal(r.picks[0].americanOdds,-110);
   scenario='props';r=await call({mode:'build',category:'touchdowns',kind:'single',legs:1});assert.equal(r.status,200);assert.equal(r.picks[0].playerName,'Test Player');assert.equal(r.picks[0].line,null);
   const db=await mf.getD1Database('DB'),rows=(await db.prepare('SELECT status FROM links_playmaker_requests').all()).results;assert.equal(rows.filter(r=>r.status==='succeeded').length,3);assert.equal(rows.filter(r=>r.status==='failed').length,4);assert.equal(calls,7);
+  scenario='success';for(let i=0;i<5;i++)assert.equal((await call({},true)).status,200);assert.equal((await call({},true)).status,429);
+  const {createHash}=require('node:crypto'),normalOwner=createHash('sha256').update('playmaker-account:normal@example.test').digest('hex');
+  await db.prepare('INSERT INTO links_playmaker_credit_grants(id,owner,amount,created_at) VALUES(?,?,1,?)').bind('native-credit-fixture',normalOwner,now).run();
+  const creditResult=await call({},true);assert.equal(creditResult.status,200);assert.equal(creditResult.creditsRemaining,0);assert.equal((await db.prepare('SELECT COUNT(*) n FROM links_playmaker_credit_uses WHERE owner=?').bind(normalOwner).first()).n,1,'Native D1 batch debits exactly one extra credit');
   console.log('PASS Cloudflare workerd: real fetch/D1, normal and Build My Bet responses, redirects never followed, sanitized access/rate errors, incomplete output rejected, no retries, no real providers.');
  }finally{await mf.dispose()}
 })().catch(error=>{console.error(error);process.exitCode=1});

@@ -1,7 +1,10 @@
+import {shareCardButton} from './share-card.mjs';
+import {requireAccount} from './account-client.mjs';
 import {cards} from './card-history.mjs';
 import {teamBadge} from './team-logos.mjs';
 import {CARD_STORAGE_KEY,validateCard,calculateReturn} from './domain.mjs';
 const get=id=>document.getElementById(id),money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n),node=(tag,cls,text)=>{const el=document.createElement(tag);el.className=cls;el.textContent=text;return el};
+const verifiedAccount=await requireAccount().catch(()=>{document.getElementById('results-status').textContent='Unable to load your account. Please reload.';return null});if(!verifiedAccount)await new Promise(()=>{});
 let packet={},raw=[],card=[];
 try{packet=JSON.parse(sessionStorage.getItem('links-playmaker:results:v1')||'{}')}catch{}
 try{const stored=localStorage.getItem(CARD_STORAGE_KEY);raw=stored===null?packet.card||[]:JSON.parse(stored)}catch{raw=packet.card||[]}
@@ -24,3 +27,5 @@ get('results-calculator').hidden=!card.length;
 if(matches&&typeof packet.analysis==='string'&&packet.analysis){get('results-explanation').hidden=false;get('results-analysis').textContent=packet.analysis.slice(0,20000)}
 function update(){const result=calculateReturn(card,get('results-stake').value);get('results-return').textContent=result.valid?money(result.payout):'—';get('results-return-note').textContent=result.valid?`${money(result.profit)} potential profit. Final odds may change.`:result.reason}
 get('results-stake').addEventListener('input',update);update();
+
+if(card.length)get('results-status').after(shareCardButton(card,archived?.createdAt));
