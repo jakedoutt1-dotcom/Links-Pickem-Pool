@@ -1,6 +1,8 @@
+import {saveBuiltCard,visitId} from './card-history.mjs';
 import {teamBadge} from './team-logos.mjs';
 import {CARD_STORAGE_KEY,isFreshSelection} from './domain.mjs';
 const get=id=>document.getElementById(id),node=(tag,cls,text)=>{const el=document.createElement(tag);el.className=cls;el.textContent=text;return el};
+visitId();
 let sport='NFL',busy=false,controller,remaining=null,connected=false;
 const form=get('analysis-form'),button=get('analyze-button'),output=get('analysis-output'),status=get('analysis-status');
 const headers=()=>{try{const token=localStorage.getItem('links-account-token');return token&&token.length<=500?{'x-links-account':token}:{}}catch{return {}}};
@@ -18,17 +20,19 @@ form.addEventListener('submit',async event=>{
   const data=await json('POST',{mode:'build',sport,book:get('book-filter').value,risk:get('build-risk').value,kind:get('build-kind').value,legs:Number(get('build-legs').value),question:get('question-input').value.trim()||'Build a bet using my chosen sport, approach, type and leg count.',card:[],requestId:crypto.randomUUID()});usage(data);
   const picks=Array.isArray(data.picks)?data.picks:[];
   if(!picks.length){output.append(node('p','analysis-text',data.analysis||'No matching picks are available. Try different preferences.'));status.textContent='No card built. Adjust your preferences.';return}
+  const archived=saveBuiltCard(data,{sport,risk:get('build-risk').value,kind:get('build-kind').value});
   output.append(node('h3','',`${picks.length}-pick card ready`));
   for(const pick of picks){const row=node('div','builder-pick','');const identity=node('div','builder-team','');identity.append(teamBadge(pick.awayTeam,pick.league),teamBadge(pick.homeTeam,pick.league),node('strong','',pick.label));row.append(identity,node('span','',`${pick.americanOdds>0?'+':''}${pick.americanOdds}`));output.append(row)}
   const view=node('button','button button-primary','View my card');view.type='button';const notice=node('p','analysis-status','');notice.setAttribute('role','status');
   view.addEventListener('click',()=>{
+   if(archived){location.assign('./card.html?id='+encodeURIComponent(archived.id));return}
    if(picks.some(p=>!isFreshSelection(p))){notice.textContent='These prices expired. Build a fresh card.';return}
    const card=picks.map(({reason,...pick})=>pick);let saved=false;
    try{localStorage.setItem(CARD_STORAGE_KEY,JSON.stringify(card));saved=true}catch{}
    try{sessionStorage.setItem('links-playmaker:results:v1',JSON.stringify({card,analysis:data.analysis,reasons:Object.fromEntries(picks.map(p=>[p.id,p.reason]))}));saved=true}catch{}
    if(!saved){notice.textContent='Your browser blocked saving this card. Enable storage to open it.';return}
    location.assign('./card.html');
-  });output.append(view,notice);status.textContent='Your card is ready. Tap View my card.';
+  });output.append(view,notice);status.textContent=archived?'Card saved in My Cards. Tap View my card.':'Your card is ready. Browser history could not be saved; tap View my card.';
  }catch(error){status.textContent=error.name==='AbortError'?'Request stopped. No automatic retry was made.':error.message;try{usage(await json())}catch{}}
  finally{clearTimeout(timeout);busy=false;controls()}
 });

@@ -59,3 +59,6 @@ The market board and optional calculator are removed from the active Playmaker p
 
 ## Team logos
 Generated pick previews and card results use team-logos.mjs to load the cached public team directory at /new-build/api/playmaker-logos. Supported leagues: NFL, NCAAF, NBA, NCAAB, MLB and NHL. Exact normalized names/aliases map to ESPN team artwork; ambiguous nicknames are omitted, and image errors/unknown teams retain initials. Only HTTPS artwork on a.espncdn.com/i/teamlogos is accepted. The fixed ESPN directory paths use no AI/provider keys and are cached for one day. NFL Pick’em files are unchanged.
+
+## My Cards history
+Each completed non-empty build automatically saves a snapshot through card-history.mjs, before the user opens it. cards.html lists Today or This visit with time, sport, approach and pick previews. card.html?id=<opaque UUID> reopens the selected snapshot without an API analysis request. Historical cards validate at creation time and remain viewable after odds age, explicitly labeled saved/not-live. At most 50 snapshots from seven days are retained locally; the interface defaults to the current local calendar day. Storage is browser/device-specific, not account synchronization. Local/session copies merge by UUID so a full/blocked local store can fall back to this tab. No questions are saved, only card output and preferences.

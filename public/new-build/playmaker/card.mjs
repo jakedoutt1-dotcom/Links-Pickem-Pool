@@ -1,13 +1,16 @@
+import {cards} from './card-history.mjs';
 import {teamBadge} from './team-logos.mjs';
 import {CARD_STORAGE_KEY,validateCard,calculateReturn} from './domain.mjs';
 const get=id=>document.getElementById(id),money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n),node=(tag,cls,text)=>{const el=document.createElement(tag);el.className=cls;el.textContent=text;return el};
 let packet={},raw=[],card=[];
 try{packet=JSON.parse(sessionStorage.getItem('links-playmaker:results:v1')||'{}')}catch{}
 try{const stored=localStorage.getItem(CARD_STORAGE_KEY);raw=stored===null?packet.card||[]:JSON.parse(stored)}catch{raw=packet.card||[]}
-card=validateCard(raw);
+const archiveId=new URL(location.href).searchParams.get('id'),archived=archiveId?cards().find(item=>item.id===archiveId):null;
+if(archiveId){packet=archived||{};raw=archived?.card||[]}
+card=validateCard(raw,archived?.createdAt||Date.now());
 const matches=Array.isArray(packet.card)&&packet.card.length===card.length&&packet.card.every((p,i)=>p.id===card[i]?.id);
 if(!Array.isArray(raw)||card.length!==raw.length){card=[];get('results-status').textContent='These prices have expired or changed. Return to Playmaker for a fresh card.'}
-else get('results-status').textContent=card.length?'Your selected picks. Open a reason only when you want more detail.':'No saved picks yet. Return to Playmaker to build your card.';
+else get('results-status').textContent=archiveId&&!archived?'This saved card is no longer available. Open My Cards to choose another.':archived?`Saved ${new Date(archived.createdAt).toLocaleString()}. These are saved prices, not live odds.`:card.length?'Your selected picks. Open a reason only when you want more detail.':'No saved picks yet. Return to Playmaker to build your card.';
 get('results-count').textContent=`${card.length} pick${card.length===1?'':'s'}`;
 const markets={moneyline:'Game winner',spread:'Point spread',total:'Game total'},stamp=iso=>new Date(iso).toLocaleString(undefined,{weekday:'short',hour:'numeric',minute:'2-digit',month:'short',day:'numeric'});
 card.forEach((pick,index)=>{
