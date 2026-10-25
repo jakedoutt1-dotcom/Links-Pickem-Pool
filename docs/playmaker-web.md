@@ -53,3 +53,6 @@ The board shows one card per event, sorted by kickoff. Each card has a sportsboo
 
 ## Builder-first entry
 The Playmaker landing page defaults to Build My Bet with visible sport/book and risk/type controls. The full market board and optional calculator are on browse.html, reached through Browse games. card.html remains the saved-card destination; Change picks returns to browse.html. Both entry pages share app.mjs and the existing API, quotas and storage.
+
+## Builder-only experience
+The market board and optional calculator are removed from the active Playmaker page. builder.mjs submits explicit build requests with sport, sportsbook, risk, type and preferences. No odds list or board request is made by this UI; the server still resolves fresh candidates before analysis. browse.html redirects old bookmarks to the builder. Results only link back to change preferences/build another card.
