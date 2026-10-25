@@ -17,7 +17,7 @@ card.forEach((pick,index)=>{
  const article=document.createElement('article');article.className='pick';const top=node('div','pick-top','');top.append(node('span','leg',`LEG ${index+1} · ${pick.league}`),node('span','',stamp(pick.startTime)));
  const teams=node('div','teams','');for(const [i,name] of [pick.awayTeam,pick.homeTeam].entries()){if(i)teams.append(node('span','versus','AT'));const team=node('div','team','');team.append(teamBadge(name,pick.league),node('span','',name));teams.append(team)}
  const selection=node('div','selection','');selection.append(node('h2','',pick.label),node('strong','odds',pick.americanOdds>0?`+${pick.americanOdds}`:String(pick.americanOdds)));
- article.append(top,teams,selection,node('p','market',`${markets[pick.market]} · ${pick.bookmakerName}`),node('p','pick-foot',`Price updated ${stamp(pick.updatedAt)}`));
+ article.append(top,teams,selection,node('p','market',`${pick.marketName||markets[pick.market]} · ${pick.bookmakerName}`),node('p','pick-foot',`Price updated ${stamp(pick.updatedAt)}`));
  const reason=matches&&packet.reasons?.[pick.id];if(typeof reason==='string'&&reason){const detail=document.createElement('details');detail.append(node('summary','','Why this pick?'),node('p','',reason.slice(0,2000)));article.append(detail)}get('results-picks').append(article);
 });
 get('results-calculator').hidden=!card.length;

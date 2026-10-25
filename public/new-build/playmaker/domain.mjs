@@ -1,3 +1,4 @@
+import {propDefinition,propLabel} from './markets.mjs';
 /** Pure rules shared by the board, local card, and automated tests. */
 export const MAX_ODDS_AGE_MS = 15 * 60 * 1000;
 export const MAX_CARD_SIZE = 12;
@@ -110,10 +111,15 @@ export function parseEvents(payload, selectedBook = 'all', now = Date.now()) {
       const period = cleanText(odd.periodID) || pieces[2];
       const type = cleanText(odd.betTypeID) || pieces[3];
       const side = cleanText(odd.sideID) || pieces[4];
-      // This first board supports team game lines only, not player props.
-      if (period !== 'game' || stat !== 'points') continue;
+      if(period!=='game'||pieces.length!==5||pieces[0]!==stat||pieces[1]!==entity||pieces[2]!==period||pieces[3]!==type||pieces[4]!==side)continue;
+      const definition=propDefinition(event.leagueID,stat,type),playerId=!['home','away','all'].includes(entity)?entity:'';
+      const player=playerId?event.players?.[playerId]:null;
+      const playerName=cleanText(player?.name)||cleanText([player?.firstName,player?.lastName].filter(Boolean).join(' '));
+      const prop=Boolean(playerId&&definition&&playerName&&(type==='ou'&&['over','under'].includes(side)||type==='yn'&&side==='yes'));
+      if(!prop&&stat!=='points')continue;
       let market;
-      if (type === 'ml' && ['home', 'away'].includes(side) && entity === side) market = 'moneyline';
+      if(prop)market='prop';
+      else if (type === 'ml' && ['home', 'away'].includes(side) && entity === side) market = 'moneyline';
       else if (type === 'sp' && ['home', 'away'].includes(side) && entity === side) market = 'spread';
       else if (type === 'ou' && ['over', 'under'].includes(side) && entity === 'all') market = 'total';
       else continue;
@@ -128,9 +134,9 @@ export function parseEvents(payload, selectedBook = 'all', now = Date.now()) {
         if (americanOdds === null || updatedAtMs === null || updatedAtMs > now + 60_000
           || now - updatedAtMs > MAX_ODDS_AGE_MS) continue;
         let line = null;
-        if (market !== 'moneyline') {
+        if (market !== 'moneyline' && !(prop&&type==='yn')) {
           line = strictNumber(market === 'spread' ? book.spread : book.overUnder);
-          if (line === null || Math.abs(line) > 1_000_000 || (market === 'total' && line < 0)) continue;
+          if (line === null || Math.abs(line) > 1_000_000 || ((market === 'total'||prop) && line < 0)) continue;
         }
         const id = `${eventId}:${oddId}:${bookmakerId}`;
         if (seen.has(id)) continue;
@@ -141,7 +147,8 @@ export function parseEvents(payload, selectedBook = 'all', now = Date.now()) {
           sport: cleanText(event.sportID), league: cleanText(event.leagueID),
           homeTeam, awayTeam, eventName: `${awayTeam} at ${homeTeam}`,
           startTime: new Date(startTimeMs).toISOString(), startTimeMs,
-          market, period, side, label: selectionLabel(market, side, homeTeam, awayTeam, line), line,
+          market, period, side, label: prop?propLabel(playerName,definition,side,line):selectionLabel(market, side, homeTeam, awayTeam, line), line,
+          ...(prop?{playerId,playerName,statId:stat,category:definition.category,marketName:definition.name}:{}),
           americanOdds, decimalOdds: americanToDecimal(americanOdds),
           updatedAt: new Date(updatedAtMs).toISOString(), updatedAtMs,
         });
@@ -169,18 +176,22 @@ export function validateCard(value, now = Date.now()) {
     const americanOdds = americanNumber(item.americanOdds);
     const id = `${eventId}:${oddId}:${bookmakerId}`;
     const expectedBookName = BOOK_NAMES[bookmakerId];
+    const prop=market==='prop',pieces=oddId.split('-'),definition=prop?propDefinition(item.league,item.statId,pieces[3]):null;
+    const playerName=cleanText(item.playerName),playerId=cleanText(item.playerId);
     if (!eventId || !oddId || !bookmakerId || !homeTeam || !awayTeam || item.id !== id || ids.has(id)
       || americanOdds === null || !isFreshSelection(item, now)
       || !Number.isFinite(item.decimalOdds) || Math.abs(item.decimalOdds - americanToDecimal(americanOdds)) > 1e-10
       || (expectedBookName && item.bookmakerName !== expectedBookName)
-      || !['moneyline', 'spread', 'total'].includes(market)
-      || (market === 'total' ? !['over', 'under'].includes(side) : !['home', 'away'].includes(side))) continue;
-    const pieces = oddId.split('-');
+      || !['moneyline', 'spread', 'total','prop'].includes(market)
+      || (prop?!definition||!playerName||!playerId||['home','away','all','PLAYER_ID'].includes(playerId)||definition.category!==item.category||!['over','under','yes'].includes(side):(market === 'total' ? !['over', 'under'].includes(side) : !['home', 'away'].includes(side)))) continue;
     const expectedType = market === 'moneyline' ? 'ml' : market === 'spread' ? 'sp' : 'ou';
-    if (pieces[0] !== 'points' || pieces[2] !== 'game' || pieces[3] !== expectedType || pieces[4] !== side
+    if(prop){
+      if(pieces.length!==5||pieces[0]!==item.statId||pieces[1]!==playerId||pieces[2]!=='game'||pieces[4]!==side||!(pieces[3]==='yn'?side==='yes':pieces[3]==='ou'&&['over','under'].includes(side)))continue;
+    }else if (pieces[0] !== 'points' || pieces[2] !== 'game' || pieces[3] !== expectedType || pieces[4] !== side
       || (market === 'total' ? pieces[1] !== 'all' : pieces[1] !== side)) continue;
-    const line = market === 'moneyline' ? null : strictNumber(item.line);
-    if (market !== 'moneyline' && (line === null || Math.abs(line) > 1_000_000 || (market === 'total' && line < 0))) continue;
+    const noLine=market==='moneyline'||prop&&pieces[3]==='yn';
+    const line=noLine?null:strictNumber(item.line);
+    if(!noLine&&(line===null||Math.abs(line)>1_000_000||((market==='total'||prop)&&line<0)))continue;
     const startTimeMs = timestamp(item.startTime);
     const updatedAtMs = timestamp(item.updatedAt);
     result.push({
@@ -189,7 +200,8 @@ export function validateCard(value, now = Date.now()) {
       sport: cleanText(item.sport), league: cleanText(item.league),
       homeTeam, awayTeam, eventName: `${awayTeam} at ${homeTeam}`,
       startTime: new Date(startTimeMs).toISOString(), startTimeMs,
-      market, period: 'game', side, label: selectionLabel(market, side, homeTeam, awayTeam, line), line,
+      market, period: 'game', side, label: prop?propLabel(playerName,definition,side,line):selectionLabel(market, side, homeTeam, awayTeam, line), line,
+      ...(prop?{playerId,playerName,statId:item.statId,category:definition.category,marketName:definition.name}:{}),
       americanOdds, decimalOdds: americanToDecimal(americanOdds),
       updatedAt: new Date(updatedAtMs).toISOString(), updatedAtMs,
     });

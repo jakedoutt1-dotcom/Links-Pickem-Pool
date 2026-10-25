@@ -81,7 +81,7 @@ console.log('PASS public Playmaker: canonical server prices, source freshness, f
   const result=await s.call(build());assert.equal(result.status,200);assert.equal(result.picks[0].americanOdds,-110);assert.equal(JSON.parse(JSON.parse(s.calls[0].body).input).legs,1);
   s.setOutput({status:'completed',output_text:JSON.stringify({analysis:'Unavailable prop.',picks:[]})});assert.equal((await s.call(build())).picks.length,0);
   s.setOutput({status:'completed',output_text:JSON.stringify({analysis:'Bad pick',picks:[{id:'invented',reason:'fake'}]})});assert.equal((await s.call(build())).status,502);
-  s.setOutput({status:'completed',output_text:JSON.stringify({analysis:'Duplicate event',picks:[{id:pick.id,reason:'one'},{id:pick.id,reason:'two'}]})});assert.equal((await s.call({...build(),kind:'parlay',legs:2})).status,502);
+  s.setOutput({status:'completed',output_text:JSON.stringify({analysis:'Duplicate event',picks:[{id:pick.id,reason:'one'},{id:pick.id,reason:'two'}]})});assert.equal((await s.call({...build(),kind:'parlay',legs:2})).status,409,'Insufficient distinct games rejected before spending an AI request');
   const calls=s.calls.length;assert.equal((await s.call({...build(),risk:'guaranteed'})).status,400);assert.equal(s.calls.length,calls);
  }finally{s.db.raw.close()}
 }

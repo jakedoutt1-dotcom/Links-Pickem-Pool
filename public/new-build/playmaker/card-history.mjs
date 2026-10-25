@@ -9,7 +9,7 @@ export function cards(now=Date.now()){
 }
 export function saveBuiltCard(data,preferences){
  const createdAt=Date.now(),card=validateCard(data.picks,createdAt);if(!card.length||card.length!==data.picks.length)return null;
- const item={id:crypto.randomUUID(),createdAt,visit:visitId(),sport:preferences.sport,risk:preferences.risk,kind:preferences.kind,card,analysis:typeof data.analysis==='string'?data.analysis.slice(0,20000):'',reasons:Object.fromEntries(data.picks.map(p=>[p.id,typeof p.reason==='string'?p.reason.slice(0,2000):'']))};
+ const item={id:crypto.randomUUID(),createdAt,visit:visitId(),sport:preferences.sport,category:preferences.category||'game',risk:preferences.risk,kind:preferences.kind,card,analysis:typeof data.analysis==='string'?data.analysis.slice(0,20000):'',reasons:Object.fromEntries(data.picks.map(p=>[p.id,typeof p.reason==='string'?p.reason.slice(0,2000):'']))};
  const text=JSON.stringify([item,...cards(createdAt)].slice(0,50));let saved=false;
  try{localStorage.setItem(KEY,text);saved=true}catch{}
  try{sessionStorage.setItem(KEY,text);saved=true}catch{}

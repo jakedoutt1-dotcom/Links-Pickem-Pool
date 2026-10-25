@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="./assets/brand/playmaker-mark.svg">
   <link rel="stylesheet" href="./styles.css">
   <link rel="stylesheet" href="./graphics-v2.css"><link rel="stylesheet" href="../home-live.css?v=1"><link rel="stylesheet" href="./web.css?v=8"><script type="module" src="../home-live.mjs?v=playmaker-live1"></script>
-  <script type="module" src="./builder.mjs?v=history1"></script>
+  <script type="module" src="./builder.mjs?v=props1"></script>
 
 </head>
 <body id="top" data-view="builder">
@@ -74,10 +74,11 @@
           <form id="analysis-form" class="analysis-form">
             <div class="bet-builder">
               <div id="builder-options">
+                <label>Bet category<select id="build-category"><option value="game">Game winners, spreads &amp; totals</option></select></label>
                 <label>Approach<select id="build-risk"><option value="conservative">Conservative</option><option value="balanced" selected>Balanced</option><option value="aggressive">Aggressive</option></select></label>
                 <label>Bet type<select id="build-kind"><option value="parlay">Parlay</option><option value="single">Single bet</option></select></label>
                 <label>Legs<select id="build-legs"><option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></label>
-                <p>Game winners, spreads and totals. Describe your preferences below. Player props are not available yet. Every bet carries risk.</p>
+                <p>Categories change with your sport. Availability varies by game and sportsbook. Every bet carries risk.</p>
               </div>
             </div>
             <label class="sr-only" for="question-input">Question for the AI analyst</label>
@@ -96,6 +97,6 @@
 
   <footer class="site-footer"><a class="footer-wordmark" href="#top">LINKS <strong>PLAYMAKER.</strong></a><p>Sports instinct. AI perspective.</p><span><a href="../index.html">Back to LINKS &nearr;</a></span></footer>
 
-  <dialog id="guide-dialog" class="guide-dialog" aria-labelledby="guide-heading"><button class="dialog-close" id="close-guide" type="button" aria-label="Close guide">×</button><h2 id="guide-heading">Build your bet in three steps.</h2><ol><li>Choose your sport, approach and number of picks.</li><li>Add any preferences, then tap Build My Bet.</li><li>Tap View my card for your picks, odds and estimated return.</li></ol><p class="guide-note">Five AI requests per day. Failed or cancelled requests can use an attempt. No bets are placed. Current odds and outcomes can change.</p></dialog>
+  <dialog id="guide-dialog" class="guide-dialog" aria-labelledby="guide-heading"><button class="dialog-close" id="close-guide" type="button" aria-label="Close guide">×</button><h2 id="guide-heading">Build your bet in three steps.</h2><ol><li>Choose your sport, bet category, approach and number of picks.</li><li>Add any preferences, then tap Build My Bet.</li><li>Tap View my card for your picks, odds and estimated return.</li></ol><p class="guide-note">Five AI requests per day. Failed or cancelled requests can use an attempt. No bets are placed. Current odds and outcomes can change.</p></dialog>
 </body>
 </html>
