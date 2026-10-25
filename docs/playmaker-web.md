@@ -77,3 +77,5 @@ Playmaker requires a verified LINKS account. Five daily requests are tracked per
 
 ## Share cards
 Results and each My Cards entry offer Share card. Mobile browsers use the native share sheet (including texting where supported); desktop browsers copy readable picks to the clipboard. A selectable text fallback supports blocked clipboard access. Shared text includes matchup, selection, sportsbook, saved odds and the public builder address. Browser-local archive IDs and account details are never shared. Sharing does not generate an AI request. The recipient can read all selections directly in their message; the builder link opens Playmaker rather than a private local archive.
+
+Sharing also renders a 900px PNG card locally, with a small preview and a download link. Supporting mobile browsers attach the PNG to the native share sheet; other browsers retain text sharing and image download. No image service or AI request is needed.
