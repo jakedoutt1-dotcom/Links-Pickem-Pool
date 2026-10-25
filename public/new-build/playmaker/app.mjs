@@ -328,25 +328,23 @@ async function analyze(event) {
       },
     });
     if (typeof payload.analysis !== 'string' || !payload.analysis.trim()) throw new Error('The analysis service returned no analysis. Please try again.');
-    const output = element('div', 'analysis-text', payload.analysis);
+    const output = element('div', 'analysis-text', build&&payload.picks?.length?`${payload.picks.length}-pick card ready. Open your card to review the picks and return.`:payload.analysis);
     // Preserve plain text; provider output is never inserted as executable HTML.
     ui.analysisOutput.replaceChildren(output);
     if(build&&Array.isArray(payload.picks)&&payload.picks.length){
       for(const pick of payload.picks){
         const item=element('div','card-item'),info=element('div','card-item-info');
-        info.append(element('strong','',`${pick.label} · ${oddsText(pick.americanOdds)}`),element('small','',`${pick.eventName} · ${pick.bookmakerName}`),element('p','',pick.reason));item.append(info);ui.analysisOutput.append(item);
+        info.append(element('strong','',`${pick.label} · ${oddsText(pick.americanOdds)}`),element('small','',`${pick.eventName} · ${pick.bookmakerName}`));const why=document.createElement('details');why.append(element('summary','','Why this pick?'),element('p','',pick.reason));info.append(why);item.append(info);ui.analysisOutput.append(item);
       }
-      const use=element('button','button button-primary','Add picks to My Play');use.type='button';
+      const use=element('button','button button-primary','View my card');use.type='button';
       const confirmation=element('p','analysis-status');confirmation.setAttribute('role','status');
       use.addEventListener('click',()=>{
         if(payload.picks.some(p=>!isFreshSelection(p))){setStatus(confirmation,'These prices expired. Build again for fresh selections.',true);return}
         state.card=payload.picks.map(({reason,...pick})=>pick);saveCard();renderCard();renderBoard();
-        const message=`${state.card.length} AI pick${state.card.length===1?'':'s'} added to My Play. Review your picks and estimate a return below.`;
-        setStatus(ui.cardStatus,message);setStatus(confirmation,message);
-        use.textContent='Card added · View my picks';
-        const panel=document.getElementById('my-play');panel.setAttribute('tabindex','-1');
-        location.hash='my-play';panel.focus({preventScroll:true});
-        panel.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});
+        let transferred=false;
+        try{sessionStorage.setItem('links-playmaker:results:v1',JSON.stringify({card:state.card,analysis:payload.analysis,reasons:Object.fromEntries(payload.picks.map(p=>[p.id,p.reason]))}));transferred=true}catch{}
+        if(!transferred&&!state.storageAvailable){setStatus(confirmation,'Your browser blocked saving this card. Enable storage to open the results page.',true);return}
+        location.assign('./card.html');
       });ui.analysisOutput.append(use,confirmation);
     }
     state.aiLastRequestFailed = false;

@@ -43,13 +43,15 @@ try{for(const width of [320,390,1440]){
   await page.locator('.pick-button').first().click();assert(await page.locator('#my-play .card-calculator').isVisible());assert.equal(await page.locator('#card-count').innerText(),'1');await page.locator('#question-input').fill('Explain this selection and its uncertainty.');await page.locator('#analyze-button').click();await page.locator('.analysis-text').waitFor();assert.equal(aiCalls,1);assert.equal(JSON.parse(providerInput.input).card[0].americanOdds,-110);assert.equal(await page.evaluate(()=>window.compromised),undefined);assert.match(await page.locator('#ai-remaining').innerText(),/4 analyses/);
   await page.locator('#analyst').screenshot({path:`${out}/analyst-${width}.png`});await page.reload();await page.locator('.pick-button').first().waitFor();assert.equal(aiCalls,1);assert.equal(await page.locator('#card-count').innerText(),'1');assert.match(await page.locator('#ai-remaining').innerText(),/4 analyses/);if(width===1440){services.session=async()=>({email:'jakedoutt@yahoo.com'});await page.reload();await page.waitForFunction(()=>document.querySelector('#ai-remaining').textContent.includes('Lifetime testing pass'));assert.equal(aiCalls,1);assert.equal(await page.locator('.account-link').getAttribute('href'),'../links-login.html?next=playmaker');await page.screenshot({path:`${out}/testing-pass.png`});}
   await page.locator('#request-mode').selectOption('build');await page.locator('#build-kind').selectOption('single');await page.locator('#analyze-button').click();
-  await page.getByRole('button',{name:'Add picks to My Play',exact:true}).click();
-  assert.equal(new URL(page.url()).hash,'#my-play');assert.equal(await page.locator('#card-count').innerText(),'1');assert.match(await page.locator('#card-list').innerText(),/Test Away 1/);
-  assert.match(await page.locator('#card-status').innerText(),/1 AI pick added/);assert.equal(await page.locator('#my-play').evaluate(el=>document.activeElement===el),true);
-  const cardPosition=await page.locator('#my-play').boundingBox();assert(cardPosition.y>=0&&cardPosition.y<250,'Picks panel scrolled into view');
-  assert(await page.getByRole('button',{name:'Card added · View my picks',exact:true}).isEnabled());
-  await page.locator('#my-play').screenshot({path:`${out}/used-card-${width}.png`});
-  await page.reload();await page.locator('.pick-button').first().waitFor();assert.match(await page.locator('#card-list').innerText(),/Test Away 1/);assert.equal(aiCalls,2,'Applying and reloading a card do not generate extra AI requests');
+  await page.getByRole('button',{name:'View my card',exact:true}).click();await page.waitForURL('**/playmaker/card.html');
+  assert.equal(await page.locator('#results-count').innerText(),'1 pick');assert.match(await page.locator('#results-picks').innerText(),/Test Away 1/);
+  assert.equal(await page.locator('.pick').count(),1);assert.equal(await page.locator('.badge').count(),2);
+  assert(!(await page.locator('#results-analysis').isVisible()),'Long AI overview collapsed');assert(!(await page.locator('.pick details p').isVisible()),'Pick reasons collapsed');
+  await page.locator('.pick summary').click();assert.match(await page.locator('.pick details p').innerText(),/Fixture selection/);
+  await page.locator('#results-stake').fill('20');assert.equal(await page.locator('#results-return').innerText(),'$38.18');
+  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Results page fits phone');await page.screenshot({path:`${out}/card-results-${width}.png`});
+  await page.reload();assert.match(await page.locator('#results-picks').innerText(),/Test Away 1/);assert.equal(aiCalls,2,'Opening/reloading results makes no AI requests');
+  await page.getByRole('link',{name:'Change picks',exact:true}).click();await page.locator('.pick-button').first().waitFor();assert.match(await page.locator('#card-list').innerText(),/Test Away 1/);
   assert.deepEqual(errors,[]);assert.deepEqual(missing,[]);
   console.log(`PASS Playmaker ${width}px: homepage banner, live feed/refresh, market board, card persistence, Odds Lab, guide, canonical AI request, plain-text response and durable allowance.`);
  }finally{await page.close();db.raw.close()}
