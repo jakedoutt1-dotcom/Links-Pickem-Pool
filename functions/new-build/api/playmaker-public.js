@@ -56,9 +56,9 @@ async function allowance(db,who,day,cap){
  const last=await db.prepare('SELECT status,created_at FROM links_playmaker_requests WHERE owner=? AND day=? ORDER BY created_at DESC,id DESC LIMIT 1').bind(who.owner,day).first();
  return {signedIn:true,account:{id:who.owner,email:who.email},dailyLimit:who.testingPass?null:LIMIT,used,freeRemaining:who.testingPass?null:freeRemaining,creditsRemaining,remaining:who.testingPass?null:freeRemaining+creditsRemaining,resetAt:new Date(Date.parse(day+'T00:00:00Z')+86400000).toISOString(),limitEnforced:true,testingPass:who.testingPass,passName:who.testingPass?'Lifetime testing pass':null,expiresAt:null,available:Number(row.total)<cap,lastRequestStatus:last?.status||'unverified',lastRequestAt:last?.created_at||null};
 }
-async function getOdds(context,sport,services,category='game',book='all'){
+async function getOdds(context,sport,services,category='game',book='all',eventId=''){
  const url=new URL(context.request.url);url.pathname='/new-build/api/playmaker-odds';url.search='';
- for(const [k,v]of Object.entries({leagueID:sport,limit:category==='game'?'20':'10',oddIDs:categoryOddIds(sport,category),...(book!=='all'?{bookmakerID:book}:{})}))url.searchParams.set(k,v);
+ for(const [k,v]of Object.entries({leagueID:sport,limit:eventId?'1':category==='game'?'20':'10',...(eventId?{eventID:eventId}:{}),oddIDs:categoryOddIds(sport,category),...(book!=='all'?{bookmakerID:book}:{})}))url.searchParams.set(k,v);
  const response=await (services.odds||legacyOdds)({...context,request:new Request(url),waitUntil:context.waitUntil||(()=>{})});
  if(!response.ok)throw fail('ODDS_UNAVAILABLE',response.status===429?'The market feed is temporarily rate limited. Try again later.':'The market feed is temporarily unavailable.',response.status===429?429:503);
  let data;try{data=JSON.parse(await boundedText(response.body,12*1024*1024))}catch{throw fail('ODDS_UNAVAILABLE','The market feed could not be read.')}
@@ -76,7 +76,8 @@ function input(body){
  if(build&&(!validCategory(sport,category)||typeof book!=='string'||!(/^[a-z0-9]{2,40}$/).test(book)))throw fail('INVALID_CATEGORY','Choose a category and sportsbook supported for this sport.',400);
  const risk=body.risk||'balanced',kind=body.kind||'parlay',legs=Number(body.legs||4);
  if(build&&(!['conservative','balanced','aggressive'].includes(risk)||!['single','parlay','same_game'].includes(kind)||!Number.isInteger(legs)||legs<1||legs>8))throw fail('INVALID_BUILD','Choose a risk level and 1–8 legs.',400);
- return {question,sport,ids:card.map(p=>p.id),requestId:body.requestId,build,risk,kind,category,book,legs:kind==='single'?1:legs};
+ const eventId=typeof body.eventId==='string'?body.eventId:'';if(eventId&&!/^[a-zA-Z0-9_-]{1,160}$/.test(eventId))throw fail('INVALID_GAME','Choose an available game.',400);if(build&&kind==='same_game'&&!eventId)throw fail('GAME_REQUIRED','Choose a game for your same-game parlay.',400);
+ return {eventId,question,sport,ids:card.map(p=>p.id),requestId:body.requestId,build,risk,kind,category,book,legs:kind==='single'?1:legs};
 }
 export function providerText(data){
  if(data?.status!=='completed')return '';
@@ -90,11 +91,15 @@ export async function playmakerPublic(context,services={}){
  try{
   if(!['GET','POST'].includes(request.method))return reply({success:false,error:'Method not allowed.'},405);
   if(request.headers.get('sec-fetch-site')==='cross-site'||request.method==='POST'&&request.headers.get('Origin')!==new URL(request.url).origin)throw fail('ORIGIN_REJECTED','Open Playmaker on LINKS to submit a question.',403);
-  if(!['config','odds','ai'].includes(action))throw fail('INVALID_ACTION','Unknown Playmaker request.',404);
+  if(!['config','odds','games','ai'].includes(action))throw fail('INVALID_ACTION','Unknown Playmaker request.',404);
   if(request.method==='POST'&&action!=='ai')throw fail('INVALID_ACTION','This action is read-only.',405);
   if(!env.DB)throw fail('BUDGET_UNAVAILABLE','Account tracking is temporarily unavailable.');
   await ensurePlaymaker(env.DB);who=await identity(request,env,services.session||accountSession);
   if(!who){if(request.method==='GET'&&action==='config')return reply({build:'PM-WEB-5',requiresAccount:true,signedIn:false,aiConnected:false,remaining:0,available:false});throw fail('SIGN_IN_REQUIRED','Sign in or create a LINKS account to use Playmaker.',401)}
+  if(action==='games'){
+   const q=new URL(request.url).searchParams,sport=q.get('leagueID')||'NFL';if(!SPORTS.has(sport))throw fail('INVALID_SPORT','Choose a supported sport.',400);
+   const rows=parseEvents(await getOdds(context,sport,services),'all',now);const games=[...new Map(rows.filter(p=>p.league===sport).map(p=>[p.eventId,{id:p.eventId,name:p.eventName,startTime:p.startTime}])).values()];return reply({games});
+  }
   if(action==='odds'){
    const sport=new URL(request.url).searchParams.get('leagueID')||'NFL';if(!SPORTS.has(sport))throw fail('INVALID_SPORT','Choose a supported sport.',400);
    return reply(await getOdds(context,sport,services));
@@ -110,9 +115,9 @@ export async function playmakerPublic(context,services={}){
   if(quota.remaining===0)throw fail('DAILY_LIMIT','Your five free daily requests have been used. Check My Account for your balance and reset time.',429);
   let card=[],candidates=[];
   if(clean.ids.length||clean.build){
-   const data=await getOdds(context,clean.sport,services,clean.build?clean.category:'game',clean.build?clean.book:'all'),rows=parseEvents(data,clean.build?clean.book:'all',now),byId=new Map(rows.map(row=>[row.id,row]));
+   const data=await getOdds(context,clean.sport,services,clean.build?clean.category:'game',clean.build?clean.book:'all',clean.build?clean.eventId:''),rows=parseEvents(data,clean.build?clean.book:'all',now),byId=new Map(rows.map(row=>[row.id,row]));
    if(clean.build){
-    const eligible=rows.filter(p=>p.league===clean.sport&&categoryMatches(p,clean.category)&&(clean.book==='all'||p.bookmakerId===clean.book));
+    const eligible=rows.filter(p=>p.league===clean.sport&&(!clean.eventId||p.eventId===clean.eventId)&&categoryMatches(p,clean.category)&&(clean.book==='all'||p.bookmakerId===clean.book));
     // Keep only books able to supply a compatible card, then spread
     // candidates over games, books and prop categories instead of one long block.
     const coverage=new Map();for(const p of eligible){const group=clean.kind==='same_game'?p.bookmakerId+':'+p.eventId:p.bookmakerId;if(!coverage.has(group))coverage.set(group,[]);const chosen=coverage.get(group);if(chosen.length<clean.legs&&compatibleBuildPicks([...chosen,p]))chosen.push(p)}

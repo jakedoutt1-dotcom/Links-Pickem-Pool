@@ -15,12 +15,13 @@ export async function onRequestGet(context){
  if(!key)return Response.json({success:false,code:"SECRET_MISSING",error:"Playmaker odds secret is not available to this deployment",diagnostic:{function:"playmaker-odds",secretDetected:false,build:"742"}},{status:503,headers:{"Cache-Control":"no-store"}});
  const q=new URL(context.request.url).searchParams;
  const leagueID=normalizeList(q.get("leagueID")||"NFL,NCAAF,NBA,WNBA,MLB,NHL,NCAAB");
+ const eventID=String(q.get('eventID')||'');if(eventID&&!/^[a-zA-Z0-9_-]{1,160}$/.test(eventID))return Response.json({success:false,error:'Invalid game.'},{status:400});
  const limit=Math.min(Math.max(Number(q.get("limit")||20),1),100);
  const bookmakerID=normalizeList(q.get("bookmakerID"));
  const oddIDs=normalizeList(q.get("oddIDs")||q.get("oddID"));
  const includeAltLines=q.get("includeAltLines")==="true",includeOpenCloseOdds=q.get("includeOpenCloseOdds")==="true";
  // Deliberately ignore cache-busters and UI-only query params so old patched callers collapse to one provider request.
- const cacheKey=[leagueID,limit,bookmakerID,oddIDs,includeAltLines?1:0,includeOpenCloseOdds?1:0].join("|");
+ const cacheKey=[leagueID,eventID,limit,bookmakerID,oddIDs,includeAltLines?1:0,includeOpenCloseOdds?1:0].join("|");
  const now=Date.now(),mem=memoryCache[cacheKey];
  if(mem&&now-mem.at<FRESH_MS)return response(mem.body,"memory");
  const edge=typeof caches!=="undefined"?caches.default:null;
@@ -33,6 +34,7 @@ export async function onRequestGet(context){
  const job=(async()=>{
   const upstream=new URL("https://api.sportsgameodds.com/v2/events");
   upstream.searchParams.set("leagueID",leagueID);upstream.searchParams.set("oddsAvailable","true");upstream.searchParams.set("limit",String(limit));upstream.searchParams.set("started","false");upstream.searchParams.set("ended","false");
+  if(eventID)upstream.searchParams.set('eventID',eventID);
   if(bookmakerID)upstream.searchParams.set("bookmakerID",bookmakerID);if(oddIDs)upstream.searchParams.set("oddIDs",oddIDs);if(includeAltLines)upstream.searchParams.set("includeAltLines","true");if(includeOpenCloseOdds)upstream.searchParams.set("includeOpenCloseOdds","true");
   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),12000);let r,body;
   try{r=await fetch(upstream.toString(),{signal:controller.signal,headers:{"Accept":"application/json","x-api-key":key}});body=await readBounded(r)}finally{clearTimeout(timeout)}

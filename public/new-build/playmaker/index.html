@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="./assets/brand/playmaker-mark.svg">
   <link rel="stylesheet" href="./styles.css">
   <link rel="stylesheet" href="./graphics-v2.css"><link rel="stylesheet" href="../home-live.css?v=clean-footer1"><link rel="stylesheet" href="./web.css?v=account1"><script type="module" src="../home-live.mjs?v=playmaker-live1"></script>
-  <script type="module" src="./builder.mjs?v=gateway-bounds1"></script>
+  <script type="module" src="./builder.mjs?v=choose-game1"></script>
 
 </head>
 <body id="top" data-view="builder">
@@ -78,7 +78,7 @@
                 <label>Bet category<select id="build-category"><option value="game">Game winners, spreads &amp; totals</option></select></label>
                 <label>Approach<select id="build-risk"><option value="conservative">Conservative</option><option value="balanced" selected>Balanced</option><option value="aggressive">Aggressive</option></select></label>
                 <label>Bet type<select id="build-kind"><option value="parlay">Parlay</option><option value="same_game">Same-game parlay</option><option value="single">Single bet</option></select></label>
-                <label>Legs<select id="build-legs"><option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></label>
+                <label id="build-game-label" hidden>Choose game<select id="build-game"><option value="">Choose a game</option></select><small id="build-game-status" role="status"></small><button id="reload-games" type="button">Refresh games</button></label><label>Legs<select id="build-legs"><option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></label>
                 <p>Several players from one game can share a card. Same-game combined odds must be confirmed at your sportsbook. Categories change with your sport. Availability varies by game and sportsbook. Every bet carries risk.</p>
               </div>
             </div>
