@@ -82,3 +82,5 @@ Sharing also renders a 900px PNG card locally, with a small preview and a downlo
 
 ## Same-game player cards
 Builder candidates and output validation now allow several distinct players from one game at the same sportsbook. No repeated player within an event, multiple first-touchdown scorers within an event, duplicate selection or multiple team game lines within an event. Existing return calculation refuses to multiply correlated same-game prices and requires a sportsbook quote. Tests cover a four-player single-game card and incompatible selections with mocked AI.
+
+The explicit Same-game parlay bet type enforces one event and one sportsbook during candidate eligibility and final output validation. Selecting it defaults Game lines to Mixed picks where supported. Too few compatible selections returns before an AI request is reserved.
