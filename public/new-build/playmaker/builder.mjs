@@ -17,7 +17,7 @@ get('build-kind').addEventListener('change',()=>{if(get('build-kind').value==='s
 form.addEventListener('submit',async event=>{
  event.preventDefault();if(busy){controller.abort();return}if(!connected||!available||remaining===0)return;
  busy=true;controller=new AbortController();controls();status.textContent='Building your card from current sportsbook prices…';output.replaceChildren();
- const timeout=setTimeout(()=>controller.abort(),65000);
+ const startedAt=Date.now(),timeout=setTimeout(()=>controller.abort(),65000);
  try{
   const preferences={sport,category:get('build-category').value,book:get('book-filter').value,risk:get('build-risk').value,kind:get('build-kind').value,legs:Number(get('build-legs').value)};
   const data=await json('POST',{mode:'build',...preferences,question:get('question-input').value.trim()||'Build a bet using my chosen sport, approach, type and leg count.',card:[],requestId:crypto.randomUUID()});usage(data);
@@ -36,7 +36,7 @@ form.addEventListener('submit',async event=>{
    if(!saved){notice.textContent='Your browser blocked saving this card. Enable storage to open it.';return}
    location.assign('./card.html');
   });output.append(view,notice);status.textContent=archived?'Card saved in My Cards. Tap View my card.':'Your card is ready. Browser history could not be saved; tap View my card.';
- }catch(error){status.textContent=error.name==='AbortError'?'Request stopped. No automatic retry was made.':error.name==='SyntaxError'||error.name==='TypeError'||/expected pattern/i.test(error.message||'')?'Your browser could not complete the connection. Check My Cards before trying again; no automatic retry was made.':error.message;try{usage(await json())}catch{}}
+ }catch(error){status.textContent=error.name==='AbortError'?'Request stopped. No automatic retry was made.':error.name==='SyntaxError'||error.name==='TypeError'||/expected pattern/i.test(error.message||'')?'Your browser could not complete the connection. Check My Cards before trying again; no automatic retry was made.':error.message;try{const latest=await json();usage(latest);if(/HTTP 502/.test(status.textContent))status.textContent+=latest.lastRequestAt>=startedAt-2000?' The server recorded this attempt: '+latest.lastRequestStatus+'.':' The build did not reach the recorded AI request stage.'}catch{}}
  finally{clearTimeout(timeout);busy=false;controls()}
 });
 get('how-it-works').addEventListener('click',()=>get('guide-dialog').showModal());get('close-guide').addEventListener('click',()=>get('guide-dialog').close());

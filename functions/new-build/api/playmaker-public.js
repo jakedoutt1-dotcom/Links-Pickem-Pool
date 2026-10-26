@@ -53,8 +53,8 @@ async function allowance(db,who,day,cap){
  const row=await db.prepare('SELECT COUNT(*) AS total,COALESCE(SUM(CASE WHEN owner=? THEN 1 ELSE 0 END),0) AS owned FROM links_playmaker_requests WHERE day=?').bind(who.owner,day).first();
  const wallet=await db.prepare('SELECT COALESCE((SELECT SUM(amount) FROM links_playmaker_credit_grants WHERE owner=?),0)-COALESCE((SELECT COUNT(*) FROM links_playmaker_credit_uses WHERE owner=?),0) AS balance').bind(who.owner,who.owner).first();
  const used=Number(row.owned),freeRemaining=Math.max(0,LIMIT-used),creditsRemaining=Math.max(0,Number(wallet.balance));
- const last=await db.prepare('SELECT status FROM links_playmaker_requests WHERE owner=? AND day=? ORDER BY created_at DESC,id DESC LIMIT 1').bind(who.owner,day).first();
- return {signedIn:true,account:{id:who.owner,email:who.email},dailyLimit:who.testingPass?null:LIMIT,used,freeRemaining:who.testingPass?null:freeRemaining,creditsRemaining,remaining:who.testingPass?null:freeRemaining+creditsRemaining,resetAt:new Date(Date.parse(day+'T00:00:00Z')+86400000).toISOString(),limitEnforced:true,testingPass:who.testingPass,passName:who.testingPass?'Lifetime testing pass':null,expiresAt:null,available:Number(row.total)<cap,lastRequestStatus:last?.status||'unverified'};
+ const last=await db.prepare('SELECT status,created_at FROM links_playmaker_requests WHERE owner=? AND day=? ORDER BY created_at DESC,id DESC LIMIT 1').bind(who.owner,day).first();
+ return {signedIn:true,account:{id:who.owner,email:who.email},dailyLimit:who.testingPass?null:LIMIT,used,freeRemaining:who.testingPass?null:freeRemaining,creditsRemaining,remaining:who.testingPass?null:freeRemaining+creditsRemaining,resetAt:new Date(Date.parse(day+'T00:00:00Z')+86400000).toISOString(),limitEnforced:true,testingPass:who.testingPass,passName:who.testingPass?'Lifetime testing pass':null,expiresAt:null,available:Number(row.total)<cap,lastRequestStatus:last?.status||'unverified',lastRequestAt:last?.created_at||null};
 }
 async function getOdds(context,sport,services,category='game',book='all'){
  const url=new URL(context.request.url);url.pathname='/new-build/api/playmaker-odds';url.search='';
