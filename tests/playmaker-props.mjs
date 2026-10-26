@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {categories,categoryOddIds,categoryMatches} from '../public/new-build/playmaker/markets.mjs';
 import {parseEvents,validateCard,calculateReturn} from '../public/new-build/playmaker/domain.mjs';
-import {playmakerPublic} from '../functions/new-build/api/playmaker-public.js';
+import {playmakerPublic,compatibleBuildPicks} from '../functions/new-build/api/playmaker-public.js';
 import {fixture} from './helpers/playmaker-fixture.mjs';
 const now=Date.now(),origin='https://links.test';
 function eventFor(league,category){const odds={};for(const oddID of categoryOddIds(league,category).split(',')){const id=oddID.replace('PLAYER_ID','ALEX_EXAMPLE_1_'+league),[statID,statEntityID,periodID,betTypeID,sideID]=id.split('-');odds[id]={oddID:id,statID,statEntityID,periodID,betTypeID,sideID,byBookmaker:{draftkings:{available:true,odds:'+130',overUnder:'25.5',spread:sideID==='home'?'-3.5':'3.5',lastUpdatedAt:new Date(now-60000).toISOString()}}}}return {eventID:'props-event',leagueID:league,sportID:league,status:{startsAt:new Date(now+86400000).toISOString(),started:false,ended:false},teams:{home:{name:'Home'},away:{name:'Away'}},players:{['ALEX_EXAMPLE_1_'+league]:{name:'Alex Example'}},odds}}
@@ -37,4 +37,10 @@ console.log(`PASS ${checked} sport/category combinations: canonical player names
   const events=Array.from({length:10},(_,i)=>({...structuredClone(event),eventID:'event-'+i}));
   test.services.odds=async()=>Response.json({data:events,success:true});const result=await test.call('assists',{kind:'parlay',legs:8});assert.equal(result.status,200);assert.equal(result.picks.length,8);assert.equal(new Set(test.calls[0].candidates.map(p=>p.eventId)).size,10,'Bounded candidate selection keeps every game represented');assert.equal(new Set(result.picks.map(p=>p.eventId)).size,8);
  }finally{test.db.raw.close()}
+}
+
+{
+ const event=eventFor('NFL','receiving_yards'),original='ALEX_EXAMPLE_1_NFL';
+ for(let i=2;i<=4;i++){const id='PLAYER_'+i;event.players[id]={name:'Player '+i};for(const [key,value] of Object.entries({...event.odds})){if(!key.includes(original))continue;const next=key.replace(original,id);event.odds[next]={...structuredClone(value),oddID:next,statEntityID:id}}}
+ const test=harness(event);try{test.services.fetch=async(url,init)=>{const input=JSON.parse(JSON.parse(init.body).input);const picks=[];for(const c of input.candidates){const p=parseEvents({data:[event]},'all',now).find(p=>p.id===c.id);if(compatibleBuildPicks([...picks,p]))picks.push(p);if(picks.length===4)break}return Response.json({status:'completed',output_text:JSON.stringify({analysis:'Same-game correlation. Confirm sportsbook combined odds.',picks:picks.map(p=>({id:p.id,reason:'Real line, uncertain result.'}))})})};const result=await test.call('receiving_yards',{kind:'parlay',legs:4});assert.equal(result.status,200);assert.equal(result.picks.length,4);assert.equal(new Set(result.picks.map(p=>p.eventId)).size,1);assert.equal(calculateReturn(result.picks,10).valid,false,'Never multiply same-game odds');assert(!compatibleBuildPicks([result.picks[0],result.picks[0]]));assert(!compatibleBuildPicks(result.picks.slice(0,2).map(p=>({...p,category:'first_td'}))));console.log('PASS four different players in one game, duplicate/first-TD conflicts, no synthetic same-game return');}finally{test.db.raw.close()}
 }
