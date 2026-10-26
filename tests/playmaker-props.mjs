@@ -48,3 +48,9 @@ console.log(`PASS ${checked} sport/category combinations: canonical player names
 {
  const test=harness(eventFor('NFL','receptions'));try{const result=await test.call('receptions',{kind:'same_game',legs:2});assert.equal(result.status,409);assert.equal(test.calls.length,0,'Not enough compatible players uses no AI request')}finally{test.db.raw.close()}
 }
+
+{
+ const base=eventFor('NFL','receiving_yards'),original='ALEX_EXAMPLE_1_NFL';
+ for(let i=2;i<=100;i++){const id='PLAYER_'+i;base.players[id]={name:'Player '+i};for(const [key,value] of Object.entries({...base.odds})){if(!key.includes(original))continue;const next=key.replace(original,id);base.odds[next]={...structuredClone(value),oddID:next,statEntityID:id}}}
+ const test=harness(base);try{const events=Array.from({length:10},(_,i)=>({...structuredClone(base),eventID:'large-'+i}));test.services.odds=async()=>Response.json({data:events});const result=await test.call('receiving_yards',{kind:'parlay',legs:8});assert.equal(result.status,200);assert(test.calls[0].candidates.length<=240);console.log('PASS large board: 2,000 player lines, bounded 240 candidates');}finally{test.db.raw.close()}
+}

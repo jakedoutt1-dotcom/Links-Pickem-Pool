@@ -110,12 +110,12 @@ export async function playmakerPublic(context,services={}){
   if(quota.remaining===0)throw fail('DAILY_LIMIT','Your five free daily requests have been used. Check My Account for your balance and reset time.',429);
   let card=[],candidates=[];
   if(clean.ids.length||clean.build){
-   const data=await getOdds(context,clean.sport,services,clean.build?clean.category:'game',clean.build?clean.book:'all'),rows=parseEvents(data,'all',now),byId=new Map(rows.map(row=>[row.id,row]));
+   const data=await getOdds(context,clean.sport,services,clean.build?clean.category:'game',clean.build?clean.book:'all'),rows=parseEvents(data,clean.build?clean.book:'all',now),byId=new Map(rows.map(row=>[row.id,row]));
    if(clean.build){
-    const eligible=rows.filter(p=>p.league===clean.sport&&isFreshSelection(p,now)&&categoryMatches(p,clean.category)&&(clean.book==='all'||p.bookmakerId===clean.book));
+    const eligible=rows.filter(p=>p.league===clean.sport&&categoryMatches(p,clean.category)&&(clean.book==='all'||p.bookmakerId===clean.book));
     // Keep only books able to supply a compatible card, then spread
     // candidates over games, books and prop categories instead of one long block.
-    const coverage=new Map();for(const p of eligible){const group=clean.kind==='same_game'?p.bookmakerId+':'+p.eventId:p.bookmakerId;if(!coverage.has(group))coverage.set(group,[]);const chosen=coverage.get(group);if(compatibleBuildPicks([...chosen,p]))chosen.push(p)}
+    const coverage=new Map();for(const p of eligible){const group=clean.kind==='same_game'?p.bookmakerId+':'+p.eventId:p.bookmakerId;if(!coverage.has(group))coverage.set(group,[]);const chosen=coverage.get(group);if(chosen.length<clean.legs&&compatibleBuildPicks([...chosen,p]))chosen.push(p)}
     const buckets=new Map();for(const p of eligible){if(coverage.get(clean.kind==='same_game'?p.bookmakerId+':'+p.eventId:p.bookmakerId).length<clean.legs)continue;const key=`${p.eventId}:${p.bookmakerId}:${p.category||p.market}`;if(!buckets.has(key))buckets.set(key,[]);buckets.get(key).push(p)}
     const byEvent=new Map();for(const list of buckets.values()){const id=list[0].eventId;if(!byEvent.has(id))byEvent.set(id,[]);byEvent.get(id).push(list)}
     const eventLists=[...byEvent.values()].map(lists=>{const result=[];for(let i=0;lists.some(list=>list.length>i)&&result.length<240;i++)for(const list of lists)if(list[i])result.push(list[i]);return result});
