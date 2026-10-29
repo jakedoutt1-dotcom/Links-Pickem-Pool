@@ -72,7 +72,10 @@ async function allowance(db,who,day,cap){
 async function getOdds(context,sport,services,category='game',book='all',eventId='',alternates=false){
  const url=new URL(context.request.url);url.pathname='/new-build/api/playmaker-odds';url.search='';
  for(const [k,v]of Object.entries({leagueID:sport,limit:eventId?'1':category==='game'?'20':'10',...(eventId?{eventID:eventId}:{}),...(alternates?{includeAltLines:'true'}:{}),oddIDs:categoryOddIds(sport,category),...(book!=='all'?{bookmakerID:book}:{})}))url.searchParams.set(k,v);
- const response=await (services.odds||legacyOdds)({...context,request:new Request(url),waitUntil:context.waitUntil||(()=>{})});
+ let response=await (services.odds||legacyOdds)({...context,request:new Request(url),waitUntil:context.waitUntil||(()=>{})});
+ // Large alternate-line payloads can fail while the main board remains usable.
+ // Retry only the odds read, never the paid AI request; preserve the sportsbook.
+ if(!response.ok&&alternates&&response.status!==429){url.searchParams.delete('includeAltLines');response=await (services.odds||legacyOdds)({...context,request:new Request(url),waitUntil:context.waitUntil||(()=>{})})}
  if(!response.ok)throw fail('ODDS_UNAVAILABLE',response.status===429?'The market feed is temporarily rate limited. Try again later.':'The market feed is temporarily unavailable.',response.status===429?429:503);
  let data;try{data=JSON.parse(await boundedText(response.body,12*1024*1024))}catch{throw fail('ODDS_UNAVAILABLE','The market feed could not be read.')}
  if(data?.success===false||!Array.isArray(data?.data))throw fail('ODDS_UNAVAILABLE','The market feed returned no valid board.');
@@ -132,6 +135,7 @@ export async function playmakerPublic(context,services={}){
    const leagues=clean.automatic?(new Date(now).getUTCMonth()>=2&&new Date(now).getUTCMonth()<=8?['MLB','NBA','NHL']:['NFL','NBA','NHL']):[clean.sport];
    const loaded=await Promise.allSettled(leagues.map(league=>getOdds(context,league,services,clean.build?clean.category:'game',clean.build?clean.book:'all',clean.build?clean.eventId:'',clean.build&&clean.risk!=='balanced')));
    if(!clean.automatic&&loaded[0].status==='rejected')throw loaded[0].reason;
+   if(clean.automatic&&loaded.every(item=>item.status==='rejected'))throw loaded[0].reason;
    currentEvents=loaded.flatMap(item=>item.status==='fulfilled'?item.value.data:[]);const data={data:currentEvents},rows=parseEvents(data,clean.build?clean.book:'all',now),byId=new Map(rows.map(row=>[row.id,row]));
    if(clean.build){
     const eligible=approachCandidates(rows.filter(p=>(clean.automatic?p.startTimeMs<=now+48*60*60*1000:p.league===clean.sport)&&(!clean.eventId||p.eventId===clean.eventId)&&categoryMatches(p,clean.category)&&(clean.book==='all'||p.bookmakerId===clean.book)),clean.risk).filter(p=>!clean.automatic||clean.risk==='lottery'||(clean.risk==='conservative'?p.americanOdds<=-150:clean.risk==='balanced'?p.americanOdds<=150:p.americanOdds<=500));
@@ -143,6 +147,7 @@ export async function playmakerPublic(context,services={}){
     const eventLists=[...byEvent.values()].map(lists=>{const result=[];for(let i=0;lists.some(list=>list.length>i)&&result.length<240;i++)for(const list of lists)if(list[i])result.push(list[i]);return result});
     for(let i=0;candidates.length<240&&eventLists.some(list=>list.length>i);i++)for(const list of eventLists)if(list[i]&&candidates.length<240)candidates.push(list[i]);
     if(clean.automatic){cardOptions=automaticCardOptions(eligible,clean.legs,compatibleBuildPicks);const ids=new Set(cardOptions.flatMap(o=>o.picks.map(p=>p.id)));candidates=eligible.filter(p=>ids.has(p.id))}
+    if(!candidates.length&&clean.automatic&&loaded.some(item=>item.status==='rejected'))throw fail('ODDS_UNAVAILABLE','Some league feeds could not be loaded, so a complete card could not be checked. No AI request was used. Try again later.',503);
     if(!candidates.length&&clean.automatic)throw fail('NO_MARKETS','Not enough current compatible selections for this '+clean.legs+'-pick card at the selected sportsbook. Try another approach or sportsbook. No AI request was used.',409);
     if(!candidates.length)throw fail('NO_MARKETS','Not enough current '+categories(clean.sport).find(c=>c.id===clean.category).label.toLowerCase()+' markets for this card. Try fewer legs, another sportsbook or another category. No AI request was used.',409);
    }
