@@ -58,3 +58,13 @@ jobs:
           node tests/playmaker-research.mjs
           node tests/playmaker-odds-bounds.mjs
           node tests/playmaker-sportsbook-links.mjs
+
+  check-please:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node tests/check-please.mjs
