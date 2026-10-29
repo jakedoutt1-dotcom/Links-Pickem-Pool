@@ -124,8 +124,8 @@ export function parseEvents(payload, selectedBook = 'all', now = Date.now()) {
       else if (type === 'ou' && ['over', 'under'].includes(side) && entity === 'all') market = 'total';
       else continue;
       if (!odd.byBookmaker || typeof odd.byBookmaker !== 'object') continue;
-      for (const [bookKey, book] of Object.entries(odd.byBookmaker)) {
-        if (!book || typeof book !== 'object' || book.available === false) continue;
+      for (const [bookKey, mainBook] of Object.entries(odd.byBookmaker)) for(const book of [mainBook,...(Array.isArray(mainBook?.altLines)?mainBook.altLines.slice(0,30).map(a=>({...a,alternate:true,lastUpdatedAt:a.lastUpdatedAt??mainBook.lastUpdatedAt,mainLine:strictNumber(market==='spread'?mainBook.spread:mainBook.overUnder)})):[])]) {
+        if (!book || typeof book !== 'object' || book.available === false || book.alternate&&book.mainLine===null) continue;
         const bookmakerId = normalizeBook(bookKey);
         if (!bookmakerId || (requestedBook !== 'all' && requestedBook !== bookmakerId)) continue;
         const americanOdds = americanNumber(book.odds);
@@ -138,7 +138,7 @@ export function parseEvents(payload, selectedBook = 'all', now = Date.now()) {
           line = strictNumber(market === 'spread' ? book.spread : book.overUnder);
           if (line === null || Math.abs(line) > 1_000_000 || ((market === 'total'||prop) && line < 0)) continue;
         }
-        const id = `${eventId}:${oddId}:${bookmakerId}`;
+        const id = `${eventId}:${oddId}:${bookmakerId}`+(book.alternate?`:alt:${line}:${americanOdds}`:'');
         if (seen.has(id)) continue;
         seen.add(id);
         output.push({
@@ -147,7 +147,7 @@ export function parseEvents(payload, selectedBook = 'all', now = Date.now()) {
           sport: cleanText(event.sportID), league: cleanText(event.leagueID),
           homeTeam, awayTeam, eventName: `${awayTeam} at ${homeTeam}`,
           startTime: new Date(startTimeMs).toISOString(), startTimeMs,
-          market, period, side, label: prop?propLabel(playerName,definition,side,line):selectionLabel(market, side, homeTeam, awayTeam, line), line,
+          ...(book.alternate?{alternate:true,mainLine:book.mainLine}:{}),market, period, side, label: prop?propLabel(playerName,definition,side,line):selectionLabel(market, side, homeTeam, awayTeam, line), line,
           ...(prop?{playerId,playerName,statId:stat,category:definition.category,marketName:definition.name}:{}),
           americanOdds, decimalOdds: americanToDecimal(americanOdds),
           updatedAt: new Date(updatedAtMs).toISOString(), updatedAtMs,
@@ -174,10 +174,11 @@ export function validateCard(value, now = Date.now()) {
     const market = item.market;
     const side = item.side;
     const americanOdds = americanNumber(item.americanOdds);
-    const id = `${eventId}:${oddId}:${bookmakerId}`;
+    const id = `${eventId}:${oddId}:${bookmakerId}`+(item.alternate===true?`:alt:${strictNumber(item.line)}:${americanOdds}`:'');
     const expectedBookName = BOOK_NAMES[bookmakerId];
     const prop=market==='prop',pieces=oddId.split('-'),definition=prop?propDefinition(item.league,item.statId,pieces[3]):null;
     const playerName=cleanText(item.playerName),playerId=cleanText(item.playerId);
+    if (item.alternate===true&&(strictNumber(item.mainLine)===null||strictNumber(item.line)===null))continue;
     if (!eventId || !oddId || !bookmakerId || !homeTeam || !awayTeam || item.id !== id || ids.has(id)
       || americanOdds === null || !isFreshSelection(item, now)
       || !Number.isFinite(item.decimalOdds) || Math.abs(item.decimalOdds - americanToDecimal(americanOdds)) > 1e-10
@@ -200,7 +201,7 @@ export function validateCard(value, now = Date.now()) {
       sport: cleanText(item.sport), league: cleanText(item.league),
       homeTeam, awayTeam, eventName: `${awayTeam} at ${homeTeam}`,
       startTime: new Date(startTimeMs).toISOString(), startTimeMs,
-      market, period: 'game', side, label: prop?propLabel(playerName,definition,side,line):selectionLabel(market, side, homeTeam, awayTeam, line), line,
+      ...(item.alternate===true?{alternate:true,mainLine:strictNumber(item.mainLine)}:{}),market, period: 'game', side, label: prop?propLabel(playerName,definition,side,line):selectionLabel(market, side, homeTeam, awayTeam, line), line,
       ...(prop?{playerId,playerName,statId:item.statId,category:definition.category,marketName:definition.name}:{}),
       americanOdds, decimalOdds: americanToDecimal(americanOdds),
       updatedAt: new Date(updatedAtMs).toISOString(), updatedAtMs,

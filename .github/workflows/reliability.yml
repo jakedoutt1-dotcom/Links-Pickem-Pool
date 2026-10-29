@@ -41,3 +41,19 @@ jobs:
         with:
           name: concurrent-game-results
           path: output/scale-readiness/concurrent-games.json
+
+  playmaker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Playmaker account, market and research rules
+        run: |
+          node tests/playmaker-public-api.mjs
+          node tests/playmaker-accounts.mjs
+          node tests/playmaker-props.mjs
+          node tests/playmaker-research.mjs
+          node tests/playmaker-odds-bounds.mjs
