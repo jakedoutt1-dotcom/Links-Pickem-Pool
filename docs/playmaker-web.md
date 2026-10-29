@@ -112,3 +112,6 @@ Tests: playmaker-research.mjs exercises all four automatic approaches, longer-od
 References: https://sportsgameodds.com/docs/data-types/stats and https://sportsgameodds.com/docs/guides/data-batches.
 
 Automatic cards are restricted to games starting within 48 hours. Automatic Conservative requires quotes of -150 or shorter, Balanced excludes quotes longer than +150, Aggressive excludes quotes longer than +500, and Lottery requires +150 or longer. These are transparent market-price risk filters, not model-estimated win probabilities or guarantees. Manual categories retain their requested market constraints; inherently speculative categories are not transformed into lower-risk bets.
+
+## Automatic builder result flow
+Automatic requests now keep progress, errors, empty-result explanations and cancellation inside the AI Pick for Me box. A successfully archived automatic card opens card.html directly; the custom builder retains its View my card step. Switching back to custom restores its result/status placement. Removed a nonessential scroll call before pick rendering, which could interrupt rendering on browsers rejecting the instant scroll option. Browser regression checks cover automatic navigation, visible provider errors, empty results, cancellation, and switching modes. These UI fixes do not by themselves verify a live provider build.
