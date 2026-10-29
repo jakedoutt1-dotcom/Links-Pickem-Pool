@@ -67,4 +67,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - run: node tests/check-please.mjs
+      - run: |
+          node tests/check-please.mjs
+          node tests/check-please-scene.mjs
