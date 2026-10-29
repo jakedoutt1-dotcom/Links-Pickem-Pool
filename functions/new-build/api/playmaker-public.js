@@ -138,11 +138,11 @@ export async function playmakerPublic(context,services={}){
     // Keep only books able to supply a compatible card, then spread
     // candidates over games, books and prop categories instead of one long block.
     const coverage=new Map();for(const p of eligible){const group=clean.kind==='same_game'?p.bookmakerId+':'+p.eventId:p.bookmakerId;if(!coverage.has(group))coverage.set(group,[]);const chosen=coverage.get(group);if(chosen.length<clean.legs&&compatibleBuildPicks([...chosen,p]))chosen.push(p)}
-    const buckets=new Map();for(const p of eligible){if(coverage.get(clean.kind==='same_game'?p.bookmakerId+':'+p.eventId:p.bookmakerId).length<clean.legs)continue;const key=`${p.eventId}:${p.bookmakerId}:${p.category||p.market}`;if(!buckets.has(key))buckets.set(key,[]);buckets.get(key).push(p)}
+    const buckets=new Map();for(const p of eligible){if(!clean.automatic&&coverage.get(clean.kind==='same_game'?p.bookmakerId+':'+p.eventId:p.bookmakerId).length<clean.legs)continue;const key=`${p.eventId}:${p.bookmakerId}:${p.category||p.market}`;if(!buckets.has(key))buckets.set(key,[]);buckets.get(key).push(p)}
     const byEvent=new Map();for(const list of buckets.values()){const id=list[0].eventId;if(!byEvent.has(id))byEvent.set(id,[]);byEvent.get(id).push(list)}
     const eventLists=[...byEvent.values()].map(lists=>{const result=[];for(let i=0;lists.some(list=>list.length>i)&&result.length<240;i++)for(const list of lists)if(list[i])result.push(list[i]);return result});
     for(let i=0;candidates.length<240&&eventLists.some(list=>list.length>i);i++)for(const list of eventLists)if(list[i]&&candidates.length<240)candidates.push(list[i]);
-    if(clean.automatic){cardOptions=automaticCardOptions(candidates,clean.legs,compatibleBuildPicks);const ids=new Set(cardOptions.flatMap(o=>o.picks.map(p=>p.id)));candidates=candidates.filter(p=>ids.has(p.id))}
+    if(clean.automatic){cardOptions=automaticCardOptions(eligible,clean.legs,compatibleBuildPicks);const ids=new Set(cardOptions.flatMap(o=>o.picks.map(p=>p.id)));candidates=eligible.filter(p=>ids.has(p.id))}
     if(!candidates.length&&clean.automatic)throw fail('NO_MARKETS','Not enough current compatible selections for this '+clean.legs+'-pick card at the selected sportsbook. Try another approach or sportsbook. No AI request was used.',409);
     if(!candidates.length)throw fail('NO_MARKETS','Not enough current '+categories(clean.sport).find(c=>c.id===clean.category).label.toLowerCase()+' markets for this card. Try fewer legs, another sportsbook or another category. No AI request was used.',409);
    }

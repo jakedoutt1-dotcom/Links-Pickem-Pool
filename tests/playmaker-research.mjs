@@ -18,3 +18,13 @@ console.log('PASS automatic approach-only cards, lottery odds gating, real alter
 {
  const rows=[];for(let i=0;i<8;i++){const e=current('NFL',i);for(const odd of Object.values(e.odds))odd.byBookmaker.fanduel=structuredClone(odd.byBookmaker.draftkings);rows.push(...parseEvents({data:[e]},'all',now))}const options=automaticCardOptions(rows,6,compatibleBuildPicks);assert(options.length>1);assert(options.every(o=>o.picks.length===6&&compatibleBuildPicks(o.picks)));assert.deepEqual(automaticCardFormat(options,6).schema.properties.cardId.enum,options.map(o=>o.id));console.log('PASS complete card options cannot mix bookmakers or duplicate/conflicting legs');
 }
+
+// A broad feed must not lose complete cards when the model candidate budget is applied.
+{
+ const {db}=fixture();let calls=0;
+ try{
+  const response=await playmakerPublic({request:new Request('https://links.test/new-build/api/playmaker-public?action=ai',{method:'POST',headers:{Origin:'https://links.test','CF-Connecting-IP':'192.0.2.1','Content-Type':'application/json'},body:JSON.stringify({mode:'automatic',risk:'lottery',book:'all',requestId:crypto.randomUUID()})}),env:{DB:db,OPENAI_API_KEY:'fake',SPORTS_GAME_ODDS_API_KEY:'fake'}},{now:()=>now,session:async()=>({email:'wide@example.test'}),historyFetch:async()=>Response.json({data:[]}),odds:async context=>Response.json({data:Array.from({length:8},(_,i)=>{const e=current(new URL(context.request.url).searchParams.get('leagueID'),i);for(const odd of Object.values(e.odds)){const quote=odd.byBookmaker.draftkings;odd.byBookmaker=Object.fromEntries(Array.from({length:60},(_,j)=>['book'+j,{...quote,altLines:[]}]))}return e})}),fetch:async(url,init)=>{calls++;const input=JSON.parse(JSON.parse(init.body).input),option=input.cardOptions[0];return Response.json({status:'completed',output_text:JSON.stringify({analysis:'Very high risk.',cardId:option.id,reasons:option.picks.map(()=> 'Quoted longer odds; missing evidence.')})})}});
+  const body=await response.json();assert.equal(response.status,200,JSON.stringify(body));assert.equal(body.picks.length,6);assert.equal(calls,1);assert(compatibleBuildPicks(body.picks));
+ }finally{db.raw.close()}
+ console.log('PASS broad sportsbook feed retains complete cards before model candidate limits');
+}
