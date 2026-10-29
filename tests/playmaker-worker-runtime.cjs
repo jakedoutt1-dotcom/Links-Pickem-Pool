@@ -24,7 +24,7 @@ const {Miniflare}=dependencies('miniflare'),{build}=dependencies('esbuild');
   let n=0;async function call(body={},normal=false){const response=await mf.dispatchFetch('https://links.test/new-build/api/playmaker-public?action=ai',{method:'POST',headers:{Origin:'https://links.test','Content-Type':'application/json','CF-Connecting-IP':`192.0.2.${++n}`,...(normal?{'x-test-normal':'1'}:{})},body:JSON.stringify({sport:'NFL',question:'Explain -110.',card:[],requestId:crypto.randomUUID(),...body})});const data=await response.json();assert(!JSON.stringify(data).includes('fake-private-key'));assert(!JSON.stringify(data).includes('private-provider-detail'));return {status:response.status,...data}}
   let r=await call();assert.equal(r.status,200);assert.match(r.analysis,/Fixture answer/);assert.equal(calls,1);
   scenario='redirect';r=await call();assert.equal(r.status,502);assert.match(r.error,/redirect/);assert.equal(leaked,0);assert.equal(calls,2,'No retry after redirect');
-  scenario='auth';r=await call();assert.equal(r.status,502);assert.match(r.error,/API access/);
+  scenario='auth';r=await call();assert.equal(r.status,502);assert.match(r.error,/saved API key/);assert.equal(r.code,'AI_AUTHENTICATION_FAILED');
   scenario='rate';r=await call();assert.equal(r.status,503);assert.match(r.error,/usage or billing limit/);
   scenario='incomplete';r=await call();assert.equal(r.status,502);assert.equal(r.analysis,undefined);
   scenario='build';r=await call({mode:'build',risk:'aggressive',kind:'single',legs:4});assert.equal(r.status,200);assert.equal(r.picks.length,1);assert.equal(r.picks[0].americanOdds,-110);

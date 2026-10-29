@@ -7,7 +7,17 @@ import {playmakerTestingPass} from '../../lib/playmaker-testing-pass.js';
 const LIMIT=5,SPORTS=new Set(['NFL','NCAAF','NBA','MLB','NHL','NCAAB','MMA']);
 const reply=(value,status=200)=>Response.json(value,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const fail=(code,message,status=503)=>Object.assign(Error(message),{code,status});
-const aiKey=env=>String(env.OPENAI_API_KEY||env.PLAYMAKER_OPENAI_API_KEY||env.PLAYMAKER_AI_API_KEY||'').trim();
+export function resolvePlaymakerKey(env){
+ for(const source of ['OPENAI_API_KEY','PLAYMAKER_OPENAI_API_KEY','PLAYMAKER_AI_API_KEY']){
+  if(typeof env[source]!=='string')continue;let key=env[source].trim();if(!key)continue;
+  if(key.length>1&&((key.startsWith('"')&&key.endsWith('"'))||(key.startsWith("'")&&key.endsWith("'"))))key=key.slice(1,-1).trim();
+  key=key.replace(/^Bearer\s+/i,'').trim();
+  if(!key)continue;
+  return {key:/\s/.test(key)?'':key,source};
+ }
+ return {key:'',source:null};
+}
+const aiKey=env=>resolvePlaymakerKey(env).key;
 const oddsKey=env=>String(env.SPORTS_GAME_ODDS_API_KEY||env.SPORTSGAMEODDS_API_KEY||env.SGO_API_KEY||'').trim();
 const globalLimit=env=>{const n=Number(env.PLAYMAKER_PUBLIC_DAILY_LIMIT||100);return Number.isSafeInteger(n)&&n>=1&&n<=500?n:100};
 async function boundedText(body,max){
@@ -106,7 +116,7 @@ export async function playmakerPublic(context,services={}){
    return reply(await getOdds(context,sport,services));
   }
   const quota=await allowance(env.DB,who,day,globalLimit(env));
-  if(action==='config')return reply({mode:'connected',build:'PM-WEB-5',oddsConnected:!!oddsKey(env),aiConnected:!!aiKey(env),...quota});
+  if(action==='config')return reply({mode:'connected',build:'PM-WEB-5',oddsConnected:!!oddsKey(env),aiConnected:!!aiKey(env),aiKeySource:resolvePlaymakerKey(env).source,...quota});
   if(request.method==='GET')return reply({success:true,build:'PM-WEB-5',aiConfigured:!!aiKey(env),...quota});
   if(!aiKey(env))throw fail('AI_UNAVAILABLE','AI analysis is temporarily unavailable. Please try again later.');
   if(!(request.headers.get('Content-Type')||'').startsWith('application/json'))throw fail('JSON_REQUIRED','Send a JSON request.',415);
@@ -160,9 +170,9 @@ export async function playmakerPublic(context,services={}){
    // on the fixed provider origin; reject redirects without following Location.
    if(response.status>=300&&response.status<400)throw fail('AI_UNAVAILABLE','The analysis service returned an unexpected redirect. No retry was made.',502);
    if(!response.ok){
-    const message=response.status===401||response.status===403?'The AI connection needs an administrator to check its API access.':response.status===429?'The AI provider is at its usage or billing limit. Please try again later.':response.status===400||response.status===404?'The AI provider rejected the configured model or request. An administrator needs to check the connection.':'The AI provider is temporarily unavailable. No automatic retry was made.';
+    const message=response.status===401?'OpenAI rejected the saved API key (401). Check OPENAI_API_KEY in Cloudflare Production.':response.status===403?'OpenAI denied API access (403). Check the key’s project permissions and account access.':response.status===429?'The AI provider is at its usage or billing limit. Please try again later.':response.status===400||response.status===404?'The AI provider rejected the configured model or request. An administrator needs to check the connection.':'The AI provider is temporarily unavailable. No automatic retry was made.';
     console.warn('Playmaker provider request rejected',{http:response.status});
-    throw fail('AI_UNAVAILABLE',message,response.status===429?503:502);
+    throw fail(response.status===401?'AI_AUTHENTICATION_FAILED':response.status===403?'AI_ACCESS_DENIED':'AI_UNAVAILABLE',message,response.status===429?503:502);
    }
    const text=await boundedText(response.body,2*1024*1024);try{data=JSON.parse(text)}catch{throw fail('AI_UNAVAILABLE','The analysis service returned an unreadable response.')}
   }catch(e){if(controller.signal.aborted)throw fail('AI_TIMEOUT','The analysis timed out. No automatic retry was made.',504);throw e}finally{clearTimeout(timer)}

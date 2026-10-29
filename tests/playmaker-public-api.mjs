@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {fixture} from './helpers/playmaker-fixture.mjs';
-import {playmakerPublic,providerText} from '../functions/new-build/api/playmaker-public.js';
+import {playmakerPublic,providerText,resolvePlaymakerKey} from '../functions/new-build/api/playmaker-public.js';
 import {ensureAccounts,digest} from '../functions/lib/commissioner-account.js';
 import {parseEvents} from '../public/new-build/playmaker/domain.mjs';
 const now=Date.parse('2026-10-24T18:00:00Z'),origin='https://links.test';
@@ -87,3 +87,14 @@ console.log('PASS public Playmaker: canonical server prices, source freshness, f
  }finally{s.db.raw.close()}
 }
 console.log('PASS Build My Bet: canonical picks, single-leg override, unsupported markets, invented selections and duplicate events.');
+
+{
+ assert.deepEqual(resolvePlaymakerKey({OPENAI_API_KEY:'  fixture-main  ',PLAYMAKER_OPENAI_API_KEY:'fixture-fallback'}),{key:'fixture-main',source:'OPENAI_API_KEY'});
+ assert.equal(resolvePlaymakerKey({OPENAI_API_KEY:'   ',PLAYMAKER_OPENAI_API_KEY:'fixture-fallback'}).key,'fixture-fallback');
+ assert.equal(resolvePlaymakerKey({OPENAI_API_KEY:'"Bearer fixture-main"'}).key,'fixture-main');
+ assert.equal(resolvePlaymakerKey({OPENAI_API_KEY:"'fixture-main'"}).key,'fixture-main');
+ assert.equal(resolvePlaymakerKey({OPENAI_API_KEY:'fixture\nkey'}).key,'');
+ for(const http of [401,403]){const s=setup();try{s.services.fetch=async(url,init)=>{assert.equal(init.headers.Authorization,'Bearer fixture-private-key');return Response.json({error:{message:'private-provider-detail'}},{status:http})};const r=await s.call(valid());assert.equal(r.code,http===401?'AI_AUTHENTICATION_FAILED':'AI_ACCESS_DENIED');assert(r.error.includes(String(http)));assert(!JSON.stringify(r).includes('private-provider-detail'));assert(!JSON.stringify(r).includes('fixture-private-key'))}finally{s.db.raw.close()}}
+ const s=setup({OPENAI_API_KEY:' "Bearer fixture-wrapped" '});try{assert.equal((await s.call(valid())).status,200);assert.equal(s.calls[0].headers.Authorization,'Bearer fixture-wrapped')}finally{s.db.raw.close()}
+ console.log('PASS API-key resolution: primary precedence, whitespace fallback, pasted wrappers, exact Bearer header, distinct sanitized 401/403');
+}
