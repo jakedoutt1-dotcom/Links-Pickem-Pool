@@ -1,9 +1,10 @@
+import {mountSportsbookPicker} from './sportsbook-ui.mjs';
 import {categories} from './markets.mjs';
 import {saveBuiltCard,visitId,setHistoryAccount} from './card-history.mjs';
 import {teamBadge} from './team-logos.mjs';
 import {CARD_STORAGE_KEY,isFreshSelection} from './domain.mjs';
 const get=id=>document.getElementById(id),node=(tag,cls,text)=>{const el=document.createElement(tag);el.className=cls;el.textContent=text;return el};
-visitId();
+visitId();mountSportsbookPicker(get('auto-book'),get('auto-book-logos'));mountSportsbookPicker(get('book-filter'),get('custom-book-logos'));
 let sport='NFL',busy=false,controller,remaining=null,connected=false,available=false,nextAutomatic=false,activeAutomatic=false;
 const form=get('analysis-form'),button=get('analyze-button'),output=get('analysis-output'),status=get('analysis-status');
 const outputHome=document.createComment('Custom builder results'),statusHome=document.createComment('Custom builder status');output.before(outputHome);status.before(statusHome);
@@ -26,7 +27,7 @@ form.addEventListener('submit',async event=>{
  const automatic=nextAutomatic;nextAutomatic=false;activeAutomatic=automatic;showResults(automatic);busy=true;controller=new AbortController();controls();status.textContent='Building your card from current sportsbook prices…';output.replaceChildren();
  const startedAt=Date.now(),timeout=setTimeout(()=>controller.abort(),65000);
  try{
-  const preferences=automatic?{sport:'AUTO',category:'mixed',risk:get('auto-risk').value,kind:'parlay',legs:({conservative:2,balanced:3,aggressive:4,lottery:6})[get('auto-risk').value]}:{sport,eventId:get('build-kind').value==='same_game'?get('build-game').value:'',category:get('build-category').value,book:get('book-filter').value,risk:get('build-risk').value,kind:get('build-kind').value,legs:Number(get('build-legs').value)};
+  const preferences=automatic?{sport:'AUTO',category:'mixed',book:get('auto-book').value,risk:get('auto-risk').value,kind:'parlay',legs:({conservative:2,balanced:3,aggressive:4,lottery:6})[get('auto-risk').value]}:{sport,eventId:get('build-kind').value==='same_game'?get('build-game').value:'',category:get('build-category').value,book:get('book-filter').value,risk:get('build-risk').value,kind:get('build-kind').value,legs:Number(get('build-legs').value)};
   const data=await json('POST',{...preferences,mode:automatic?'automatic':'build',question:get('question-input').value.trim()||'Build a bet using my chosen sport, approach, type and leg count.',card:[],requestId:crypto.randomUUID()});usage(data);
   const picks=Array.isArray(data.picks)?data.picks:[];
   if(!picks.length){output.append(node('p','analysis-text',data.analysis||'No matching picks are available. Try different preferences.'));status.textContent='No card built. Adjust your preferences.';return}

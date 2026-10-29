@@ -1,3 +1,4 @@
+import {verifiedPickLink} from './sportsbook-links.mjs';
 import {propDefinition,propLabel} from './markets.mjs';
 /** Pure rules shared by the board, local card, and automated tests. */
 export const MAX_ODDS_AGE_MS = 15 * 60 * 1000;
@@ -143,7 +144,7 @@ export function parseEvents(payload, selectedBook = 'all', now = Date.now()) {
         seen.add(id);
         output.push({
           id, eventId, oddId, bookmakerId,
-          bookmakerName: BOOK_NAMES[bookmakerId] || cleanText(book.bookmakerName) || cleanText(bookKey),
+          bookmakerName: BOOK_NAMES[bookmakerId] || cleanText(book.bookmakerName) || cleanText(bookKey),...(verifiedPickLink(book.deeplink,bookmakerId)?{sportsbookLink:verifiedPickLink(book.deeplink,bookmakerId)}:{}),
           sport: cleanText(event.sportID), league: cleanText(event.leagueID),
           homeTeam, awayTeam, eventName: `${awayTeam} at ${homeTeam}`,
           startTime: new Date(startTimeMs).toISOString(), startTimeMs,
@@ -197,7 +198,7 @@ export function validateCard(value, now = Date.now()) {
     const updatedAtMs = timestamp(item.updatedAt);
     result.push({
       id, eventId, oddId, bookmakerId,
-      bookmakerName: expectedBookName || cleanText(item.bookmakerName) || bookmakerId,
+      bookmakerName: expectedBookName || cleanText(item.bookmakerName) || bookmakerId,...(verifiedPickLink(item.sportsbookLink,bookmakerId)?{sportsbookLink:verifiedPickLink(item.sportsbookLink,bookmakerId)}:{}),
       sport: cleanText(item.sport), league: cleanText(item.league),
       homeTeam, awayTeam, eventName: `${awayTeam} at ${homeTeam}`,
       startTime: new Date(startTimeMs).toISOString(), startTimeMs,

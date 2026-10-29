@@ -57,3 +57,4 @@ jobs:
           node tests/playmaker-props.mjs
           node tests/playmaker-research.mjs
           node tests/playmaker-odds-bounds.mjs
+          node tests/playmaker-sportsbook-links.mjs

@@ -1,0 +1,42 @@
+[
+  {
+    "book": "draftkings",
+    "name": "DraftKings: Sports & Casino",
+    "seller": "DRAFTKINGS LLC.",
+    "bundle": "com.draftkings.sportsbook",
+    "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/6c/56/a2/6c56a297-0db4-78db-6897-d8dfb9833a39/AppIcon-0-0-1x_U007epad-0-1-85-220.png/512x512bb.jpg",
+    "appStore": "https://apps.apple.com/us/app/draftkings-sports-casino/id1375031369?uo=4"
+  },
+  {
+    "book": "fanduel",
+    "name": "FanDuel Sportsbook & Casino",
+    "seller": "FanDuel Limited",
+    "bundle": "com.fanduel.sportsbook",
+    "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/d6/92/e7/d692e74f-1696-1f86-2d5c-1ca9c5df8ee2/AppIcon-0-0-1x_U007emarketing-0-11-0-85-220.png/512x512bb.jpg",
+    "appStore": "https://apps.apple.com/us/app/fanduel-sportsbook-casino/id1413721906?uo=4"
+  },
+  {
+    "book": "betmgm",
+    "name": "BetMGM - Sportsbook & Casino",
+    "seller": "BetMGM, LLC",
+    "bundle": "com.playmgm.nj.sports2",
+    "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/f3/b2/f2/f3b2f2e4-7854-d72b-02c7-f8b03d77cc00/AppIcon-0-0-1x_U007epad-0-1-0-85-220.png/512x512bb.jpg",
+    "appStore": "https://apps.apple.com/us/app/betmgm-sportsbook-casino/id1430875409?uo=4"
+  },
+  {
+    "book": "caesars",
+    "name": "Caesars Sportsbook & Casino",
+    "seller": "Computerized Bookmaking Systems, Inc.",
+    "bundle": "us.williamhill.nj.sports",
+    "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/29/86/7a/29867aa5-3436-d505-fca9-1d9b02836292/AppIcon-0-0-1x_U007epad-0-1-0-sRGB-85-220.png/512x512bb.jpg",
+    "appStore": "https://apps.apple.com/us/app/caesars-sportsbook-casino/id1413099571?uo=4"
+  },
+  {
+    "book": "bet365",
+    "name": "bet365 - Sportsbook & Casino",
+    "seller": "Hillside Technology Limited",
+    "bundle": "com.bet365.bet365NJ",
+    "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/15/2f/2d/152f2df3-f01b-27f5-e84d-077cb663b02a/AppIcon-US-0-0-1x_U007epad-0-1-0-sRGB-85-220.png/512x512bb.jpg",
+    "appStore": "https://apps.apple.com/us/app/bet365-sportsbook-casino/id1465717844?uo=4"
+  }
+]

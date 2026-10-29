@@ -1,0 +1,2 @@
+const domains={draftkings:['draftkings.com'],fanduel:['fanduel.com'],betmgm:['betmgm.com'],caesars:['caesars.com'],bet365:['bet365.com']};
+export function verifiedPickLink(raw,book){if(typeof raw!=='string'||raw.length>2000)return null;try{const url=new URL(raw);if(url.protocol!=='https:'||url.username||url.password||url.port||!domains[book]?.some(domain=>url.hostname===domain||url.hostname.endsWith('.'+domain)))return null;return url.href}catch{return null}}
