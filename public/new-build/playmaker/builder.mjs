@@ -1,3 +1,4 @@
+import {openCardPopup} from './card-popup.mjs';
 import {mountSportsbookPicker} from './sportsbook-ui.mjs';
 import {categories} from './markets.mjs';
 import {saveBuiltCard,visitId,setHistoryAccount} from './card-history.mjs';
@@ -37,14 +38,14 @@ form.addEventListener('submit',async event=>{
   for(const pick of picks){const row=node('div','builder-pick','');const identity=node('div','builder-team','');identity.append(teamBadge(pick.awayTeam,pick.league),teamBadge(pick.homeTeam,pick.league),node('strong','',pick.label));row.append(identity,node('span','',`${pick.americanOdds>0?'+':''}${pick.americanOdds}`));output.append(row)}
   const view=node('button','button button-primary','View my card');view.type='button';const notice=node('p','analysis-status','');notice.setAttribute('role','status');
   view.addEventListener('click',()=>{
-   if(archived){location.assign('./card.html?id='+encodeURIComponent(archived.id));return}
+   if(archived){openCardPopup('./card.html?id='+encodeURIComponent(archived.id));return}
    if(picks.some(p=>!isFreshSelection(p))){notice.textContent='These prices expired. Build a fresh card.';return}
    const card=picks.map(({reason,...pick})=>pick);let saved=false;
    try{localStorage.setItem(CARD_STORAGE_KEY,JSON.stringify(card));saved=true}catch{}
    try{sessionStorage.setItem('links-playmaker:results:v1',JSON.stringify({card,research:data.research||{},risk:preferences.risk,approachNote:data.approachNote||'',analysis:data.analysis,reasons:Object.fromEntries(picks.map(p=>[p.id,p.reason]))}));saved=true}catch{}
    if(!saved){notice.textContent='Your browser blocked saving this card. Enable storage to open it.';return}
-   location.assign('./card.html');
-  });output.append(view,notice);if(automatic&&archived){location.assign('./card.html?id='+encodeURIComponent(archived.id));return}status.textContent=archived?'Card saved in My Cards. Tap View my card.':'Your card is ready. Browser history could not be saved; tap View my card.';
+   openCardPopup('./card.html');
+  });output.append(view,notice);status.textContent=archived?'Card saved in My Cards.':'Your card is ready. Browser history could not be saved.';view.click();
  }catch(error){status.textContent=error.name==='AbortError'?'Request stopped. No automatic retry was made.':error.name==='SyntaxError'||error.name==='TypeError'||/expected pattern/i.test(error.message||'')?'Your browser could not complete the connection. Check My Cards before trying again; no automatic retry was made.':error.message;try{const latest=await json();usage(latest);if(/HTTP 502/.test(status.textContent)&&latest.lastRequestAt>=startedAt-2000&&latest.lastFailure){status.textContent=latest.lastFailure.message+' ['+latest.lastFailure.code+']. No automatic retry was made.'}else if(/HTTP 502/.test(status.textContent))status.textContent+=latest.lastRequestAt>=startedAt-2000?' The server recorded this attempt: '+latest.lastRequestStatus+'.':' The build did not reach the recorded AI request stage.'}catch{}}
  finally{clearTimeout(timeout);busy=false;activeAutomatic=false;controls()}
 });

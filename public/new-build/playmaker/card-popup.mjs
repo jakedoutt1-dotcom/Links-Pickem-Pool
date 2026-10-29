@@ -1,0 +1,11 @@
+let dialog,frame,previousOverflow;
+export function openCardPopup(href){
+ if(!dialog){
+  const style=document.createElement('style');style.textContent=`.card-popup{box-sizing:border-box;width:min(780px,calc(100vw - 20px));height:min(920px,92dvh);max-height:92dvh;padding:0;border:1px solid #d5b46d;border-radius:20px;background:#091623;color:#f4e7c2;box-shadow:0 24px 90px #0009}.card-popup::backdrop{background:#000b}.card-popup[open]{display:flex;flex-direction:column}.card-popup-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid #d5b46d55}.card-popup-bar h2{font:700 18px system-ui;margin:0}.card-popup-bar button{font:600 15px system-ui;color:#f4e7c2;background:#152d40;border:1px solid #d5b46d;border-radius:10px;padding:9px 14px;cursor:pointer}.card-popup iframe{display:block;width:100%;flex:1;min-height:0;border:0}.card-popup-footer{padding:12px 16px;border-top:1px solid #d5b46d55;font:15px system-ui}.card-popup-footer a{color:#f4d784}`;document.head.append(style);
+  dialog=document.createElement('dialog');dialog.className='card-popup';dialog.setAttribute('aria-labelledby','card-popup-title');
+  const bar=document.createElement('div');bar.className='card-popup-bar';const title=document.createElement('h2');title.id='card-popup-title';title.textContent='Your Playmaker card';const close=document.createElement('button');close.type='button';close.textContent='Close';close.addEventListener('click',()=>dialog.close());bar.append(title,close);
+  frame=document.createElement('iframe');frame.title='Your saved Playmaker card';const footer=document.createElement('div');footer.className='card-popup-footer';const history=document.createElement('a');history.href='./cards.html';history.textContent='View My Cards';footer.append(history);dialog.append(bar,frame,footer);document.body.append(dialog);
+  dialog.addEventListener('close',()=>{document.documentElement.style.overflow=previousOverflow;frame.src='about:blank'});
+ }
+ const url=new URL(href,location.href);if(url.origin!==location.origin)return;url.searchParams.set('popup','1');frame.src=url.href;previousOverflow=document.documentElement.style.overflow;document.documentElement.style.overflow='hidden';dialog.showModal();
+}

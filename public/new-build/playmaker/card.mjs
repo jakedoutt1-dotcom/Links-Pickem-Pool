@@ -1,3 +1,4 @@
+if(new URLSearchParams(location.search).get('popup')==='1'){const style=document.createElement('style');style.textContent='body>header,main>nav{display:none}main{padding-top:18px}';document.head.append(style)}
 import {sportsbookBadge} from './sportsbook-ui.mjs';
 import {verifiedPickLink} from './sportsbook-links.mjs';
 import {shareCardButton} from './share-card.mjs';
