@@ -32,3 +32,14 @@ body[data-playmaker-signed-in="false"] #analyst :is(.sport-filters,.board-toolba
 #auto-cancel[hidden],#auto-results[hidden]{display:none}#auto-results{margin-top:16px;overflow-wrap:anywhere}#auto-results .analysis-output{padding:0;border:0}#auto-results .analysis-status{font-size:14px;line-height:1.6;color:#e9d69d}.auto-builder #auto-cancel{margin-top:8px}
 
 .sportsbook-logos{display:flex;gap:8px;overflow-x:auto;max-width:100%;margin:14px 0;padding:3px 0 8px}.sportsbook-logos button{flex:0 0 72px;min-height:76px;padding:7px 4px;border:1px solid #55738c;border-radius:12px;background:#102638;color:#e3edf5;cursor:pointer}.sportsbook-logos button[aria-pressed="true"]{border-color:#efd083;box-shadow:0 0 0 2px #efd08366;background:#294960}.sportsbook-badge{display:inline-flex;align-items:center;gap:10px;font:700 14px/1.3 sans-serif;color:#e3edf5}.sportsbook-badge img{width:40px;height:40px;border-radius:9px;object-fit:contain}.sportsbook-logos .sportsbook-badge{flex-direction:column;gap:5px;font-size:10px}.sportsbook-logos .sportsbook-badge img{width:36px;height:36px}body[data-playmaker-signed-in="false"] #custom-book-logos{display:none}
+
+/* A spiral while either builder waits for its card. */
+.card-loading{display:flex;justify-content:center;padding:24px 12px 12px;perspective:400px}
+.card-loading[hidden]{display:none}
+.spiral-football{position:relative;display:block;width:76px;height:44px;border-radius:50%;border:2px solid #d39c5c;background:linear-gradient(165deg,#b77339,#713d20 60%,#422414);box-shadow:0 5px 18px #0005;transform:rotate(-25deg);animation:football-spiral 1.1s linear infinite}
+.spiral-football::before,.spiral-football::after{content:"";position:absolute;top:4px;bottom:4px;width:5px;background:#f4e8ce;border-radius:40%}
+.spiral-football::before{left:12px}.spiral-football::after{right:12px}
+.football-laces{position:absolute;left:26px;right:26px;top:19px;height:3px;background:#fff1d4}
+.football-laces::after{content:"";position:absolute;inset:-4px 2px;background:repeating-linear-gradient(90deg,transparent 0 3px,#fff1d4 3px 5px,transparent 5px 7px)}
+@keyframes football-spiral{from{transform:rotate(-25deg) rotateX(0deg)}to{transform:rotate(-25deg) rotateX(360deg)}}
+@media(prefers-reduced-motion:reduce){.spiral-football{animation:none}}
