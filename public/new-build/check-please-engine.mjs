@@ -9,7 +9,7 @@ export function stepGame(s,input){
  if(s.ended)return s;const target=clamp(input/100,-1,1),dt=STEP/1000,time=(s.step+1)*dt; s.events=[];
  const prior=s.velocity;s.velocity=clamp((target-s.x)*5,-1.65,1.65);s.x=clamp(s.x+s.velocity*dt,-1,1);
  s.spin+=(-s.tilt*8-s.spin*2.8-s.velocity*2+Math.sin(time*2.4)*.11)*dt-(s.velocity-prior)*1.5;s.tilt+=s.spin*dt;
- const lose=reason=>{if(time-s.lastHit<1.1)return;s.lastHit=time;s.savedWobble=false;s.spills++;s.food=Math.max(0,s.food-1);s.combo=0;s.tilt*=.35;s.spin*=.2;s.events.push({type:'spill',reason});if(s.spills>=5){s.ended=true;s.events.push({type:'end'})}};
+ const lose=reason=>{if(time-s.lastHit<1.1)return;s.lastHit=time;s.savedWobble=false;s.spills++;s.food=Math.max(0,s.food-1);s.combo=0;s.tilt*=.35;s.spin*=.2;s.events.push({type:'spill',reason});if(s.food===0){s.ended=true;s.events.push({type:'end'})}};
  if(Math.abs(s.tilt)>.6)s.savedWobble=true;
  if(Math.abs(s.tilt)>1.05)lose('wobble');else if(s.savedWobble&&Math.abs(s.tilt)<.15&&time-s.lastHit>1.2){s.savedWobble=false;if(time-s.lastSave>=4){s.lastSave=time;s.score+=25;s.events.push({type:'save'})}}
  for(const o of s.obstacles){if(o.at>(s.step*dt)&&o.at<=time){if(Math.abs(s.x-obstacleX(o,time))<(o.type==='chair'?.32:.29))lose(o.type);else{s.dodges++;s.combo++;s.score+=40+Math.min(5,s.combo)*10;s.events.push({type:'dodge'})}}}

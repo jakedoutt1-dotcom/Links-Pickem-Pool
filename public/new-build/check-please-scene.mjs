@@ -1,11 +1,11 @@
 import {clamp,obstacleX} from './check-please-engine.mjs';
 import {createActorAnimator} from './check-please-actors.mjs';
 
-// World-space scenery advances toward the camera. The distant bar stays behind
-// the moving floor, booths and lamps; it is not a zoomed gameplay screenshot.
+// A single projected room: walls, ceiling, fixtures and floor share world depth.
+// No baked room photograph remains behind the moving scenery.
 export function project(lateral,depth,camera=0){const scale=1/(1+Math.max(-.7,depth)*.65);return {x:240+(lateral-camera*.7)*225*scale,y:210+385*scale,scale}}
 export function boothPositions(time,camera=0){const phase=time*1.8%3.7,out=[];for(let i=0;i<8;i++){const depth=.5+i*3.7-phase;if(depth<-.7)continue;for(const side of [-1,1])out.push({...project(side*2.1,depth,camera),depth,side})}return out.sort((a,b)=>b.depth-a.depth)}
-const assets={fan:'check-please-fan-v2.webp',dancer:'check-please-dancer-v2.webp',chair:'check-please-chair-v2.webp',booth:'check-please-booth-v2.webp',tray:'check-please-tray-v2.webp',wings:'check-please-wings-v2.webp',nachos:'check-please-nachos-v2.webp',soda:'check-please-soda-v2.webp',floor:'check-please-floor-v2.webp',venue:'check-please-venue-v1.webp'};
+const assets={fan:'check-please-fan-v2.webp',dancer:'check-please-dancer-v2.webp',chair:'check-please-chair-v2.webp',booth:'check-please-booth-v2.webp',tray:'check-please-tray-v2.webp',floor:'check-please-floor-v2.webp'};
 function image(file){return new Promise(resolve=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>resolve(null);img.src='./assets/'+file})}
 export function createSceneRenderer(ctx,{reducedMotion=false}={}){
  const sprites={},actors={},ready=Promise.all(Object.entries(assets).map(async([name,file])=>{sprites[name]=await image(file)})).then(()=>{for(const name of ['fan','dancer'])if(sprites[name])actors[name]=createActorAnimator(sprites[name],name)});
@@ -14,10 +14,20 @@ export function createSceneRenderer(ctx,{reducedMotion=false}={}){
  function drawSprite(name,x,bottom,width,{flip=false,rotation=0,squash=1}={}){const img=sprites[name];if(!img)return false;const h=width*img.naturalHeight/img.naturalWidth;ctx.save();ctx.translate(x,bottom);ctx.rotate(rotation);ctx.scale(flip?-1:1,squash);ctx.drawImage(img,-width/2,-h,width,h);ctx.restore();return true}
  function world(game,time){
   ctx.clearRect(0,0,480,720);ctx.save();const bob=reducedMotion?0:Math.sin(time*7)*1.2;ctx.translate(0,bob);
-  if(sprites.venue)ctx.drawImage(sprites.venue,-12-game.x*5,-8,504,740);else{ctx.fillStyle='#172c40';ctx.fillRect(0,0,480,720)}
-  // The side architecture also advances in depth. Preserve the distant bar,
-  // then project the venue's lower strips toward and past the camera.
-  if(sprites.venue){const img=sprites.venue,travel=time*1.8%14;for(let y=212;y<720;y+=5){const scale=(y-210)/385,depth=(1/scale-1)/.65,sourceScale=1/(1+(depth+travel)*.65),nextDepth=(385/(y+5-210)-1)/.65,nextScale=1/(1+(nextDepth+travel)*.65),sy=(210+385*sourceScale)/720*img.naturalHeight,sh=Math.max(.5,(nextScale-sourceScale)*385/720*img.naturalHeight),width=480*scale/sourceScale;ctx.drawImage(img,0,sy,img.naturalWidth,Math.min(sh,img.naturalHeight-sy),240-width/2-game.x*12*scale,y,width,5.2)}}
+  const wall=ctx.createLinearGradient(0,0,0,720);wall.addColorStop(0,'#101c32');wall.addColorStop(.6,'#28364b');wall.addColorStop(1,'#101824');ctx.fillStyle=wall;ctx.fillRect(0,0,480,720);
+  polygon([[0,0],[480,0],[294,210],[186,210]],'#18243a');
+  polygon([[0,0],[186,210],[186,720],[0,720]],'#182d40');polygon([[480,0],[294,210],[294,720],[480,720]],'#182d40');
+  // The far end is built from geometry too, rather than a second set of still fixtures.
+  const end=project(0,42-time*.025,game.x),ew=900*end.scale,eh=570*end.scale;
+  ctx.fillStyle='#47321e';ctx.fillRect(end.x-ew/2,210-eh,ew,eh+18);
+  ctx.fillStyle='#d4a452';ctx.fillRect(end.x-ew/2,209,ew,3);
+  for(let i=-4;i<=4;i++){ctx.fillStyle=i%2?'#c89643':'#edc56b';ctx.fillRect(end.x+i*ew/11,196,ew/25,12)}
+  // Ceiling ribs, wall panels and rails all advance with the booths below.
+  for(const section of boothPositions(time,game.x).filter(p=>p.side===1)){
+   const {depth,scale}=section,l=project(-2.95,depth,game.x),r=project(2.95,depth,game.x),top=210-240*scale;
+   ctx.strokeStyle='#8c693e';ctx.lineWidth=Math.max(1,5*scale);ctx.beginPath();ctx.moveTo(l.x,l.y);ctx.lineTo(l.x,top);ctx.lineTo(r.x,top);ctx.lineTo(r.x,r.y);ctx.stroke();
+   ctx.strokeStyle='#dbb867';ctx.lineWidth=Math.max(.7,2*scale);ctx.beginPath();ctx.moveTo(l.x,210-155*scale);ctx.lineTo(r.x,210-155*scale);ctx.stroke();
+  }
   const floor=ctx.createLinearGradient(0,210,0,720);floor.addColorStop(0,'#382a25');floor.addColorStop(.18,'#765031');floor.addColorStop(1,'#bc834b');polygon([[186,210],[294,210],[720,760],[-240,760]],floor);
   // Perspective floor seams and grain flow past the player continuously.
   ctx.save();ctx.beginPath();ctx.moveTo(186,210);ctx.lineTo(294,210);ctx.lineTo(720,760);ctx.lineTo(-240,760);ctx.closePath();ctx.clip();
@@ -47,13 +57,29 @@ export function createSceneRenderer(ctx,{reducedMotion=false}={}){
   else{const actor=actors[o.type==='dancer'?'dancer':'fan'];if(actor){const frame=actor.render(time,o.phase,reducedMotion),height=width*1.5;ctx.translate(x,y);ctx.scale(o.id%2===1?-1:1,1);ctx.drawImage(frame,-width/2,-height*.94,width,height)}}
   ctx.restore();return true;
  }
+ function drink(x,bottom,index,game,time){
+  const beer=index!==1,w=beer?65:56,h=beer?111:128;
+  ctx.save();ctx.translate(x,bottom);ctx.rotate(-game.tilt*.13);
+  ellipse(0,3,w*.56,9,'#0007');
+  if(beer){ctx.strokeStyle='#e4f5ffb0';ctx.lineWidth=8;ctx.beginPath();ctx.ellipse(w*.58,-h*.49,19,27,0,0,Math.PI*2);ctx.stroke()}
+  const glass=ctx.createLinearGradient(-w/2,0,w/2,0);glass.addColorStop(0,'#eefaff88');glass.addColorStop(.2,'#d1eeff14');glass.addColorStop(.8,'#aac9dd33');glass.addColorStop(1,'#f3ffffaa');
+  ctx.fillStyle=glass;ctx.beginPath();ctx.roundRect(-w/2,-h,w,h,beer?9:14);ctx.fill();ctx.strokeStyle='#e0f6ffc0';ctx.lineWidth=2;ctx.stroke();
+  ctx.save();ctx.beginPath();ctx.roundRect(-w/2+4,-h+6,w-8,h-12,6);ctx.clip();
+  const level=-h*.79,slosh=clamp(Math.sin(time*5+index)*2+game.tilt*23,-22,22),liquid=ctx.createLinearGradient(0,-h,0,0);liquid.addColorStop(0,beer?'#ffc43d':'#b8461a');liquid.addColorStop(1,beer?'#a84908':'#30140e');polygon([[-w/2,level-slosh],[w/2,level+slosh],[w/2,0],[-w/2,0]],liquid);
+  ctx.strokeStyle=beer?'#fff2cd':'#e3ac6b';ctx.lineWidth=beer?12:3;ctx.beginPath();ctx.moveTo(-w/2,level-slosh);ctx.lineTo(w/2,level+slosh);ctx.stroke();
+  for(let i=0;i<9;i++)ellipse(-w*.3+(i%3)*w*.28,-12-((time*17+i*13)%65),1.6,2.4,'#fff1b899');
+  if(!beer)for(let i=0;i<3;i++){ctx.fillStyle='#e3f6ff77';ctx.fillRect(-19+i*13,-h*.72+(i%2)*14,14,17)}ctx.restore();
+  ctx.strokeStyle='#fff9';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-w*.33,-h+14);ctx.lineTo(-w*.33,-18);ctx.stroke();ellipse(0,-h,w/2,6,'#e6f5ff55');ellipse(0,-2,w*.45,5,'#deefff66');
+  if(!beer){ctx.strokeStyle='#f4e7bd';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(10,-h*.6);ctx.lineTo(23,-h-26);ctx.stroke()}
+  ctx.restore();
+ }
  function tray(game,time){
-  if(!sprites.tray||!sprites.wings||!sprites.nachos||!sprites.soda)return false;
   ctx.save();ctx.translate(240-game.x*14,510+(reducedMotion?0:Math.sin(time*7)*2));ctx.rotate(game.tilt*.35);
-  const img=sprites.tray,w=510,h=w*img.naturalHeight/img.naturalWidth;ctx.drawImage(img,-w/2,-h*.52,w,h);
-  if(game.food>=1)drawSprite('wings',-110,-4,166,{rotation:game.tilt*.05});
-  if(game.food>=2)drawSprite('nachos',99,0,176,{rotation:-game.tilt*.04});
-  if(game.food>=3)drawSprite('soda',-1,-27,83,{rotation:-game.tilt*.15});
+  if(sprites.tray){const img=sprites.tray,w=510,h=w*img.naturalHeight/img.naturalWidth;ctx.drawImage(img,-w/2,-h*.52,w,h)}else{ellipse(0,12,220,65,'#b8c6d0');ellipse(0,0,210,54,'#243d50')}
+  // Three visibly separate glasses, removed individually by the replay rules.
+  for(let i=0;i<game.food;i++)drink([-105,0,105][i],i===1?-24:0,i,game,time);
+  const elapsed=time-game.lastHit;
+  if(elapsed>=0&&elapsed<.75&&!reducedMotion){for(let i=0;i<18;i++){const t=elapsed,side=game.tilt<0?-1:1,x=side*(115+t*(100+i*9)),y=-80-t*(80+i*7)+t*t*340;ellipse(x,y,2+i%3,4+i%4,'#f6c452cc')}}
   ctx.restore();return true;
  }
  return {ready,sprites,world,person,tray};
