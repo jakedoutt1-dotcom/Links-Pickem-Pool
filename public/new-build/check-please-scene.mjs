@@ -5,13 +5,16 @@ import {createActorAnimator} from './check-please-actors.mjs';
 // No baked room photograph remains behind the moving scenery.
 export function project(lateral,depth,camera=0){const scale=1/(1+Math.max(-.7,depth)*.65);return {x:240+(lateral-camera*.7)*225*scale,y:210+385*scale,scale}}
 export function boothPositions(time,camera=0){const phase=time*1.8%3.7,out=[];for(let i=0;i<8;i++){const depth=.5+i*3.7-phase;if(depth<-.7)continue;for(const side of [-1,1])out.push({...project(side*2.1,depth,camera),depth,side})}return out.sort((a,b)=>b.depth-a.depth)}
-const assets={fan:'check-please-fan-v2.webp',dancer:'check-please-dancer-v2.webp',chair:'check-please-chair-v2.webp',booth:'check-please-booth-v2.webp',tray:'check-please-tray-v2.webp',floor:'check-please-floor-v2.webp'};
+const assets={fan:'check-please-fan-v2.webp',dancer:'check-please-dancer-v2.webp',chair:'check-please-chair-v2.webp',booth:'check-please-booth-v2.webp',tray:'check-please-tray-v2.webp',floor:'check-please-floor-v2.webp',beer:'check-please-beer-v4.webp',cola:'check-please-cola-v4.webp',wall:'check-please-wall-v4.webp',seated:'check-please-seated-v4.webp',seatedWoman:'check-please-seated-woman-v4.webp'};
 function image(file){return new Promise(resolve=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>resolve(null);img.src='./assets/'+file})}
 export function createSceneRenderer(ctx,{reducedMotion=false}={}){
- const sprites={},actors={},ready=Promise.all(Object.entries(assets).map(async([name,file])=>{sprites[name]=await image(file)})).then(()=>{for(const name of ['fan','dancer'])if(sprites[name])actors[name]=createActorAnimator(sprites[name],name)});
+ const sprites={},actors={},ready=Promise.all(Object.entries(assets).map(async([name,file])=>{sprites[name]=await image(file)})).then(()=>{for(const name of ['fan','dancer','seated','seatedWoman'])if(sprites[name])actors[name]=createActorAnimator(sprites[name],name)});
  function polygon(points,fill){ctx.fillStyle=fill;ctx.beginPath();for(const [i,p]of points.entries())i?ctx.lineTo(...p):ctx.moveTo(...p);ctx.closePath();ctx.fill()}
  function ellipse(x,y,rx,ry,fill){ctx.fillStyle=fill;ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fill()}
  function drawSprite(name,x,bottom,width,{flip=false,rotation=0,squash=1}={}){const img=sprites[name];if(!img)return false;const h=width*img.naturalHeight/img.naturalWidth;ctx.save();ctx.translate(x,bottom);ctx.rotate(rotation);ctx.scale(flip?-1:1,squash);ctx.drawImage(img,-width/2,-h,width,h);ctx.restore();return true}
+ // Subdivided texture mapping keeps wall artwork attached to perspective planes.
+ function textureTriangle(img,source,dest){ctx.save();ctx.beginPath();ctx.moveTo(...dest[0]);ctx.lineTo(...dest[1]);ctx.lineTo(...dest[2]);ctx.closePath();ctx.clip();const [a,b,c]=source,[d,e,f]=dest,det=a[0]*(b[1]-c[1])+b[0]*(c[1]-a[1])+c[0]*(a[1]-b[1]);if(Math.abs(det)<.001){ctx.restore();return}const solve=k=>[(d[k]*(b[1]-c[1])+e[k]*(c[1]-a[1])+f[k]*(a[1]-b[1]))/det,(d[k]*(c[0]-b[0])+e[k]*(a[0]-c[0])+f[k]*(b[0]-a[0]))/det,(d[k]*(b[0]*c[1]-c[0]*b[1])+e[k]*(c[0]*a[1]-a[0]*c[1])+f[k]*(a[0]*b[1]-b[0]*a[1]))/det];const x=solve(0),y=solve(1);ctx.transform(x[0],y[0],x[1],y[1],x[2],y[2]);ctx.drawImage(img,0,0);ctx.restore()}
+ function wallPanel(side,near,far,game){const img=sprites.wall;if(!img)return;const at=(u,v)=>{const p=project(side*2.95,near+(far-near)*u,game.x);return [p.x,210+(-240+625*v)*p.scale]};for(let i=0;i<8;i++)for(let j=0;j<4;j++){const a=i/8,b=(i+1)/8,c=j/4,d=(j+1)/4,uv=[[a,c],[b,c],[a,d],[b,d]],src=uv.map(([u,v])=>[u*img.naturalWidth,v*img.naturalHeight]),dst=uv.map(([u,v])=>at(u,v));textureTriangle(img,[src[0],src[1],src[2]],[dst[0],dst[1],dst[2]]);textureTriangle(img,[src[1],src[3],src[2]],[dst[1],dst[3],dst[2]])}}
  function world(game,time){
   ctx.clearRect(0,0,480,720);ctx.save();const bob=reducedMotion?0:Math.sin(time*7)*1.2;ctx.translate(0,bob);
   const wall=ctx.createLinearGradient(0,0,0,720);wall.addColorStop(0,'#101c32');wall.addColorStop(.6,'#28364b');wall.addColorStop(1,'#101824');ctx.fillStyle=wall;ctx.fillRect(0,0,480,720);
@@ -22,12 +25,9 @@ export function createSceneRenderer(ctx,{reducedMotion=false}={}){
   ctx.fillStyle='#47321e';ctx.fillRect(end.x-ew/2,210-eh,ew,eh+18);
   ctx.fillStyle='#d4a452';ctx.fillRect(end.x-ew/2,209,ew,3);
   for(let i=-4;i<=4;i++){ctx.fillStyle=i%2?'#c89643':'#edc56b';ctx.fillRect(end.x+i*ew/11,196,ew/25,12)}
-  // Ceiling ribs, wall panels and rails all advance with the booths below.
-  for(const section of boothPositions(time,game.x).filter(p=>p.side===1)){
-   const {depth,scale}=section,l=project(-2.95,depth,game.x),r=project(2.95,depth,game.x),top=210-240*scale;
-   ctx.strokeStyle='#8c693e';ctx.lineWidth=Math.max(1,5*scale);ctx.beginPath();ctx.moveTo(l.x,l.y);ctx.lineTo(l.x,top);ctx.lineTo(r.x,top);ctx.lineTo(r.x,r.y);ctx.stroke();
-   ctx.strokeStyle='#dbb867';ctx.lineWidth=Math.max(.7,2*scale);ctx.beginPath();ctx.moveTo(l.x,210-155*scale);ctx.lineTo(r.x,210-155*scale);ctx.stroke();
-  }
+  // Solid textured wall bays meet the floor and ceiling; all advance in world space.
+  const phaseWall=time*1.8%3.7;
+  for(let i=9;i>=0;i--){const near=Math.max(-.7,.5+i*3.7-phaseWall),far=.5+(i+1)*3.7-phaseWall;if(far<=-.7)continue;for(const side of [-1,1])wallPanel(side,near,far,game);const l=project(-2.95,near,game.x),r=project(2.95,near,game.x),top=210-240*l.scale;ctx.strokeStyle='#ac834d';ctx.lineWidth=Math.max(1,6*l.scale);ctx.beginPath();ctx.moveTo(l.x,l.y);ctx.lineTo(l.x,top);ctx.lineTo(r.x,top);ctx.lineTo(r.x,r.y);ctx.stroke()}
   const floor=ctx.createLinearGradient(0,210,0,720);floor.addColorStop(0,'#382a25');floor.addColorStop(.18,'#765031');floor.addColorStop(1,'#bc834b');polygon([[186,210],[294,210],[720,760],[-240,760]],floor);
   // Perspective floor seams and grain flow past the player continuously.
   ctx.save();ctx.beginPath();ctx.moveTo(186,210);ctx.lineTo(294,210);ctx.lineTo(720,760);ctx.lineTo(-240,760);ctx.closePath();ctx.clip();
@@ -38,8 +38,11 @@ export function createSceneRenderer(ctx,{reducedMotion=false}={}){
   const phase=time*1.8%1.15;for(let i=0;i<32;i++){const d=i*1.15-phase;if(d<-.65)continue;const left=project(-4,d,game.x),right=project(4,d,game.x);ctx.strokeStyle='#3d241b66';ctx.lineWidth=Math.max(.4,left.scale*1.2);ctx.beginPath();ctx.moveTo(left.x,left.y);ctx.lineTo(right.x,right.y);ctx.stroke()}
   const shine=ctx.createRadialGradient(240,275,10,240,390,300);shine.addColorStop(0,'#ffd66b20');shine.addColorStop(.4,'#ffdb7e12');shine.addColorStop(1,'#ffdb7e00');ctx.fillStyle=shine;ctx.fillRect(0,210,480,510);
   ctx.restore();
-  for(const booth of boothPositions(time,game.x)){
+  const seatedFrames=['seated','seatedWoman'].map((name,i)=>actors[name]?.render(time*.55,i*1.9,reducedMotion));
+  for(const [boothIndex,booth] of boothPositions(time,game.x).entries()){
    const {x,y,scale,side}=booth,w=410*scale;ellipse(x,y-4,155*scale,18*scale,'#0006');drawSprite('booth',x,y,w,{flip:side===1});
+   // Guests remain seated on the leather bench while their head/arms animate.
+   const guest=seatedFrames[boothIndex%2];if(guest&&scale>.065){const gw=190*scale,gh=gw*1.5;ctx.save();ctx.translate(x+side*65*scale,y-10*scale);ctx.scale(side===1?-1:1,1);ctx.drawImage(guest,-gw/2,-gh,gw,gh);ctx.restore()}
    // Warm ceiling lamps use the same world depth as the passing booths.
    const lampX=240+(side*1.7-game.x*.4)*180*scale,lampY=200-112*scale;
    ctx.strokeStyle='#bd914d';ctx.lineWidth=1.5*scale;ctx.beginPath();ctx.moveTo(lampX,lampY-55*scale);ctx.lineTo(lampX,lampY);ctx.stroke();ellipse(lampX,lampY,19*scale,9*scale,'#a07130');ellipse(lampX,lampY+4*scale,17*scale,5*scale,'#ffe4a1');
@@ -58,19 +61,12 @@ export function createSceneRenderer(ctx,{reducedMotion=false}={}){
   ctx.restore();return true;
  }
  function drink(x,bottom,index,game,time){
-  const beer=index!==1,w=beer?65:56,h=beer?111:128;
-  ctx.save();ctx.translate(x,bottom);ctx.rotate(-game.tilt*.13);
-  ellipse(0,3,w*.56,9,'#0007');
-  if(beer){ctx.strokeStyle='#e4f5ffb0';ctx.lineWidth=8;ctx.beginPath();ctx.ellipse(w*.58,-h*.49,19,27,0,0,Math.PI*2);ctx.stroke()}
-  const glass=ctx.createLinearGradient(-w/2,0,w/2,0);glass.addColorStop(0,'#eefaff88');glass.addColorStop(.2,'#d1eeff14');glass.addColorStop(.8,'#aac9dd33');glass.addColorStop(1,'#f3ffffaa');
-  ctx.fillStyle=glass;ctx.beginPath();ctx.roundRect(-w/2,-h,w,h,beer?9:14);ctx.fill();ctx.strokeStyle='#e0f6ffc0';ctx.lineWidth=2;ctx.stroke();
-  ctx.save();ctx.beginPath();ctx.roundRect(-w/2+4,-h+6,w-8,h-12,6);ctx.clip();
-  const level=-h*.79,slosh=clamp(Math.sin(time*5+index)*2+game.tilt*23,-22,22),liquid=ctx.createLinearGradient(0,-h,0,0);liquid.addColorStop(0,beer?'#ffc43d':'#b8461a');liquid.addColorStop(1,beer?'#a84908':'#30140e');polygon([[-w/2,level-slosh],[w/2,level+slosh],[w/2,0],[-w/2,0]],liquid);
-  ctx.strokeStyle=beer?'#fff2cd':'#e3ac6b';ctx.lineWidth=beer?12:3;ctx.beginPath();ctx.moveTo(-w/2,level-slosh);ctx.lineTo(w/2,level+slosh);ctx.stroke();
-  for(let i=0;i<9;i++)ellipse(-w*.3+(i%3)*w*.28,-12-((time*17+i*13)%65),1.6,2.4,'#fff1b899');
-  if(!beer)for(let i=0;i<3;i++){ctx.fillStyle='#e3f6ff77';ctx.fillRect(-19+i*13,-h*.72+(i%2)*14,14,17)}ctx.restore();
-  ctx.strokeStyle='#fff9';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-w*.33,-h+14);ctx.lineTo(-w*.33,-18);ctx.stroke();ellipse(0,-h,w/2,6,'#e6f5ff55');ellipse(0,-2,w*.45,5,'#deefff66');
-  if(!beer){ctx.strokeStyle='#f4e7bd';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(10,-h*.6);ctx.lineTo(23,-h-26);ctx.stroke()}
+  const beer=index!==1,img=sprites[beer?'beer':'cola'];if(!img)return;
+  ctx.save();ctx.translate(x,bottom);ctx.rotate(-game.tilt*.12);const w=beer?103:79,h=w*img.naturalHeight/img.naturalWidth;
+  ellipse(0,3,w*.43,8,'#0008');ctx.drawImage(img,-w/2,-h,w,h);
+  // Subtle live fizz and reflected glints retain movement inside the detailed glass.
+  ctx.save();ctx.globalAlpha=.35;for(let i=0;i<7;i++)ellipse(-w*.23+(i%3)*w*.16,-h*.18-((time*12+i*13)%(h*.45)),.7,1.1,beer?'#fff1bc':'#d9f0ff');ctx.restore();
+  if(Math.abs(game.tilt)>.35){ctx.strokeStyle=beer?'#fff1c3bb':'#c5eeff99';ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(-w*.24,-h*.77-game.tilt*5);ctx.lineTo(w*.18,-h*.77+game.tilt*5);ctx.stroke()}
   ctx.restore();
  }
  function tray(game,time){
