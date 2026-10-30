@@ -4,11 +4,14 @@ import {createActorAnimator} from './check-please-actors.mjs';
 // A single projected room: walls, ceiling, fixtures and floor share world depth.
 // No baked room photograph remains behind the moving scenery.
 export function project(lateral,depth,camera=0){const scale=1/(1+Math.max(-.7,depth)*.65);return {x:240+(lateral-camera*.7)*225*scale,y:210+385*scale,scale}}
-export function boothPositions(time,camera=0){const phase=time*1.8%3.7,out=[];for(let i=0;i<8;i++){const depth=.5+i*3.7-phase;if(depth<-.7)continue;for(const side of [-1,1])out.push({...project(side*2.1,depth,camera),depth,side})}return out.sort((a,b)=>b.depth-a.depth)}
+export function boothPositions(time,camera=0){const phase=time*1.8%3.7,out=[];for(let i=0;i<8;i++){const depth=.5+i*3.7-phase;if(depth<-.7)continue;for(const side of [-1,1])out.push({...project(side*1.8,depth,camera),depth,side})}return out.sort((a,b)=>b.depth-a.depth)}
+// Shared presentation helpers make spill motion and booth occupancy testable.
+export function spillPose(event,time,reduced=false){const t=clamp(time-event.at,0,1.15),side=event.direction||1;return {x:[-105,0,105][event.index]+side*(reduced?40:110)*t*t,y:(event.index===1?-24:0)-65*t+240*t*t,rotation:side*t*(reduced?1.3:2.4),alpha:clamp((1.15-t)/.3,0,1),pour:clamp((t-.08)*3,0,1)}}
+export function boothGuests(booth){return [-32,88,182].map((offset,i)=>({x:booth.x+booth.side*offset*booth.scale,y:booth.y-10*booth.scale,width:(i===2?151:170)*booth.scale,flip:booth.side===1,variant:i%2}))}
 const assets={fan:'check-please-fan-v2.webp',dancer:'check-please-dancer-v2.webp',chair:'check-please-chair-v2.webp',booth:'check-please-booth-v2.webp',tray:'check-please-tray-v2.webp',floor:'check-please-floor-v2.webp',beer:'check-please-beer-v4.webp',cola:'check-please-cola-v4.webp',wall:'check-please-wall-v4.webp',seated:'check-please-seated-v4.webp',seatedWoman:'check-please-seated-woman-v4.webp'};
 function image(file){return new Promise(resolve=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>resolve(null);img.src='./assets/'+file})}
 export function createSceneRenderer(ctx,{reducedMotion=false}={}){
- const sprites={},actors={},ready=Promise.all(Object.entries(assets).map(async([name,file])=>{sprites[name]=await image(file)})).then(()=>{for(const name of ['fan','dancer','seated','seatedWoman'])if(sprites[name])actors[name]=createActorAnimator(sprites[name],name)});
+ let spills=[];const sprites={},actors={},ready=Promise.all(Object.entries(assets).map(async([name,file])=>{sprites[name]=await image(file)})).then(()=>{for(const name of ['fan','dancer','seated','seatedWoman'])if(sprites[name])actors[name]=createActorAnimator(sprites[name],name)});
  function polygon(points,fill){ctx.fillStyle=fill;ctx.beginPath();for(const [i,p]of points.entries())i?ctx.lineTo(...p):ctx.moveTo(...p);ctx.closePath();ctx.fill()}
  function ellipse(x,y,rx,ry,fill){ctx.fillStyle=fill;ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fill()}
  function drawSprite(name,x,bottom,width,{flip=false,rotation=0,squash=1}={}){const img=sprites[name];if(!img)return false;const h=width*img.naturalHeight/img.naturalWidth;ctx.save();ctx.translate(x,bottom);ctx.rotate(rotation);ctx.scale(flip?-1:1,squash);ctx.drawImage(img,-width/2,-h,width,h);ctx.restore();return true}
@@ -42,7 +45,7 @@ export function createSceneRenderer(ctx,{reducedMotion=false}={}){
   for(const [boothIndex,booth] of boothPositions(time,game.x).entries()){
    const {x,y,scale,side}=booth,w=410*scale;ellipse(x,y-4,155*scale,18*scale,'#0006');drawSprite('booth',x,y,w,{flip:side===1});
    // Guests remain seated on the leather bench while their head/arms animate.
-   const guest=seatedFrames[boothIndex%2];if(guest&&scale>.065){const gw=190*scale,gh=gw*1.5;ctx.save();ctx.translate(x+side*65*scale,y-10*scale);ctx.scale(side===1?-1:1,1);ctx.drawImage(guest,-gw/2,-gh,gw,gh);ctx.restore()}
+   if(scale>.065)for(const seat of boothGuests(booth)){const guest=seatedFrames[(seat.variant+boothIndex)%2];if(!guest)continue;const gh=seat.width*1.5;ctx.save();ctx.translate(seat.x,seat.y);ctx.scale(seat.flip?-1:1,1);ctx.drawImage(guest,-seat.width/2,-gh,seat.width,gh);ctx.restore()}
    // Warm ceiling lamps use the same world depth as the passing booths.
    const lampX=240+(side*1.7-game.x*.4)*180*scale,lampY=200-112*scale;
    ctx.strokeStyle='#bd914d';ctx.lineWidth=1.5*scale;ctx.beginPath();ctx.moveTo(lampX,lampY-55*scale);ctx.lineTo(lampX,lampY);ctx.stroke();ellipse(lampX,lampY,19*scale,9*scale,'#a07130');ellipse(lampX,lampY+4*scale,17*scale,5*scale,'#ffe4a1');
@@ -60,9 +63,9 @@ export function createSceneRenderer(ctx,{reducedMotion=false}={}){
   else{const actor=actors[o.type==='dancer'?'dancer':'fan'];if(actor){const frame=actor.render(time,o.phase,reducedMotion),height=width*1.5;ctx.translate(x,y);ctx.scale(o.id%2===1?-1:1,1);ctx.drawImage(frame,-width/2,-height*.94,width,height)}}
   ctx.restore();return true;
  }
- function drink(x,bottom,index,game,time){
+ function drink(x,bottom,index,game,time,rotation=0,alpha=1){
   const beer=index!==1,img=sprites[beer?'beer':'cola'];if(!img)return;
-  ctx.save();ctx.translate(x,bottom);ctx.rotate(-game.tilt*.12);const w=beer?103:79,h=w*img.naturalHeight/img.naturalWidth;
+  ctx.save();ctx.globalAlpha=alpha;ctx.translate(x,bottom);ctx.rotate(-game.tilt*.28+rotation);const w=beer?103:79,h=w*img.naturalHeight/img.naturalWidth;
   ellipse(0,3,w*.43,8,'#0008');ctx.drawImage(img,-w/2,-h,w,h);
   // Subtle live fizz and reflected glints retain movement inside the detailed glass.
   ctx.save();ctx.globalAlpha=.35;for(let i=0;i<7;i++)ellipse(-w*.23+(i%3)*w*.16,-h*.18-((time*12+i*13)%(h*.45)),.7,1.1,beer?'#fff1bc':'#d9f0ff');ctx.restore();
@@ -74,9 +77,13 @@ export function createSceneRenderer(ctx,{reducedMotion=false}={}){
   if(sprites.tray){const img=sprites.tray,w=510,h=w*img.naturalHeight/img.naturalWidth;ctx.drawImage(img,-w/2,-h*.52,w,h)}else{ellipse(0,12,220,65,'#b8c6d0');ellipse(0,0,210,54,'#243d50')}
   // Three visibly separate glasses, removed individually by the replay rules.
   for(let i=0;i<game.food;i++)drink([-105,0,105][i],i===1?-24:0,i,game,time);
-  const elapsed=time-game.lastHit;
-  if(elapsed>=0&&elapsed<.75&&!reducedMotion){for(let i=0;i<18;i++){const t=elapsed,side=game.tilt<0?-1:1,x=side*(115+t*(100+i*9)),y=-80-t*(80+i*7)+t*t*340;ellipse(x,y,2+i%3,4+i%4,'#f6c452cc')}}
+  // Lost glasses keep rendering as they tip, pour and fall away, rather than vanishing.
+  for(const e of spills){const elapsed=time-e.at;if(elapsed<0||elapsed>1.15)continue;const pose=spillPose(e,time,reducedMotion),beer=e.index!==1;
+   drink(pose.x,pose.y,e.index,game,time,pose.rotation,pose.alpha);
+   if(pose.pour>0){const side=e.direction||1,lipX=pose.x+Math.sin(pose.rotation)*65,lipY=pose.y-Math.cos(pose.rotation)*85;ctx.save();ctx.globalAlpha=pose.alpha;ctx.strokeStyle=beer?'#e9a42de6':'#7b341de6';ctx.lineWidth=5+pose.pour*9;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(lipX,lipY);ctx.quadraticCurveTo(lipX+side*40,lipY+25,lipX+side*(65+elapsed*40),lipY+70+elapsed*95);ctx.stroke();ctx.strokeStyle=beer?'#fff0c7d9':'#d4efff99';ctx.lineWidth=3;ctx.stroke();for(let i=0;i<(reducedMotion?7:24);i++){const t=Math.max(0,elapsed-.08),vx=side*(35+i*6),vy=-90-(i%6)*22;ellipse(lipX+vx*t,lipY+vy*t+370*t*t,2+i%3,3+i%4,beer?'#ffc451dd':'#9b4d27dd')}ctx.restore()}
+  }
+  spills=spills.filter(e=>time-e.at<1.15);
   ctx.restore();return true;
  }
- return {ready,sprites,world,person,tray};
+ return {ready,sprites,world,person,tray,spill(event){spills.push({...event})},resetRound(){spills=[]}};
 }
