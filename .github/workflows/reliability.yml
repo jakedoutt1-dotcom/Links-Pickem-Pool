@@ -53,6 +53,7 @@ jobs:
       - name: Playmaker account, market and research rules
         run: |
           node tests/playmaker-public-api.mjs
+          node tests/playmaker-schedule.mjs
           node tests/playmaker-accounts.mjs
           node tests/playmaker-props.mjs
           node tests/playmaker-research.mjs

@@ -19,9 +19,11 @@ export async function onRequestGet(context){
  const limit=Math.min(Math.max(Number(q.get("limit")||20),1),100);
  const bookmakerID=normalizeList(q.get("bookmakerID"));
  const oddIDs=normalizeList(q.get("oddIDs")||q.get("oddID"));
+ const windowParams={};for(const name of ['startsAfter','startsBefore']){const value=q.get(name);if(value){const ms=Date.parse(value);if(!Number.isFinite(ms))return Response.json({success:false,error:'Invalid game date.'},{status:400});windowParams[name]=new Date(ms).toISOString()}}
+ if(windowParams.startsAfter&&windowParams.startsBefore&&Date.parse(windowParams.startsAfter)>=Date.parse(windowParams.startsBefore))return Response.json({success:false,error:'Invalid game dates.'},{status:400});
  const includeAltLines=q.get("includeAltLines")==="true",includeOpenCloseOdds=q.get("includeOpenCloseOdds")==="true";
  // Deliberately ignore cache-busters and UI-only query params so old patched callers collapse to one provider request.
- const cacheKey=[leagueID,eventID,limit,bookmakerID,oddIDs,includeAltLines?1:0,includeOpenCloseOdds?1:0].join("|");
+ const cacheKey=[leagueID,eventID,limit,bookmakerID,oddIDs,windowParams.startsAfter||'',windowParams.startsBefore||'',includeAltLines?1:0,includeOpenCloseOdds?1:0].join("|");
  const now=Date.now(),mem=memoryCache[cacheKey];
  if(mem&&now-mem.at<FRESH_MS)return response(mem.body,"memory");
  const edge=typeof caches!=="undefined"?caches.default:null;
@@ -34,6 +36,7 @@ export async function onRequestGet(context){
  const job=(async()=>{
   const upstream=new URL("https://api.sportsgameodds.com/v2/events");
   upstream.searchParams.set("leagueID",leagueID);upstream.searchParams.set("oddsAvailable","true");upstream.searchParams.set("limit",String(limit));upstream.searchParams.set("started","false");upstream.searchParams.set("ended","false");
+  for(const [name,value] of Object.entries(windowParams))upstream.searchParams.set(name,value);
   if(eventID)upstream.searchParams.set('eventID',eventID);
   if(bookmakerID)upstream.searchParams.set("bookmakerID",bookmakerID);if(oddIDs)upstream.searchParams.set("oddIDs",oddIDs);if(includeAltLines)upstream.searchParams.set("includeAltLines","true");if(includeOpenCloseOdds)upstream.searchParams.set("includeOpenCloseOdds","true");
   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),12000);let r,body;

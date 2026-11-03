@@ -1,3 +1,4 @@
+import {selectedWeek,inWeek} from '../../../public/new-build/playmaker/schedule.mjs';
 import {AUTO_LEGS,approachCandidates,RESEARCH_RULES,automaticCardOptions,automaticCardFormat} from '../../lib/playmaker-approach.js';
 import {loadResearch} from '../../lib/playmaker-research.js';
 import {categoryOddIds,categoryMatches,validCategory,categories} from '../../../public/new-build/playmaker/markets.mjs';
@@ -69,9 +70,9 @@ async function allowance(db,who,day,cap){
  const last=await db.prepare('SELECT r.status,r.created_at,f.code AS failure_code,f.message AS failure_message FROM links_playmaker_requests r LEFT JOIN links_playmaker_failures f ON f.request_id=r.id WHERE r.owner=? AND day=? ORDER BY r.created_at DESC,r.id DESC LIMIT 1').bind(who.owner,day).first();
  return {signedIn:true,account:{id:who.owner,email:who.email},dailyLimit:who.testingPass?null:LIMIT,used,freeRemaining:who.testingPass?null:freeRemaining,creditsRemaining,remaining:who.testingPass?null:freeRemaining+creditsRemaining,resetAt:new Date(Date.parse(day+'T00:00:00Z')+86400000).toISOString(),limitEnforced:true,testingPass:who.testingPass,passName:who.testingPass?'Lifetime testing pass':null,expiresAt:null,available:Number(row.total)<cap,lastRequestStatus:last?.status||'unverified',lastRequestAt:last?.created_at||null,lastFailure:last?.failure_code?{code:last.failure_code,message:last.failure_message}:null};
 }
-async function getOdds(context,sport,services,category='game',book='all',eventId='',alternates=false){
+async function getOdds(context,sport,services,category='game',book='all',eventId='',alternates=false,week=null){
  const url=new URL(context.request.url);url.pathname='/new-build/api/playmaker-odds';url.search='';
- for(const [k,v]of Object.entries({leagueID:sport,limit:eventId?'1':category==='game'?'20':'10',...(eventId?{eventID:eventId}:{}),...(alternates?{includeAltLines:'true'}:{}),oddIDs:categoryOddIds(sport,category),...(book!=='all'?{bookmakerID:book}:{})}))url.searchParams.set(k,v);
+ for(const [k,v]of Object.entries({leagueID:sport,limit:eventId?'1':week?(category==='game'?'100':'20'):category==='game'?'20':'10',...(week?{startsAfter:new Date(week.from-1).toISOString(),startsBefore:new Date(week.to).toISOString()}:{}),...(eventId?{eventID:eventId}:{}),...(alternates?{includeAltLines:'true'}:{}),oddIDs:categoryOddIds(sport,category),...(book!=='all'?{bookmakerID:book}:{})}))url.searchParams.set(k,v);
  let response=await (services.odds||legacyOdds)({...context,request:new Request(url),waitUntil:context.waitUntil||(()=>{})});
  // Large alternate-line payloads can fail while the main board remains usable.
  // Retry only the odds read, never the paid AI request; preserve the sportsbook.
@@ -81,8 +82,10 @@ async function getOdds(context,sport,services,category='game',book='all',eventId
  if(data?.success===false||!Array.isArray(data?.data))throw fail('ODDS_UNAVAILABLE','The market feed returned no valid board.');
  return data;
 }
-function input(body){
- const automatic=body?.mode==='automatic';if(automatic){const risk=body.risk||'balanced';if(!Object.hasOwn(AUTO_LEGS,risk))throw fail('INVALID_BUILD','Choose a supported approach.',400);body={...body,mode:'build',sport:'NFL',category:'mixed',book:body.book||'all',risk,kind:'parlay',legs:AUTO_LEGS[risk],eventId:'',card:[],question:'Choose current verified bets for my approach. Explain player history, opposing defense and missing data.'}}
+function input(body,now){
+ let week;try{week=selectedWeek(body?.week,now)}catch{throw fail('INVALID_WEEK','Choose an available week.',400)}
+ const automaticSport=body?.mode==='automatic'&&body.sport&&body.sport!=='AUTO'?String(body.sport).toUpperCase():'';if(automaticSport&&!SPORTS.has(automaticSport))throw fail('INVALID_SPORT','Choose a supported sport.',400);
+ const automatic=body?.mode==='automatic';if(automatic){const risk=body.risk||'balanced';if(!Object.hasOwn(AUTO_LEGS,risk))throw fail('INVALID_BUILD','Choose a supported approach.',400);body={...body,mode:'build',sport:automaticSport||'NFL',category:'mixed',book:body.book||'all',risk,kind:body.eventId?'same_game':'parlay',legs:AUTO_LEGS[risk],eventId:body.eventId||'',card:[],question:'Choose current verified bets for my approach. Explain player history, opposing defense and missing data.'}}
  if(!body||typeof body!=='object'||Array.isArray(body)||typeof body.question!=='string'||body.question.trim().length>1800)throw fail('INVALID_QUESTION','Keep your question to 1,800 characters.',400);
  const sport=String(body.sport||'').toUpperCase();if(!SPORTS.has(sport))throw fail('INVALID_SPORT','Choose a supported sport.',400);
  const question=body.question.trim(),card=body.card??[];
@@ -94,7 +97,8 @@ function input(body){
  const risk=body.risk||'balanced',kind=body.kind||'parlay',legs=Number(body.legs||4);
  if(build&&(!['conservative','balanced','aggressive','lottery'].includes(risk)||!['single','parlay','same_game'].includes(kind)||!Number.isInteger(legs)||legs<1||legs>8))throw fail('INVALID_BUILD','Choose a risk level and 1–8 legs.',400);
  const eventId=typeof body.eventId==='string'?body.eventId:'';if(eventId&&!/^[a-zA-Z0-9_-]{1,160}$/.test(eventId))throw fail('INVALID_GAME','Choose an available game.',400);if(build&&kind==='same_game'&&!eventId)throw fail('GAME_REQUIRED','Choose a game for your same-game parlay.',400);
- return {automatic,eventId,question,sport,ids:card.map(p=>p.id),requestId:body.requestId,build,risk,kind,category,book,legs:kind==='single'?1:legs};
+ if(automatic&&eventId&&!automaticSport)throw fail('INVALID_GAME','Choose a sport before choosing a game.',400);
+ return {automatic,automaticSport,week,eventId,question,sport,ids:card.map(p=>p.id),requestId:body.requestId,build,risk,kind,category,book,legs:kind==='single'?1:legs};
 }
 export function providerText(data){
  if(data?.status!=='completed')return '';
@@ -115,7 +119,8 @@ export async function playmakerPublic(context,services={}){
   if(!who){if(request.method==='GET'&&action==='config')return reply({build:'PM-WEB-5',requiresAccount:true,signedIn:false,aiConnected:false,remaining:0,available:false});throw fail('SIGN_IN_REQUIRED','Sign in or create a LINKS account to use Playmaker.',401)}
   if(action==='games'){
    const q=new URL(request.url).searchParams,sport=q.get('leagueID')||'NFL';if(!SPORTS.has(sport))throw fail('INVALID_SPORT','Choose a supported sport.',400);
-   const rows=parseEvents(await getOdds(context,sport,services),'all',now);const games=[...new Map(rows.filter(p=>p.league===sport).map(p=>[p.eventId,{id:p.eventId,name:p.eventName,startTime:p.startTime}])).values()];return reply({games});
+   let week;try{week=selectedWeek(q.get('week'),now)}catch{throw fail('INVALID_WEEK','Choose an available week.',400)}
+   const rows=parseEvents(await getOdds(context,sport,services,'game','all','',false,week),'all',now).filter(p=>inWeek(p,week));const games=[...new Map(rows.filter(p=>p.league===sport).map(p=>[p.eventId,{id:p.eventId,name:p.eventName,startTime:p.startTime}])).values()];return reply({games});
   }
   if(action==='odds'){
    const sport=new URL(request.url).searchParams.get('leagueID')||'NFL';if(!SPORTS.has(sport))throw fail('INVALID_SPORT','Choose a supported sport.',400);
@@ -127,18 +132,18 @@ export async function playmakerPublic(context,services={}){
   if(!aiKey(env))throw fail('AI_UNAVAILABLE','AI analysis is temporarily unavailable. Please try again later.');
   if(!(request.headers.get('Content-Type')||'').startsWith('application/json'))throw fail('JSON_REQUIRED','Send a JSON request.',415);
   let body;try{body=JSON.parse(await boundedText(request.body,24576))}catch(e){if(e.code)throw e;throw fail('INVALID_JSON','The request could not be read.',400)}
-  const clean=input(body);
+  const clean=input(body,now);
   if(!quota.available)throw fail('SERVICE_CAPACITY','Playmaker has reached today’s service capacity. Your extra credits remain available.',429);
   if(quota.remaining===0)throw fail('DAILY_LIMIT','Your five free daily requests have been used. Check My Account for your balance and reset time.',429);
   let card=[],candidates=[],research={},currentEvents=[],cardOptions=[];
   if(clean.ids.length||clean.build){
-   const leagues=clean.automatic?(new Date(now).getUTCMonth()>=2&&new Date(now).getUTCMonth()<=8?['MLB','NBA','NHL']:['NFL','NBA','NHL']):[clean.sport];
-   const loaded=await Promise.allSettled(leagues.map(league=>getOdds(context,league,services,clean.build?clean.category:'game',clean.build?clean.book:'all',clean.build?clean.eventId:'',clean.build&&clean.risk!=='balanced')));
+   const leagues=clean.automaticSport?[clean.automaticSport]:clean.automatic?(new Date(now).getUTCMonth()>=2&&new Date(now).getUTCMonth()<=8?['MLB','NBA','NHL']:['NFL','NBA','NHL']):[clean.sport];
+   const loaded=await Promise.allSettled(leagues.map(league=>getOdds(context,league,services,clean.build?clean.category:'game',clean.build?clean.book:'all',clean.build?clean.eventId:'',clean.build&&clean.risk!=='balanced',clean.week)));
    if(!clean.automatic&&loaded[0].status==='rejected')throw loaded[0].reason;
    if(clean.automatic&&loaded.every(item=>item.status==='rejected'))throw loaded[0].reason;
    currentEvents=loaded.flatMap(item=>item.status==='fulfilled'?item.value.data:[]);const data={data:currentEvents},rows=parseEvents(data,clean.build?clean.book:'all',now),byId=new Map(rows.map(row=>[row.id,row]));
    if(clean.build){
-    const eligible=approachCandidates(rows.filter(p=>(clean.automatic?p.startTimeMs<=now+48*60*60*1000:p.league===clean.sport)&&(!clean.eventId||p.eventId===clean.eventId)&&categoryMatches(p,clean.category)&&(clean.book==='all'||p.bookmakerId===clean.book)),clean.risk).filter(p=>!clean.automatic||clean.risk==='lottery'||(clean.risk==='conservative'?p.americanOdds<=-150:clean.risk==='balanced'?p.americanOdds<=150:p.americanOdds<=500));
+    const eligible=approachCandidates(rows.filter(p=>(clean.automatic?(clean.automaticSport?p.league===clean.automaticSport:true)&&((clean.week||clean.eventId)?true:p.startTimeMs<=now+48*60*60*1000):p.league===clean.sport)&&inWeek(p,clean.week)&&(!clean.eventId||p.eventId===clean.eventId)&&categoryMatches(p,clean.category)&&(clean.book==='all'||p.bookmakerId===clean.book)),clean.risk).filter(p=>!clean.automatic||clean.risk==='lottery'||(clean.risk==='conservative'?p.americanOdds<=-150:clean.risk==='balanced'?p.americanOdds<=150:p.americanOdds<=500));
     // Keep only books able to supply a compatible card, then spread
     // candidates over games, books and prop categories instead of one long block.
     const coverage=new Map();for(const p of eligible){const group=clean.kind==='same_game'?p.bookmakerId+':'+p.eventId:p.bookmakerId;if(!coverage.has(group))coverage.set(group,[]);const chosen=coverage.get(group);if(chosen.length<clean.legs&&compatibleBuildPicks([...chosen,p]))chosen.push(p)}

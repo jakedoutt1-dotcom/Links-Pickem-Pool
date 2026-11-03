@@ -5,6 +5,9 @@ const context=category=>({request:new Request('https://links.test/new-build/api/
 try{
  globalThis.fetch=async()=>{calls++;return Response.json({success:true,data:[]})};
  let r=await onRequestGet(context('fixture-valid'));assert.equal(r.status,200);assert.equal((await r.json()).success,true);await onRequestGet(context('fixture-valid'));assert.equal(calls,1,'Cache reused');
+ const windows=[];globalThis.fetch=async url=>{windows.push(new URL(url));return Response.json({success:true,data:[]})};
+ for(const start of ['2026-11-02T06:00:00Z','2026-11-09T06:00:00Z']){const c=context('fixture-window');const u=new URL(c.request.url);u.searchParams.set('startsAfter',start);u.searchParams.set('startsBefore',new Date(Date.parse(start)+86400000*7).toISOString());c.request=new Request(u);assert.equal((await onRequestGet(c)).status,200)}assert.equal(windows.length,2,'Different weeks use distinct shared caches');assert.equal(windows[0].searchParams.get('startsAfter'),'2026-11-02T06:00:00.000Z');
+ const invalid=context('fixture-invalid-date');invalid.request=new Request(invalid.request.url+'&startsAfter=invalid');assert.equal((await onRequestGet(invalid)).status,400);assert.equal(windows.length,2);
  globalThis.fetch=async()=>new Response(new Uint8Array(8*1024*1024+1));r=await onRequestGet(context('fixture-large'));assert.equal(r.status,502);assert.equal((await r.json()).code,'UPSTREAM_ERROR');
  globalThis.setTimeout=(fn,ms,...args)=>originalTimeout(fn,ms===12000?1:ms,...args);globalThis.fetch=async(url,init)=>new Promise((resolve,reject)=>init.signal.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError'))));r=await onRequestGet(context('fixture-timeout'));assert.equal(r.status,502);assert.equal((await r.json()).code,'UPSTREAM_ERROR');
  console.log('PASS odds gateway: cache reuse, bounded provider response and abort deadline return JSON');
