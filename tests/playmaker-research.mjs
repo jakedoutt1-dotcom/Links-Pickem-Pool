@@ -15,6 +15,21 @@ for(const risk of Object.keys(AUTO_LEGS)){
 }
 console.log('PASS automatic approach-only cards, lottery odds gating, real alternate lines, historical averages, opponent allowed stats, sample limits and one AI attempt');
 
+// The reported Bills/Vikings failure: restricted bet365 reads fail, but the
+// shared board is healthy and contains only other books. Never spend on AI or
+// silently switch books. Also prove a supported book can recover the same way.
+for(const book of ['bet365','draftkings']){
+ const {db}=fixture();let aiCalls=0;const reads=[],e=current('NFL',0);e.players={};e.odds={};
+ for(let i=0;i<4;i++){const sample=current('NFL',i);Object.assign(e.players,sample.players);Object.assign(e.odds,sample.odds)}
+ try{
+  const response=await playmakerPublic({request:new Request('https://links.test/new-build/api/playmaker-public?action=ai',{method:'POST',headers:{Origin:'https://links.test','CF-Connecting-IP':'192.0.2.1','Content-Type':'application/json'},body:JSON.stringify({mode:'automatic',sport:'NFL',eventId:e.eventID,risk:'aggressive',book,requestId:crypto.randomUUID()})}),env:{DB:db,OPENAI_API_KEY:'fake',SPORTS_GAME_ODDS_API_KEY:'fake'}},{now:()=>now,session:async()=>({email:'restricted@example.test'}),historyFetch:async()=>Response.json({data:[]}),odds:async c=>{const q=new URL(c.request.url).searchParams;reads.push(q);return q.has('bookmakerID')?Response.json({error:'restricted book query'},{status:502}):Response.json({data:[e]})},fetch:async(url,init)=>{aiCalls++;const input=JSON.parse(JSON.parse(init.body).input),o=input.cardOptions[0];assert(input.candidates.every(p=>p.book===book));return Response.json({status:'completed',output_text:JSON.stringify({analysis:'Fixture only.',cardId:o.id,reasons:o.picks.map(()=> 'Fixture only.')})})}});
+  const data=await response.json();assert.equal(reads.length,3);assert.equal(reads.at(-1).has('bookmakerID'),false);assert(reads.every(q=>q.get('eventID')===e.eventID));
+  if(book==='bet365'){assert.equal(response.status,409,JSON.stringify(data));assert.equal(data.code,'NO_MARKETS');assert.match(data.error,/bet365 has no current odds/);assert.equal(aiCalls,0);assert.equal(db.raw.prepare('SELECT COUNT(*) n FROM links_playmaker_requests').get().n,0)}
+  else{assert.equal(response.status,200,JSON.stringify(data));assert.equal(aiCalls,1);assert.equal(data.picks.length,4);assert(data.picks.every(p=>p.bookmakerId==='draftkings'&&p.eventId===e.eventID))}
+ }finally{db.raw.close()}
+}
+console.log('PASS restricted-book errors recover through shared board, unavailable bet365 uses no AI, supported book keeps all four same-game legs');
+
 {
  const rows=[];for(let i=0;i<8;i++){const e=current('NFL',i);for(const odd of Object.values(e.odds))odd.byBookmaker.fanduel=structuredClone(odd.byBookmaker.draftkings);rows.push(...parseEvents({data:[e]},'all',now))}const options=automaticCardOptions(rows,6,compatibleBuildPicks);assert(options.length>1);assert(options.every(o=>o.picks.length===6&&compatibleBuildPicks(o.picks)));assert.deepEqual(automaticCardFormat(options,6).schema.properties.cardId.enum,options.map(o=>o.id));console.log('PASS complete card options cannot mix bookmakers or duplicate/conflicting legs');
 }
