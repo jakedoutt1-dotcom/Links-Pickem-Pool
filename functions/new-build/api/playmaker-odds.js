@@ -3,7 +3,7 @@
 let memoryCache={};
 let inFlight={};
 const MAX_BODY=8*1024*1024,MAX_MEMORY_CHARS=8*1024*1024;
-function remember(key,body){delete memoryCache[key];memoryCache[key]={at:Date.now(),body};let size=Object.values(memoryCache).reduce((n,v)=>n+v.body.length,0);for(const id of Object.keys(memoryCache)){if(size<=MAX_MEMORY_CHARS)break;size-=memoryCache[id].body.length;delete memoryCache[id]}}
+function remember(key,body,at=Date.now()){delete memoryCache[key];memoryCache[key]={at,body};let size=Object.values(memoryCache).reduce((n,v)=>n+v.body.length,0);for(const id of Object.keys(memoryCache)){if(size<=MAX_MEMORY_CHARS)break;size-=memoryCache[id].body.length;delete memoryCache[id]}}
 async function readBounded(response){const reader=response.body.getReader(),decoder=new TextDecoder(),parts=[];let size=0;try{for(;;){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>MAX_BODY){await reader.cancel();throw Error('ODDS_RESPONSE_TOO_LARGE')}parts.push(decoder.decode(value,{stream:true}))}parts.push(decoder.decode());return parts.join('')}finally{reader.releaseLock()}}
 const FRESH_MS=15*60*1000,STALE_MS=6*60*60*1000;
 const outHeaders=(extra={})=>({"Content-Type":"application/json; charset=utf-8",...extra});
@@ -29,10 +29,13 @@ export async function onRequestGet(context){
  const edge=typeof caches!=="undefined"?caches.default:null;
  const edgeURL=new URL(context.request.url);edgeURL.pathname="/new-build/api/__playmaker_odds_cache_v742";edgeURL.search="?k="+encodeURIComponent(cacheKey);
  const edgeReq=new Request(edgeURL.toString(),{method:"GET"});
- if(edge){const hit=await edge.match(edgeReq);if(hit){const body=await hit.text();remember(cacheKey,body);return response(body,"edge")}}
+ const backupURL=new URL(edgeURL);backupURL.pathname='/new-build/api/__playmaker_odds_backup_v1';const backupReq=new Request(backupURL);
+ let stale=mem&&now-mem.at<STALE_MS?mem:null;
+ if(edge){const hit=await edge.match(edgeReq);if(hit){const body=await hit.text();remember(cacheKey,body);return response(body,"edge")}
+  if(!stale){const backup=await edge.match(backupReq);if(backup){const at=Number(backup.headers.get('X-LINKS-Cached-At'));if(at>0&&now-at<STALE_MS)stale={at,body:await backup.text()}}}
+ }
  // If several old page patches fire together, only the first is allowed to reach SportsGameOdds.
- if(inFlight[cacheKey]){try{return response(await inFlight[cacheKey],"coalesced")}catch{}}
- const stale=mem&&now-mem.at<STALE_MS?mem:null;
+ if(inFlight[cacheKey]){try{return response(await inFlight[cacheKey],"coalesced")}catch(e){return failed(e,stale)}}
  const job=(async()=>{
   const upstream=new URL("https://api.sportsgameodds.com/v2/events");
   upstream.searchParams.set("leagueID",leagueID);upstream.searchParams.set("oddsAvailable","true");upstream.searchParams.set("limit",String(limit));upstream.searchParams.set("started","false");upstream.searchParams.set("ended","false");
@@ -42,13 +45,14 @@ export async function onRequestGet(context){
   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),12000);let r,body;
   try{r=await fetch(upstream.toString(),{signal:controller.signal,headers:{"Accept":"application/json","x-api-key":key}});body=await readBounded(r)}finally{clearTimeout(timeout)}
   if(!r.ok){const err=new Error("UPSTREAM_"+r.status);err.status=r.status;err.body=body;throw err}
-  try{const parsed=JSON.parse(body),rows=Array.isArray(parsed?.data)?parsed.data:[];parsed.linksDiagnostic={build:"742",leagueID,eventCount:rows.length,sharedCache:true};body=JSON.stringify(parsed)}catch{}
+  const parsed=JSON.parse(body);if(parsed?.success===false||!Array.isArray(parsed?.data))throw Error('INVALID_ODDS_BOARD');const rows=parsed.data;parsed.linksDiagnostic={build:"743",leagueID,eventCount:rows.length,sharedCache:true};body=JSON.stringify(parsed);
   remember(cacheKey,body);
-  if(edge)context.waitUntil(edge.put(edgeReq,new Response(body,{status:200,headers:outHeaders({"Cache-Control":"public, max-age=900, stale-while-revalidate=1800"})})));
+  if(edge)context.waitUntil(Promise.all([edge.put(edgeReq,new Response(body,{status:200,headers:outHeaders({"Cache-Control":"public, max-age=900, stale-while-revalidate=1800"})})),edge.put(backupReq,new Response(body,{status:200,headers:outHeaders({"Cache-Control":"public, max-age=21600","X-LINKS-Cached-At":String(Date.now())})}))]));
   return body;
  })();
  inFlight[cacheKey]=job;
  try{return response(await job,"provider")}
- catch(e){if(stale)return response(stale.body,"stale-memory",e.status===429?"provider-rate-limited":"provider-error");if(e.status===429)return Response.json({success:false,code:"RATE_LIMITED",error:"Live odds provider rate limit reached. Playmaker will reuse cached odds as soon as available.",build:"742"},{status:429,headers:{"Cache-Control":"no-store","Retry-After":"900"}});return Response.json({success:false,code:"UPSTREAM_ERROR",error:"Odds provider unavailable",build:"742"},{status:502,headers:{"Cache-Control":"no-store"}})}
+ catch(e){return failed(e,stale)}
  finally{delete inFlight[cacheKey]}
 }
+function failed(e,stale){if(stale)return response(stale.body,"stale-cache",e.status===429?"provider-rate-limited":"provider-error");if(e.status===429)return Response.json({success:false,code:"RATE_LIMITED",error:"Live odds provider rate limit reached. Try again later.",build:"743"},{status:429,headers:{"Cache-Control":"no-store","Retry-After":"900"}});return Response.json({success:false,code:"UPSTREAM_ERROR",error:"Odds provider unavailable",build:"743"},{status:502,headers:{"Cache-Control":"no-store"}})}

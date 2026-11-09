@@ -1,6 +1,6 @@
 if(new URLSearchParams(location.search).get('popup')==='1'){const style=document.createElement('style');style.textContent='body>header,main>nav{display:none}main{padding-top:18px}';document.head.append(style)}
 import {sportsbookBadge} from './sportsbook-ui.mjs';
-import {verifiedPickLink} from './sportsbook-links.mjs';
+import {verifiedPickLink,cardSlipLink} from './sportsbook-links.mjs?v=whole-slip1';
 import {shareCardButton} from './share-card.mjs';
 import {requireAccount} from './account-client.mjs';
 import {cards} from './card-history.mjs';
@@ -36,4 +36,9 @@ if(card.length)get('results-status').after(shareCardButton(card,archived?.create
 
 if(packet.approachNote)get('results-status').after(node('p','disclaimer',String(packet.approachNote).slice(0,400)));
 
-if(card.length){const name=card[0].bookmakerName;get('results-status').after(sportsbookBadge(card[0].bookmakerId,name));get('results-status').after(node('p','disclaimer','Sportsbook: '+name+'. Selection links open individual markets where available. A complete bet-slip import is not yet connected. Review selections and enter your stake at the sportsbook.'))}
+if(card.length){
+ const name=card[0].bookmakerName,link=cardSlipLink(card),area=node('section','calculator','');area.setAttribute('aria-label','Open your sportsbook slip');area.append(sportsbookBadge(card[0].bookmakerId,name));
+ if(link){const open=node('a','open-card',`Open all ${card.length} pick${card.length===1?'':'s'} in ${name}`);open.href=link;open.target='_blank';open.rel='noopener noreferrer';area.append(open,node('p','disclaimer','Review every pick in your sportsbook, choose the parlay if offered, and enter your bet amount there. Availability, combined odds and same-game eligibility are confirmed by the sportsbook.'))}
+ else area.append(node('p','disclaimer','A complete slip link is unavailable for this card. Use the individual pick links below, or copy your card.'));
+ get('results-status').after(area);
+}

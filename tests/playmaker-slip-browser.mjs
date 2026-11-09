@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+import {readFileSync,existsSync,mkdirSync} from 'node:fs';
+import {resolve,extname} from 'node:path';
+import {parseEvents,CARD_STORAGE_KEY} from '../public/new-build/playmaker/domain.mjs';
+const {chromium}=createRequire(import.meta.url)('playwright'),root=resolve('public'),origin='https://links.test';
+const links={betmgm:i=>`https://www.nj.betmgm.com/en/sports?options=6:44038-${3451306+i}-${5411294+i}`,draftkings:i=>`https://sportsbook.draftkings.com/event/1?outcomes=0QA${456+i}%23789_13L`,fanduel:i=>`https://sportsbook.fanduel.com/addToBetslip?marketId=42.${100+i}&selectionId=${50191+i}`,caesars:i=>`https://sportsbook.caesars.com/us/nj/bet/betslip?selectionIds=fixture-${i}`,bet365:()=>null};
+const browser=await chromium.launch({channel:'msedge',headless:true});mkdirSync('output/playmaker-slips',{recursive:true});
+try{for(const width of [390,1440])for(const book of Object.keys(links)){
+ const now=Date.now(),event={eventID:'fixture-game',leagueID:'NFL',status:{startsAt:new Date(now+86400000).toISOString()},teams:{home:{name:'Minnesota Vikings'},away:{name:'Buffalo Bills'}},players:{A:{name:'Player A'},B:{name:'Player B'}},odds:{}};
+ for(const [i,player]of ['A','B'].entries())event.odds[`rushing_yards-${player}-game-ou-over`]={statID:'rushing_yards',statEntityID:player,periodID:'game',betTypeID:'ou',sideID:'over',byBookmaker:{[book]:{odds:'-110',overUnder:'50.5',lastUpdatedAt:new Date(now-60000).toISOString(),deeplink:links[book](i)}}};
+ const card=parseEvents({data:[event]},book,now);assert.equal(card.length,2);const errors=[],page=await browser.newPage({viewport:{width,height:1000}});page.on('pageerror',e=>errors.push(e.message));
+ await page.route('**/*',async route=>{const u=new URL(route.request().url());if(u.pathname.includes('/api/'))return route.fulfill({json:u.pathname.endsWith('playmaker-public')?{signedIn:true,account:{id:'a'.repeat(64)}}:{logos:{}}});if(u.origin!==origin)return route.abort();const file=resolve(root,'.'+u.pathname);if(!file.startsWith(root)||!existsSync(file))return route.fulfill({status:404,body:''});return route.fulfill({body:readFileSync(file),contentType:{'.html':'text/html','.css':'text/css','.mjs':'text/javascript','.js':'text/javascript','.svg':'image/svg+xml','.png':'image/png'}[extname(file)]||'application/octet-stream'})});
+ await page.addInitScript(({key,card})=>localStorage.setItem(key,JSON.stringify(card)),{key:CARD_STORAGE_KEY,card});await page.goto(origin+'/new-build/playmaker/card.html');await page.locator('#results-count').filter({hasText:'2 picks'}).waitFor();
+ const open=page.getByRole('link',{name:/Open all 2 picks/});if(['betmgm','draftkings','fanduel'].includes(book)){await open.waitFor();const url=new URL(await open.getAttribute('href'));assert(url.hostname.endsWith(book+'.com'));assert(!url.searchParams.has('stake'));assert.equal(await page.getByRole('link',{name:/Open this pick/}).count(),2)}else{assert.equal(await open.count(),0);await page.getByText('A complete slip link is unavailable',{exact:false}).waitFor()}
+ assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);await page.screenshot({path:`output/playmaker-slips/${book}-${width}.png`});console.log(`PASS ${book} ${width}px: full-card link or explicit unavailable state, individual links preserved`);await page.close();
+}}finally{await browser.close()}
