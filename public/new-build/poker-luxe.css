@@ -7,8 +7,8 @@
 #pokerTable .avatar-character{background-image:url('./assets/poker-character-portraits-v1.png');background-size:300% 300%;background-position:var(--avatar-x) var(--avatar-y)}
 #pokerTable .seat-label{position:relative;isolation:isolate;box-sizing:border-box;width:100%;padding:5px 7px 4px;border:0!important;border-radius:0!important;background:linear-gradient(110deg,#fff1b2,#ac762b 20%,#ffe8a5 49%,#a7722b 80%,#fff0ab)!important;clip-path:polygon(8% 0,92% 0,100% 24%,100% 76%,92% 100%,8% 100%,0 76%,0 24%);box-shadow:none!important;min-height:34px}
 #pokerTable .seat-label::before{content:'';position:absolute;inset:2px;z-index:-1;clip-path:inherit;background:linear-gradient(160deg,#1b3146,#030c18 75%)}
-#pokerTable .seat.active .seat-label::before{background:linear-gradient(145deg,#665021,#111b26)}
-#pokerTable .seat.active{filter:drop-shadow(0 0 9px #ffd777aa)}
+#pokerTable .seat.pot-winner .seat-label::before{background:linear-gradient(145deg,#665021,#111b26)}
+#pokerTable .seat.pot-winner{filter:drop-shadow(0 0 9px #ffd777aa)}
 #pokerTable .seat-name{display:block;font-family:Georgia,serif;font-weight:600;line-height:1.1;color:#fff5d8!important;text-shadow:0 1px 2px #000;font-size:.82rem}
 #pokerTable .seat-stack{font-family:Georgia,serif;font-size:.8rem;font-weight:500;color:#ffe5a0!important;margin-top:1px}
 #pokerTable .seat-status{font-size:.52rem;line-height:1.2;margin-top:2px;letter-spacing:.04em;color:#d8dce1}
@@ -96,12 +96,15 @@ body:not(.tv) #bettingControls,body:not(.tv) #preselectControls{background:radia
 
 #pokerTable .seat.you .seat-cards .card{width:29px;height:41px}#pokerTable .seat.you .seat-cards .rank,#pokerTable .seat.you .seat-cards .suit{font-size:15px}
 
-#pokerTable .seat.pot-winner .seat-label::before {
+#pokerTable .seat.active .seat-label {
+  background: linear-gradient(110deg, #b9ffca, #38935c 20%, #a7f5bb 49%, #38935c 80%, #b9ffca) !important;
+}
+#pokerTable .seat.active .seat-label::before {
   background: linear-gradient(145deg, #226244, #103525);
 }
-#pokerTable .seat.pot-winner {
+#pokerTable .seat.active {
   filter: drop-shadow(0 0 9px #53e88baa);
 }
-#pokerTable .seat.pot-winner .seat-status {
+#pokerTable .seat.active .seat-status {
   color: #a7f5bb;
 }
