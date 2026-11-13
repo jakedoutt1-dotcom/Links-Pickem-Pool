@@ -1,6 +1,6 @@
 import {presetAvatar,presetStyle} from './poker-avatars.mjs';
 import {createPokerProfile} from './poker-profile.mjs?v=sticky-actions6';
-import {createTableChat} from './poker-chat.mjs?v=compact5';
+import {createTableChat} from './poker-chat.mjs?v=newest-first1';
 import {createPokerAudio} from './poker-audio.mjs?v=rich2';
 import {pokerSeatPosition} from './poker-seats.mjs?v=luxe3';
 import {raisePreset,validRaise} from './poker-controls.mjs';
