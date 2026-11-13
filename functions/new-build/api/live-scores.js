@@ -36,16 +36,20 @@ async function readFeed(league, path) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 3000);
       try {
-        const response = await fetch('https://' + host + '/apis/site/v2/sports/' + path + '/scoreboard', {
-          signal: controller.signal, headers: {Accept: 'application/json'}, redirect: 'error',
+        const response = await fetch('https://' + host + '/apis/site/v2/sports/' + path + '/scoreboard?limit=20', {
+          signal: controller.signal,
+          headers: {Accept: 'application/json', 'User-Agent': 'Mozilla/5.0'},
+          cf: {cacheTtl: 0, cacheEverything: false},
+          redirect: 'error',
         });
-        if (!response.ok) throw Error('Score provider unavailable.');
+        if (!response.ok) throw Error('Score provider returned HTTP ' + response.status);
         const data = await response.json();
         if (!Array.isArray(data.events)) throw Error('Invalid score feed.');
         return {events: normalizeLiveEvents(data.events, league), asOf: Date.now()};
       } catch (error) { lastError = error; }
       finally { clearTimeout(timeout); }
     }
+    console.warn('LINKS Live league unavailable', league, lastError?.message);
     throw lastError;
   }, {ttl: 45});
 }
