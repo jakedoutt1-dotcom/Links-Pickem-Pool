@@ -32,11 +32,17 @@ export function normalizeLiveEvents(events, league) {
 async function readFeed(league, path) {
   return sharedScoreFeed('home-live-v3:' + league, async () => {
     let lastError;
-    for (const host of ['site.api.espn.com', 'site.web.api.espn.com']) {
+    const sport = path.split('/')[1];
+    const urls = [
+      'https://site.api.espn.com/apis/site/v2/sports/' + path + '/scoreboard?limit=20',
+      'https://cdn.espn.com/core/' + sport + '/scoreboard?xhr=1',
+      'https://site.web.api.espn.com/apis/site/v2/sports/' + path + '/scoreboard?limit=20',
+    ];
+    for (const url of urls) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 3000);
       try {
-        const response = await fetch('https://' + host + '/apis/site/v2/sports/' + path + '/scoreboard?limit=20', {
+        const response = await fetch(url, {
           signal: controller.signal,
           headers: {Accept: 'application/json', 'User-Agent': 'Mozilla/5.0'},
           cf: {cacheTtl: 0, cacheEverything: false},
@@ -44,8 +50,9 @@ async function readFeed(league, path) {
         });
         if (!response.ok) throw Error('Score provider returned HTTP ' + response.status);
         const data = await response.json();
-        if (!Array.isArray(data.events)) throw Error('Invalid score feed.');
-        return {events: normalizeLiveEvents(data.events, league), asOf: Date.now()};
+        const events = data.events ?? data.content?.sbData?.events;
+        if (!Array.isArray(events)) throw Error('Invalid score feed.');
+        return {events: normalizeLiveEvents(events, league), asOf: Date.now()};
       } catch (error) { lastError = error; }
       finally { clearTimeout(timeout); }
     }

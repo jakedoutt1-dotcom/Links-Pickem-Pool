@@ -26,10 +26,14 @@ globalThis.caches = {default: {
 }};
 globalThis.fetch = async (url, options) => {
   calls.push(String(url));
-  assert.ok(['site.api.espn.com','site.web.api.espn.com'].includes(new URL(url).hostname));
+  const host = new URL(url).hostname;
+  assert.ok(['site.api.espn.com','site.web.api.espn.com','cdn.espn.com'].includes(host));
   assert.equal(options.headers?.Authorization, undefined);
   assert.ok(options.signal);
   if (mode === 'alternate' && new URL(url).hostname==='site.api.espn.com') throw Error('primary unavailable');
+  if (mode === 'cdn' && host!=='cdn.espn.com') throw Error('site feeds unavailable');
+  if (host==='cdn.espn.com' && mode==='cdn') return Response.json({content:{sbData:{events:[event()]}}});
+  if (host==='cdn.espn.com' && mode==='alternate') throw Error('CDN unavailable');
   if (mode === 'down' || mode === 'partial' && String(url).includes('/nfl/')) throw Error('offline');
   if (mode === 'timeout' && String(url).includes('/nfl/')) return new Promise((resolve, reject) => options.signal.addEventListener('abort', () => reject(Error('timed out')), {once: true}));
   if (mode === 'bad') return Response.json({error: 'not a scoreboard'});
@@ -47,6 +51,9 @@ try {
   response = await onRequest({request: request('GET')}); payload = await response.json();
   assert.equal(response.status,200); assert.equal(payload.events.length,7);
   assert.ok(calls.some(url=>new URL(url).hostname==='site.web.api.espn.com'));
+  entries.clear(); mode = 'cdn';
+  response = await onRequest({request: request('GET')}); payload = await response.json();
+  assert.equal(response.status, 200); assert.equal(payload.events.length, 7);
   entries.clear(); mode = 'partial';
   response = await onRequest({request: request('GET')}); payload = await response.json();
   assert.equal(response.status, 200); assert.equal(payload.events.length, 6); assert.deepEqual(payload.unavailable, ['NFL']);
