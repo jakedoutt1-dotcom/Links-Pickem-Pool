@@ -1,7 +1,7 @@
 let memberProfile;
 const $=id=>document.getElementById(id);let period='week',loadId=0,initialGame=new URLSearchParams(location.search).get('game');
 // Bookmarks for games off the current lineup open overall standings.
-if(['goal-line','dead-air'].includes(initialGame)){initialGame='all';const url=new URL(location.href);url.searchParams.delete('game');history.replaceState(null,'',url);}
+if(['goal-line','dead-air','last-alibi'].includes(initialGame)){initialGame='all';const url=new URL(location.href);url.searchParams.delete('game');history.replaceState(null,'',url);}
 async function api(){const r=await fetch('./api/party-scoreboard?'+new URLSearchParams({period,game:initialGame||$('game').value}),{headers:{'x-links-account':localStorage.getItem('links-account-token')||''},cache:'no-store'});const j=await r.json();if(!r.ok)throw Error(j.error||'Please try again.');return j}
 
 // Anonymous identity is device-local. Seat proofs come from the games, never from names.
