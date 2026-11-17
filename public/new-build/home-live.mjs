@@ -11,25 +11,25 @@ export function validLiveSnapshot(value, now = Date.now()) {
       typeof event.away?.name === 'string' && typeof event.home?.name === 'string');
 }
 
-// Independent public-data recovery path if the site score endpoint is unavailable.
+// Read the public ESPN scoreboards directly, as on NFL Picks.
 // Fixed URLs only; no session headers, player data, API keys or pool picks are sent.
-const BACKUP_FEEDS=[['NFL','football/nfl'],['CFB','football/college-football'],['MLB','baseball/mlb'],['NBA','basketball/nba'],['WNBA','basketball/wnba'],['NHL','hockey/nhl'],['NCAAM','basketball/mens-college-basketball']];
-export function normalizeBackupEvents(events,league){return events.flatMap(event=>{const c=event?.competitions?.[0],teams=c?.competitors||[],away=teams.find(t=>t.homeAway==='away'),home=teams.find(t=>t.homeAway==='home'),status=c?.status?.type||event?.status?.type||{};if(!away?.team||!home?.team||!['pre','in','post'].includes(status.state))return [];const team=t=>({name:String(t.team.abbreviation||t.team.shortDisplayName||t.team.displayName||'').slice(0,35),score:status.state==='pre'?'':String(t.score??'').slice(0,12)});return [{id:String(event.id||'').slice(0,40),league,state:status.state,away:team(away),home:team(home),detail:String(status.shortDetail||status.detail||'').slice(0,100)}]}).sort((a,b)=>['in','post','pre'].indexOf(a.state)-['in','post','pre'].indexOf(b.state)).slice(0,8)}
-export async function loadBackupScores() {
-  const results = await Promise.allSettled(BACKUP_FEEDS.map(async ([league, path]) => {
+const ESPN_FEEDS=[['NFL','football/nfl'],['CFB','football/college-football'],['MLB','baseball/mlb'],['NBA','basketball/nba'],['WNBA','basketball/wnba'],['NHL','hockey/nhl'],['NCAAM','basketball/mens-college-basketball']];
+export function normalizeEspnEvents(events,league){return events.flatMap(event=>{const c=event?.competitions?.[0],teams=c?.competitors||[],away=teams.find(t=>t.homeAway==='away'),home=teams.find(t=>t.homeAway==='home'),status=c?.status?.type||event?.status?.type||{};if(!away?.team||!home?.team||!['pre','in','post'].includes(status.state))return [];const team=t=>({name:String(t.team.abbreviation||t.team.shortDisplayName||t.team.displayName||'').slice(0,35),score:status.state==='pre'?'':String(t.score??'').slice(0,12)});return [{id:String(event.id||'').slice(0,40),league,state:status.state,away:team(away),home:team(home),detail:String(status.shortDetail||status.detail||'').slice(0,100)}]}).sort((a,b)=>['in','post','pre'].indexOf(a.state)-['in','post','pre'].indexOf(b.state)).slice(0,8)}
+export async function loadEspnScores() {
+  const results = await Promise.allSettled(ESPN_FEEDS.map(async ([league, path]) => {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
     async function read(host) {
       const response = await fetch('https://' + host + '/apis/site/v2/sports/' + path + '/scoreboard', {
         signal: controller.signal, credentials: 'omit', referrerPolicy: 'no-referrer',
       });
-      if (!response.ok) throw Error('Backup unavailable');
+      if (!response.ok) throw Error('ESPN unavailable');
       const body = await response.json();
-      if (!Array.isArray(body.events)) throw Error('Invalid backup');
-      return normalizeBackupEvents(body.events, league);
+      if (!Array.isArray(body.events)) throw Error('Invalid ESPN scoreboard');
+      return normalizeEspnEvents(body.events, league);
     }
     try {
-      return await Promise.any(['site.web.api.espn.com', 'site.api.espn.com'].map(read));
+      return await Promise.any(['site.api.espn.com', 'site.web.api.espn.com'].map(read));
     } finally {
       clearTimeout(timeout);
       controller.abort();
@@ -40,22 +40,25 @@ export async function loadBackupScores() {
     events: results.flatMap(result => result.status === 'fulfilled' ? result.value : [])
       .sort((a, b) => ['in', 'post', 'pre'].indexOf(a.state) - ['in', 'post', 'pre'].indexOf(b.state)),
     asOf: Date.now(),
-    unavailable: BACKUP_FEEDS.filter((_, index) => results[index].status === 'rejected').map(([name]) => name),
-    source: 'public-backup',
+    unavailable: ESPN_FEEDS.filter((_, index) => results[index].status === 'rejected').map(([name]) => name),
+    source: 'espn',
   };
 }
 
 export function startHomeLive() {
-  const track = document.getElementById('liveTrackHome');
-  const bar = track?.closest('.livebar-home');
+  const track = document.getElementById('liveTrackHome') || document.getElementById('liveTrack');
+  const bar = track?.closest('.livebar-home, .livebar');
   if (!bar || bar.dataset.liveReady) return;
   bar.dataset.liveReady = '1';
   const refresh = document.createElement('button');
   refresh.type = 'button'; refresh.className = 'live-refresh-home'; refresh.textContent = 'Refresh';
-  refresh.setAttribute('aria-label', 'Refresh live scores'); bar.append(refresh);
+  refresh.setAttribute('aria-label', 'Refresh live scores');
   const status = document.createElement('span');
   status.className = 'live-status-home'; status.setAttribute('role', 'status');
-  bar.insertAdjacentElement('afterend', status);
+  if (bar.classList.contains('livebar-home')) {
+    bar.append(refresh);
+    bar.insertAdjacentElement('afterend', status);
+  }
   let snapshot = null, busy = false, timer = null, stale = false, stopped = false;
   bar.dataset.liveState = 'empty';
   try {
@@ -97,30 +100,27 @@ export function startHomeLive() {
     clearTimeout(timer);
     if (busy || stopped || document.hidden) return;
     busy = true; refresh.disabled = true;
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
     try {
       let next;
       try {
-        const response = await fetch('/new-build/api/live-scores', {cache: 'no-store', signal: controller.signal});
+        next = await loadEspnScores();
+        if (!validLiveSnapshot(next)) throw Error('Invalid ESPN score feed.');
+      } catch {
+        const response = await fetch('/new-build/api/live-scores', {
+          cache: 'no-store', signal: AbortSignal.timeout(8000)
+        });
         if (!response.ok) throw Error('Score feed unavailable.');
         next = await response.json();
-        if (!validLiveSnapshot(next)) throw Error('Invalid score feed.');
-      } catch {
-        clearTimeout(timeout);
-        status.textContent = 'Connecting to the backup score feed…';
-        next = await loadBackupScores();
-        if (!validLiveSnapshot(next)) throw Error('Invalid backup score feed.');
+        if (!validLiveSnapshot(next)) throw Error('Invalid site score feed.');
       }
       snapshot = next; stale = false; render(snapshot);
       status.textContent = 'Updated ' + time(snapshot) +
-        (snapshot.source==='public-backup'?' · Backup score feed':'') +
         (snapshot.unavailable?.length ? ' · Some leagues are reconnecting.' : '');
       refresh.textContent = 'Refresh';
       try {localStorage.setItem(CACHE_KEY, JSON.stringify(snapshot));} catch {}
     } catch {stale = true; renderFallback();}
     finally {
-      clearTimeout(timeout); busy = false; refresh.disabled = false;
+      busy = false; refresh.disabled = false;
       if (!stopped) timer = setTimeout(load, stale ? RETRY_DELAY : REFRESH_DELAY);
     }
   }

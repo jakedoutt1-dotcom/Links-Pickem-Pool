@@ -1,5 +1,7 @@
 // Shared navigation never signs a player out or changes pool membership.
 (()=>{
+ const keepRoomExits=document.currentScript?.hasAttribute('data-keep-game-room-exits');
+ const duplicateRoom=keepRoomExits?/\/control-center(?:\.html)?\/?$/:/\/(?:control-center|game-room)(?:\.html)?\/?$/;
  function mount(){
   if(!document.getElementById('linksFeedbackScript')){const script=document.createElement('script');script.id='linksFeedbackScript';script.src='/new-build/game-feedback.js';document.head.append(script)}
   if(!document.getElementById('linksTestingNoticeScript')){const script=document.createElement('script');script.id='linksTestingNoticeScript';script.src='/new-build/testing-access.js';document.head.append(script)}
@@ -12,6 +14,7 @@
   function link(text,href){const a=document.createElement('a');a.textContent=text;a.href=href;nav.append(a)}
   if(!isHome)link('← Back to Home','/new-build/index.html');
   if(page==='control-center')link('Game Room','/new-build/game-room.html');
+  else link('← Back to Locker Room','/new-build/control-center.html');
   document.body.prepend(nav);
   // Keep the shared Home control; preserve clickable logos and game-specific exits.
   function removeDuplicateHome(){
@@ -20,7 +23,7 @@
     if(page!=='control-center'&&control.matches('a[href]')){
      const label=control.textContent.trim().replace(/[←→‹›↩🏠]/gu,'').trim();
      const target=new URL(control.getAttribute('href'),location.href);
-     if(target.origin===location.origin&&/\/(?:control-center|game-room)(?:\.html)?\/?$/.test(target.pathname)&&/^(?:(?:back|return|go)\s+to\s+)?(?:my\s+)?(?:game room|locker room|pools)$/i.test(label)){
+     if(target.origin===location.origin&&duplicateRoom.test(target.pathname)&&/^(?:(?:back|return|go)\s+to\s+)?(?:my\s+)?(?:game room|locker room|pools)$/i.test(label)){
       control.setAttribute('data-links-room-shortcut','');control.hidden=true;
      }
     }

@@ -14,13 +14,14 @@ const snapshot = () => ({asOf: Date.now(), unavailable: [], events: [{id: 'one',
   away: {name: '<img src=x onerror=alert(1)>', score: '17'}, home: {name: 'DAL', score: '10'}, detail: '2nd quarter'}]});
 await page.route('**/*', async route => {
   const url = new URL(route.request().url()),path=url.pathname;
-  if(url.hostname==='site.web.api.espn.com')return route.fulfill({status:mode==='backup'?200:503,contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*'},body:JSON.stringify({events:mode==='backup'?[{id:'backup',status:{type:{state:'in',shortDetail:'3rd quarter'}},competitions:[{competitors:[{homeAway:'away',team:{abbreviation:'BUF'},score:'21'},{homeAway:'home',team:{abbreviation:'NYJ'},score:'7'}]}]}]:[]})});
+  if(['site.api.espn.com','site.web.api.espn.com'].includes(url.hostname))return route.fulfill({status:mode==='backup'?200:503,contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*'},body:JSON.stringify({events:mode==='backup'?[{id:'backup',status:{type:{state:'in',shortDetail:'3rd quarter'}},competitions:[{competitors:[{homeAway:'away',team:{abbreviation:'BUF'},score:'21'},{homeAway:'home',team:{abbreviation:'NYJ'},score:'7'}]}]}]:[]})});
   if (path === '/new-build/api/live-scores') {
     hits++;
     return route.fulfill({status: ['offline','backup'].includes(mode) ? 503 : 200, contentType: 'application/json',
       body: JSON.stringify(mode === 'offline' ? {error: 'offline'} : mode === 'empty' ? {...snapshot(), events: []} : snapshot())});
   }
   if (path === '/home-live.mjs') return route.fulfill({contentType: 'text/javascript', body: source});
+  if (path === '/confidence.html') return route.fulfill({contentType:'text/html',body:'<!doctype html><div class="livebar"><div id="liveTrack" class="track">Loading</div></div><script type="module" src="/home-live.mjs"></script>'});
   return route.fulfill({contentType: 'text/html', body: `<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><style>${baseCss}${css}</style><div class="livebar-home"><div class="livebrand-home"><i></i>LINKS LIVE</div><div class="live-window"><div id="liveTrackHome" class="live-track-home"><span>Loading live scores…</span></div></div></div><script type="module" src="/home-live.mjs"></script>`});
 });
 try {
@@ -29,7 +30,9 @@ try {
   assert.equal(await page.locator('#liveTrackHome img').count(), 0, 'score text cannot inject HTML');
   assert.equal(await page.locator('#liveTrackHome [aria-hidden="true"]').count(), 1, 'duplicate ticker row hidden from screen readers');
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
-  mode='backup';await page.getByRole('button',{name:'Refresh live scores'}).click();await page.getByRole('status').filter({hasText:/^Updated.*Backup score feed/}).waitFor();assert.match(await page.locator('#liveTrackHome').innerText(),/BUF 21/);
+  const beforeDirect = hits;
+  mode='backup';await page.getByRole('button',{name:'Refresh live scores'}).click();await page.getByRole('status').filter({hasText:/^Updated/}).waitFor();assert.match(await page.locator('#liveTrackHome').innerText(),/BUF 21/);
+  assert.equal(hits,beforeDirect,'direct ESPN success does not request the fallback endpoint');
   mode = 'offline'; await page.getByRole('button', {name: 'Refresh live scores'}).click();
   await page.getByRole('status').filter({hasText: 'Scores may have changed'}).waitFor();
   assert.equal(await page.locator('.livebar-home').getAttribute('data-live-state'), 'cached');
@@ -48,6 +51,11 @@ try {
   assert.equal(await page.evaluate(() => localStorage.getItem('links-home-live-v2')), null);
   mode = 'healthy'; await page.evaluate(() => window.dispatchEvent(new Event('online')));
   await page.getByRole('status').filter({hasText: 'Updated'}).waitFor();
-  assert.ok(hits >= 6); assert.deepEqual(errors, []);
+  assert.ok(hits >= 6);
+  mode = 'backup';
+  await page.goto('https://links.test/confidence.html');
+  await page.locator('.livebar[data-live-state=ready]').waitFor();
+  assert.match(await page.locator('#liveTrack').innerText(), /BUF 21/);
+  assert.deepEqual(errors, []);
   console.log('PASS 360px LINKS Live browser: same-origin scores, safe rendering, cached outage label, retry, empty state, expired cache removal, online recovery, no overflow.');
 } finally {await browser.close();}
