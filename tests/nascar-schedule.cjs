@@ -22,6 +22,23 @@ const assert=require('node:assert/strict'),{DatabaseSync}=require('node:sqlite')
  global.fetch=async url=>String(url).includes('espn')?new Response('',{status:503}):Response.json({series_1:[{race_id:99,race_name:'Official race',race_date:'2090-07-01T15:00:00'}]});
  const fallback=await (await call('admin')).json();assert.equal(fallback.source,'NASCAR');assert.equal(fallback.races[0].id,'nascar-99');assert.equal(fallback.races[0].date,'2090-07-01T19:00:00.000Z');assert.deepEqual(fallback.races[0].drivers,[]);
  assert.equal((await call('admin',{raceId:'nascar-99',drivers:['Confirmed Driver']})).status,200);
+ const hits=[];
+ global.fetch=async url=>{
+  const host=new URL(url).hostname;
+  hits.push(host);
+  if(host==='site.api.espn.com')return Response.json({events:[{id:'123',name:'ESPN Race',date:'2090-10-01T20:00:00Z',competitions:[{competitors:[{athlete:{displayName:'ESPN Driver'}}]}]}]});
+  return Response.json({series_1:[{race_id:99,race_name:'Official race',race_date:'2090-07-01T15:00:00'}]});
+ };
+ assert.equal((await (await call('admin')).json()).source,'NASCAR','Keep the current official provider for an unfiltered list');
+ for(const provider of ['', '&provider=nascar']){
+  hits.length=0;
+  const explicit=await onRequest({request:new Request('https://test/api/nascar-schedule?pool=1&year=2026&raceId=123'+provider,{headers:{Authorization:'Bearer admin'}}),env:{DB:db}});
+  assert.equal(explicit.status,200);
+  assert.deepEqual((await explicit.json()).race.drivers,['ESPN Driver']);
+  assert.deepEqual(hits,['site.api.espn.com'],'An explicit ESPN race ID takes precedence over the legacy current race and provider hint');
+ }
+ const espnList=await onRequest({request:new Request('https://test/api/nascar-schedule?pool=1&year=2026&provider=espn',{headers:{Authorization:'Bearer admin'}}),env:{DB:db}});
+ assert.equal((await espnList.json()).source,'ESPN');
  global.fetch=async()=>new Response('',{status:503});assert.equal((await call('admin')).status,503);
  console.log('PASS NASCAR real-feed parsing, commissioner-only publish, invalid fields, race-specific picks, prior race and NFL preservation');
  }finally{global.fetch=original;sql.close()}

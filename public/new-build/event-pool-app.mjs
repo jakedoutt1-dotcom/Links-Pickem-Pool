@@ -10,7 +10,7 @@ async function api(action,body={}){if(practice)return practice.api(action,body);
 function status(text){root.querySelector('[role=status]').textContent=text;}
 function hasUnsavedDraft(){return JSON.stringify(draft)!==JSON.stringify(state?.card||{picks:[],garage:''});}
 async function load(){const sequence=++loadSequence;loading=true;root.querySelectorAll('button').forEach(b=>b.disabled=true);try{const next=await api();if(sequence!==loadSequence)return;state=next;event=state.event||'';draft=state.card?structuredClone(state.card):{picks:[],garage:''};render();}catch(error){if(sequence!==loadSequence)return;event=state?.event||'';render();throw error;}finally{if(sequence===loadSequence)loading=false;}}
-async function mutate(action,body){if(busy||loading)return;busy=true;const enabled=[...root.querySelectorAll('button:not(:disabled)')];enabled.forEach(b=>b.disabled=true);try{const j=await api(action,body);if(j.event)event=j.event;await load();status(practice?'Saved in this practice demo.':'Saved to your pool.')}catch(e){if(action==='configure'){const notice=root.querySelector('#setupStatus');notice.textContent=e.message;notice.scrollIntoView({block:'center'});}else{render();status(e.message)}}finally{busy=false;enabled.forEach(b=>{if(b.isConnected)b.disabled=false});}}
+async function mutate(action,body){if(busy||loading)return;busy=true;const enabled=[...root.querySelectorAll('button:not(:disabled)')];enabled.forEach(b=>b.disabled=true);try{const j=await api(action,body);if(j.event)event=j.event;const published=!practice&&game==='nascar'&&action==='configure';if(published)view='picks';await load();status(published?'Race published. Players can make their picks.':practice?'Saved in this practice demo.':'Saved to your pool.')}catch(e){if(action==='configure'){const notice=root.querySelector('#setupStatus');if(notice){notice.textContent=e.message;notice.scrollIntoView({block:'center'});}else status(e.message);}else{render();status(e.message)}}finally{busy=false;enabled.forEach(b=>{if(b.isConnected)b.disabled=false});}}
 function renderRaceLive(){if(game==='golf'){
  root.querySelector('.race-live')?.remove();if(!state.liveGolf)return;const golf=state.liveGolf,strip=document.createElement('section');strip.className='race-live';strip.innerHTML='<strong>● LINKS LIVE GOLF</strong><span>'+esc(golf.name)+' · '+(golf.final?'Final':'Round '+(golf.round||'—'))+'</span><span>'+golf.leaders.map(p=>esc(p.position+'. '+p.name+' '+(p.score===0?'E':p.score>0?'+'+p.score:p.score))).join(' · ')+'</span><small>Live scores are provisional until the tournament is final.</small>';root.querySelector('.event-heading').after(strip);return;
  }if(game!=='nascar')return;root.querySelector('.race-live')?.remove();
@@ -18,9 +18,15 @@ function renderRaceLive(){if(game==='golf'){
  const race=state.liveRace;live.innerHTML='<strong>● LINKS LIVE</strong><span>'+esc(race?race.name+' · Lap '+race.lap+' / '+race.laps+' · '+race.flag:'Waiting for live coverage of this race')+'</span>'+(race?'<span>'+race.leaders.map(d=>esc(d.position+'. '+d.name+' #'+d.number)).join(' · ')+'</span>':'')+'<small>Running order is provisional. Final pool scoring waits for official results.</small>';root.querySelector('.event-heading').after(live);
  }
 
+function startEvent(){
+ event='';
+ state={...state,event:'',config:null,version:null,entries:0};
+ view='admin';render();
+ root.querySelector('#raceSchedule')?.scrollIntoView({block:'nearest'});
+}
 function render(){
  const c=state.config;
- root.innerHTML='<div class="event-heading"><div><small>YOUR '+game.toUpperCase()+' POOL</small><h2>'+esc(c?.title||'Choose your game format')+'</h2></div><button id="eventRefresh">Refresh</button></div><nav class="event-tabs">'+['picks','standings','results','rules',...(state.role==='admin'?['admin']:[])].map(v=>'<button data-view="'+v+'" class="'+(view===v?'active':'')+'">'+v.toUpperCase()+'</button>').join('')+'</nav><label'+(state.events.length?'':' hidden')+'>Saved pool events<select id="eventSelect">'+(!event?'<option value="" disabled selected>Choose a saved event</option>':'')+options(state.events.map(e=>[e.id,e.title]),event)+'</select></label><p role="status" aria-live="polite"></p><div id="eventBody"></div>';
+ root.innerHTML='<div class="event-heading"><div><small>YOUR '+game.toUpperCase()+' POOL</small><h2>'+esc(c?.title||(game==='nascar'?'No race published yet':'Choose your game format'))+'</h2></div><button id="eventRefresh">Refresh</button></div><nav class="event-tabs">'+['picks','standings','results','rules',...(state.role==='admin'?['admin']:[])].map(v=>'<button data-view="'+v+'" class="'+(view===v?'active':'')+'">'+v.toUpperCase()+'</button>').join('')+'</nav><label'+(state.events.length?'':' hidden')+'>Saved pool events<select id="eventSelect">'+(!event?'<option value="" disabled selected>Choose a saved event</option>':'')+options(state.events.map(e=>[e.id,e.title]),event)+'</select></label><p role="status" aria-live="polite"></p><div id="eventBody"></div>';
  renderRaceLive();
  if(state.scoringMessage)status(state.scoringMessage);
  root.querySelector('#eventRefresh').onclick=()=>{if(busy)return;if(hasUnsavedDraft()&&!confirm('Refresh and discard your unsaved entry changes?'))return;load().catch(e=>status(e.message));};
@@ -28,6 +34,17 @@ function render(){
  root.querySelector('#eventSelect').onchange=e=>{if(busy||hasUnsavedDraft()&&!confirm('Change events and discard your unsaved entry changes?')){e.target.value=event;return;}event=e.target.value;load().catch(e=>status(e.message));};
  const body=root.querySelector('#eventBody');
  if(view==='admin'){admin(body);return;}
+ if(game==='nascar'&&!practice&&state.role==='admin'&&view==='picks'){
+  const setup=document.createElement('button');
+  setup.type='button';setup.className='primary race-setup-button';
+  setup.textContent=c?'Set up another race':'Set up a race';
+  setup.onclick=startEvent;
+  body.before(setup);
+ }
+ if(!c&&game==='nascar'&&!practice){
+  body.textContent=state.role==='admin'?'Choose an upcoming race, review the drivers, and publish it to open picks.':'Your commissioner will publish the next race here. Once it opens, choose your drivers and save your entry.';
+  return;
+ }
  if(!c){body.innerHTML='<p>Your commissioner can create an event and choose its format in Admin. '+(state.events.length?'Choose a saved pool event above to view previous entries.':'No events have been saved for this pool yet.')+'</p>';return;}
  if(view==='rules'){body.innerHTML='<h3>'+esc(FORMATS[game][c.format])+'</h3><p>'+esc(state.rules)+'</p><p>Results stay pending until all selected competitors have the required scores. Automatic scoring follows the event’s selected scoring mode; manual events use commissioner-verified results. This LINKS format may differ from other websites.</p>';return;}
  if(view==='standings'){
@@ -44,17 +61,95 @@ function render(){
  const swap=document.createElement('section');swap.innerHTML='<h3>Garage substitution</h3><p>Reserve: '+esc(state.card.garage)+'. Cutoff: '+new Date(c.garageClosesAt).toLocaleString()+'</p><label>Starter to move into the garage<select>'+options(state.card.picks.map(p=>[p,p]),'')+'</select></label><button>Swap garage driver</button>';swap.querySelector('button').onclick=()=>mutate('garage',{out:swap.querySelector('select').value});body.append(swap);
  }
 }
+function setupRaceSchedule(form){
+ const schedule=document.createElement('section');
+ schedule.id='raceSchedule';
+ schedule.innerHTML='<h4>Choose an upcoming Cup Series race</h4><label>Choose race<select disabled><option value="">Choose race</option></select></label>'+
+   '<button type="button">Load Cup Series schedule</button><p role="status"></p>';
+ form.prepend(schedule);
+
+ const select=schedule.querySelector('select'),loadButton=schedule.querySelector('button'),notice=schedule.querySelector('[role=status]');
+ const publish=form.querySelector('button.primary'),id=form.elements.id,year=form.elements.year;
+ let races=[],raceRequest=0,scheduleRequest=0,importedRace='';
+
+ async function get(query){
+  const response=await LINKS_API_FETCH('./api/nascar-schedule?'+new URLSearchParams({pool,year:year.value,...query}),{cache:'no-store'});
+  const data=await response.json();
+  if(!response.ok)throw Error(data.error||'The race schedule is unavailable.');
+  return data;
+ }
+ async function loadSchedule(){
+  const seq=++scheduleRequest;
+  loadButton.disabled=true;select.disabled=true;
+  notice.textContent='Loading upcoming races…';
+  try{
+   const data=await get({provider:'nascar'});
+   if(seq!==scheduleRequest)return;
+   races=data.races.filter(r=>Date.parse(r.date)>Date.now()).sort((a,b)=>Date.parse(a.date)-Date.parse(b.date));
+   select.innerHTML='<option value="">Choose race</option>'+options(races.map(r=>[r.id,new Date(r.date).toLocaleDateString()+' · '+r.name]),importedRace);
+   select.disabled=!races.length;
+   notice.textContent=races.length?'Choose a race to load its start time and drivers.':'No upcoming races were found for this season. You can enter a race below.';
+  }catch(error){
+   if(seq===scheduleRequest)notice.textContent=error.message+' You can retry or enter a race below.';
+  }finally{
+   if(seq===scheduleRequest)loadButton.disabled=false;
+  }
+ }
+ loadButton.onclick=loadSchedule;
+ year.addEventListener('change',()=>{
+  if(importedRace){
+   form.elements.raceId.value='';form.elements.scoring.value='manual';
+   importedRace='';id.closest('label').hidden=false;
+  }
+  raceRequest++;publish.disabled=false;loadSchedule();
+ });
+ select.onchange=async()=>{
+  const choice=races.find(r=>r.id===select.value);
+  const seq=++raceRequest;
+  if(!choice){publish.disabled=false;select.value=importedRace;return;}
+  if(form.elements.field.value.trim()&&select.value!==importedRace&&!confirm('Replace the current setup and driver field with '+choice.name+'?')){
+   select.value=importedRace;publish.disabled=false;return;
+  }
+  notice.textContent='Loading '+choice.name+' and its drivers…';
+  publish.disabled=true;
+  try{
+   const data=await get({raceId:choice.id});
+   if(seq!==raceRequest)return;
+   const race=data.race;
+   importedRace=race.id;
+   form.elements.raceId.value=race.id;
+   form.elements.scoring.value=race.id.startsWith('nascar-')&&Number(year.value)===2026?'automatic':'manual';
+   id.value='race-'+race.id;
+   id.closest('label').hidden=true;
+   form.elements.title.value=race.name;
+   form.elements.lockAt.value=local(race.date);
+   form.elements.raceStart.value=local(race.date);
+   form.elements.garageClosesAt.value='';
+   form.elements.field.value=race.drivers.join('\n');
+   notice.textContent=race.drivers.length?'Loaded '+race.drivers.length+' drivers. Review the field and publish when ready.':'The driver field has not been published yet. Add confirmed drivers below or reload this race closer to race day.';
+   if(form.elements.format.value==='fantasy')notice.textContent+=' Set the garage cutoff before publishing.';
+  }catch(error){
+   if(seq===raceRequest){notice.textContent=error.message;select.value=importedRace;}
+  }finally{
+   if(seq===raceRequest)publish.disabled=false;
+  }
+ };
+ loadSchedule();
+}
 function admin(body){
  const c=state.config||{format:game==='golf'?'best':'simple',pickCount:game==='golf'?6:1,countBest:4,penalty:10,year:new Date().getFullYear(),field:[]};
- body.innerHTML='<p>Setup freezes when the first entry is saved. Start a new event to change formats.</p><button id="newEvent">New event</button><details '+(!state.config?'open':'')+'><summary>Event and format</summary><form id="eventSetup">'+field('Unique event ID','id',event||'', 'text')+field('Event name','title',c.title||'')+field('Season','year',c.year,'number')+'<label>Game format<select name="format">'+options(Object.entries(FORMATS[game]),c.format)+'</select></label>'+field('Entry deadline','lockAt',local(c.lockAt),'datetime-local')+field('Selections per player','pickCount',c.pickCount,'number')+(game==='golf'?field('Best scores counted','countBest',c.countBest,'number')+field('Cut / withdrawal score to par','penalty',c.penalty,'number'):'<div id="fantasySetup">'+field('Race start (fantasy locks 5 minutes earlier)','raceStart',local(c.raceStart),'datetime-local')+field('Garage cutoff (before final stage)','garageClosesAt',local(c.garageClosesAt),'datetime-local')+'<label>Season phase<select name="phase">'+options([['regular','Regular season · 10 uses'],['chase','Chase · 5 uses']],c.phase)+'</select></label><p>Set a conservative garage cutoff and close it earlier if the final stage starts early. Automatic scoring imports official race and stage points. The garage cutoff is set by the commissioner; bonus matchup picks are not included.</p></div>')+'<label>Eligible names, one per line'+(game==='golf'?' (for tiers: Name | tier number)':'')+'<textarea name="field" rows="10" required>'+esc(c.field.map(f=>f.name+(c.format==='tiers'?' | '+f.tier:'')).join('\n'))+'</textarea></label><button class="primary">Save setup</button></form></details>'+(state.config?'<details><summary>Verify results</summary><p>Enter official results after the event. NASCAR uses final finishing positions even for DNFs. Fantasy points include stage points; garage drivers do not score.</p><form id="eventResults">'+c.field.map((f,i)=>{const r=state.results[f.name]||{};return '<fieldset><legend>'+esc(f.name)+'</legend><label>Status<select name="status'+i+'">'+options((game==='golf'?['pending','final','cut','withdrawn']:['pending','final']).map(s=>[s,s]),r.status||'pending')+'</select></label>'+field(game==='golf'?(c.format==='one'?'Earnings':'Score to par'):'Finishing position','value'+i,(game==='golf'?(c.format==='one'?r.earnings:r.score):r.finish)??'', 'number')+(c.format==='fantasy'?field('Verified race + stage points','points'+i,r.points??'','number'):'')+'</fieldset>';}).join('')+'<button class="primary">Save verified results</button></form></details>':'');
- body.querySelector('#newEvent').onclick=()=>{event='';state={...state,event:'',config:null,version:null,entries:0};view='admin';render();};
+ const raceSetup=game==='nascar'&&!practice;
+ body.innerHTML=(raceSetup?'<h3>'+(state.config?'Manage race':'Set up a race')+'</h3><p>Publish the race to open picks. Entries lock at the deadline shown below.</p>':'<p>Setup freezes when the first entry is saved. Start a new event to change formats.</p>')+'<button id="newEvent">'+(raceSetup?'Set up another race':'New event')+'</button><details '+(!state.config?'open':'')+'><summary>'+(raceSetup?'Race setup':'Event and format')+'</summary><form id="eventSetup">'+field('Unique event ID','id',event||'', 'text')+field('Event name','title',c.title||'')+field('Season','year',c.year,'number')+'<label>Game format<select name="format">'+options(Object.entries(FORMATS[game]),c.format)+'</select></label>'+field('Entry deadline','lockAt',local(c.lockAt),'datetime-local')+field('Selections per player','pickCount',c.pickCount,'number')+(game==='golf'?field('Best scores counted','countBest',c.countBest,'number')+field('Cut / withdrawal score to par','penalty',c.penalty,'number'):'<div id="fantasySetup">'+field('Race start (fantasy locks 5 minutes earlier)','raceStart',local(c.raceStart),'datetime-local')+field('Garage cutoff (before final stage)','garageClosesAt',local(c.garageClosesAt),'datetime-local')+'<label>Season phase<select name="phase">'+options([['regular','Regular season · 10 uses'],['chase','Chase · 5 uses']],c.phase)+'</select></label><p>Set a conservative garage cutoff and close it earlier if the final stage starts early. Automatic scoring imports official race and stage points. The garage cutoff is set by the commissioner; bonus matchup picks are not included.</p></div>')+'<label>Eligible names, one per line'+(game==='golf'?' (for tiers: Name | tier number)':'')+'<textarea name="field" rows="10" required>'+esc(c.field.map(f=>f.name+(c.format==='tiers'?' | '+f.tier:'')).join('\n'))+'</textarea></label><button class="primary">'+(raceSetup?'Publish race for picks':'Save setup')+'</button></form></details>'+(state.config?'<details><summary>Verify results</summary><p>Enter official results after the event. NASCAR uses final finishing positions even for DNFs. Fantasy points include stage points; garage drivers do not score.</p><form id="eventResults">'+c.field.map((f,i)=>{const r=state.results[f.name]||{};return '<fieldset><legend>'+esc(f.name)+'</legend><label>Status<select name="status'+i+'">'+options((game==='golf'?['pending','final','cut','withdrawn']:['pending','final']).map(s=>[s,s]),r.status||'pending')+'</select></label>'+field(game==='golf'?(c.format==='one'?'Earnings':'Score to par'):'Finishing position','value'+i,(game==='golf'?(c.format==='one'?r.earnings:r.score):r.finish)??'', 'number')+(c.format==='fantasy'?field('Verified race + stage points','points'+i,r.points??'','number'):'')+'</fieldset>';}).join('')+'<button class="primary">Save verified results</button></form></details>':'');
+ const newEvent=body.querySelector('#newEvent');
+ newEvent.hidden=raceSetup&&!state.config;
+ newEvent.onclick=startEvent;
  if(c.format==='fantasy'&&state.config){const close=document.createElement('button');close.textContent='Final stage started · close garage';close.onclick=()=>mutate('closeGarage',{});body.append(close);}
  const form=body.querySelector('#eventSetup');
  const setupNotice=document.createElement('p');setupNotice.id='setupStatus';setupNotice.setAttribute('role','alert');form.append(setupNotice);
  form.addEventListener('invalid',e=>{setupNotice.textContent='Please complete '+(e.target.closest('label')?.firstChild?.textContent||'the required field')+'.';},true);
 
  if(game==='nascar'){
- const controls=document.createElement('section');controls.innerHTML='<label>Tied scores<select name="tieRule">'+options([['shared','Share rank'],['best-finish','Best finishing driver, then next best']],c.tieRule||'shared')+'</select></label><label>Scoring<select name="scoring">'+options([['manual','Commissioner verified results'],['automatic','Automatic official results (2026)']],c.scoring||'manual')+'</select></label><input type="hidden" name="raceId" value="'+esc(c.raceId||'')+'"><p>Automatic scoring requires a race selected from the NASCAR schedule. Results count after inspection; incomplete results stay pending.</p>';form.prepend(controls);
+ const controls=document.createElement(raceSetup?'details':'section');controls.innerHTML=(raceSetup?'<summary>Scoring options</summary>':'')+'<label>Tied scores<select name="tieRule">'+options([['shared','Share rank'],['best-finish','Best finishing driver, then next best']],c.tieRule||'shared')+'</select></label><label>Scoring<select name="scoring">'+options([['manual','Commissioner verified results'],['automatic','Automatic official results (2026)']],c.scoring||'manual')+'</select></label><input type="hidden" name="raceId" value="'+esc(c.raceId||'')+'"><p>Automatic scoring requires a race selected from the NASCAR schedule. Results count after inspection; incomplete results stay pending.</p>';form.querySelector('button.primary').before(controls);
  }
 
  if(game==='golf'){
@@ -70,22 +165,16 @@ function admin(body){
  schedule.querySelector('button').onclick=async()=>{const seq=++requestId;message.textContent='Loading tournaments…';try{const j=await get({});if(seq!==requestId)return;events=j.events;select.innerHTML='<option value="">Choose tournament</option>'+options(events.map(e=>[e.id,new Date(e.date).toLocaleDateString()+' · '+e.name]),'');schedule.querySelector('label').hidden=false;message.textContent=events.length?'Choose an individual stroke-play event to load its golfers. Team and match-play events are excluded.':'No tournaments published for this season.'}catch(e){message.textContent=e.message}};
  select.onchange=async()=>{const chosen=events.find(e=>e.id===select.value);if(!chosen)return;const seq=++requestId;message.textContent='Loading golfers…';try{const j=await get({event:chosen.id});if(seq!==requestId)return;if(form.elements.field.value.trim()&&!confirm('Replace the event setup and eligible golfers with '+chosen.name+'?'))return;form.elements.tournamentId.value=chosen.id;form.elements.scoring.value='automatic';form.elements.id.value='pga-'+chosen.id;form.elements.title.value=chosen.name;form.elements.field.value=j.golfers.join('\n');form.elements.lockAt.value='';message.textContent=j.golfers.length+' golfers loaded. '+j.message+' Tournament begins '+new Date(chosen.date).toLocaleDateString()+'. Tiered pools also need tier numbers assigned.'}catch(e){if(seq===requestId)message.textContent=e.message}};
  }
- if(game==='nascar'&&!practice){
- const schedule=document.createElement('section');schedule.innerHTML='<button type="button">Load Cup Series schedule</button><label hidden>Choose race<select></select></label><p role="status"></p>';form.prepend(schedule);let races=[];
- schedule.querySelector('button').onclick=async()=>{try{const r=await LINKS_API_FETCH('./api/nascar-schedule?'+new URLSearchParams({pool,year:form.elements.year.value,provider:'nascar'}));const j=await r.json();if(!r.ok)throw Error(j.error);races=j.races;schedule.querySelector('label').hidden=false;schedule.querySelector('select').innerHTML='<option value="">Choose race</option>'+options(races.map(r=>[r.id,new Date(r.date).toLocaleDateString()+' · '+r.name]),'');schedule.querySelector('[role=status]').textContent='Schedule from '+j.source+'. Review the field and cutoff before saving.';}catch(e){schedule.querySelector('[role=status]').textContent=e.message;}};
- let raceRequest=0;
- schedule.querySelector('select').onchange=async e=>{const race=races.find(r=>r.id===e.target.value);if(!race)return;const seq=++raceRequest,notice=schedule.querySelector('[role=status]');notice.textContent='Loading race and drivers…';try{const response=await LINKS_API_FETCH('./api/nascar-schedule?'+new URLSearchParams({pool,year:form.elements.year.value,raceId:race.id}));const j=await response.json();if(!response.ok)throw Error(j.error);if(seq!==raceRequest)return;const r=j.race;if(form.elements.field.value.trim()&&!confirm('Replace the event setup and driver field with '+r.name+'?'))return;form.elements.raceId.value=r.id;form.elements.scoring.value=r.id.startsWith('nascar-')&&Number(form.elements.year.value)===2026?'automatic':'manual';form.elements.id.value='race-'+r.id;form.elements.title.value=r.name;form.elements.lockAt.value=local(r.date);form.elements.raceStart.value=local(r.date);form.elements.garageClosesAt.value='';form.elements.field.value=r.drivers.join('\n');notice.textContent=r.drivers.length+' drivers loaded. '+j.message+(form.elements.format.value==='fantasy'?' Set the garage cutoff before saving.':'');}catch(error){if(seq===raceRequest)notice.textContent=error.message}};
-
- }
+ if(raceSetup&&!state.config)setupRaceSchedule(form);
  form.elements.format.onchange=formatChanged;formatChanged();
- form.onsubmit=e=>{e.preventDefault();setupNotice.textContent='Saving setup…';const raw=Object.fromEntries(new FormData(form));for(const key of ['lockAt','raceStart','garageClosesAt'])if(raw[key])raw[key]=new Date(raw[key]).toISOString();const fieldList=raw.field.split('\n').filter(s=>s.trim()).map(s=>{const [name,tier]=s.split('|');return {name:name.trim(),tier:Number(tier)||1};});mutate('configure',{event:raw.id,config:{...raw,field:fieldList}});};
+ form.onsubmit=e=>{e.preventDefault();setupNotice.textContent=raceSetup?'Publishing race…':'Saving setup…';const raw=Object.fromEntries(new FormData(form));for(const key of ['lockAt','raceStart','garageClosesAt'])if(raw[key])raw[key]=new Date(raw[key]).toISOString();const fieldList=raw.field.split('\n').filter(s=>s.trim()).map(s=>{const [name,tier]=s.split('|');return {name:name.trim(),tier:Number(tier)||1};});mutate('configure',{event:raw.id,config:{...raw,field:fieldList}});};
  if(state.entries)form.querySelectorAll('input,select,textarea,button').forEach(n=>n.disabled=true);
  const rf=body.querySelector('#eventResults');if(rf&&c.scoring==='automatic'){rf.closest('details').hidden=true;}if(rf){rf.querySelectorAll('input').forEach(n=>n.required=false);rf.onsubmit=e=>{e.preventDefault();const fd=new FormData(rf);mutate('results',{results:c.field.map((f,i)=>({name:f.name,status:fd.get('status'+i),score:fd.get('value'+i),earnings:fd.get('value'+i),finish:fd.get('value'+i),points:fd.get('points'+i)}))});};}
 }
 if(practice||pool&&pool!=='default'){
  const old=document.querySelector('main.grid');root=document.createElement('main');root.className='event-pool event-'+game;old.before(root);
  try{state=await api();{
- const legacy=document.createElement('details');legacy.className='event-legacy';legacy.innerHTML='<summary>Previous event controls and saved entries</summary>';old.before(legacy);legacy.append(old);legacy.hidden=true;event=state.event||'';draft=state.card?structuredClone(state.card):draft;render();
+ const legacy=document.createElement('details');legacy.className='event-legacy';legacy.innerHTML='<summary>Previous event controls and saved entries</summary>';old.before(legacy);legacy.append(old);legacy.hidden=game!=='nascar'||old.dataset.legacyRace!=='true';event=state.event||'';draft=state.card?structuredClone(state.card):draft;if(game==='nascar'&&!practice&&params.get('view')==='admin'&&state.role==='admin')view='admin';render();
  }}catch(e){root.innerHTML='<p>'+esc(e.message)+'</p>';}
 }
 

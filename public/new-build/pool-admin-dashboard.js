@@ -21,7 +21,7 @@ function organize(root){
 function scan(){queued=false;
  const manager=document.getElementById('manager');if(manager?.querySelector('#settings'))organize(manager);
  const content=document.getElementById('content');if(content?.querySelector('#gameCount,#loadField,[data-access]'))organize(content);
- const event=document.getElementById('eventBody');if(event?.querySelector('#eventSetup'))organize(event);
+ const event=document.getElementById('eventBody');if(event?.querySelector('#eventSetup')&&!event.closest('.event-nascar'))organize(event);
  const formats=document.getElementById('formatContent');if(formats?.querySelector('#createBoard,#propsSettings,#playoffSettings'))organize(formats);
  const game33=document.querySelector('[data-admin-section]')?.parentElement;if(game33&&!game33.classList.contains('pool-admin-screen'))organize(game33);
  if(document.querySelector('[data-view="admin"].active')){for(const id of ['leagueContent','confidence','survivor'])organize(document.getElementById(id))}

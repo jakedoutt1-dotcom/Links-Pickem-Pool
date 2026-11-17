@@ -7,9 +7,12 @@ export async function onRequest({request,env}){try{
  if(!(await poolGameKeys(env.DB,pool)).includes('nascar'))return json({error:'NASCAR is not enabled in this pool.'},403);
  if(!Number.isInteger(year)||year<2024||year>2100)return json({error:'Choose a valid season.'},400);
  const currentRow=await env.DB.prepare('SELECT value FROM pool_settings WHERE pool_id=? AND key=?').bind(pool,'game_settings:nascar:current').first();const current=currentRow?JSON.parse(currentRow.value):null;
- const official=String(b.raceId||current?.settings?.raceId||'').startsWith('nascar-');
+ const selectedRaceId=String(b.raceId||'');
+ const preferOfficial=selectedRaceId
+  ? selectedRaceId.startsWith('nascar-')
+  : b.provider==='nascar'||(b.provider!=='espn'&&String(current?.settings?.raceId||'').startsWith('nascar-'));
  let races=[],source='';
- const providers=official||b.provider==='nascar'?['nascar','espn']:['espn','nascar'];
+ const providers=preferOfficial?['nascar','espn']:['espn','nascar'];
  for(const provider of providers){try{
  const url=provider==='espn'?'https://site.api.espn.com/apis/site/v2/sports/racing/nascar-premier/scoreboard?dates='+year+'&limit=100':'https://cf.nascar.com/cacher/'+year+'/race_list_basic.json';
  const r=await fetch(url,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(10000)});if(!r.ok)continue;const feed=await r.json();

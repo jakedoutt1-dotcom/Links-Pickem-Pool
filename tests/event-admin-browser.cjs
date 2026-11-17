@@ -10,13 +10,16 @@ const fs=require('fs'),path=require('path'),assert=require('assert/strict'),{chr
  const f=path.join('public',decodeURIComponent(u.pathname));return fs.existsSync(f)?r.fulfill({path:f,contentType:/\.(mjs|js)$/.test(f)?'text/javascript':f.endsWith('.css')?'text/css':'text/html'}):r.fulfill({status:404,body:''});});
  await page.goto('https://admin.test/new-build/'+game+'.html?pool=1');await page.getByRole('button',{name:'ADMIN',exact:true}).click();
  const form=page.locator('#eventSetup');
- await page.getByRole('button',{name:game==='golf'?'Load PGA tournaments':'Load Cup Series schedule'}).click();
+ if(game==='golf')await page.getByRole('button',{name:'Load PGA tournaments'}).click();
+ else await form.locator('select:not([name]) option[value="123"]').waitFor({state:'attached'});
  await form.locator('select:not([name])').selectOption('123');
  await page.waitForFunction(()=>document.querySelector('[name=field]').value.split('\n').length===6);
  assert.equal(await form.locator('[name=title]').inputValue(),game==='golf'?'Imported Tournament':'Imported Race');
-await form.locator('[name=id]').fill('sample-event');await form.locator('[name=title]').fill('Test event');await form.locator('[name=lockAt]').fill('2090-10-01T12:00');await form.locator('[name=field]').fill('A\nB\nC\nD\nE\nF');
+ if(game==='golf')await form.locator('[name=id]').fill('sample-event');
+ else assert.equal(await form.locator('[name=id]').inputValue(),'race-123');
+ await form.locator('[name=title]').fill('Test event');await form.locator('[name=lockAt]').fill('2090-10-01T12:00');await form.locator('[name=field]').fill('A\nB\nC\nD\nE\nF');
  if(game==='nascar'){await form.locator('[name=format]').selectOption('fantasy');await form.locator('[name=raceStart]').fill('2090-10-01T12:05');await form.locator('[name=garageClosesAt]').fill('2090-10-01T14:00');}
- await page.getByRole('button',{name:'Save setup',exact:true}).click();await page.getByText('Saved to your pool.',{exact:true}).waitFor();assert.equal(state.events.length,1);
+ await page.getByRole('button',{name:game==='golf'?'Save setup':'Publish race for picks',exact:true}).click();await page.getByText(game==='golf'?'Saved to your pool.':'Race published. Players can make their picks.',{exact:true}).waitFor();assert.equal(state.events.length,1);
  await page.getByRole('button',{name:'PICKS',exact:true}).click();assert.equal(await page.locator('.event-choice').count(),6);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
  state.role='player';await page.reload();await page.locator('.event-choice').first().waitFor();assert.equal(await page.getByRole('button',{name:'ADMIN',exact:true}).count(),0);assert.ok(await page.getByText('Previous event controls and saved entries').count());await page.close();
  }
