@@ -73,5 +73,5 @@ export function gradeWeek(p,week,games,{players,picks,ties,manual,access,credits
   return {player,wins,losses,correct:wins,tiePick,tieDiff,...(credited.has(exactKey(player))?{courtesyCredit:true}:{})};
  }).filter(x=>by.get(x.player)?.length||tieMap[x.player]!=null).sort((a,b)=>b.wins-a.wins||(a.tieDiff??Infinity)-(b.tieDiff??Infinity)||a.player.localeCompare(b.player));
  const top=rows[0],finalizedWinners=allFinal&&top?rows.filter(x=>x.wins===top.wins&&(actualTie==null||(x.tieDiff??Infinity)===(top.tieDiff??Infinity))).map(x=>x.player):[];
- return {success:true,week,locked:true,tieLocked,rows,actualTie,finalizedWinner:finalizedWinners[0]||null,finalizedWinners,allFinal,finalGames,expectedGames,pool:{id:String(p.id),name:p.name,code:p.code}};
+ return {success:true,week,locked:true,tieLocked,rows,actualTie,lastKickoff:last?.kickoff??null,finalizedWinner:finalizedWinners[0]||null,finalizedWinners,allFinal,finalGames,expectedGames,pool:{id:String(p.id),name:p.name,code:p.code}};
 }

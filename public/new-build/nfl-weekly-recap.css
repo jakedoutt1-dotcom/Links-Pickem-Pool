@@ -1,0 +1,20 @@
+#nfl-weekly-recap {
+  width: min(36rem, calc(100% - 2rem));
+  max-height: min(85dvh, 42rem);
+  padding: clamp(1rem, 4vw, 1.5rem);
+  border: 1px solid #c9953d;
+  border-radius: 14px;
+  background: #07131d;
+  color: #fff;
+  box-shadow: 0 20px 60px #0009;
+}
+#nfl-weekly-recap::backdrop { background: #020609c9; }
+#nfl-weekly-recap h2 { margin: 0 0 .65rem; font-size: 1.5rem; }
+#nfl-weekly-recap p { margin: .45rem 0; }
+#nfl-weekly-recap [data-winner] { color: #f2cd78; font-weight: 800; }
+#nfl-weekly-recap table { width: 100%; margin: .8rem 0; border-collapse: collapse; }
+#nfl-weekly-recap caption { text-align: left; padding-bottom: .45rem; }
+#nfl-weekly-recap :is(th, td) { padding: .5rem .3rem; border-bottom: 1px solid #29485e; text-align: right; }
+#nfl-weekly-recap :is(th, td):first-child { text-align: left; overflow-wrap: anywhere; }
+#nfl-weekly-recap .recap-actions { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+#nfl-weekly-recap .recap-actions .action { display: inline-grid; place-items: center; min-height: 44px; }
