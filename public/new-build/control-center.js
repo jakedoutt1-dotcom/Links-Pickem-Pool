@@ -1,4 +1,3 @@
-import './locker-chat-badges.mjs';
 import {bootLocker,enabled} from './links-account-client.mjs';
 import {mountLockerWelcome} from './locker-welcome.mjs';
 let bootError=null,initialPools=null;try{initialPools=await bootLocker()}catch(e){bootError=e}
