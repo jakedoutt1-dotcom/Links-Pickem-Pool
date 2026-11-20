@@ -72,8 +72,8 @@ try {
     assert.equal(await page.evaluate(() => {
       const children = [...document.querySelector('main').children];
       return children.indexOf(document.querySelector('#games')) < children.indexOf(document.querySelector('#excelWorkbook')) &&
-        children.indexOf(document.querySelector('#excelWorkbook')) < children.indexOf(document.querySelector('#trivia-night'));
-    }), true, 'Workbook banner is below Pools and above the Game Room');
+        children.indexOf(document.querySelector('#excelWorkbook')) < children.indexOf(document.querySelector('#linksHowItWorks'));
+    }), true, 'Workbook banner follows the game destinations and precedes the setup guide');
     await page.locator('#excelWorkbook').scrollIntoViewIfNeeded();
     await page.waitForFunction(() => [...document.querySelectorAll('#excelWorkbook img')].every(image => image.complete && image.naturalWidth > 0));
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'Homepage fits at ' + width);

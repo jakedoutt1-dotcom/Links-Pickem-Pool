@@ -49,13 +49,13 @@ test('Football API: authorization, persisted picks, swaps, stale devices, kickof
  assert.equal(db.raw.prepare('SELECT COUNT(*) AS n FROM pool_picks').get().n,0);
  }finally{global.fetch=oldFetch;db.raw.close()}
 });
-test('NFL saves reject anonymous, forged teams and kickoff changes; commissioner corrections stay authenticated',async()=>{
+test('NFL saves reject anonymous, forged teams and kickoff changes; commissioner corrections use the approval flow',async()=>{
  const db=new D1(),oldFetch=fetch;let started=false;
  global.fetch=async()=>Response.json({events:[event('a',started?'2020-10-01':'2090-10-01')]});
  const call=async(token,body={})=>nflSave({request:new Request('https://test/new-build/api/picks',{method:'POST',headers:{Authorization:'Bearer '+token},body:JSON.stringify({pool:1,player:'Alice',game:"NFL Pick'em",week:1,eventId:'a',selection:'BUF',...body})}),env:{DB:db}});
  try{assert.equal((await call('')).status,403);assert.equal((await call('alice',{selection:'DAL'})).status,400);assert.equal((await call('alice')).status,200);
- started=true;assert.equal((await call('alice')).status,403);assert.equal((await call('alice',{commissionerCorrection:true})).status,403);assert.equal((await call('admin',{commissionerCorrection:true,selection:'MIA'})).status,200);
- assert.equal(db.raw.prepare('SELECT team FROM pool_picks').get().team,'MIA');
+ started=true;assert.equal((await call('alice')).status,403);assert.equal((await call('alice',{commissionerCorrection:true})).status,409);assert.equal((await call('admin',{commissionerCorrection:true,selection:'MIA'})).status,409);
+ assert.equal(db.raw.prepare('SELECT team FROM pool_picks').get().team,'BUF');
  }finally{global.fetch=oldFetch;db.raw.close()}
 });
 test('Squares waits for finished quarters and final overtime score, validates number permutations',async()=>{

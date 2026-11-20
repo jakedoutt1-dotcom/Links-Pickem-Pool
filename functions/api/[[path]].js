@@ -1392,7 +1392,7 @@ async function syncWeek(DB,pid,sport,w){
     if(!ev)ev=feed.find(x=>(x.away===b.away&&x.home===b.home)||(x.away===b.home&&x.home===b.away));
     let g=ev?{...b,...ev,gameIndex:i}:{...b,gameIndex:i,completed:false,winner:null,status:"",awayScore:null,homeScore:null};
     const snap=snaps.get(i);
-    if(snap&&!live&&String(b.status)==="FINAL"){
+    if(snap&&snap.status==="FINAL"&&snap.winner){
       g={...g,completed:true,winner:snap.winner,status:"FINAL",state:"post",clock:"",
         awayScore:snap.away_score==null?g.awayScore:Number(snap.away_score),
         homeScore:snap.home_score==null?g.homeScore:Number(snap.home_score)};

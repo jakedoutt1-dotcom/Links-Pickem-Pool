@@ -48,7 +48,7 @@
   body.tv .champion h2{font-size:1.5rem;margin-bottom:5px}
 }
 @media(min-width:900px) and (max-height:800px){
-  body.tv{--tv-table-height:clamp(220px,calc(100dvh - 420px),380px)}
+  body.tv{--tv-table-height:clamp(220px,calc(100dvh - 480px),380px)}
   body.tv .site-header{height:44px;padding-top:3px;padding-bottom:3px}
   body.tv .brand img{height:32px;width:68px}
   body.tv main{padding-top:5px;padding-bottom:5px}
@@ -206,6 +206,8 @@ input.raise-exact{width:140px;min-height:44px;margin:0;text-align:right;font-siz
 }
 .preselect-hand-summary,#dockHideCards{display:none}
 @media(max-width:600px){
+ body:not(.tv):has(#gameArea:not([hidden])) #linksSiteNavigation{flex-wrap:nowrap!important;gap:6px;padding:0 8px!important}
+ body:not(.tv):has(#gameArea:not([hidden])) #linksSiteNavigation a{white-space:nowrap;font-size:12px;padding:7px 9px!important}
  body:not(.tv):has(#gameArea:not([hidden])) .room-top h1{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
  body:not(.tv):has(#gameArea:not([hidden])) .site-header{padding:5px 12px}
  body:not(.tv):has(#gameArea:not([hidden])) .brand img{height:34px;width:68px}

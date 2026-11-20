@@ -1,4 +1,4 @@
-name: Non-NFL reliability checks
+name: LINKS reliability checks
 on:
   pull_request:
     paths: ['public/**', 'functions/**', 'tests/**', '.github/workflows/reliability.yml']
@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group: [accounts, games, pools]
+        group: [accounts, games, pools, nfl]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -18,10 +18,10 @@ await db.prepare("INSERT INTO links_party_guest_names VALUES('say-what','OLD',1,
 async function get(game,period='all'){const r=await board({env:{DB:db},request:new Request('https://test/new-build/api/party-scoreboard?'+new URLSearchParams({game,period}))});return {status:r.status,...await r.json()}}
 assert.equal((await get('all')).rows.length,0);assert.equal((await get('say-what')).status,400);assert.equal((await get('captain-clash')).status,400);
 assert.equal((await get('goal-line')).status,400,'Paused game is not a public leaderboard');
-const active=await get('all');assert.equal(active.games.length,7);assert(!active.games.some(g=>['goal-line','say-what','captain-clash'].includes(g.id)));
+const active=await get('all');assert.deepEqual(active.games.map(g=>g.id).sort(),Object.keys(BOARD_GAMES).sort());assert(!active.games.some(g=>['goal-line','say-what','captain-clash','dead-air','last-alibi'].includes(g.id)));
 let j=await goalLineBoard(db,'all');assert.equal(j.rows[0].name,'Alex Fox 2026');assert.equal(j.rows[0].played,1);assert.equal(j.highScore,0);assert(j.solo);
 await db.prepare("INSERT INTO links_goal_line_scores VALUES('older','old','Old player',70,0)").run();
 assert.equal((await goalLineBoard(db,'week')).highScore,0);assert.equal((await goalLineBoard(db,'year')).highScore,0);assert.equal((await goalLineBoard(db,'all')).highScore,70);
-assert.equal(Object.keys(BOARD_GAMES).length,7);
+assert.ok(Object.keys(BOARD_GAMES).includes('poker-night'),'Active games remain on the public leaderboard');
 db.raw.close();
 console.log('PASS paused Goal Line excluded from active boards; replay validation, idempotent saving and historical score periods preserved');

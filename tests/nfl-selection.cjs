@@ -23,7 +23,7 @@ function scoreboard(week) {
         const json=body=>route.fulfill({json:body});
         if(url.hostname==='site.api.espn.com')return json(scoreboard(Number(url.searchParams.get('week')||4)));
         if(url.pathname==='/new-build/api/picks') {
-          if(request.method()==='POST'){posts.push(request.postDataJSON());return json({success:true})}
+          if(request.method()==='POST'){const saved=request.postDataJSON();posts.push(saved);return json({success:true,eventId:saved.eventId,selection:saved.selection})}
           reads.push(url);
           const player=url.searchParams.get('player'),week=url.searchParams.get('week');
           return json({success:true,active:accessActive,picks:player==='Alice'&&week==='4'?[{gameIndex:0,selection:'BUF'}]:[]});

@@ -1,8 +1,16 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{chromium}=require('playwright');const root=path.resolve(__dirname,'../public'),origin='http://admin.test';
-(async()=>{const browser=await chromium.launch({headless:true,channel:'msedge'});try{for(const width of [1280,390]){const ctx=await browser.newContext({viewport:{width,height:950}}),posts=[],errors=[];await ctx.route('**/*',async route=>{const req=route.request(),u=new URL(req.url()),j=d=>route.fulfill({json:d});if(req.method()==='POST')posts.push({path:u.pathname,body:req.postDataJSON(),auth:req.headers().authorization});
+(async()=>{const browser=await chromium.launch({headless:true,channel:'msedge'});try{for(const width of [1280,390]){const ctx=await browser.newContext({viewport:{width,height:950}}),posts=[],errors=[],pendingLocks=[],savedLocks=new Map();let holdLocks=true;await ctx.route('**/*',async route=>{const req=route.request(),u=new URL(req.url()),j=d=>route.fulfill({json:d});if(req.method()==='POST')posts.push({path:u.pathname,body:req.postDataJSON(),auth:req.headers().authorization});
  if(u.hostname==='site.api.espn.com')return j({week:{number:4},events:[{id:'1',status:{type:{completed:false}}}]});
  if(u.pathname==='/api/session')return j({role:'admin',poolCode:'FAM',poolName:'Family'});
- if(u.pathname.endsWith('/api/game-settings'))return j({settings:null});
+ if(u.pathname.endsWith('/api/game-settings')){
+  const period=u.searchParams.get('period');
+  if(req.method()==='POST'){const body=req.postDataJSON();savedLocks.set(body.period,body.lockAt?{lockAt:body.lockAt}:null);return j({ok:true});}
+  if(holdLocks&&['8','9'].includes(period)){
+   const reply=await new Promise(resolve=>pendingLocks.push({period,resolve}));
+   return route.fulfill(reply);
+  }
+  return j({settings:savedLocks.get(period)||null});
+ }
  if(u.pathname.endsWith('/api/pools'))return j({pool:{id:'1',code:'FAM',name:'Family'}});
  if(u.pathname.endsWith('/api/email-status'))return j(req.method()==='POST'?{delivery:{sent:true}}:{configured:true,from:'noreply@example.com',note:'Configuration detected is not a delivery test.'});
  if(u.pathname.endsWith('/api/nfl-player-access'))return j({access:u.searchParams.get('week')==='3'?[{player_name:'Alice',paid:1}]:[],invites:[{email:'one@example.com'}]});
@@ -22,4 +30,30 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
  const page=await ctx.newPage();page.on('pageerror',e=>errors.push(e.message));await page.addInitScript(()=>{localStorage.setItem('links-legacy-token','test-token');localStorage.setItem('links-current-pool',JSON.stringify({id:'1',code:'FAM',name:'Family'}));localStorage.setItem('links-player-role','commissioner');localStorage.setItem('links-player-id','Alice');if(!localStorage.getItem('links-player-name'))localStorage.setItem('links-player-name','Alice')});await page.goto(origin+'/new-build/commissioner.html?pool=1&week=3');await page.waitForFunction(()=>document.querySelector('#savePick')&&!document.querySelector('#savePick').disabled).catch(async e=>{console.log(errors,await page.locator('body').innerText());throw e});
 
  await page.getByRole('button',{name:'Pick deadlines Open'}).click();
- await page.locator('#lockWeek').selectOption('8');await page.locator('#lockMode').selectOption('shared');await page.locator('#lockDate').fill('2026-11-01T10:30');await page.locator('#savePickLocks').click();await page.waitForFunction(()=>document.querySelector('#savePickLocks').disabled===false);const sent=posts.find(p=>p.path.endsWith('/api/game-settings'));assert.equal(sent.body.period,'8');assert.equal(sent.body.lockAt,new Date('2026-11-01T10:30').toISOString());assert.equal(sent.auth,'Bearer test-token');await page.locator('#lockMode').selectOption('kickoff');await page.locator('#savePickLocks').click();await page.waitForFunction(()=>document.querySelector('#savePickLocks').disabled===false);assert.equal(posts.filter(p=>p.path.endsWith('/api/game-settings')).at(-1).body.lockAt,'');assert.equal(sent.body.game,'NFL Pick\u2019em');assert.deepEqual(errors,[]);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await ctx.close();}console.log('NFL lock admin desktop/mobile PASS');}finally{await browser.close()}})().catch(e=>{console.error(e);process.exit(1)});
+ async function waitForLockRead(period){
+  await page.waitForFunction(()=>document.querySelector('#pickLockMsg').textContent.startsWith('Loading Week '));
+  for(let attempt=0;attempt<50;attempt++){const pending=pendingLocks.find(item=>item.period===period);if(pending)return pending;await page.waitForTimeout(20);}
+  throw Error('No deadline read for Week '+period);
+ }
+ function reply(pending,json,status=200){pendingLocks.splice(pendingLocks.indexOf(pending),1);pending.resolve({status,json});}
+ await page.locator('#lockWeek').selectOption('8');
+ const oldWeek=await waitForLockRead('8');
+ for(const id of ['lockMode','lockDate','savePickLocks'])assert.equal(await page.locator('#'+id).isDisabled(),true,'Deadline editing waits for the selected week');
+ assert.equal(await page.locator('#lockWeek').isEnabled(),true);
+ await page.locator('#lockWeek').selectOption('9');
+ const currentWeek=await waitForLockRead('9');
+ reply(oldWeek,{settings:{lockAt:'2026-12-01T12:00:00Z'}});
+ await page.waitForTimeout(50);
+ assert.equal(await page.locator('#lockWeek').inputValue(),'9');
+ assert.equal(await page.locator('#lockMode').isDisabled(),true,'Old response cannot enable the newer week');
+ reply(currentWeek,{settings:null});
+ await page.waitForFunction(()=>!document.querySelector('#lockMode').disabled);
+ assert.equal(await page.locator('#lockMode').inputValue(),'kickoff');
+ await page.locator('#lockWeek').selectOption('8');
+ reply(await waitForLockRead('8'),{error:'Temporary deadline read failure'},503);
+ await page.locator('#retryPickLocks').waitFor({state:'visible'});
+ assert.equal(await page.locator('#savePickLocks').isDisabled(),true,'Failed read cannot overwrite an unknown deadline');
+ await page.locator('#retryPickLocks').click();
+ const retry=await waitForLockRead('8');holdLocks=false;reply(retry,{settings:null});
+ await page.waitForFunction(()=>!document.querySelector('#lockMode').disabled);
+ await page.locator('#lockMode').selectOption('shared');await page.locator('#lockDate').fill('2026-11-01T10:30');await page.locator('#savePickLocks').click();await page.waitForFunction(()=>document.querySelector('#savePickLocks').disabled===false);const sent=posts.find(p=>p.path.endsWith('/api/game-settings'));assert.equal(sent.body.period,'8');assert.equal(sent.body.lockAt,new Date('2026-11-01T10:30').toISOString());assert.equal(sent.auth,'Bearer test-token');await page.locator('#lockMode').selectOption('kickoff');await page.locator('#savePickLocks').click();await page.waitForFunction(()=>document.querySelector('#savePickLocks').disabled===false);assert.equal(posts.filter(p=>p.path.endsWith('/api/game-settings')).at(-1).body.lockAt,'');assert.equal(sent.body.game,'NFL Pick\u2019em');assert.deepEqual(errors,[]);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await ctx.close();}console.log('NFL lock admin desktop/mobile PASS');}finally{await browser.close()}})().catch(e=>{console.error(e);process.exit(1)});

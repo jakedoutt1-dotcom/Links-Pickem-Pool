@@ -12,7 +12,7 @@ export const SCORE_GAMES={
  'captain-clash':{name:'Captain Clash',table:'links_caption_rooms',storage:'links-captain-'}
 };
 // Goal Line is paused. Its replay validation, saved scores and game files stay intact.
-export const BOARD_GAMES={...Object.fromEntries(Object.entries(SCORE_GAMES).filter(([id])=>!['say-what','captain-clash'].includes(id))),'two-minute-drill':{name:'Two-Minute Drill',solo:true}};
+export const BOARD_GAMES={...Object.fromEntries(Object.entries(SCORE_GAMES).filter(([id])=>!['say-what','captain-clash','dead-air','last-alibi'].includes(id))),'two-minute-drill':{name:'Two-Minute Drill',solo:true}};
 export async function ensureScoreboard(db){await db.batch([
  db.prepare('CREATE TABLE IF NOT EXISTS links_party_results(game TEXT NOT NULL,room TEXT NOT NULL,round INTEGER NOT NULL,seat TEXT NOT NULL,score INTEGER NOT NULL,win INTEGER NOT NULL,finished INTEGER NOT NULL,PRIMARY KEY(game,room,round,seat))'),
  db.prepare('CREATE INDEX IF NOT EXISTS links_party_results_period ON links_party_results(finished,game)'),

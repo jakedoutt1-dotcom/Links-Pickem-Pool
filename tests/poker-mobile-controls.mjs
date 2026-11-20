@@ -47,7 +47,7 @@ try{
   await page.addInitScript(({code,actor})=>localStorage.setItem('links-poker-session-'+code,JSON.stringify(actor)),{code,actor});
   await page.goto(origin+'/new-build/poker-night.html?room='+code);
   await page.locator('#bettingControls').waitFor({state:'visible'});await fits(page);
-  if(width<=600&&height>width){await page.evaluate(()=>scrollTo(0,0));const tableTop=await page.locator('#pokerTable').evaluate(el=>el.getBoundingClientRect().top);assert.ok(tableTop<=210,'Compact header keeps phone table near top: '+tableTop);await page.screenshot({path:out+`/compact-top-${width}.png`});}
+  if(width<=600&&height>width){await page.evaluate(()=>scrollTo(0,0));const tableTop=await page.locator('#pokerTable').evaluate(el=>el.getBoundingClientRect().top);assert.ok(tableTop<=210,'Compact header keeps '+width+'px phone table near top: '+tableTop);await page.screenshot({path:out+`/compact-top-${width}.png`});}
   assert.equal(await page.locator('#seats .seat.you .card:not(.back)').count(),2,'Own table seat shows private cards');
   assert.equal(await page.locator('#seats .seat:not(.you) .card:not(.back)').count(),0,'Opponent cards remain hidden');
   assert.equal(await page.locator('#board .card.empty').first().isVisible(),false,'Undealt community slots show felt');

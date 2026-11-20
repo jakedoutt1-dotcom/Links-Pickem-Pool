@@ -1,10 +1,9 @@
 // Execute the real API handler against in-memory stubs; never contact production.
-const fs=require('node:fs');
+const {pathToFileURL}=require('node:url');
 const path=require('node:path');
 const assert=require('node:assert/strict');
 (async()=>{
- const source=fs.readFileSync(path.join(__dirname,'../functions/new-build/api/compare-picks.js'),'utf8');
- const {onRequestGet}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+ const {onRequestGet}=await import(pathToFileURL(path.join(__dirname,'../functions/new-build/api/compare-picks.js')).href);
  const first=Date.parse('2026-10-02T00:00:00Z');
  const originalNow=Date.now,originalFetch=global.fetch;
  let reads=0;
