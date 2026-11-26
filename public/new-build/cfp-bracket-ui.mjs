@@ -38,7 +38,16 @@ export function mountBracket({root,data,view,api,reload,demo}){
   root.querySelectorAll('[data-go-slot]').forEach(b=>b.onclick=()=>{const target=root.querySelector('[data-slot="'+b.dataset.goSlot+'"]');target?.scrollIntoView({behavior:'smooth',block:'center'});target?.focus({preventScroll:true});});
   const observer=new ResizeObserver(drawConnections);observer.observe(root.querySelector('.cfp-bracket'));let frame=requestAnimationFrame(drawConnections);root._bracketCleanup=()=>{observer.disconnect();cancelAnimationFrame(frame)};
   root.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>{captureGuess();const id=b.closest('[data-slot]').dataset.slot;draft[id]={team:b.dataset.pick,confidence:draft[id]?.confidence??null};draft=cleanBracket(draft,cfg.teams);dirty=true;const top=scrollY;render();scrollTo({top,behavior:'instant'});root.querySelector('[data-slot="'+id+'"] [data-pick="'+draft[id].team+'"]')?.focus({preventScroll:true})});
-  root.querySelectorAll('.confidence').forEach(select=>select.onchange=()=>{captureGuess();const id=select.closest('[data-slot]').dataset.slot;draft[id].confidence=select.value===''?null:Number(select.value);dirty=true;const top=scrollY;render();scrollTo({top,behavior:'instant'});root.querySelector('[data-slot="'+id+'"] .confidence')?.focus({preventScroll:true})});
+  root.querySelectorAll('.confidence').forEach(select=>select.onchange=()=>{
+   captureGuess();const id=select.closest('[data-slot]').dataset.slot;draft[id].confidence=select.value===''?null:Number(select.value);dirty=true;
+   root.querySelector('#bracketStatus').textContent='Unsaved changes.';
+   // Keep the native picker mounted and focused normally. Replacing and refocusing
+   // a select during its change event can reopen the phone's selection sheet.
+   root.querySelectorAll('.confidence').forEach(other=>{
+    const owner=other.closest('[data-slot]').dataset.slot,used=new Set(Object.entries(draft).filter(([key])=>key!==owner).map(([,p])=>p.confidence));
+    for(const option of other.options){if(option.value==='')continue;const n=Number(option.value),taken=used.has(n);option.disabled=taken;option.textContent=n+' points'+(taken?' (used)':'');}
+   });
+  });
   function captureGuess(){guess=root.querySelector('#championshipGuess').value;}
   async function save(submit){captureGuess();const note=root.querySelector('#saveStatus'),buttons=root.querySelectorAll('#bracketSave button');buttons.forEach(b=>b.disabled=true);try{const value=guess===''?null:Number(guess);validateBracket(draft,cfg.teams,value,submit);await api({action:'bracketSave',picks:draft,guess:value,submit,revision:cfg.revision,version:state.entry?.version||0});await reload();}catch(e){note.textContent=e.message;buttons.forEach(b=>b.disabled=false)}}
   root.querySelector('#saveDraft').onclick=()=>save(false);root.querySelector('#bracketSave').onsubmit=e=>{e.preventDefault();void save(true)};
