@@ -33,6 +33,17 @@ try{for(const width of [1280,390]){
  await page.locator('#event').selectOption('one');await page.locator('#boardTitle').fill('Sunday Squares');await page.locator('#price').fill('10');
  await page.getByRole('button',{name:'Create board',exact:true}).click();await page.getByText('Board created. Players can now choose their squares.',{exact:true}).waitFor();assert.equal(await page.locator('#boardSelect').inputValue(),'1');assert.equal(await page.locator('[data-square]').count(),100);
  await role('alice');await go('squares');assert.equal(await page.getByRole('button',{name:'ADMIN',exact:true}).count(),0);
+ // Selecting or deselecting a distant square keeps the existing grid and both scroll offsets.
+ await page.locator('[data-square="78"]').evaluate(button=>button.scrollIntoView({block:'center',inline:'center'}));
+ const position=await page.locator('[data-square="78"]').evaluate(button=>{window.originalSquare=button;window.originalGrid=button.closest('.format-scroll');return {x:originalGrid.scrollLeft,y:scrollY}});
+ if(width===390)assert(position.x>0,'Phone board is scrolled sideways before selection');
+ for(const selected of [true,false]){
+  await page.locator('[data-square="78"]').click();
+  const after=await page.locator('[data-square="78"]').evaluate(button=>({sameButton:button===window.originalSquare,sameGrid:button.closest('.format-scroll')===window.originalGrid,x:button.closest('.format-scroll').scrollLeft,y:scrollY,selected:button.getAttribute('aria-pressed')}));
+  assert(after.sameButton&&after.sameGrid,'Square selection does not rebuild the board');assert.equal(after.x,position.x,'Horizontal position stays fixed');assert(Math.abs(after.y-position.y)<=1,'Vertical position stays fixed');assert.equal(after.selected,String(selected));
+ }
+ assert.equal(await page.locator('#saveSquares').isDisabled(),true,'Deselecting the last square disables Save');
+
  await page.locator('[data-square="12"]').click();assert.equal(fx.db.raw.prepare('SELECT COUNT(*) n FROM squares_claims').get().n,0);await page.locator('#saveSquares').click();await page.locator('#cancelSquares').click();assert.equal(fx.db.raw.prepare('SELECT COUNT(*) n FROM squares_claims').get().n,0);await page.locator('#saveSquares').click();await page.locator('#confirmSquares').click();await page.getByText(/Squares saved for Alice/).waitFor();assert.equal(await page.locator('[data-square="12"]').isDisabled(),true);await page.reload();await page.locator('[data-square="12"].mine').waitFor();
  if(output)await page.screenshot({path:resolve(output,'squares-'+width+'.png'),fullPage:true});
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'Grid scroll stays inside phone viewport');
