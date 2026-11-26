@@ -6,12 +6,12 @@ function organize(root){
  const groups=[];let group;
  for(const node of nodes){
   const starts=node.matches('section,.admin-card,details,h2,h3,h4');
-  if(starts||!group){group={nodes:[],title:node.matches('h2,h3,h4')?node.textContent:node.querySelector('summary,h2,h3,h4')?.textContent||'Pool actions'};groups.push(group)}
+  if(starts||!group){group={nodes:[],hint:node.dataset.adminHint,title:node.matches('h2,h3,h4')?node.textContent:node.querySelector('summary,h2,h3,h4')?.textContent||'Pool actions'};groups.push(group)}
   group.nodes.push(node);
  }
  const nav=document.createElement('nav');nav.className='pool-admin-tools';nav.setAttribute('aria-label','Pool admin tools');
  const back=document.createElement('button');back.type='button';back.className='pool-admin-back';back.textContent='← Back to pool admin';back.hidden=true;
- const panels=groups.map((g,i)=>{const panel=document.createElement('div');panel.className='pool-admin-screen';panel.hidden=true;g.nodes.forEach(n=>panel.append(n));const button=document.createElement('button');button.type='button';button.className='pool-admin-tool';const title=document.createElement('strong');title.textContent=g.title.trim();const hint=document.createElement('span');hint.textContent='Open →';button.append(title,hint);button.onclick=()=>{history.pushState(null,'','#pool-admin-'+i);show(i,true)};nav.append(button);return panel});
+ const panels=groups.map((g,i)=>{const panel=document.createElement('div');panel.className='pool-admin-screen';panel.hidden=true;g.nodes.forEach(n=>panel.append(n));const button=document.createElement('button');button.type='button';button.className='pool-admin-tool';const title=document.createElement('strong');title.textContent=g.title.trim();const hint=document.createElement('span');hint.textContent=g.hint||'Open →';button.append(title,hint);button.onclick=()=>{history.pushState(null,'','#pool-admin-'+i);show(i,true)};nav.append(button);return panel});
  root.replaceChildren(nav,back,...panels);
  const legacyNav=document.querySelector('.admin-nav');if(root.id==='manager'&&legacyNav)legacyNav.hidden=true;
  function show(index,focus=false){const valid=Number.isInteger(index)&&index>=0&&index<panels.length;nav.hidden=valid;back.hidden=!valid;panels.forEach((p,i)=>{p.hidden=!valid||i!==index;if(!p.hidden)p.querySelectorAll(':scope > details').forEach(d=>d.open=true)});if(focus){const target=valid?back:nav.querySelector('button');target?.focus();root.scrollIntoView({block:'start',behavior:'smooth'})}}

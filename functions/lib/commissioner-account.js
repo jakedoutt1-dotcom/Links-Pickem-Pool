@@ -33,8 +33,10 @@ export async function importOwnedPools(db,email){
   for(const g of games)await db.prepare('INSERT OR IGNORE INTO links_pool_slots(id,email,pool_id,game_type,active) VALUES(?,?,?,?,?)').bind(crypto.randomUUID(),email,p.pool_id,g.game_type,Number(g.active)!==0?1:0).run()
  }
 }
-export async function allowance(db,email){
- if(FREE_GAME_TESTING)return {plan:'testing',label:'Free game testing',amount:0,slots:Number.MAX_SAFE_INTEGER,expiresAt:null,testing:true};
+export async function allowance(db,email,{includeFreeAccess=true}={}){
+ // Free game access does not grant an ad-free purchase. Callers checking ads
+ // can inspect the underlying paid/granted plan without changing game access.
+ if(FREE_GAME_TESTING&&includeFreeAccess)return {plan:'testing',label:'Free game testing',amount:0,slots:Number.MAX_SAFE_INTEGER,expiresAt:null,testing:true};
  let ent=await db.prepare('SELECT * FROM links_account_plans WHERE email=?').bind(email).first();
  // Preserve paid legacy purchases, including canonical Gmail aliases. Never infer payment from a pool's test-mode service flag.
  if(!ent){try{const rows=(await db.prepare("SELECT * FROM commissioner_entitlements WHERE status='ACTIVE'").all()).results||[];ent=rows.filter(x=>emailKey(x.email)===email&&PLANS[x.plan]).sort((a,b)=>Number(!b.expires_at||Date.parse(b.expires_at)>Date.now())-Number(!a.expires_at||Date.parse(a.expires_at)>Date.now())||PLANS[b.plan].slots-PLANS[a.plan].slots)[0]}catch(e){if(!/no such table/i.test(String(e)))throw e}}

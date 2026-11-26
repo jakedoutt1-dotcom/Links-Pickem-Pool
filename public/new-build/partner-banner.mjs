@@ -41,7 +41,7 @@ export function mountPartners(panel,{host,controlsHost,brandingOnly=false,autoLo
  if(!navigator.geolocation){general('Location is unavailable. Enjoy your LINKS pool.');return}
  if(!explicit){try{const permission=await navigator.permissions.query({name:'geolocation'});if(serial!==generation)return;if(permission.state!=='granted'){general('Allow location to see offers from the partner location you are visiting.');return}}catch{general();return}}
  try{
- const [position,response]=await Promise.all([new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(resolve,reject,{enableHighAccuracy:true,maximumAge:0,timeout:12000})),fetch('./api/partners?public=1',{cache:'no-store'})]);
+ const [position,response]=await Promise.all([new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(resolve,reject,{enableHighAccuracy:true,maximumAge:0,timeout:12000})),fetch('./api/partners?public=1',{cache:'no-store',signal:AbortSignal.timeout(15000)})]);
  if(serial!==generation||document.hidden)return;if(!response.ok)throw Error();const data=await response.json();if(serial!==generation)return;const result=nearby(data.partners,position.coords);nearbyCandidates=nearby(data.partners.map(p=>({...p,radius:3000})),position.coords).candidates.map(p=>({...p,radius:data.partners.find(original=>original.id===p.id)?.radius||p.radius}));
  if(!result.candidates.length){general('No nearby LINKS partner was found. Offers will appear automatically when a partner is detected.');return}
  if(result.certain){show(result.candidates[0],{candidates:result.candidates});return}
