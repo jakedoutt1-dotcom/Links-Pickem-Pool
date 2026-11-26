@@ -70,9 +70,13 @@ try{
   await poolPage.getByRole('heading',{name:'Your road to the title'}).waitFor();
   await poolPage.getByRole('button',{name:'Pool standings',exact:true}).click();
   await poolPage.getByRole('heading',{name:'The standings tip off with the tournament.'}).waitFor();
-  await poolPage.getByRole('button',{name:'ADMIN',exact:true}).click();
-  await poolPage.getByText('Set the field. Open the challenge.',{exact:true}).filter({visible:true}).click();await poolPage.locator('#loadField').waitFor();assert.equal(await poolPage.getByRole('link',{name:/Back to Home/}).getAttribute('href'),'/new-build/index.html');
-  await poolPage.screenshot({path:resolve(output,'march-commissioner.png'),fullPage:true});
+  assert.equal(await poolPage.getByRole('button',{name:'ADMIN',exact:true}).count(),0);
+  await poolPage.addInitScript(()=>{Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{window.__copied=text}}});Object.defineProperty(navigator,'share',{configurable:true,value:async value=>{window.__shared=value}})});
+  await poolPage.route('**/api/qr-invite',route=>route.fulfill({json:{poolName:'Links Test Pool',poolCode:'LINKS',expiresAt:new Date(Date.now()+86400000).toISOString(),url:base+'/new-build/join.html?qr=test-invite'}}));
+  response.tournament=null;await poolPage.reload();await poolPage.getByRole('heading',{name:'Your next March starts here.'}).waitFor();assert.match(await poolPage.locator('#content').innerText(),/no commissioner setup is needed/);
+  await poolPage.getByRole('button',{name:'Share pool',exact:true}).click();await poolPage.locator('dialog svg').waitFor();await poolPage.getByRole('button',{name:'Copy Invite',exact:true}).click();assert.match(await poolPage.evaluate(()=>window.__copied),/join.html\?qr=test-invite/);
+  await poolPage.getByRole('button',{name:'Share Invite',exact:true}).click();assert.equal((await poolPage.evaluate(()=>window.__shared)).url,base+'/new-build/join.html?qr=test-invite');await poolPage.getByRole('button',{name:'Close',exact:true}).click();
+  response.tournament=t;await poolPage.reload();await poolPage.getByRole('heading',{name:'Your road to the title'}).waitFor();
   await poolPage.getByRole('button',{name:'My bracket',exact:true}).click();
   await poolPage.locator('[data-game="East-1-0"]').first().click();
   await poolPage.unroute('**/api/march?**');
@@ -90,6 +94,6 @@ try{
   await poolPage.getByText('READ ONLY',{exact:true}).waitFor();
   assert.equal(await poolPage.locator('[data-game]:enabled').count(),0);
   assert.deepEqual(errors,[]);
-  console.log('PASS: desktop and 390px mobile, full 63-pick submission, draft reload, sample standings, read-only opponent view, commissioner navigation, save-conflict preservation, and deadline lock.');
+  console.log('PASS: desktop and 390px mobile, full 63-pick submission, draft reload, sample standings, read-only opponent view, automatic waiting screen, admin QR/copy/native sharing, save-conflict preservation, and deadline lock.');
   console.log('Screenshots: '+output);
 }finally{await browser.close();await new Promise(r=>server.close(r));}

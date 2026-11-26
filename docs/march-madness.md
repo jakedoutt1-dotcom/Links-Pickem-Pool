@@ -6,16 +6,18 @@ The March Madness page now uses a complete men's 64-team / 63-game bracket. Regi
 
 - Practice: /new-build/march-madness.html?demo=1
 - Pool: /new-build/march-madness.html?pool=POOL_ID
-- Commissioner: the same pool page, then Commissioner.
+- Admin invitations: Share pool opens the QR code, Copy Invite, and the phone share menu.
 - Season: use the tournament-year selector or season=2027.
 
 Without a pool parameter the page is explicitly a practice bracket; practice storage is separate from real entries. Its sample field is not a published upcoming tournament.
 
-## Commissioner setup
+## Automatic tournament setup
 
-Enable March Madness in the pool. Once ESPN exposes all 32 Round of 64 matchups with resolved team IDs and seeds, use Check ESPN tournament field, review the matchups, and confirm the official Final Four regional pairings. Publish before the first Round of 64 tip-off.
+No commissioner import, seed entry, pairing selection, or publish action is needed. An authenticated visit opens the tournament once ESPN provides all 32 resolved Round of 64 matchups and the NCAA publishes the official regional paths for that tournament year. The waiting page retries every minute while visible. Unresolved play-in placeholders keep entries closed until the field is complete.
 
-This initial version opens the field after First Four participants resolve; it does not support advance picks on unresolved play-in placeholders. A field cannot be replaced after any player saves a draft or after tip-off. Previous per-game March entries remain untouched; they are not silently converted into full brackets.
+NCAA bracket links determine which regional champions meet in each semifinal; pairings are never guessed or copied from a previous year. The first confirmed import is persisted with its first Round of 64 deadline. Manual field/pairing replacements are disabled. Existing saved tournaments and entries remain intact.
+
+Admins can use Share pool before the field opens as well as afterward. It reuses the existing authenticated invitation service: a scannable QR code, Copy Invite, and Share Invite. Each invitee creates their own player name and password. Group invitations expire in seven days and can be turned off from the popup. The same shortcut is available on College Playoff.
 
 ## Scoring and storage
 
@@ -29,7 +31,7 @@ ESPN's public basketball scoreboard is queried by individual calendar dates. Tou
 
 ## Verification
 
-Run node --test tests/march.test.mjs with Node 24+ (built-in SQLite). The suite covers advancement, elimination, scoring, tiebreakers, feed mapping, authentication, privacy, full submission, concurrent versions, setup freeze, and deadline enforcement.
+Run node --test tests/march.test.mjs with Node 24+ (built-in SQLite). The suite covers advancement, elimination, scoring, tiebreakers, feed mapping, authentication, privacy, full submission, concurrent versions, automatic official pairings, and deadline enforcement.
 
 Run node tests/march-browser.mjs with Playwright available to Node (installed normally or via NODE_PATH). On Windows it uses installed Edge; elsewhere it uses Playwright Chromium. PLAYWRIGHT_CHROMIUM_EXECUTABLE optionally supplies an executable. MARCH_SCREENSHOT_DIR optionally chooses the screenshot directory; otherwise it writes output/march-madness in the repository. Pool APIs in browser tests are mocked, so tests do not touch production.
 

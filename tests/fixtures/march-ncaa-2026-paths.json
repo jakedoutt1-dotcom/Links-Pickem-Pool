@@ -1,0 +1,82 @@
+{
+  "source": "https://sdataprod.ncaa.com/ (get_championship_ncaa, basketball-men, division 1, year 2026)",
+  "data": {
+    "championships": [
+      {
+        "year": 2026,
+        "sportUrl": "basketball-men",
+        "divisionName": "d1",
+        "games": [
+          {
+            "bracketPositionId": 501,
+            "victorBracketPositionId": 601,
+            "victorGamePosition": "Top",
+            "sectionId": 2
+          },
+          {
+            "bracketPositionId": 502,
+            "victorBracketPositionId": 601,
+            "victorGamePosition": "Bottom",
+            "sectionId": 4
+          },
+          {
+            "bracketPositionId": 503,
+            "victorBracketPositionId": 602,
+            "victorGamePosition": "Top",
+            "sectionId": 3
+          },
+          {
+            "bracketPositionId": 504,
+            "victorBracketPositionId": 602,
+            "victorGamePosition": "Bottom",
+            "sectionId": 5
+          },
+          {
+            "bracketPositionId": 601,
+            "victorBracketPositionId": 701,
+            "victorGamePosition": "Top",
+            "sectionId": 6
+          },
+          {
+            "bracketPositionId": 602,
+            "victorBracketPositionId": 701,
+            "victorGamePosition": "Bottom",
+            "sectionId": 6
+          },
+          {
+            "bracketPositionId": 701,
+            "victorBracketPositionId": null,
+            "victorGamePosition": null,
+            "sectionId": 6
+          }
+        ],
+        "regions": [
+          {
+            "title": "",
+            "sectionId": 1
+          },
+          {
+            "title": " EAST",
+            "sectionId": 2
+          },
+          {
+            "title": "WEST",
+            "sectionId": 3
+          },
+          {
+            "title": " SOUTH",
+            "sectionId": 4
+          },
+          {
+            "title": " MIDWEST",
+            "sectionId": 5
+          },
+          {
+            "title": "",
+            "sectionId": 6
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,9 +1,12 @@
+import {readFileSync} from 'node:fs';
+import {officialPairing} from '../functions/lib/march-official-pairing.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {demoTournament,makeGames,entrants,selectTeam,cleanPicks,scoreBracket,rankEntries,validTie,PAIRINGS} from '../public/new-build/march-core.mjs';
 import {parseEvent,mapResults,createTournament} from '../functions/lib/march.js';
 import {onRequest} from '../functions/new-build/api/march.js';
+const officialFixture=JSON.parse(readFileSync(new URL('./fixtures/march-ncaa-2026-paths.json',import.meta.url),'utf8'));
 const demo=demoTournament();
 function filled(games,choose=ids=>ids[0]) {const picks={};for(const g of games)picks[g.id]=choose(entrants(g,picks));return picks;}
 const full=filled(demo.games);
@@ -62,13 +65,14 @@ test('authenticated API: complete entry lifecycle, privacy, revisions, field fre
   db.raw.exec("CREATE TABLE pools(id INTEGER PRIMARY KEY,code TEXT,name TEXT);CREATE TABLE pool_sessions(token TEXT,pool_id INTEGER,player_name TEXT,role TEXT,expires_at TEXT);CREATE TABLE pool_players(pool_id INTEGER,name TEXT);CREATE TABLE pool_settings(pool_id INTEGER,key TEXT,value TEXT);CREATE TABLE pool_active_games(pool_id INTEGER,game_type TEXT,active INTEGER,is_primary INTEGER);INSERT INTO pools VALUES(1,'LINKS','Links Test'),(2,'OTHER','Other');INSERT INTO pool_players VALUES(1,'Jake');INSERT INTO pool_sessions VALUES('player',1,'Jake','player','2099-01-01'),('admin',1,'Jake','admin','2099-01-01'),('other',2,'Other','player','2099-01-01');INSERT INTO pool_active_games VALUES(1,'march',1,1);");
   const field=demo.field.map((g,i)=>({...g,eventId:String(100+i),date:season+'-03-18T16:00:00Z',teams:g.teams.map((t,j)=>({...t,id:String(i*2+j+1)}))}));
   const events=field.map(g=>event(g)),originalFetch=globalThis.fetch;
-  globalThis.fetch=async()=>Response.json({leagues:[{calendar:[season+'-03-18T00:00Z']}],events});
+  globalThis.fetch=async url=>{if(String(url).includes('sdataprod.ncaa.com')){const source=structuredClone(officialFixture);source.data.championships[0].year=season;return Response.json(source)}return Response.json({leagues:[{calendar:[season+'-03-18T00:00Z']}],events})};
   const call=async(token,body=null,query='')=>{const response=await onRequest({env:{DB:db},request:new Request('https://links.test/new-build/api/march?pool=LINKS&season='+season+query,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},...(body?{body:JSON.stringify({pool:'LINKS',season,...body})}:{})})});return {status:response.status,data:await response.json()};};
   try {
     assert.equal((await call('bad')).status,401);assert.equal((await call('other')).status,401);
-    assert.equal((await call('player',{action:'publish',pairing:PAIRINGS[0],revision:0})).status,403);
-    const published=await call('admin',{action:'publish',pairing:PAIRINGS[0],revision:0});assert.equal(published.status,200,JSON.stringify(published.data));
+    assert.equal((await call('player',{action:'publish',pairing:PAIRINGS[0],revision:0})).status,409);
+    assert.equal((await call('admin',{action:'publish',pairing:PAIRINGS[0],revision:0})).status,409);
     const start=await call('player'),games=start.data.tournament.games,picks=filled(games);
+    assert.equal(games.length,63,'Player visit automatically opens the full bracket');assert.deepEqual(start.data.tournament.pairing,['East','South','West','Midwest']);
     assert.equal(start.data.revision,1);assert.deepEqual(start.data.rows,[]);
     const invalid=await call('player',{action:'save',picks:{'national-6-0':'1'},tie:140,submitted:false,version:0,revision:1});assert.equal(invalid.status,400);
     assert.equal((await call('player',{action:'save',picks:{},tie:140,submitted:true,version:0,revision:1})).status,400);
@@ -81,11 +85,20 @@ test('authenticated API: complete entry lifecycle, privacy, revisions, field fre
     db.raw.exec("UPDATE links_march_tournaments SET lock_at='2020-01-01T00:00:00.000Z'");
     const late=await call('player',{action:'save',picks,tie:180,submitted:true,version:2,revision:1,start:'2099-01-01'});assert.equal(late.status,403);
     const after=await call('player');assert.equal(after.data.closed,true);assert.equal(after.data.rows.length,1);assert.equal(after.data.entry.tie,145);
-    assert.equal((await call('admin',{action:'publish',pairing:PAIRINGS[0],revision:1})).status,403);
+    assert.equal((await call('admin',{action:'publish',pairing:PAIRINGS[0],revision:1})).status,409);
   }finally{globalThis.fetch=originalFetch;db.raw.close();}
 });
 
 test('final scores resolve a missing winner flag, but live and tied scores do not',()=>{
  const raw={id:'final',date:'2027-04-05T20:00:00Z',status:{type:{completed:true}},competitions:[{notes:[{headline:"NCAA Men's Basketball Championship - National Championship"}],competitors:[{team:{id:'1'},score:'80'},{team:{id:'2'},score:'70'}]}]};
  assert.equal(parseEvent(raw).winner,'1');raw.status.type.completed=false;assert.equal(parseEvent(raw).winner,'');raw.status.type.completed=true;raw.competitions[0].competitors[1].score='80';assert.equal(parseEvent(raw).winner,'');raw.competitions[0].competitors[1].score=null;assert.equal(parseEvent(raw).winner,'');
+});
+
+test('Official NCAA regional paths are read from bracket links, never commissioner guesses',()=>{
+ assert.deepEqual(officialPairing(officialFixture,2026),['East','South','West','Midwest']);
+ assert.equal(officialPairing(officialFixture,2027),null);
+ const wrong=structuredClone(officialFixture);wrong.data.championships[0].sportUrl='basketball-women';assert.equal(officialPairing(wrong,2026),null);
+ const partial=structuredClone(officialFixture);partial.data.championships[0].games.pop();assert.equal(officialPairing(partial,2026),null);
+ const missing=structuredClone(officialFixture);missing.data.championships[0].regions=missing.data.championships[0].regions.filter(r=>r.title.trim()!=='EAST');assert.equal(officialPairing(missing,2026),null);
+ const shuffled=structuredClone(officialFixture);shuffled.data.championships[0].games.reverse();shuffled.data.championships[0].regions.reverse();assert.deepEqual(officialPairing(shuffled,2026),['East','South','West','Midwest']);
 });

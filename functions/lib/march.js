@@ -34,7 +34,7 @@ export async function tournamentFeed(season) {
     const batch=await Promise.all(dates.slice(i,i+6).filter(d=>d!==season+'0315').map(day));
     batch.forEach(d=>events.push(...d.events));
   }
-  const parsed=[...new Map(events.map(e=>[String(e.id),e])).values()].map(parseEvent).filter(Boolean);
+  const parsed=[...new Map(events.map(e=>[String(e.id),e])).values()].map(parseEvent).filter(e=>e&&e.date?.slice(0,4)===String(season));
   const field=parsed.filter(e=>e.round===1);
   let ready=field.length===32&&new Set(field.flatMap(g=>g.teams.map(t=>t.id))).size===64;
   ready=ready&&field.every(g=>REGIONS.includes(g.region)&&Number.isFinite(Date.parse(g.date))&&g.teams.every(t=>/^\d+$/.test(t.id)&&Number(t.id)>0&&t.seed>=1&&t.seed<=16));

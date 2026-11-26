@@ -1,9 +1,9 @@
-import {REGIONS,POINTS,ROUNDS,PAIRINGS,teamMap,entrants,cleanPicks,selectTeam,scoreBracket,rankEntries,validTie,demoTournament} from './march-core.mjs';
+import {REGIONS,POINTS,ROUNDS,teamMap,entrants,cleanPicks,selectTeam,scoreBracket,rankEntries,validTie,demoTournament} from './march-core.mjs';
 const $=id=>document.getElementById(id), escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const q=new URLSearchParams(location.search), pool=q.get('pool')||'', demo=!pool;
 const currentYear=new Date().getFullYear(), nextSeason=currentYear+(new Date().getMonth()>=6?1:0);
-let season=Number(q.get('season'))||nextSeason, view=['bracket','scores','standings','rules','admin'].includes(q.get('view'))?q.get('view'):'bracket';
-let data=null,picks={},tie=null,version=0,submitted=false,savedAt=null,dirty=false,busy=false,region='East',round=1,viewing=null,preview=null,scoreRound=1,clockOffset=0;
+let season=Number(q.get('season'))||nextSeason, view=['bracket','scores','standings','rules'].includes(q.get('view'))?q.get('view'):'bracket';
+let data=null,picks={},tie=null,version=0,submitted=false,savedAt=null,dirty=false,busy=false,region='East',round=1,viewing=null,scoreRound=1,clockOffset=0;
 const practiceKey='links-march-bracket-practice-v2';
 const logo=team=>team?.logo&&/^https:\/\/a\.espncdn\.com\//.test(team.logo)?'<img src="'+escape(team.logo)+'" alt="" loading="lazy">':'';
 const numberPicks=()=>Object.keys(picks).length;
@@ -41,7 +41,6 @@ async function load() {
       data=next;
       if(!dirty){picks=cleanPicks(data.tournament?.games||[],data.entry?.picks||{});tie=data.entry?.tie??null;version=data.entry?.version||0;submitted=!!data.entry?.submitted;savedAt=data.entry?.savedAt||null;}
     }
-    if(view==='admin'&&data.role!=='admin')view='bracket';
     showMessage(data.warning||'');
   }catch(e){showMessage(e.message,true);if(!data)$('content').innerHTML='<section class="empty-panel"><h2>Unable to open this pool</h2><p>'+escape(e.message)+'</p><a href="./pool-login.html?code='+encodeURIComponent(pool)+'">Sign in to your pool</a></section>';}
   finally{busy=false;$('refresh').disabled=false;$('season').disabled=demo;if(data)render();}
@@ -49,9 +48,9 @@ async function load() {
 function navigation() {
   $('season').disabled=demo||busy;$('refresh').disabled=busy;
   const tabs=[['bracket','My bracket'],['scores','Tournament scores'],['standings','Pool standings'],['rules','How to play']];
-  if(data.role==='admin')tabs.push(['admin','ADMIN']);
   $('mainNav').innerHTML=tabs.map(([id,title])=>'<button data-view="'+id+'" class="'+(view===id?'active':'')+'" aria-current="'+(view===id?'page':'false')+'">'+title+'</button>').join('');
   $('mainNav').querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{view=b.dataset.view;viewing=null;render();});
+  if(!demo&&data.role==='admin'){const share=document.createElement('button');share.type='button';share.textContent='Share pool';share.onclick=async()=>{share.disabled=true;try{await (await import('./invite-qr.mjs')).openInviteQR(pool)}catch(error){showMessage(error.message,true)}finally{share.disabled=false}};$('mainNav').append(share);}
   $('identity').textContent=data.pool.name+(demo?' · Sample field':(' · '+(data.player||'Commissioner')));
   $('modeBadge').textContent=demo?'PRACTICE MODE':closed()?'BRACKETS LOCKED':data.tournament?'BRACKETS OPEN':'AWAITING THE FIELD';
 }
@@ -59,8 +58,7 @@ function empty(title,description,action='') {return '<section class="empty-panel
 function render() {
   navigation();
   if(view==='rules')return renderRules();
-  if(view==='admin')return renderAdmin();
-  if(!data.tournament){$('content').innerHTML=empty('Your next March starts here.','The '+season+' bracket will open after the tournament field is available and your commissioner confirms the setup. Until then, explore the practice bracket.','<a href="./march-madness.html?demo=1">Try a practice bracket →</a>');return;}
+  if(!data.tournament){$('content').innerHTML=empty('Your next March starts here.','The '+season+' bracket will open after the tournament field and official regional paths are confirmed. LINKS opens it automatically—no commissioner setup is needed. Play-in teams must be resolved before entries open. Until then, explore the practice bracket.','<a href="./march-madness.html?demo=1">Try a practice bracket →</a>');return;}
   if(view==='scores')return renderScores();
   if(view==='standings')return renderStandings();
   renderBracket();
@@ -138,25 +136,13 @@ function renderStandings() {
   $('content').querySelectorAll('[data-entry]').forEach(b=>b.onclick=()=>{viewing=rows[Number(b.dataset.entry)];view='bracket';render();});
 }
 function renderRules() {
-  $('content').innerHTML='<div class="bracket-toolbar"><div><span class="eyebrow">THE GAME PLAN</span><h2>Easy to enter. Hard to predict.</h2><p>One bracket per player, per pool, per tournament year.</p></div></div><div class="rule-grid"><article class="panel"><span class="rule-number">01</span><h3>Pick the whole path.</h3><p>Choose the winner of every matchup, moving through the four regions to the Final Four and your national champion. First Four games are not scored.</p></article><article class="panel"><span class="rule-number">02</span><h3>Submit before tip-off.</h3><p>Save drafts as you go. Complete all 63 picks and a championship combined-score tiebreaker, then submit. All picks lock together at the first Round of 64 game.</p></article><article class="panel"><span class="rule-number">03</span><h3>Let the points build.</h3><p>Correct picks earn more each round. Follow the results on your bracket and compare submitted entries after the deadline.</p></article></div><section class="panel"><h2>Every round raises the stakes.</h2><div class="points-grid">'+ROUNDS.map((name,i)=>'<div><strong>'+POINTS[i]+'</strong><span>'+name+'</span></div>').join('')+'</div><p><strong>1,920 points</strong> for a perfect bracket. Maximum possible includes points earned plus points still available from your surviving selections. An eliminated team cannot earn future points.</p><h3>When brackets tie</h3><p>After the championship is final, the closest predicted combined score wins the tiebreaker. If points and tiebreaker distance are both equal, the players share the rank. Before the final, equal points share a rank.</p><h3>Changing your mind</h3><p>You may edit and resubmit until the deadline. Changing an early winner clears later picks that depend on that team. A saved draft is not an entry: remember to submit again after editing.</p><h3>Real pool, real results</h3><p>The commissioner confirms the tournament field and Final Four regional pairings. The field is frozen once anyone saves a bracket. Tournament scores refresh from ESPN when you open or refresh this page. Practice mode uses sample teams and stays separate from your pool.</p><p><a href="https://support.espn.com/hc/en-us/articles/360040324812-Your-Bracket-Explained" target="_blank" rel="noopener">Explore ESPN’s bracket guide ↗</a></p></section>';
-}
-function renderAdmin() {
-  if(data.role!=='admin')return;
-  const t=data.tournament;
-  $('content').innerHTML='<section class="panel"><span class="eyebrow">COMMISSIONER DESK</span><h2>Set the field. Open the challenge.</h2><p>Import the '+season+' men’s NCAA tournament field from ESPN. Review the seeded matchups and confirm which regions meet in the national semifinals. Setup freezes as soon as the first player saves a draft.</p>'+(t?'<div class="notice"><b>Tournament published</b> · All brackets lock '+dateText(t.lockAt)+'.</div>':'')+'<button id="loadField" '+(busy?'disabled':'')+'>Check ESPN tournament field</button><div id="fieldPreview"></div></section>';
-  $('loadField').onclick=async()=>{if(busy)return;busy=true;$('loadField').disabled=true;showMessage('Checking ESPN’s tournament field…');try{preview=await api({query:{view:'preview'}});showMessage(preview.ready?'Review all four regions and confirm the official semifinal pairings.':'The complete field is not available yet.');}catch(e){showMessage(e.message,true);}finally{busy=false;renderAdmin();}};
-  if(!preview)return;
-  const box=$('fieldPreview');
-  if(!preview.ready){box.innerHTML='<p>The complete 64-team field is not available. Check again after Selection Sunday and the First Four matchups are resolved.</p>';return;}
-  const first=new Date(Math.min(...preview.field.map(g=>Date.parse(g.date))));
-  box.innerHTML='<div class="setup-grid">'+REGIONS.map(r=>'<section><h3>'+r+'</h3>'+preview.field.filter(g=>g.region===r).sort((a,b)=>Math.min(...a.teams.map(t=>t.seed))-Math.min(...b.teams.map(t=>t.seed))).map(g=>'<p>'+g.teams.map(t=>t.seed+' '+escape(t.name)).join(' vs. ')+'</p>').join('')+'</section>').join('')+'</div><p><b>Bracket deadline:</b> '+dateText(first)+'</p><div class="setup-controls"><div><label for="pairing">Official Final Four regional pairings</label><select id="pairing"><option value="">Choose from the official bracket</option>'+PAIRINGS.map((p,i)=>'<option value="'+i+'">'+p[0]+' vs '+p[1]+' · '+p[2]+' vs '+p[3]+'</option>').join('')+'</select></div><button id="publish" class="primary" '+(closed()||first.getTime()<=Date.now()?'disabled':'')+'>Publish tournament</button></div>';
-  $('publish').onclick=async()=>{if(busy)return;const value=$('pairing').value;if(value===''){showMessage('Confirm the official Final Four regional pairings first.',true);return;}busy=true;$('publish').disabled=true;try{await api({body:{action:'publish',pairing:PAIRINGS[Number(value)],revision:data.revision}});preview=null;busy=false;await load();showMessage('Tournament published.');}catch(e){busy=false;renderAdmin();showMessage(e.message,true);}};
+  $('content').innerHTML='<div class="bracket-toolbar"><div><span class="eyebrow">THE GAME PLAN</span><h2>Easy to enter. Hard to predict.</h2><p>One bracket per player, per pool, per tournament year.</p></div></div><div class="rule-grid"><article class="panel"><span class="rule-number">01</span><h3>Pick the whole path.</h3><p>Choose the winner of every matchup, moving through the four regions to the Final Four and your national champion. First Four games are not scored.</p></article><article class="panel"><span class="rule-number">02</span><h3>Submit before tip-off.</h3><p>Save drafts as you go. Complete all 63 picks and a championship combined-score tiebreaker, then submit. All picks lock together at the first Round of 64 game.</p></article><article class="panel"><span class="rule-number">03</span><h3>Let the points build.</h3><p>Correct picks earn more each round. Follow the results on your bracket and compare submitted entries after the deadline.</p></article></div><section class="panel"><h2>Every round raises the stakes.</h2><div class="points-grid">'+ROUNDS.map((name,i)=>'<div><strong>'+POINTS[i]+'</strong><span>'+name+'</span></div>').join('')+'</div><p><strong>1,920 points</strong> for a perfect bracket. Maximum possible includes points earned plus points still available from your surviving selections. An eliminated team cannot earn future points.</p><h3>When brackets tie</h3><p>After the championship is final, the closest predicted combined score wins the tiebreaker. If points and tiebreaker distance are both equal, the players share the rank. Before the final, equal points share a rank.</p><h3>Changing your mind</h3><p>You may edit and resubmit until the deadline. Changing an early winner clears later picks that depend on that team. A saved draft is not an entry: remember to submit again after editing.</p><h3>Real pool, real results</h3><p>LINKS imports the official tournament field and NCAA Final Four regional paths automatically. No commissioner setup is needed. The published bracket stays fixed. Tournament scores refresh from ESPN when you open or refresh this page. Practice mode uses sample teams and stays separate from your pool.</p><p><a href="https://support.espn.com/hc/en-us/articles/360040324812-Your-Bracket-Explained" target="_blank" rel="noopener">Explore ESPN’s bracket guide ↗</a></p></section>';
 }
 $('practiceNotice').hidden=!demo;
 $('season').innerHTML=[...new Set([nextSeason,currentYear,currentYear-1])].filter(y=>y>=2025).map(y=>'<option '+(season===y?'selected':'')+'>'+y+'</option>').join('');
 if(![...$('season').options].some(o=>Number(o.value)===season))season=nextSeason;
 $('season').value=String(season);$('season').disabled=demo;
-$('season').onchange=async e=>{if(busy){e.target.value=String(season);return;}if(dirty&&!confirm('Switch years and discard your unsaved changes?')){e.target.value=String(season);return;}season=Number(e.target.value);dirty=false;picks={};tie=null;version=0;submitted=false;savedAt=null;data=null;preview=null;viewing=null;await load();};
+$('season').onchange=async e=>{if(busy){e.target.value=String(season);return;}if(dirty&&!confirm('Switch years and discard your unsaved changes?')){e.target.value=String(season);return;}season=Number(e.target.value);dirty=false;picks={};tie=null;version=0;submitted=false;savedAt=null;data=null;viewing=null;await load();};
 $('refresh').onclick=()=>load();
 if(pool){$('poolLink').href='./control-center.html?pool='+encodeURIComponent(pool);$('poolLink').textContent='Back to Locker Room';$('signOut').hidden=false;}
 $('signOut').onclick=async()=>{if(dirty&&!confirm('Sign out and discard your unsaved changes?'))return;const token=localStorage.getItem('links-legacy-token')||localStorage.getItem('links-token')||'';const account=localStorage.getItem('links-account-token');await Promise.allSettled([fetch('/api/logout',{method:'POST',headers:{Authorization:'Bearer '+token}}),fetch('./api/home-session?pool='+encodeURIComponent(pool),{method:'DELETE'}),...(account?[fetch('./api/account',{method:'POST',headers:{'Content-Type':'application/json','x-links-account':account},body:JSON.stringify({action:'logout'})})]:[])]);for(const key of ['links-legacy-token','links-token','links-account-token','links-current-pool','links-player-id','links-player-name','links-player-role','links-current-role','links-session-v1'])localStorage.removeItem(key);try{sessionStorage.setItem('links-signed-out','1');sessionStorage.removeItem('links-playmaker-import');}catch{}dirty=false;location.href='./index.html';};
@@ -164,3 +150,5 @@ window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.return
 let wasClosed=false;
 setInterval(()=>{if(!data)return;const isClosed=closed();if(isClosed&&!wasClosed){wasClosed=true;render();showMessage('The tournament has tipped off. Brackets are locked.');}wasClosed=isClosed;},1000);
 await load();
+
+const autoRefresh=setInterval(()=>{if(!demo&&!document.hidden&&!busy&&!dirty&&data&&!data.tournament)void load()},60000);window.addEventListener('pagehide',()=>clearInterval(autoRefresh),{once:true});

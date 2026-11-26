@@ -1,3 +1,4 @@
+import {loadOfficialPairing} from '../../lib/march-official-pairing.js';
 import {poolFor,sessionFor} from '../../lib/college.js';
 import {poolGameKeys} from '../../lib/pool-games.js';
 import {tournamentFeed,createTournament,mapResults,ensureSchema} from '../../lib/march.js';
@@ -16,21 +17,22 @@ export async function onRequest({request,env}) {
     const season=Number(b.season||q.get('season'));
     if(!Number.isInteger(season)||season<2025||season>new Date().getFullYear()+1)throw fail('Choose a valid tournament year.');
     await ensureSchema(db);
-    const stored=await db.prepare('SELECT * FROM links_march_tournaments WHERE pool_id=? AND season=?').bind(pool.id,season).first();
+    let stored=await db.prepare('SELECT * FROM links_march_tournaments WHERE pool_id=? AND season=?').bind(pool.id,season).first();
     let tournament=stored?JSON.parse(stored.definition):null;
+    if(!(await poolGameKeys(db,pool.id)).includes('march'))throw fail('March Madness is not active in this pool.',403);
+    if(request.method==='POST'&&b.action==='publish')throw fail('The official tournament opens automatically. Manual field and pairing changes are disabled.',409);
+    let warning='',feed=null;
+    if(!tournament||request.method==='GET')try{
+      feed=await tournamentFeed(season);
+      if(!tournament&&feed.ready){const pairing=await loadOfficialPairing(season);if(pairing){
+        const next=createTournament(feed,season,pairing);
+        await db.prepare('INSERT OR IGNORE INTO links_march_tournaments(pool_id,season,definition,lock_at,revision) VALUES(?,?,?,?,1)').bind(pool.id,season,JSON.stringify(next),next.lockAt).run();
+        stored=await db.prepare('SELECT * FROM links_march_tournaments WHERE pool_id=? AND season=?').bind(pool.id,season).first();tournament=JSON.parse(stored.definition);
+      }}
+      if(tournament){if(!feed.ready)throw Error('Tournament feed is incomplete.');tournament={...tournament,results:mapResults(tournament,feed.events),checkedAt:feed.checkedAt};}
+    }catch{warning=tournament?'Live results are temporarily unavailable. Showing the last confirmed tournament snapshot.':'Tournament data is temporarily unavailable. LINKS will check again automatically; no commissioner setup is needed.';}
     const closed=!!stored&&Date.now()>=Date.parse(stored.lock_at);
     if(request.method==='GET') {
-      if(q.get('view')==='preview') {
-        if(session.role!=='admin')throw fail('Commissioner access required.',403);
-        const feed=await tournamentFeed(season);
-        return json({ready:feed.ready,field:feed.field,checkedAt:feed.checkedAt});
-      }
-      let warning='';
-      if(tournament)try{
-        const feed=await tournamentFeed(season);
-        if(!feed.ready)throw Error('Tournament feed is incomplete.');
-        tournament={...tournament,results:mapResults(tournament,feed.events),checkedAt:feed.checkedAt};
-      }catch{warning='Live results are temporarily unavailable. Showing the last confirmed tournament snapshot.'}
       const own=await db.prepare('SELECT * FROM links_march_entries WHERE pool_id=? AND season=? AND player_name=?').bind(pool.id,season,session.player_name||'').first();
       const count=await db.prepare('SELECT COUNT(*) AS total FROM links_march_entries WHERE pool_id=? AND season=? AND submitted=1').bind(pool.id,season).first();
       let rows=[];
@@ -41,21 +43,8 @@ export async function onRequest({request,env}) {
       const entry=entryOf(own);
       return json({pool,season,role:session.role,player:session.player_name,tournament,revision:stored?.revision||0,closed,serverNow:new Date().toISOString(),entry,stats:entry&&tournament?scoreBracket(tournament.games,entry.picks,tournament.results):null,submittedCount:count?.total||0,rows,warning});
     }
-    if(!(await poolGameKeys(db,pool.id)).includes('march'))throw fail('March Madness is not active in this pool.',403);
-    if(b.action==='publish') {
-      if(session.role!=='admin')throw fail('Commissioner access required.',403);
-      if(closed)throw fail('This tournament has started. Its field cannot be replaced.',403);
-      const feed=await tournamentFeed(season);
-      let next;try{next=createTournament(feed,season,b.pairing)}catch(e){throw fail(e.message)}
-      if(Date.now()>=Date.parse(next.lockAt))throw fail('This tournament has already started. Choose the upcoming tournament year.',403);
-      const expected=Number(b.revision);
-      if(!Number.isInteger(expected)||expected<0)throw fail('Refresh tournament setup first.',409);
-      const saved=await db.prepare("INSERT INTO links_march_tournaments(pool_id,season,definition,lock_at,revision) SELECT ?,?,?,?,1 WHERE NOT EXISTS(SELECT 1 FROM links_march_entries WHERE pool_id=? AND season=?) AND julianday(?)>julianday('now') AND (?=0 OR EXISTS(SELECT 1 FROM links_march_tournaments WHERE pool_id=? AND season=?)) ON CONFLICT(pool_id,season) DO UPDATE SET definition=excluded.definition,lock_at=excluded.lock_at,revision=links_march_tournaments.revision+1 WHERE links_march_tournaments.revision=? AND julianday(links_march_tournaments.lock_at)>julianday('now')").bind(pool.id,season,JSON.stringify(next),next.lockAt,pool.id,season,next.lockAt,expected,pool.id,season,expected).run();
-      if(!saved.meta?.changes)throw fail('Setup changed or a player has started a bracket. Refresh; the existing field was preserved.',409);
-      return json({success:true});
-    }
     if(b.action!=='save')throw fail('Unknown bracket action.');
-    if(!tournament)throw fail('Your commissioner has not opened this tournament yet.',409);
+    if(!tournament)throw fail('The official tournament field and regional paths are not available yet. The bracket opens automatically when they are confirmed.',409);
     if(closed)throw fail('Brackets locked at the first Round of 64 tip-off.',403);
     if(!session.player_name)throw fail('Sign in as a pool player to save a bracket.',403);
     const member=await db.prepare('SELECT name FROM pool_players WHERE pool_id=? AND lower(name)=lower(?)').bind(pool.id,session.player_name).first();
