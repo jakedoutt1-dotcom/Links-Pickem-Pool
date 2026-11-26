@@ -31,7 +31,7 @@ try{for(const width of [1280,390]){
  await go('squares');await page.getByRole('button',{name:'ADMIN',exact:true}).click();
  await openTool('Create an NFL board');await page.locator('#event option[value="one"]').waitFor({state:'attached'});
  await page.locator('#event').selectOption('one');await page.locator('#boardTitle').fill('Sunday Squares');await page.locator('#price').fill('10');
- await page.getByRole('button',{name:'Create board',exact:true}).click();await saved();
+ await page.getByRole('button',{name:'Create board',exact:true}).click();await page.getByText('Board created. Players can now choose their squares.',{exact:true}).waitFor();assert.equal(await page.locator('#boardSelect').inputValue(),'1');assert.equal(await page.locator('[data-square]').count(),100);
  await role('alice');await go('squares');assert.equal(await page.getByRole('button',{name:'ADMIN',exact:true}).count(),0);
  await page.locator('[data-square="12"]').click();assert.equal(fx.db.raw.prepare('SELECT COUNT(*) n FROM squares_claims').get().n,0);await page.locator('#saveSquares').click();await page.locator('#cancelSquares').click();assert.equal(fx.db.raw.prepare('SELECT COUNT(*) n FROM squares_claims').get().n,0);await page.locator('#saveSquares').click();await page.locator('#confirmSquares').click();await page.getByText(/Squares saved for Alice/).waitFor();assert.equal(await page.locator('[data-square="12"]').isDisabled(),true);await page.reload();await page.locator('[data-square="12"].mine').waitFor();
  if(output)await page.screenshot({path:resolve(output,'squares-'+width+'.png'),fullPage:true});
