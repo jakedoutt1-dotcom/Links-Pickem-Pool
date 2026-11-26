@@ -1,3 +1,4 @@
+import {bracketState} from '../../lib/cfp-bracket.js';
 import {sessionFor} from '../../lib/college.js';
 import {poolGameKeys} from '../../lib/pool-games.js';
 import {cfpSeason,isPlayoff,normalizePlayoff,gradePlayoff,pickClosed} from '../../../public/new-build/cfp-core.mjs';
@@ -17,6 +18,12 @@ export async function onRequest({request,env}){try{
  const actor=await sessionFor(request,db,pool);if(!actor)throw fail('Sign in to this pool.',401);
  if(!(await poolGameKeys(db,pool)).includes('cfp'))throw fail('College Playoff Pick\'em is not enabled in this pool.',403);
  const member=await db.prepare('SELECT name FROM pool_players WHERE pool_id=? AND lower(name)=lower(?)').bind(pool,actor.player_name).first();if(!member)throw fail('Player membership not found.',403);
+ if(post&&b.action==='bracketTeams'){
+  if(actor.role!=='admin')throw fail('Commissioner access required.',403);
+  const r=await fetch('https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams?limit=1000',{signal:AbortSignal.timeout(12000)});if(!r.ok)throw fail('Team list unavailable. Try again.',503);
+  const j=await r.json(),teams=(j.sports||[]).flatMap(s=>(s.leagues||[]).flatMap(l=>(l.teams||[]).map(x=>x.team))).filter(t=>t&&/^[1-9]\d*$/.test(String(t.id))).map(t=>({id:String(t.id),name:t.displayName,record:t.record?.items?.find(r=>r.type==='total')?.summary||'',logo:'https://a.espncdn.com/i/teamlogos/ncaa/500/'+t.id+'.png'}));
+  if(!teams.length)throw fail('Team list unavailable. Try again.',503);return json({teams});
+ }
  await db.batch([
   db.prepare('CREATE TABLE IF NOT EXISTS links_cfp_games(season INTEGER,event_id TEXT,data TEXT NOT NULL,locked INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(season,event_id))'),
   db.prepare('CREATE TABLE IF NOT EXISTS links_cfp_picks(pool_id INTEGER,player TEXT,season INTEGER,event_id TEXT,team TEXT,bonus INTEGER NOT NULL DEFAULT 0,total_side TEXT,total_line REAL,saved_at TEXT,PRIMARY KEY(pool_id,player,season,event_id))'),
@@ -40,8 +47,11 @@ export async function onRequest({request,env}){try{
  }
  const stored=(await db.prepare('SELECT * FROM links_cfp_games WHERE season=?').bind(season).all()).results||[],lines=(await db.prepare('SELECT * FROM links_cfp_lines WHERE pool_id=? AND season=?').bind(pool,season).all()).results||[];
  const games=stored.map(row=>{const g=JSON.parse(row.data),line=lines.find(l=>l.event_id===g.id);return {...g,locked:!!row.locked,totalLine:line?.total_line??g.totalLine,lineFixed:!!line}}).sort((a,b)=>Date.parse(a.start)-Date.parse(b.start));
+ const bracket=await bracketState({db,pool,season,member,actor,games,b,post:post&&['bracketSetup','bracketSave'].includes(b.action),available:!warning});
+ if(post&&['bracketSetup','bracketSave'].includes(b.action))return json(bracket);
  if(post){
   if(b.action!=='pick')throw fail('Unknown action.');
+  if(bracket.config)throw fail('This pool uses the full playoff bracket. Refresh and submit every round together before the first kickoff.',409);
   const g=games.find(g=>g.id===String(b.eventId));if(!g||!fresh.some(x=>x.id===g.id)||pickClosed(g))throw fail('This game is locked or its teams are not yet confirmed.',409);
   if(![g.home.id,g.away.id].includes(String(b.team)))throw fail('Choose a team in this matchup.');
   const bonus=Number(b.bonus??0),total=String(b.totalSide||'');if(!Number.isInteger(bonus)||bonus<0||bonus>3||(!settings.bonus&&bonus))throw fail('Use 0 to 3 confidence points when that option is enabled.');
@@ -55,5 +65,5 @@ export async function onRequest({request,env}){try{
   const results=await db.batch(statements);if(!results.at(-1)?.meta?.changes)throw fail('This game locked, the rules changed, or your confidence points were used. Refresh and review your picks.',409);return json({ok:true});
  }
  const roster=((await db.prepare('SELECT name FROM pool_players WHERE pool_id=? ORDER BY name').bind(pool).all()).results||[]).map(r=>r.name),picks=(await db.prepare('SELECT * FROM links_cfp_picks WHERE pool_id=? AND season=?').bind(pool,season).all()).results||[];
- return json({pool,season,player:member.name,admin:actor.role==='admin',settings:{bonus:!!settings.bonus,totals:!!settings.totals,revision:settings.revision,locked:picks.length>0},games,picks:Object.fromEntries(picks.filter(p=>p.player===member.name).map(p=>[p.event_id,p])),shared:picks.filter(p=>games.some(g=>g.id===p.event_id&&pickClosed(g)&&!g.tbd)),standings:gradePlayoff(roster,picks,games),bonusUsed:picks.filter(p=>p.player===member.name).reduce((n,p)=>n+p.bonus,0),warning,available:!warning});
+ return json({bracket,pool,season,player:member.name,admin:actor.role==='admin',settings:{bonus:!!settings.bonus,totals:!!settings.totals,revision:settings.revision,locked:picks.length>0},games,picks:Object.fromEntries(picks.filter(p=>p.player===member.name).map(p=>[p.event_id,p])),shared:picks.filter(p=>games.some(g=>g.id===p.event_id&&pickClosed(g)&&!g.tbd)),standings:gradePlayoff(roster,picks,games),bonusUsed:picks.filter(p=>p.player===member.name).reduce((n,p)=>n+p.bonus,0),warning,available:!warning});
  }catch(error){return json({error:error.status?error.message:'College playoff service is unavailable. Saved picks are unchanged.'},error.status||503)}}
