@@ -13,7 +13,7 @@ export async function onRequestGet({request,env}){
  try{
  const pool=await resolvePool(db,new URL(request.url).searchParams.get('pool'));if(!pool)return json({error:'Pool not found.'},404);
  const token=(request.headers.get('authorization')||'').replace(/^Bearer /,'');
- const session=await db.prepare('SELECT pool_id,expires_at FROM pool_sessions WHERE token=?').bind(token).first();
+ const session=await db.prepare('SELECT pool_id,player_name,expires_at FROM pool_sessions WHERE token=?').bind(token).first();
  if(!session||String(session.pool_id)!==String(pool.id)||!Number.isFinite(Date.parse(session.expires_at))||Date.parse(session.expires_at)<=Date.now())return json({error:'Sign in to this pool to view standings.'},401);
  const [players,picks,ties,manual,access]=await Promise.all([
  db.prepare('SELECT name FROM pool_players WHERE pool_id=? ORDER BY rowid').bind(pool.id).all(),
@@ -26,17 +26,18 @@ export async function onRequestGet({request,env}){
  const activeWeeks=new Set((access.results||[]).map(r=>Number(r.week)));
  if(credits.length)activeWeeks.add(4);
  const weeks=[...new Set([...(credits.length?[{week:4}]:[]),...(picks.results||[]),...(ties.results||[])].map(r=>Number(r.week)))].filter(w=>Number.isInteger(w)&&w>=1&&w<=22&&activeWeeks.has(w)).sort((a,b)=>a-b);
- const totals=new Map((players.results||[]).map(({name})=>[name,{name,wins:0,losses:0,weekWins:0}])),gradedWeeks=[],failedWeeks=[];let cursor=0,finalGames=0;
+ const totals=new Map((players.results||[]).map(({name})=>[name,{name,wins:0,losses:0,weekWins:0}])),gradedWeeks=[],failedWeeks=[],history=[];let cursor=0,finalGames=0;
  const slice=(rows,w)=>({results:(rows.results||[]).filter(r=>Number(r.week)===w)});
  async function worker(){while(cursor<weeks.length){const week=weeks[cursor++];try{
  const games=(await schedule(week)).map(g=>({...g})),first=Math.min(...games.map(g=>Date.parse(g.kickoff)).filter(Number.isFinite));
  if(!Number.isFinite(first)||Date.now()<first)continue;
  const result=gradeWeek(pool,week,games,{players,picks:slice(picks,week),ties:slice(ties,week),manual:slice(manual,week),access:slice(access,week),credits});
  if(!result.rows.length||!result.finalGames)continue;
+ history.push({period:String(week).padStart(2,'0'),label:'Week '+week,complete:result.allFinal,winners:result.allFinal?result.finalizedWinners:[],rows:result.rows.map(r=>({player:r.player,wins:r.wins,losses:r.losses}))});
  gradedWeeks.push(week);finalGames+=result.finalGames;const winners=new Set(result.allFinal?result.finalizedWinners:[]);
  for(const row of result.rows){const name=row.player,v=totals.get(name);if(!v)continue;v.wins+=row.wins;v.losses+=row.losses;if(winners.has(name))v.weekWins++;totals.set(name,v)}
  }catch{failedWeeks.push(week)}}}
  await Promise.all(Array.from({length:Math.min(4,weeks.length)},worker));
- return json({courtesy:creditNotice(credits,4),rows:[...totals.values()].sort((a,b)=>b.wins-a.wins||a.losses-b.losses||b.weekWins-a.weekWins||a.name.localeCompare(b.name)),gradedWeeks:gradedWeeks.sort((a,b)=>a-b),failedWeeks:failedWeeks.sort((a,b)=>a-b),finalGames,checkedWeeks:weeks,updatedAt:new Date().toISOString()});
+ return json({player:session.player_name||'',history:history.sort((a,b)=>a.period.localeCompare(b.period)),courtesy:creditNotice(credits,4),rows:[...totals.values()].sort((a,b)=>b.wins-a.wins||a.losses-b.losses||b.weekWins-a.weekWins||a.name.localeCompare(b.name)),gradedWeeks:gradedWeeks.sort((a,b)=>a-b),failedWeeks:failedWeeks.sort((a,b)=>a-b),finalGames,checkedWeeks:weeks,updatedAt:new Date().toISOString()});
  }catch{return json({error:'Season standings could not be loaded. Please try again.'},503)}
 }

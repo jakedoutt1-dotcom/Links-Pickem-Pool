@@ -10,7 +10,7 @@ const hash=async value=>Array.from(new Uint8Array(await crypto.subtle.digest('SH
 const token=()=>crypto.randomUUID()+crypto.randomUUID();
 const credential=value=>typeof value==='string'&&/^[a-f0-9-]{72}$/.test(value)?value:'';
 const permission=()=>json({error:'Only this game’s host can use that control.'},403);
-const gameErrors=new Set(['INVALID_ACTION','INVALID_SETTINGS','INVALID_NAME','STALE_HAND','STALE_TURN','INVALID_CHIPS','INVALID_BLINDS','INVALID_TIMER','TABLE_FULL','INVALID_PLAYER','INVALID_SEAT','HAND_RUNNING','NEED_PLAYERS','NO_ACTIVE_HAND','NOT_YOUR_TURN','TURN_EXPIRED','CANNOT_CHECK','CANNOT_CALL','CANNOT_RAISE','INVALID_RAISE','MIN_RAISE','CANNOT_SHOW_HAND']);
+const gameErrors=new Set(['INVALID_ACTION','INVALID_SETTINGS','INVALID_NAME','STALE_HAND','STALE_TURN','INVALID_CHIPS','INVALID_BLINDS','INVALID_TIMER','TABLE_FULL','INVALID_PLAYER','INVALID_SEAT','HAND_RUNNING','NEED_PLAYERS','NO_ACTIVE_HAND','NOT_YOUR_TURN','TURN_EXPIRED','CANNOT_CHECK','CANNOT_CALL','CANNOT_RAISE','INVALID_RAISE','MIN_RAISE','CANNOT_SHOW_HAND','SITTING_OUT']);
 async function initialize(db){
  await db.batch([
   db.prepare('CREATE TABLE IF NOT EXISTS links_poker_night_rooms(code TEXT PRIMARY KEY,state TEXT NOT NULL,version INTEGER NOT NULL DEFAULT 0,expires INTEGER NOT NULL)'),

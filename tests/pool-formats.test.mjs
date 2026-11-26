@@ -131,3 +131,16 @@ test('Squares empty and partially filled boards draw once at kickoff on a player
   }
  }finally{db.raw.close()}
 });
+
+test('College Squares uses its own schedule, persisted team metadata and college score service',async()=>{
+ const {db,runtime,call}=fixture();try{
+  runtime.collegeSlate=[{eventId:'college-one',away:'ALA',home:'UGA',awayId:'333',homeId:'61',awayName:'Alabama',homeName:'Georgia',awayRank:5,homeRank:99,records:{ALA:'11-1',UGA:'12-0'},kickoff:'2090-12-20T20:00:00Z'}];
+  vm.runInContext('fetchCollegeWeek=async()=>collegeSlate',runtime);
+  const schedule=await call('squares','schedule',null,'admin',1,{sport:'college'});assert.equal(schedule.games[0].eventId,'college-one');
+  const made=await call('squares','boards',{sport:'college',week:1,eventId:'college-one',size:25,price:10},'admin');assert.equal(made.status,200);
+  assert.equal((await call('squares','boards',{sport:'nfl',week:1,eventId:'college-one',price:0},'admin')).status,400,'NFL and college event IDs cannot cross slates');
+  await call('squares','claim',{boardId:made.id,squareIndices:Array.from({length:25},(_,i)=>i),confirmed:true});
+  const requests=[];runtime.getJSON=async url=>{requests.push(url);return null};
+  const board=(await call('squares')).boards[0];assert.equal(board.sport,'college');assert.equal(board.awayId,'333');assert.equal(board.awayRank,5);assert.equal(board.homeRank,null,'Unranked sentinel 99 is not a ranking');assert.equal(board.awayRecord,'11-1');assert.equal(board.status,'LOCKED');assert(requests.some(url=>url.includes('college-football/summary')));
+ }finally{db.raw.close()}
+});

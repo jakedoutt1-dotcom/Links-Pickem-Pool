@@ -6,7 +6,7 @@ const require=createRequire(import.meta.url),{chromium}=require('playwright'),or
 const originalNflCard=readFileSync('tests/fixtures/home-nfl-demo-card.html','utf8'),newDemos=readFileSync('public/new-build/pool-demos.html','utf8');
 const card=(html,game)=>html.match(new RegExp('<article class="game">(?:(?!<article)[\\s\\S])*?data-game="'+game+'"(?:(?!<article)[\\s\\S])*?</article>'))?.[0];
 assert.equal(card(newDemos,'nfl'),originalNflCard,'NFL demo card moved without changing its markup');assert(card(newDemos,'nfl'));
-const games=['nfl','college','squares','march','nba','mlb','homerun','golf','nascar','playoff','survivor','confidence','props'];
+const games=['nfl','college','squares','march','nba','nhl','cfp','mlb','homerun','golf','nascar','playoff','survivor','confidence','props'];
 const browser=await chromium.launch({channel:'msedge',headless:true});
 try{for(const width of [320,390,1280]){
  const page=await browser.newPage({viewport:{width,height:920}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
@@ -20,6 +20,6 @@ try{for(const width of [320,390,1280]){
   for(const match of await page.locator('.match').all())await match.locator('button').first().click();await page.locator('#demoTie').fill('47');await page.locator('#demoLock').click();assert.equal(await page.locator('#board button:enabled').count(),0);await page.locator('#results').click();assert((await page.locator('#feedback').innerText()).length>20);assert.equal(await page.evaluate(()=>JSON.stringify([Object.entries(localStorage),Object.entries(sessionStorage)])),before,'Demo leaves real pool storage untouched');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'NFL demo still fits '+width);
   await page.screenshot({path:`output/home-hub/nfl-demo-${width}.png`,fullPage:true});
   if(width===390){for(const game of ['college','squares']){await page.goto(origin+'/new-build/pool-demos.html');await page.locator(`[data-game="${game}"]`).click();await page.waitForURL('**/game-demo.html?game='+game);await page.locator('#board button').first().waitFor();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,game+' demo still fits')}}
-  assert.deepEqual(errors,[]);console.log('PASS homepage hub '+width+'px: exactly two destinations, separate 13-demo shelf, unchanged NFL card and working sample picks/locks/results, logos/records/moneyline, no real storage changes and mobile fit.');
+  assert.deepEqual(errors,[]);console.log('PASS homepage hub '+width+'px: exactly two destinations, separate 15-demo shelf, unchanged NFL card and working sample picks/locks/results, logos/records/moneyline, no real storage changes and mobile fit.');
  }finally{await page.close()}
 }}finally{await browser.close()}

@@ -25,12 +25,13 @@ export async function formatRequest(context,dispatch=legacy){
   const allowed=post?['boards','claim','unclaim','draw','paid','delete']:['state','schedule'];
   if(!allowed.includes(action))return json({error:'Unsupported Squares action.'},400);
   if(post&&!['claim','unclaim'].includes(action)&&!admin)return json({error:'Commissioner only.'},403);
-  const week=Number(b.week||url.searchParams.get('week')||1);
-  if(action==='schedule'||action==='boards'){if(!Number.isInteger(week)||week<1||week>22)return json({error:'Choose a valid NFL week.'},400)}
+  const week=Number(b.week||url.searchParams.get('week')||1),sport=String(b.sport||url.searchParams.get('sport')||'nfl');
+  if(!['nfl','college'].includes(sport))return json({error:'Choose NFL or College Football.'},400);
+  if(action==='schedule'||action==='boards'){if(!Number.isInteger(week)||week<1||week>(sport==='college'?18:22))return json({error:'Choose a valid football week.'},400)}
   if(action==='boards'){
    for(const key of ['price','payoutQ1','payoutHalf','payoutQ3','payoutFinal'])if(!Number.isFinite(Number(b[key]??0))||Number(b[key]??0)<0||Number(b[key]??0)>100000)return json({error:'Enter nonnegative amounts up to 100,000.'},400);
   }
-  const response=await call('squares/'+action,post?b:null,{week}),data=await response.json();
+  const response=await call('squares/'+action,post?b:null,{week,sport}),data=await response.json();
   return json({...data,game,active,role:session.role,viewer:session.player_name},response.status);
  }
  const key='game_settings_'+game,row=await db.prepare('SELECT value FROM pool_settings WHERE pool_id=? AND key=?').bind(pool.id,key).first(),raw=row?.value||'{}',settings=JSON.parse(raw),version=settings.linksRevision||'';

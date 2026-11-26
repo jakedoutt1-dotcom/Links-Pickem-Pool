@@ -15,10 +15,10 @@ export function fixture(){
  const db=new D1(),slate=[{id:'one',eventId:'one',gameIndex:0,away:'BUF',home:'MIA',awayName:'Bills',homeName:'Dolphins',kickoff:'2090-10-01T00:00:00Z',completed:false,winner:'',awayScore:0,homeScore:0}];
  const runtime={Response,Request,URL,console,crypto,Date,Uint32Array,TextEncoder,fetch,slate,summary:null,session:null};
  vm.createContext(runtime);vm.runInContext(source+';ensureV2=async()=>{};auth=async()=>session;fetchNFLWeek=async()=>slate;getJSON=async()=>summary;globalThis.handler=onRequest;',runtime);
- async function call(game,action='state',body=null,token='alice',week=19){
+ async function call(game,action='state',body=null,token='alice',week=19,query={}){
   runtime.session=db.raw.prepare('SELECT * FROM pool_sessions WHERE token=?').get(token)||null;
   if(body&&action==='entry'&&body.version===undefined){const setting=db.raw.prepare('SELECT value FROM pool_settings WHERE pool_id=1 AND key=?').get('game_settings_'+game);body={version:JSON.parse(setting?.value||'{}').linksRevision||'',...body}}
-  const request=new Request('https://test/new-build/api/pool-format?'+new URLSearchParams({pool:1,game,action,week}),{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token},...(body?{body:JSON.stringify({pool:1,game,action,...body})}:{})});
+  const request=new Request('https://test/new-build/api/pool-format?'+new URLSearchParams({pool:1,game,action,week,...query}),{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token},...(body?{body:JSON.stringify({pool:1,game,action,...body})}:{})});
   const response=await formatRequest({request,env:{DB:db}},runtime.handler);return {status:response.status,...await response.json()};
  }
  return {db,runtime,call};

@@ -1,0 +1,9 @@
+{
+  "mode": "built-in image_gen",
+  "prompt": "Use case: ads-marketing. Create a polished wide landscape website hero background for LINKS College Playoff Pick'em. Cinematic American college football stadium at night, full illuminated stands, rich deep navy and dark forest green, warm metallic gold highlights, realistic turf and subtle gold confetti. A beautiful generic modern gold and silver championship football trophy on the RIGHT third of the frame, dramatic stadium lights and natural depth. Leave the LEFT half darker and visually quiet for HTML headline overlay. Premium sports broadcast photography/compositing quality, credible materials, elegant rather than cluttered. Wide 16:9 composition suitable for cropping on phones. No text, no letters, no numbers, no team logos, no league logo, no watermarks. This is original atmospheric artwork, not a screenshot of a webpage.",
+  "generatedSource": "C:/Users/jaked/.codex/generated_images/01a0ed75-dc99-7c12-bc3d-1e5173264070/exec-44e3c178-e785-41c0-b199-e44afdce19ef.png",
+  "previewOnly": false,
+  "approvalRequired": false,
+  "composition": "Existing LINKS logo, editable headline, verified current CFP top-12 helmet-style tiles and records in HTML/CSS/SVG.",
+  "approvedByUser": true
+}

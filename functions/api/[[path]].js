@@ -1833,9 +1833,9 @@ function shuffledDigits(){
   return a;
 }
 function numArray(v){try{const a=JSON.parse(v||"[]");return Array.isArray(a)&&a.length===10&&a.every(x=>Number.isInteger(Number(x))&&Number(x)>=0&&Number(x)<=9)&&new Set(a.map(Number)).size===10?a.map(Number):[]}catch(e){return []}}
-async function squareLiveScore(eventId){
+async function squareLiveScore(eventId,sport="nfl"){
   if(!eventId)return null;
-  const j=await getJSON(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=${encodeURIComponent(eventId)}&_=${Date.now()}`);
+  const j=await getJSON(`https://site.api.espn.com/apis/site/v2/sports/football/${sport==="college"?"college-football":"nfl"}/summary?event=${encodeURIComponent(eventId)}&_=${Date.now()}`);
   const comp=j?.header?.competitions?.[0];if(!comp)return null;
   const cs=comp.competitors||[];
   const away=cs.find(x=>x.homeAway==="away")||cs[0],home=cs.find(x=>x.homeAway==="home")||cs[1];
@@ -1853,7 +1853,7 @@ async function squareLiveScore(eventId){
   };
 }
 function squareLayout(size=100){const count=[25,50,100].includes(Number(size))?Number(size):100,columns=count===25?5:10;return {size:count,columns,rows:count/columns};}
-async function squareConfig(DB,pid,id){const row=await DB.prepare("SELECT value FROM pool_settings WHERE pool_id=? AND key=?").bind(pid,'squares_split_'+id).first();let value;try{value=JSON.parse(row?.value||'null')}catch{}return {...squareLayout(value?.size),split:Array.isArray(value)?value:value?.payoutPercentages||null};}
+async function squareConfig(DB,pid,id){const row=await DB.prepare("SELECT value FROM pool_settings WHERE pool_id=? AND key=?").bind(pid,'squares_split_'+id).first();let value;try{value=JSON.parse(row?.value||'null')}catch{}return {...squareLayout(value?.size),sport:value?.sport==="college"?"college":"nfl",awayId:value?.awayId||"",homeId:value?.homeId||"",awayRecord:value?.awayRecord||"",homeRecord:value?.homeRecord||"",awayRank:Number(value?.awayRank)>0&&Number(value?.awayRank)<99?Number(value.awayRank):null,homeRank:Number(value?.homeRank)>0&&Number(value?.homeRank)<99?Number(value.homeRank):null,split:Array.isArray(value)?value:value?.payoutPercentages||null};}
 function squareWinner(claims,awayNums,homeNums,awayScore,homeScore,size=100){
   if(awayScore==null||homeScore==null||awayNums.length!==10||homeNums.length!==10)return null;
   const a=Number(awayScore)%10,h=Number(homeScore)%10;
@@ -1867,6 +1867,12 @@ function squaresSplit(price,count,percentages){
  const order=shares.map((x,i)=>({i,f:x-cents[i]})).sort((a,b)=>b.f-a.f||a.i-b.i);
  for(let n=pot-cents.reduce((a,b)=>a+b,0),i=0;i<n;i++)cents[order[i%4].i]++;
  return {claimedPot:pot/100,payout_q1:cents[0]/100,payout_half:cents[1]/100,payout_q3:cents[2]/100,payout_final:cents[3]/100};
+}
+async function squareSchedule(sport,week){
+ if(sport!=="college")return fetchNFLWeek(week);
+ if(week!==18)return fetchCollegeWeek(week);
+ const j=await getJSON(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?dates=${currentFootballSeason()}&seasontype=3&groups=80&limit=300`);
+ return parseEvents(findEventsDeep(j||{}),"college");
 }
 async function squareAutoDraw(DB,pid,boardId){
   const config=await squareConfig(DB,pid,boardId);
@@ -1883,7 +1889,7 @@ async function squaresState(DB,pid,viewer,role){
     const config=await squareConfig(DB,pid,b.id);
     const claims=(await DB.prepare("SELECT square_index,player_name,paid,claimed_at FROM squares_claims WHERE board_id=? ORDER BY square_index").bind(b.id).all()).results||[];
     const awayNums=numArray(b.numbers_away),homeNums=numArray(b.numbers_home);
-    let live=null;try{live=await squareLiveScore(b.event_id)}catch(e){}
+    let live=null;try{live=await squareLiveScore(b.event_id,config.sport)}catch(e){}
     let winners=live?{
       q1:squareWinner(claims,awayNums,homeNums,live.q1Away,live.q1Home,config.size),
       half:squareWinner(claims,awayNums,homeNums,live.halfAway,live.halfHome,config.size),
@@ -1903,7 +1909,7 @@ async function squaresState(DB,pid,viewer,role){
     }
     const split=config.split;
     const auto=Array.isArray(split)&&split.length===4?squaresSplit(b.price,claims.length,split):{};
-    out.push({...b,size:config.size,columns:config.columns,rows:config.rows,status:live?.completed?"FINAL":b.status,price:Number(b.price||0),payout_q1:Number(b.payout_q1||0),payout_half:Number(b.payout_half||0),payout_q3:Number(b.payout_q3||0),payout_final:Number(b.payout_final||0),awayNums,homeNums,claims,live,winners,payoutPercentages:split,...auto});
+    out.push({...b,sport:config.sport,awayId:config.awayId,homeId:config.homeId,awayRecord:config.awayRecord,homeRecord:config.homeRecord,awayRank:config.awayRank,homeRank:config.homeRank,size:config.size,columns:config.columns,rows:config.rows,status:live?.completed?"FINAL":b.status,price:Number(b.price||0),payout_q1:Number(b.payout_q1||0),payout_half:Number(b.payout_half||0),payout_q3:Number(b.payout_q3||0),payout_final:Number(b.payout_final||0),awayNums,homeNums,claims,live,winners,payoutPercentages:split,...auto});
   }
   return {boards:out,players,viewer,role};
 }
@@ -2634,8 +2640,8 @@ export async function onRequest(context){
 
     if(path==="squares/schedule"&&method==="GET"){
       const sw=Math.max(1,Math.min(22,Number(url.searchParams.get("week")||1)));
-      const games=await fetchNFLWeek(sw);
-      return json({week:sw,games});
+      const sport=url.searchParams.get("sport")==="college"?"college":"nfl",games=await squareSchedule(sport,sw);
+      return json({week:sw,sport,games});
     }
     if(path==="squares/state"&&method==="GET"){
       return json(await squaresState(DB,pid,s.player_name,s.role));
@@ -2643,8 +2649,8 @@ export async function onRequest(context){
     if(path==="squares/boards"&&method==="POST"){
       if(s.role!=="admin")return json({error:"Commissioner only."},403);
       const sw=Math.max(1,Math.min(22,Number(body.week||1))),eventId=String(body.eventId||"").trim();
-      const games=await fetchNFLWeek(sw),g=games.find(x=>String(x.id||x.eventId||"")===eventId);
-      if(!g)return json({error:"Choose a valid NFL game."},400);
+      const sport=body.sport==="college"?"college":"nfl",games=await squareSchedule(sport,sw),g=games.find(x=>String(x.id||x.eventId||"")===eventId);
+      if(!g)return json({error:"Choose a valid football game."},400);
       if(!Number.isFinite(Date.parse(g.kickoff))||Date.now()>=Date.parse(g.kickoff))return json({error:"Create the board before kickoff."},409);
       const size=body.size===undefined?100:Number(body.size);if(![25,50,100].includes(size))return json({error:"Choose a 25, 50 or 100-square board."},400);
       const split=body.payoutPercentages;
@@ -2654,7 +2660,7 @@ export async function onRequest(context){
       const title=String(body.title||`${g.awayName||g.away} vs ${g.homeName||g.home} Squares`).trim().slice(0,100);
       const insert=DB.prepare("INSERT INTO squares_boards(pool_id,title,event_id,week,away,home,away_name,home_name,kickoff,price,payout_q1,payout_half,payout_q3,payout_final,status,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,\'OPEN\',?)")
         .bind(pid,title,eventId,sw,g.away,g.home,g.awayName||g.away,g.homeName||g.home,g.kickoff||null,price,q1,half,q3,fin,new Date().toISOString());
-      const results=await DB.batch([insert,DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,'squares_split_' || last_insert_rowid(),?)").bind(pid,JSON.stringify({size,payoutPercentages:split||null}))]);
+      const results=await DB.batch([insert,DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,'squares_split_' || last_insert_rowid(),?)").bind(pid,JSON.stringify({size,sport,awayId:g.awayId||"",homeId:g.homeId||"",awayRecord:g.records?.[g.away]||"",homeRecord:g.records?.[g.home]||"",awayRank:g.awayRank||null,homeRank:g.homeRank||null,payoutPercentages:split||null}))]);
       return json({ok:true,id:results[0].meta?.last_row_id||null});
     }
     if(path==="squares/claim"&&method==="POST"){

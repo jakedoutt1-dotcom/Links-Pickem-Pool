@@ -64,6 +64,10 @@ assert.equal((await call({action:'feature',code,tableId:'table-2'},other.session
 assert.equal((await call({action:'feature',code,tableId:'table-2'},host.session)).room.featuredTableId,'table-2');
 let room=(await call(null,host.session,{code})).room,table=room.tables[0],actor=players.find(p=>p.session.playerId===table.actorId);
 const firstBet={action:'bet',code,tableId:table.id,handNumber:table.handNumber,turnId:table.turnId,move:'call',requestId:crypto.randomUUID()};
+const awayPlayer=players.find(p=>p!==actor&&table.players.some(q=>q.id===p.session.playerId));
+assert.equal((await call({action:'sitout',code,away:true},awayPlayer.session)).http,200);
+const sittingOut=await call({...firstBet,requestId:crypto.randomUUID()},awayPlayer.session);assert.equal(sittingOut.http,409,JSON.stringify(sittingOut));assert.equal(sittingOut.code,'SITTING_OUT');assert.match(sittingOut.error,/Sit back down/);
+assert.equal((await call({action:'sitout',code,away:false},awayPlayer.session)).http,200);
 const bet=await call(firstBet,actor.session);assert.equal(bet.http,200,JSON.stringify(bet));const changed=JSON.stringify(snapshot(code).tables[0]);
 assert.equal((await call(firstBet,actor.session)).http,200);assert.equal(JSON.stringify(snapshot(code).tables[0]),changed,'idempotent action cannot charge twice');
 assert.equal((await call({...firstBet,requestId:crypto.randomUUID()},actor.session)).http,409);
