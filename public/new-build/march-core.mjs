@@ -74,12 +74,6 @@ export function rankEntries(entries,games,results) {
   return rows;
 }
 export function demoTournament() {
-  const names=[
-    ['Duke','Siena','Ohio State','TCU',"St. John's",'Northern Iowa','Kansas','Cal Baptist','Louisville','South Florida','Michigan State','North Dakota State','UCLA','UCF','UConn','Furman'],
-    ['Arizona','Long Island','Villanova','Utah State','Wisconsin','High Point','Arkansas','Hawaii','BYU','Texas','Gonzaga','Kennesaw State','Miami (FL)','Missouri','Purdue','Queens'],
-    ['Florida','Prairie View','Clemson','Iowa','Vanderbilt','McNeese','Nebraska','Troy','North Carolina','VCU','Illinois','Penn',"Saint Mary's",'Texas A&M','Houston','Idaho'],
-    ['Michigan','Howard','Georgia','Saint Louis','Texas Tech','Akron','Alabama','Hofstra','Tennessee','Miami (Ohio)','Virginia','Wright State','Kentucky','Santa Clara','Iowa State','Tennessee State']
-  ];
-  const field=REGIONS.flatMap((region,r)=>SEEDS.map((seeds,i)=>({region,eventId:'practice-'+r+'-'+i,date:null,teams:seeds.map((seed,j)=>({id:'practice-'+r+'-'+seed,name:names[r][i*2+j],seed,logo:''}))})));
+  const field=REGIONS.flatMap((region,r)=>SEEDS.map((seeds,i)=>({region,eventId:'practice-'+r+'-'+i,date:null,teams:seeds.map((seed,j)=>({id:'practice-'+r+'-'+seed,name:'Seed '+seed,seed,logo:''}))})));
   return {season:'Practice',field,pairing:PAIRINGS[0],games:makeGames(field,PAIRINGS[0]),results:{},lockAt:null};
 }

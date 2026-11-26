@@ -12,7 +12,7 @@ function filled(games,choose=ids=>ids[0]) {const picks={};for(const g of games)p
 const full=filled(demo.games);
 test('63 games, six rounds, every team follows a unique seeded path',()=>{
   assert.deepEqual([1,2,3,4,5,6].map(r=>demo.games.filter(g=>g.round===r).length),[32,16,8,4,2,1]);
-  assert.equal(new Set(demo.games.flatMap(g=>g.teams||[]).map(t=>t.id)).size,64);
+  assert.equal(new Set(demo.games.flatMap(g=>g.teams||[]).map(t=>t.id)).size,64);assert.ok(demo.field.every(g=>g.teams.every(t=>t.name==='Seed '+t.seed&&!t.logo)),'Practice does not reuse past school lineups');
   assert.equal(Object.keys(cleanPicks(demo.games,full)).length,63);
   assert.throws(()=>makeGames(demo.field,['East','East','South','West']));
 });

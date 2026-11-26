@@ -43,3 +43,5 @@ The 2026 ESPN feed was also checked directly: 32 opening matchups, all 63 games,
 - [ESPN round scoring and leaderboard](https://support.espn.com/hc/en-us/articles/360040752191-What-s-my-ranking-Leaderboard-Explanation)
 
 Deployment uses the repository's existing Cloudflare Pages flow. Deploy public assets and functions together. Local verification does not establish that production has been deployed.
+
+Before the field is confirmed, the game page shows a colored bracket with seed placeholders and disabled entry controls. Practice fields contain no school identities. College Playoff follows the same rule, and the dated weekly top-12 panel is hidden until an official field exists. Evergreen game cards use blank colored brackets without team logos or helmets.
