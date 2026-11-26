@@ -1,0 +1,9 @@
+{
+  "mode": "built-in image_gen edit",
+  "prompt": "Edit IMAGE 1 (LINKS College Playoff Pick'em card). IMAGE 2 is a labeled contact sheet of the exact TWELVE school logo references; use all twelve logos, one per school helmet. IMAGE 3 is the actual LINKS brand logo. Preserve image 1's navy/gold night stadium, legible large COLLEGE PLAYOFF and PICK\u2019EM lettering, gold/silver trophy, full-bleed 16:9 landscape premium card style. Replace the TWO generic helmets and football with TWELVE beautifully rendered school helmets in TWO orderly rows of SIX across the lower half. Slightly reduce/reposition title and trophy to make enough room; keep title readable on a phone. Each school appears once, no duplicates: top row Georgia, Utah, Texas, Notre Dame, Tennessee, Alabama; bottom row Miami, Wake Forest, UCLA, BYU, Texas Tech, Oregon. Use the corresponding logo in image 2 clearly on each helmet. Georgia red shell, Utah red, Texas white, Notre Dame gold, Tennessee white, Alabama crimson, Miami white, Wake Forest gold, UCLA gold, BYU white, Texas Tech black, Oregon green. Make school logos contrast against shells using appropriate white outlines where needed. Polished realistic materials, credible facemasks, consistent lighting. The game card needs MORE ACTUAL TEAM LOGOS, not generic helmets. Do not add dates, records, rankings, names under helmets, webpage UI or buttons. Preserve LINKS brand at top.",
+  "previewOnly": false,
+  "approvalRequired": false,
+  "workspacePreview": "output/site-review-nov26/cfp-game-card-v2.png",
+  "sourceFile": "C:/Users/jaked/.codex/generated_images/01a0ed75-dc99-7c12-bc3d-1e5173264070/exec-1f3a6c87-79fb-45db-abdb-a1adfc636011.png",
+  "approvedByUser": true
+}
