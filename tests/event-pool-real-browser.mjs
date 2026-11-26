@@ -26,6 +26,7 @@ try {
   for (const game of ['golf', 'nascar']) {
     const context = await browser.newContext({viewport: {width: 390, height: 844}});
     let queue = Promise.resolve();
+    let failInitialLoad = true;
     await context.route('**/*', async route => {
       const req = route.request();
       const url = new URL(req.url());
@@ -38,6 +39,10 @@ try {
         return route.fulfill({json: {source: 'Fixture', races: [past, upcoming]}});
       }
       if (url.pathname.endsWith('/api/event-pool')) {
+        if (failInitialLoad) {
+          failInitialLoad = false;
+          return route.fulfill({status: 503, json: {error: 'Pool service temporarily unavailable.'}});
+        }
         queue = queue.then(() => onRequest({
           env: {DB: db},
           request: new Request(req.url(), {
@@ -68,6 +73,9 @@ try {
     const host = await context.newPage();
     await host.addInitScript(() => localStorage.setItem('test-token', 'admin'));
     await host.goto(url);
+    await host.getByRole('button', {name: 'Try again', exact: true}).waitFor();
+    assert.equal(await host.locator('main.grid').isVisible(), false, 'legacy controls stay hidden after a failed modern pool load');
+    await host.getByRole('button', {name: 'Try again', exact: true}).click();
     const tab = host.locator('[data-view=admin]');
     await tab.waitFor();
     assert.equal(await host.locator('#eventSelect').isVisible(), false);
@@ -110,6 +118,11 @@ try {
       await form.locator('[name=title]').fill(eventTitle);
       await form.locator('[name=lockAt]').fill('2090-01-01T12:00');
       await form.locator('[name=field]').fill(drivers.join('\n'));
+      for (const action of [host.locator('[data-view=picks]'), host.locator('#eventRefresh')]) {
+        host.once('dialog', dialog => dialog.dismiss());
+        await action.click();
+        assert.equal(await form.locator('[name=title]').inputValue(), eventTitle, 'cancelling navigation preserves commissioner setup');
+      }
       await form.getByRole('button', {name: 'Save setup', exact: true}).click();
       await host.getByText('Saved to your pool.', {exact: true}).waitFor();
     }

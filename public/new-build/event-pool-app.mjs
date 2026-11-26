@@ -2,13 +2,14 @@ import {FORMATS,scoreCard} from './event-pool-core.mjs';
 const demoMode=/\/event-pool-demo(?:\.html)?\/?$/.test(location.pathname),params=new URLSearchParams(location.search),game=demoMode?(params.get('game')==='nascar'?'nascar':'golf'):(location.pathname.includes('nascar')?'nascar':'golf'),pool=params.get('pool');
 const practice=demoMode?(await import('./event-pool-demo.mjs')).createDemo(game):null;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let state,view='picks',event='',draft={picks:[],garage:''},busy=false,loading=false,loadSequence=0,root;
+let state,view='picks',event='',draft={picks:[],garage:''},busy=false,loading=false,loadSequence=0,root,adminDraftDirty=false;
 const field=(label,name,value='',type='text')=>'<label>'+label+'<input name="'+name+'" type="'+type+'" value="'+esc(value)+'" required></label>';
 const options=(values,selected)=>values.map(([value,label])=>'<option value="'+esc(value)+'" '+(value===selected?'selected':'')+'>'+esc(label)+'</option>').join('');
 const local=v=>v?new Date(Date.parse(v)-new Date(v).getTimezoneOffset()*60000).toISOString().slice(0,16):'';
 async function api(action,body={}){if(practice)return practice.api(action,body);const r=await LINKS_API_FETCH('./api/event-pool?'+new URLSearchParams({pool,game,event}),action?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pool,game,event,version:state?.version,action,...body})}:{cache:'no-store'});const j=await r.json();if(!r.ok)throw Error(j.error||'Request failed.');return j;}
 function status(text){root.querySelector('[role=status]').textContent=text;}
 function hasUnsavedDraft(){return JSON.stringify(draft)!==JSON.stringify(state?.card||{picks:[],garage:''});}
+function discardChanges(message){return !adminDraftDirty&&!hasUnsavedDraft()||confirm(message);}
 async function load(){const sequence=++loadSequence;loading=true;root.querySelectorAll('button').forEach(b=>b.disabled=true);try{const next=await api();if(sequence!==loadSequence)return;state=next;event=state.event||'';draft=state.card?structuredClone(state.card):{picks:[],garage:''};render();}catch(error){if(sequence!==loadSequence)return;event=state?.event||'';render();throw error;}finally{if(sequence===loadSequence)loading=false;}}
 async function mutate(action,body){if(busy||loading)return;busy=true;const enabled=[...root.querySelectorAll('button:not(:disabled)')];enabled.forEach(b=>b.disabled=true);try{const j=await api(action,body);if(j.event)event=j.event;const published=!practice&&game==='nascar'&&action==='configure';if(published)view='picks';await load();status(published?'Race published. Players can make their picks.':practice?'Saved in this practice demo.':'Saved to your pool.')}catch(e){if(action==='configure'){const notice=root.querySelector('#setupStatus');if(notice){notice.textContent=e.message;notice.scrollIntoView({block:'center'});}else status(e.message);}else{render();status(e.message)}}finally{busy=false;enabled.forEach(b=>{if(b.isConnected)b.disabled=false});}}
 function renderRaceLive(){if(game==='golf'){
@@ -19,19 +20,21 @@ function renderRaceLive(){if(game==='golf'){
  }
 
 function startEvent(){
+ if(busy||loading||!discardChanges('Start another event and discard your unsaved changes?'))return;
  event='';
  state={...state,event:'',config:null,version:null,entries:0};
  view='admin';render();
  root.querySelector('#raceSchedule')?.scrollIntoView({block:'nearest'});
 }
 function render(){
+ adminDraftDirty=false;
  const c=state.config;
  root.innerHTML='<div class="event-heading"><div><small>YOUR '+game.toUpperCase()+' POOL</small><h2>'+esc(c?.title||(game==='nascar'?'No race published yet':'Choose your game format'))+'</h2></div><button id="eventRefresh">Refresh</button></div><nav class="event-tabs">'+['picks','standings','results','rules',...(state.role==='admin'?['admin']:[])].map(v=>'<button data-view="'+v+'" class="'+(view===v?'active':'')+'">'+v.toUpperCase()+'</button>').join('')+'</nav><label'+(state.events.length?'':' hidden')+'>Saved pool events<select id="eventSelect">'+(!event?'<option value="" disabled selected>Choose a saved event</option>':'')+options(state.events.map(e=>[e.id,e.title]),event)+'</select></label><p role="status" aria-live="polite"></p><div id="eventBody"></div>';
  renderRaceLive();
  if(state.scoringMessage)status(state.scoringMessage);
- root.querySelector('#eventRefresh').onclick=()=>{if(busy)return;if(hasUnsavedDraft()&&!confirm('Refresh and discard your unsaved entry changes?'))return;load().catch(e=>status(e.message));};
- root.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{if(busy||loading)return;view=b.dataset.view;render();});
- root.querySelector('#eventSelect').onchange=e=>{if(busy||hasUnsavedDraft()&&!confirm('Change events and discard your unsaved entry changes?')){e.target.value=event;return;}event=e.target.value;load().catch(e=>status(e.message));};
+ root.querySelector('#eventRefresh').onclick=()=>{if(busy||loading||!discardChanges('Refresh and discard your unsaved changes?'))return;load().catch(e=>status(e.message));};
+ root.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{if(busy||loading||adminDraftDirty&&!confirm('Leave this tab and discard your unsaved commissioner changes?'))return;view=b.dataset.view;render();});
+ root.querySelector('#eventSelect').onchange=e=>{if(busy||loading||!discardChanges('Change events and discard your unsaved changes?')){e.target.value=event;return;}event=e.target.value;load().catch(e=>status(e.message));};
  const body=root.querySelector('#eventBody');
  if(view==='admin'){admin(body);return;}
  if(game==='nascar'&&!practice&&state.role==='admin'&&view==='picks'){
@@ -145,6 +148,7 @@ function admin(body){
  newEvent.onclick=startEvent;
  if(c.format==='fantasy'&&state.config){const close=document.createElement('button');close.textContent='Final stage started · close garage';close.onclick=()=>mutate('closeGarage',{});body.append(close);}
  const form=body.querySelector('#eventSetup');
+ body.querySelectorAll('form').forEach(form=>{for(const type of ['input','change'])form.addEventListener(type,()=>{adminDraftDirty=true;});});
  const setupNotice=document.createElement('p');setupNotice.id='setupStatus';setupNotice.setAttribute('role','alert');form.append(setupNotice);
  form.addEventListener('invalid',e=>{setupNotice.textContent='Please complete '+(e.target.closest('label')?.firstChild?.textContent||'the required field')+'.';},true);
 
@@ -173,9 +177,14 @@ function admin(body){
 }
 if(practice||pool&&pool!=='default'){
  const old=document.querySelector('main.grid');root=document.createElement('main');root.className='event-pool event-'+game;old.before(root);
- try{state=await api();{
- const legacy=document.createElement('details');legacy.className='event-legacy';legacy.innerHTML='<summary>Previous event controls and saved entries</summary>';old.before(legacy);legacy.append(old);legacy.hidden=game!=='nascar'||old.dataset.legacyRace!=='true';event=state.event||'';draft=state.card?structuredClone(state.card):draft;if(game==='nascar'&&!practice&&params.get('view')==='admin'&&state.role==='admin')view='admin';render();
- }}catch(e){root.innerHTML='<p>'+esc(e.message)+'</p>';}
+ old.hidden=true;old.style.display='none';
+ const initialize=async()=>{
+ root.innerHTML='<p role="status" aria-live="polite">Loading your '+game+' pool…</p>';
+ try{state=await api();
+ const legacy=document.createElement('details');legacy.className='event-legacy';legacy.innerHTML='<summary>Previous event controls and saved entries</summary>';old.before(legacy);legacy.append(old);old.hidden=false;old.style.removeProperty('display');legacy.hidden=game!=='nascar'||old.dataset.legacyRace!=='true';event=state.event||'';draft=state.card?structuredClone(state.card):draft;if(game==='nascar'&&!practice&&params.get('view')==='admin'&&state.role==='admin')view='admin';render();
+ }catch(e){root.innerHTML='<h2>Could not load your '+game+' pool</h2><p role="alert">'+esc(e.message)+'</p><button type="button" id="retryEventPool">Try again</button>';root.querySelector('#retryEventPool').onclick=initialize;}
+ };
+ await initialize();
 }
 
 if(practice){document.querySelector('h1').textContent=game==='golf'?'Try a Golf pool':'Try a NASCAR pool';const art=document.createElement('img');art.className='event-demo-art';art.alt=game==='golf'?'LINKS Golf':'LINKS NASCAR';art.src='./assets/ChatGPT Image Sep 22, 2026, '+(game==='golf'?'06_30_00':'06_29_55')+' PM.png';document.querySelector('h1').before(art);const selector=document.getElementById('practiceFormat');selector.innerHTML=options(Object.entries(FORMATS[game]),state.config.format);selector.onchange=()=>{practice.reset(selector.value);load();};document.getElementById('practiceResults').onclick=()=>{if(!state.card){status('Save an entry first.');return;}practice.finish();load();};document.getElementById('practiceReset').onclick=()=>{practice.reset(selector.value);load();};}
