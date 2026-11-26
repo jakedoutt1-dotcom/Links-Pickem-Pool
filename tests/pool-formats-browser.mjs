@@ -29,7 +29,7 @@ try{for(const width of [1280,390]){
  const saved=()=>page.getByText('Saved to your pool.',{exact:true}).waitFor();
  const role=async value=>page.evaluate(v=>localStorage.setItem('test-role',v),value);
  await go('squares');await page.getByRole('button',{name:'ADMIN',exact:true}).click();
- await openTool('Create an NFL board');await page.getByRole('button',{name:'Load NFL games',exact:true}).click();await page.locator('#event option[value="one"]').waitFor({state:'attached'});
+ await openTool('Create an NFL board');await page.locator('#event option[value="one"]').waitFor({state:'attached'});
  await page.locator('#event').selectOption('one');await page.locator('#boardTitle').fill('Sunday Squares');await page.locator('#price').fill('10');
  await page.getByRole('button',{name:'Create board',exact:true}).click();await saved();
  await role('alice');await go('squares');assert.equal(await page.getByRole('button',{name:'ADMIN',exact:true}).count(),0);
