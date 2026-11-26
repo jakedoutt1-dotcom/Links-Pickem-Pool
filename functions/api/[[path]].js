@@ -1868,11 +1868,18 @@ function squaresSplit(price,count,percentages){
  for(let n=pot-cents.reduce((a,b)=>a+b,0),i=0;i<n;i++)cents[order[i%4].i]++;
  return {claimedPot:pot/100,payout_q1:cents[0]/100,payout_half:cents[1]/100,payout_q3:cents[2]/100,payout_final:cents[3]/100};
 }
+async function squareAutoDraw(DB,pid,boardId){
+  const config=await squareConfig(DB,pid,boardId);
+  await DB.prepare("UPDATE squares_boards SET numbers_away=?,numbers_home=?,status='LOCKED' WHERE id=? AND pool_id=? AND status='OPEN' AND (numbers_away IS NULL OR numbers_away='[]' OR numbers_away='') AND (julianday(kickoff)<=julianday(?) OR (SELECT COUNT(*) FROM squares_claims WHERE board_id=squares_boards.id)>=?)")
+    .bind(JSON.stringify(shuffledDigits()),JSON.stringify(shuffledDigits()),boardId,pid,new Date().toISOString(),config.size).run();
+  return DB.prepare("SELECT * FROM squares_boards WHERE id=? AND pool_id=?").bind(boardId,pid).first();
+}
 async function squaresState(DB,pid,viewer,role){
   const boards=(await DB.prepare("SELECT * FROM squares_boards WHERE pool_id=? ORDER BY id DESC").bind(pid).all()).results||[];
   const players=role==="admin"?((await DB.prepare("SELECT name FROM pool_players WHERE pool_id=? ORDER BY lower(name)").bind(pid).all()).results||[]).map(x=>x.name):[];
   const out=[];
-  for(const b of boards){
+  for(let b of boards){
+    if(String(b.status)==="OPEN")b=await squareAutoDraw(DB,pid,b.id);
     const config=await squareConfig(DB,pid,b.id);
     const claims=(await DB.prepare("SELECT square_index,player_name,paid,claimed_at FROM squares_claims WHERE board_id=? ORDER BY square_index").bind(b.id).all()).results||[];
     const awayNums=numArray(b.numbers_away),homeNums=numArray(b.numbers_home);
@@ -2662,16 +2669,17 @@ export async function onRequest(context){
       const at=new Date().toISOString();
       try{const saved=await DB.prepare("INSERT INTO squares_claims(board_id,square_index,player_name,paid,claimed_at) SELECT ?,CAST(value AS INTEGER),?,0,? FROM json_each(?) WHERE EXISTS(SELECT 1 FROM squares_boards WHERE id=? AND pool_id=? AND status='OPEN' AND (numbers_away IS NULL OR numbers_away='[]' OR numbers_away='') AND kickoff>?)").bind(boardId,player,at,JSON.stringify(indices),boardId,pid,at).run();if(!saved.meta?.changes)return json({error:"This board closed before your save. No squares were saved."},409)}
       catch(e){return json({error:"A selected square is no longer available. No squares in this request were saved. Refresh and choose again."},409)}
+      await squareAutoDraw(DB,pid,boardId);
       return json({ok:true,player,squareIndices:indices,savedAt:at});
     }
     if(path==="squares/unclaim"&&method==="POST")return json({error:"Saved squares are final and cannot be changed or released."},409);
     if(path==="squares/draw"&&method==="POST"){
       if(s.role!=="admin")return json({error:"Commissioner only."},403);
       const boardId=Number(body.boardId),b=await DB.prepare("SELECT * FROM squares_boards WHERE id=? AND pool_id=?").bind(boardId,pid).first();if(!b)return json({error:"Board not found."},404);
-      if(String(b.status)!=="OPEN"||numArray(b.numbers_away).length||!Number.isFinite(Date.parse(b.kickoff))||Date.now()>=Date.parse(b.kickoff))return json({error:"Numbers must be drawn once before kickoff."},409);
-      const away=shuffledDigits(),home=shuffledDigits();
-      const drawn=await DB.prepare("UPDATE squares_boards SET numbers_away=?,numbers_home=?,status='LOCKED' WHERE id=? AND pool_id=? AND status='OPEN' AND (numbers_away IS NULL OR numbers_away='[]' OR numbers_away='')").bind(JSON.stringify(away),JSON.stringify(home),boardId,pid).run();
-      if(!drawn.meta?.changes)return json({error:"Numbers have already been drawn."},409);return json({ok:true,awayNums:away,homeNums:home});
+      if(String(b.status)!=="OPEN")return json({error:"Numbers have already been drawn."},409);
+      const drawn=await squareAutoDraw(DB,pid,boardId);
+      if(String(drawn.status)==="OPEN")return json({error:"Numbers draw automatically when the board fills or at kickoff, whichever comes first."},409);
+      return json({ok:true,awayNums:numArray(drawn.numbers_away),homeNums:numArray(drawn.numbers_home)});
     }
     if(path==="squares/paid"&&method==="POST"){
       if(s.role!=="admin")return json({error:"Commissioner only."},403);

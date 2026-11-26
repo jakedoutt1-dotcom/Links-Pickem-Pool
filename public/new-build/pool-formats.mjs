@@ -31,7 +31,7 @@ function squares(){
  if(!board){root.innerHTML+='<section class="format-card format-empty"><h2>The first board is on its way</h2><p>Your commissioner creates a board for an NFL game. Once it opens, select an available square.</p></section>';return}
  const pending=pendingSquares.get(boardId)||new Set();pendingSquares.set(boardId,pending);for(const claim of board.claims||[])pending.delete(claim.square_index);
  const open=data.active&&board.status==='OPEN'&&!board.awayNums?.length&&Date.now()<Date.parse(board.kickoff),claims=board.claims||[],wins=Object.values(board.winners||{}).filter(Boolean);
- root.innerHTML+='<section class="format-card"><div class="format-columns"><div><span class="format-badge">'+esc(board.status)+' · '+size+' squares</span><h2>'+esc(board.title)+'</h2><p>'+esc(new Date(board.kickoff).toLocaleString())+'</p></div><div class="format-stat">Per square<b>'+money(board.price)+'</b></div><div class="format-stat">Claimed<b>'+claims.length+' / '+size+'</b></div><div class="format-stat">Claimed pot<b>'+money(board.price*claims.length)+'</b></div></div><p class="format-muted">'+(open?'Choose available squares, then press Save squares. Nothing is reserved until saved. Saved squares cannot be changed or released.':'Selections are locked. Quarter winners use the last digit of each cumulative score; final includes overtime.')+'</p></section>';
+ root.innerHTML+='<section class="format-card"><div class="format-columns"><div><span class="format-badge">'+esc(board.status)+' · '+size+' squares</span><h2>'+esc(board.title)+'</h2><p>'+esc(new Date(board.kickoff).toLocaleString())+'</p></div><div class="format-stat">Per square<b>'+money(board.price)+'</b></div><div class="format-stat">Claimed<b>'+claims.length+' / '+size+'</b></div><div class="format-stat">Claimed pot<b>'+money(board.price*claims.length)+'</b></div></div><p class="format-muted">'+(open?'Numbers draw automatically when every square is claimed, or at kickoff, whichever comes first. Payments do not delay the draw. Once drawn, selections are locked. Choose available squares, then press Save squares. Nothing is reserved until saved. Saved squares cannot be changed or released.':'Selections are locked. Quarter winners use the last digit of each cumulative score; final includes overtime.')+'</p></section>';
  root.innerHTML+=window.LINKS_SQUARE_WINNERS.panel(board.winners,board);
  if(view==='results'){
   root.innerHTML+='<section class="format-card"><h2>Quarter winners</h2>'+rowsTable(['Period','Winning square','Player','Amount'],[['q1','First quarter','payout_q1'],['half','Halftime','payout_half'],['q3','Third quarter','payout_q3'],['final','Final / overtime','payout_final']].map(([key,label,amount])=>{const w=board.winners?.[key];return [label,w?'#'+(w.squareIndex+1)+' ('+w.awayDigit+'–'+w.homeDigit+')':'Pending',w?esc(w.player):'Awaiting result',money(board[amount])]}))+'<p class="format-muted">'+(board.payoutPercentages?'Automatic split: '+board.payoutPercentages.join('% / ')+'%. Based on claimed squares, whether marked paid or unpaid. ':'Fixed amounts set by commissioner. ')+'An unclaimed winning square has no player. Payment flags track payments; they do not change ownership.</p></section>';return;
@@ -75,8 +75,8 @@ function squaresAdmin(board){
  root.querySelector('#manageBoard').onchange=e=>{boardId=Number(e.target.value);draw()};
  if(!board)return;
  const panel=root.querySelector('#boardManagement'),open=data.active&&board.status==='OPEN'&&!board.awayNums?.length&&Date.now()<Date.parse(board.kickoff);
- panel.innerHTML='<p>'+esc(board.title)+' • '+esc(board.status)+'</p><div class="format-actions"><button id="drawNumbers" '+(!open?'disabled':'')+'>Draw and lock numbers</button><button id="deleteBoard" '+(!data.active?'disabled':'')+'>Delete board</button></div><form id="assignSquare" class="format-form"><h3>Claim a square for a player</h3><label>Player<select id="squarePlayer">'+(data.players||[]).map(p=>'<option>'+esc(p)+'</option>').join('')+'</select></label><label>Square number (1–'+(board.size||100)+')<input id="squareNumber" type="number" min="1" max="'+(board.size||100)+'" required></label><button '+(!open?'disabled':'')+'>Claim square</button></form><h3>Claims and payments</h3>'+rowsTable(['Square','Player','Paid','Action'],(board.claims||[]).map(c=>['#'+(c.square_index+1),esc(c.player_name),'<input type="checkbox" aria-label="Paid for square '+(c.square_index+1)+'" data-paid="'+c.square_index+'" '+(c.paid?'checked':'')+' '+(!data.active?'disabled':'')+'>','<button data-release="'+c.square_index+'" '+(!open?'disabled':'')+'>Release</button>']));
- panel.querySelector('#drawNumbers').onclick=()=>{if(confirm('Randomly draw the numbers and permanently close selections for this board? '+(board.claims||[]).length+' of '+(board.size||100)+' squares are claimed.'))mutate('draw',{boardId})};
+ panel.innerHTML='<p>Numbers draw automatically when every square is claimed, or at kickoff, whichever comes first. Payments do not delay the draw. Once drawn, selections are locked.</p><p>'+esc(board.title)+' • '+esc(board.status)+'</p><div class="format-actions"><button id="deleteBoard" '+(!data.active?'disabled':'')+'>Delete board</button></div><form id="assignSquare" class="format-form"><h3>Claim a square for a player</h3><label>Player<select id="squarePlayer">'+(data.players||[]).map(p=>'<option>'+esc(p)+'</option>').join('')+'</select></label><label>Square number (1–'+(board.size||100)+')<input id="squareNumber" type="number" min="1" max="'+(board.size||100)+'" required></label><button '+(!open?'disabled':'')+'>Claim square</button></form><h3>Claims and payments</h3>'+rowsTable(['Square','Player','Paid','Action'],(board.claims||[]).map(c=>['#'+(c.square_index+1),esc(c.player_name),'<input type="checkbox" aria-label="Paid for square '+(c.square_index+1)+'" data-paid="'+c.square_index+'" '+(c.paid?'checked':'')+' '+(!data.active?'disabled':'')+'>','<button data-release="'+c.square_index+'" '+(!open?'disabled':'')+'>Release</button>']));
+
  panel.querySelector('#deleteBoard').onclick=()=>{if(confirm('Delete this board, all its claims and its results?'))mutate('delete',{boardId})};
  panel.querySelector('#assignSquare').onsubmit=e=>{e.preventDefault();mutate('claim',{boardId,squareIndex:Number(panel.querySelector('#squareNumber').value)-1,playerName:panel.querySelector('#squarePlayer').value})};
  panel.querySelectorAll('[data-paid]').forEach(e=>e.onchange=()=>mutate('paid',{boardId,squareIndex:Number(e.dataset.paid),paid:e.checked}));
@@ -144,4 +144,19 @@ async function start(){
  await load();
 }
 void start();
-const timer=setInterval(()=>{if(!document.hidden&&!busy&&view==='results')load()},60000);window.addEventListener('pagehide',()=>clearInterval(timer),{once:true});
+async function refreshSquares(){
+ if(busy||document.hidden||view!=='play'||document.querySelector('dialog[open]'))return;
+ busy=true;
+ try{
+  const next=await api();
+  if(JSON.stringify(next.boards)!==JSON.stringify(data?.boards)){
+   const x=window.scrollX,y=window.scrollY,scrolls=[...root.querySelectorAll('.format-scroll')].map(e=>[e.scrollLeft,e.scrollTop]);
+   data=next;draw();
+   root.querySelectorAll('.format-scroll').forEach((e,i)=>{if(scrolls[i]){e.scrollLeft=scrolls[i][0];e.scrollTop=scrolls[i][1]}});window.scrollTo(x,y);
+  }
+ }catch{ /* Keep the current board and retry on the next refresh. */ }
+ finally{busy=false}
+}
+const timer=setInterval(()=>{if(game==='squares'&&view==='play')void refreshSquares();else if(!document.hidden&&!busy&&view==='results')void load()},game==='squares'?10000:60000);
+window.addEventListener('pagehide',()=>clearInterval(timer),{once:true});
+document.addEventListener('visibilitychange',()=>{if(game==='squares'&&!document.hidden)void refreshSquares()});

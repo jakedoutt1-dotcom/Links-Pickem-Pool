@@ -9,6 +9,7 @@ for(const size of [25,50,100])test('Squares '+size+': persisted layout, bounded 
   let board=(await call('squares')).boards.find(b=>b.id===id);assert.equal(board.size,size);assert.equal(board.columns,size===25?5:10);assert.equal(board.rows,size/board.columns);
   assert.equal((await call('squares','claim',{boardId:id,squareIndices:[0,size],confirmed:true})).status,400);assert.equal(db.raw.prepare('SELECT COUNT(*) n FROM squares_claims WHERE board_id=?').get(id).n,0,'Invalid multi-claim saves nothing');
   assert.equal((await call('squares','claim',{boardId:id,squareIndices:[size-1],confirmed:true})).status,200);
+  db.raw.prepare("UPDATE squares_boards SET kickoff='2020-01-01' WHERE id=?").run(id);
   const drawn=await call('squares','draw',{boardId:id},'admin');assert.equal(drawn.status,200);assert.equal(new Set(drawn.awayNums).size,10);assert.equal(new Set(drawn.homeNums).size,10);
   vm.runInContext('globalThis.matchSquare=squareWinner',runtime);const hits=new Map();
   for(let away=0;away<10;away++)for(let home=0;home<10;home++){const result=runtime.matchSquare([],drawn.awayNums,drawn.homeNums,away,home,size);assert(result.squareIndex>=0&&result.squareIndex<size);hits.set(result.squareIndex,(hits.get(result.squareIndex)||0)+1)}
@@ -19,7 +20,7 @@ for(const size of [25,50,100])test('Squares '+size+': persisted layout, bounded 
 });
 test('Squares rejects unsupported sizes and reads legacy 100-square layouts/splits',async()=>{
  const {db,call}=fixture();try{
-  for(const size of [0,30,250,'bad'])assert.equal((await call('squares','boards',{week:1,eventId:'one',size},'admin')).status,400);
+  for(const size of [0,30,250,'bad'])assert.equal((await call('squares','boards',{week:1,eventId:'one',size,price:10},'admin')).status,400);
   const made=await call('squares','boards',{week:1,eventId:'one',price:1},'admin');
   await db.prepare('UPDATE pool_settings SET value=? WHERE pool_id=1 AND key=?').bind('[25,25,25,25]','squares_split_'+made.id).run();
   let board=(await call('squares')).boards[0];assert.equal(board.size,100);assert.equal(board.columns,10);assert.deepEqual(board.payoutPercentages,[25,25,25,25]);
@@ -36,6 +37,7 @@ test('Squares complete lifecycle: create, save/immutable claims, duplicate, draw
  assert.equal((await call('squares','unclaim',{boardId:id,squareIndex:12},'bob')).status,409);
  assert.equal((await call('squares','unclaim',{boardId:id,squareIndex:12})).status,409);
  assert.equal((await call('squares','claim',{boardId:id,squareIndices:[12],confirmed:true})).status,409);
+ db.raw.prepare("UPDATE squares_boards SET kickoff='2020-01-01' WHERE id=?").run(id);
  result=await call('squares','draw',{boardId:id},'admin');assert.equal(result.status,200);assert.equal(new Set(result.awayNums).size,10);
  assert.equal((await call('squares','draw',{boardId:id},'admin')).status,409);
  assert.equal((await call('squares','unclaim',{boardId:id,squareIndex:12})).status,409);
@@ -101,3 +103,31 @@ test('Squares explicit confirmation, immutable ownership, and atomic collision h
  assert.equal((await call('squares','delete',{boardId:id},'admin')).status,409);
  assert.equal((await call('squares','claim',{boardId:id,squareIndices:[3],confirmed:true})).status,200);
  }finally{db.raw.close()}});
+
+for(const size of [25,50,100])test('Squares '+size+': automatically locks on last unpaid claim, never redraws',async()=>{
+ const {db,call}=fixture();try{
+  const {id}=await call('squares','boards',{week:1,eventId:'one',size,price:10},'admin');
+  assert.equal((await call('squares','draw',{boardId:id},'admin')).status,409);
+  await call('squares','claim',{boardId:id,squareIndices:Array.from({length:size-1},(_,i)=>i),confirmed:true});
+  assert.equal((await call('squares')).boards[0].awayNums.length,0);
+  assert.equal((await call('squares','claim',{boardId:id,squareIndices:[size-1],confirmed:true},'bob')).status,200);
+  const stored=db.raw.prepare('SELECT * FROM squares_boards WHERE id=?').get(id);assert.equal(stored.status,'LOCKED');
+  const states=await Promise.all([call('squares'),call('squares')]);
+  for(const state of states){assert.equal(JSON.stringify(state.boards[0].awayNums),stored.numbers_away);assert.equal(new Set(state.boards[0].awayNums).size,10);assert.equal(new Set(state.boards[0].homeNums).size,10)}
+  assert(states[0].boards[0].claims.every(c=>!c.paid));
+  await call('squares','paid',{boardId:id,squareIndex:0,paid:true},'admin');
+  assert.equal(JSON.stringify((await call('squares')).boards[0].awayNums),stored.numbers_away);
+ }finally{db.raw.close()}
+});
+test('Squares empty and partially filled boards draw once at kickoff on a player visit',async()=>{
+ const {db,call}=fixture();try{
+  for(const count of [0,1]){
+   const {id}=await call('squares','boards',{week:1,eventId:'one',size:25,price:10},'admin');
+   if(count)await call('squares','claim',{boardId:id,squareIndices:[0],confirmed:true});
+   db.raw.prepare("UPDATE squares_boards SET kickoff='2020-01-01' WHERE id=?").run(id);
+   assert.equal((await call('squares','claim',{boardId:id,squareIndices:[1],confirmed:true})).status,409);
+   const a=(await call('squares')).boards.find(b=>b.id===id),b=(await call('squares')).boards.find(b=>b.id===id);
+   assert.equal(a.status,'LOCKED');assert.equal(a.awayNums.length,10);assert.deepEqual(a.awayNums,b.awayNums);assert.equal(a.claims.length,count);
+  }
+ }finally{db.raw.close()}
+});
