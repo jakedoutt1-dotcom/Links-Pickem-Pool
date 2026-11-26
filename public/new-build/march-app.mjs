@@ -1,9 +1,11 @@
+import {mountBracketLines} from './march-bracket-view.mjs?v=rounds1';
 import {REGIONS,POINTS,ROUNDS,teamMap,entrants,cleanPicks,selectTeam,scoreBracket,rankEntries,validTie,demoTournament} from './march-core.mjs';
 const $=id=>document.getElementById(id), escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const q=new URLSearchParams(location.search), pool=q.get('pool')||'', demo=!pool;
 const currentYear=new Date().getFullYear(), nextSeason=currentYear+(new Date().getMonth()>=6?1:0);
 let season=Number(q.get('season'))||nextSeason, view=['bracket','scores','standings','rules'].includes(q.get('view'))?q.get('view'):'bracket';
 let data=null,picks={},tie=null,version=0,submitted=false,savedAt=null,dirty=false,busy=false,region='East',round=1,viewing=null,scoreRound=1,clockOffset=0;
+let bracketLayout='bracket',cleanupBracket=()=>{};
 const practiceKey='links-march-bracket-practice-v2';
 const logo=team=>team?.logo&&/^https:\/\/a\.espncdn\.com\//.test(team.logo)?'<img src="'+escape(team.logo)+'" alt="" loading="lazy">':'';
 const numberPicks=()=>Object.keys(picks).length;
@@ -56,7 +58,7 @@ function navigation() {
 }
 function empty(title,description,action='') {return '<section class="empty-panel"><span class="eyebrow">THE ROAD TO THE FINAL FOUR</span><h2>'+title+'</h2><p>'+description+'</p>'+action+'</section>';}
 function render() {
-  navigation();
+  cleanupBracket();navigation();
   if(view==='rules')return renderRules();
   if(!data.tournament){$('content').innerHTML=empty('Your next March starts here.','The '+season+' bracket will open after the tournament field and official regional paths are confirmed. LINKS opens it automatically—no commissioner setup is needed. Play-in teams must be resolved before entries open. Until then, explore the practice bracket.','<a href="./march-madness.html?demo=1">Try a practice bracket →</a>');return;}
   if(view==='scores')return renderScores();
@@ -69,15 +71,17 @@ function summary(displayPicks) {
 }
 function matchMarkup(game,displayPicks,stats,teams) {
   const ids=entrants(game,displayPicks),ready=ids.every(Boolean),result=data.tournament.results[game.id],pick=displayPicks[game.id],state=stats.states[game.id];
-  return '<div class="match" data-round="'+game.round+'">'+ids.map((id,index)=>{
+  const index=Number(game.id.split('-').at(-1)),span=2**(game.round>4?game.round-4:game.round);
+  return '<div class="match" data-match="'+game.id+'" data-round="'+game.round+'" style="--slot-start:'+(index*span+1)+';--slot-span:'+span+'">'+ids.map((id,index)=>{
     const team=teams[id],selected=pick===id&&!!id;
     const outcome=id&&result?.completed&&result.winner?(id===result.winner?'winner':result.teams?.some(t=>t.id===id)?'loser':'eliminated'):'';
     const outcomeLabel=outcome==='winner'?'Winner':outcome==='loser'?'Lost':outcome==='eliminated'?'Eliminated':'';
-    const placeholder=game.round===5?game.sources[index].split('-')[0]+' champion':game.round===6?'Semifinal '+(index+1)+' winner':'Pick previous round';
-    return '<button class="team '+(!id?'placeholder':'')+(selected?' selected '+state:'')+(outcome?' result-'+outcome:'')+'" data-game="'+game.id+'" data-team="'+escape(id||'')+'" aria-pressed="'+selected+'" aria-label="'+escape(team?team.name+', seed '+team.seed+', '+ROUNDS[game.round-1]+(selected?', selected':'')+(outcomeLabel?', '+outcomeLabel:''):placeholder)+'" '+(!ready||!canEdit()?'disabled':'')+'><span class="seed">'+(team?.seed||'—')+'</span>'+logo(team)+'<span class="name">'+escape(team?.name||placeholder)+(selected?'<small class="your-pick-label">'+(viewing?'Their pick':'Your pick')+'</small>':'')+(outcomeLabel?'<small class="outcome-label">'+outcomeLabel+'</small>':'')+'</span><span class="pick-mark">'+(selected?(state==='correct'?'✓':['incorrect','eliminated'].includes(state)?'×':'✓'):'')+'</span></button>';
+    const placeholder=game.round===5?game.sources[index].split('-')[0]+' champion':game.round===6?'Semifinal '+(index+1)+' winner':game.round>1?ROUNDS[game.round-2]+' game '+(Number(game.sources[index].split('-').at(-1))+1)+' winner':'Team not set';
+    return '<button class="team '+(!id?'placeholder':'')+(selected?' selected '+state:'')+(outcome?' result-'+outcome:'')+'" data-game="'+game.id+'" data-team="'+escape(id||'')+'" aria-pressed="'+selected+'" aria-label="'+escape(team?team.name+', seed '+team.seed+', '+ROUNDS[game.round-1]+(selected?', selected':'')+(outcomeLabel?', '+outcomeLabel:''):placeholder)+'" '+(!ready||!canEdit()?'disabled':'')+'><span class="seed">'+(team?.seed||'—')+'</span>'+logo(team)+'<span class="name">'+escape(team?.name||placeholder)+(team&&game.round>1?'<small class="march-source">'+escape(placeholder)+'</small>':'')+(selected?'<small class="your-pick-label">'+(viewing?'Their pick':'Your pick')+'</small>':'')+(outcomeLabel?'<small class="outcome-label">'+outcomeLabel+'</small>':'')+'</span><span class="pick-mark">'+(selected?(state==='correct'?'✓':['incorrect','eliminated'].includes(state)?'×':'✓'):'')+'</span></button>';
   }).join('')+(result?.completed?'<div class="match-result"><b>FINAL</b> · '+escape(teams[result.winner]?.name||'Result pending')+(pick&&result.winner?' · '+(state==='correct'?'Correct +'+POINTS[game.round-1]:'Incorrect'):'')+'</div>':'')+'</div>';
 }
 function renderBracket() {
+  cleanupBracket();const horizontal=$('content').querySelector('.march-board-viewport')?.scrollLeft||0;
   const t=data.tournament,displayPicks=viewing?.picks||picks,teams=teamMap(t.games),stats=scoreBracket(t.games,displayPicks,t.results);
   const rounds=region==='Final Four'?[5,6]:[1,2,3,4];
   if(!rounds.includes(round))round=rounds[0];
@@ -86,10 +90,13 @@ function renderBracket() {
   $('content').innerHTML=(viewing?'<div class="review-banner"><strong>Viewing '+escape(viewing.player)+'’s bracket</strong><button id="myBracket">Back to my bracket</button></div>':'')+summary(displayPicks)+
     '<div class="bracket-toolbar"><div><h2>'+escape(viewing?.player||'Your road to the title')+'</h2><p id="deadline">'+(demo?'Sample field · Practice as often as you like':closed()?'Locked · '+dateText(t.lockAt):'All picks lock '+dateText(t.lockAt))+'</p></div><div class="toolbar-actions">'+(canEdit()?'<button id="nextPick">Next unpicked game →</button><button id="reset">Reset bracket</button>':'')+(demo?'':'<button id="reloadSaved" '+(busy?'disabled':'')+'>Reload saved bracket</button>')+(demo?'<button id="demoResults">'+(Object.keys(t.results).length?'Clear sample results':'Preview sample results')+'</button>':'')+'</div></div>'+
     '<div class="region-nav" aria-label="Bracket region">'+[...REGIONS,'Final Four'].map(r=>{const gs=t.games.filter(g=>g.region===r),n=gs.filter(g=>displayPicks[g.id]).length;return '<button data-region="'+r+'" class="'+(region===r?'active':'')+'" aria-pressed="'+(region===r)+'">'+r+'<small>'+n+' / '+gs.length+' picks</small></button>';}).join('')+'</div>'+
-    '<div class="mobile-round"><label for="roundSelect">Round</label><select id="roundSelect">'+rounds.map(r=>'<option value="'+r+'" '+(round===r?'selected':'')+'>'+ROUNDS[r-1]+'</option>').join('')+'</select><button id="nextRound">Next →</button></div>'+
-    '<section class="bracket-board '+(region==='Final Four'?'national':'')+'" aria-label="'+region+' bracket">'+rounds.map(r=>'<section class="round-column '+(round===r?'mobile-active':'')+'"><h3 class="round-title">'+ROUNDS[r-1]+' <span>'+POINTS[r-1]+' PTS</span></h3><div class="round-matches">'+t.games.filter(g=>g.region===region&&g.round===r).map(g=>matchMarkup(g,displayPicks,stats,teams)).join('')+'</div></section>').join('')+'</section>'+
+    '<div class="march-layout-nav" aria-label="Bracket layout"><button type="button" data-layout="bracket" aria-pressed="'+(bracketLayout==='bracket')+'">Bracket view</button><button type="button" data-layout="rounds" aria-pressed="'+(bracketLayout==='rounds')+'">Round by round</button></div><p class="march-layout-help">'+(bracketLayout==='bracket'?'Follow the lines toward the regional champion. Swipe sideways for later rounds.':'Choose a round below to follow your advancing teams.')+'</p><div class="mobile-round" data-layout="'+bracketLayout+'"><label for="roundSelect">Round</label><select id="roundSelect">'+rounds.map(r=>'<option value="'+r+'" '+(round===r?'selected':'')+'>'+ROUNDS[r-1]+'</option>').join('')+'</select><button id="nextRound">Next →</button></div>'+
+    '<div class="march-board-viewport" data-layout="'+bracketLayout+'" tabindex="0" aria-label="'+region+' bracket — scroll sideways for later rounds"><section class="bracket-board '+(region==='Final Four'?'national':'')+'" aria-label="'+region+' bracket"><svg class="march-connections" aria-hidden="true"></svg>'+rounds.map(r=>'<section class="round-column '+(round===r?'mobile-active':'')+'" data-round="'+r+'"><h3 class="round-title">'+ROUNDS[r-1]+' <span>'+POINTS[r-1]+' PTS</span></h3><div class="round-matches">'+t.games.filter(g=>g.region===region&&g.round===r).map(g=>matchMarkup(g,displayPicks,stats,teams)).join('')+'</div></section>').join('')+'</section></div>'+
     '<div class="bracket-bottom"><div class="legend"><span>✓ Selected</span><span class="yes">✓ Correct</span><span class="no">× Incorrect / eliminated</span></div><span>Changing a winner clears affected later picks.</span></div>'+
     '<section class="submission"><div><h3 id="saveStatus" class="'+(!dirty&&submitted?'saved-tag':'')+'">'+(viewing?'Submitted bracket':escape(status))+'</h3><p>'+count+' of 63 picks'+(savedAt&&!viewing?' · Saved '+dateText(savedAt):'')+'</p><p>'+(closed()?'The entry deadline has passed.':demo?'Practice saves stay on this device.':'Save a draft as you go. Submit your completed bracket before the deadline.')+'</p></div><div class="tie-field"><label for="tie">Championship combined score</label><input id="tie" type="number" inputmode="numeric" min="0" max="400" step="1" placeholder="e.g. 145" value="'+escape(viewing?.tie??tie??'')+'" '+(!canEdit()?'disabled':'')+'><small>Tiebreaker: both teams’ final scores added together.</small></div><div class="submit-actions">'+(!viewing&&!closed()?'<button id="saveDraft" '+(busy?'disabled':'')+'>Save draft</button><button id="submit" class="primary" '+(busy?'disabled':'')+'>Submit bracket</button>':'<span class="badge">READ ONLY</span>')+'</div></section>';
+  $('content').querySelector('.march-board-viewport').scrollLeft=horizontal;
+  cleanupBracket=mountBracketLines($('content'),t.games,displayPicks,bracketLayout);
+  $('content').querySelectorAll('.march-layout-nav [data-layout]').forEach(b=>b.onclick=()=>{bracketLayout=b.dataset.layout;renderBracket()});
   $('content').querySelectorAll('[data-region]').forEach(b=>b.onclick=()=>{region=b.dataset.region;round=region==='Final Four'?5:1;renderBracket();});
   $('roundSelect').onchange=e=>{round=Number(e.target.value);renderBracket();};
   $('nextRound').onclick=()=>{const i=rounds.indexOf(round);if(i===rounds.length-1){const all=[...REGIONS,'Final Four'];region=all[(all.indexOf(region)+1)%all.length];round=region==='Final Four'?5:1;}else round=rounds[i+1];renderBracket();};
@@ -152,3 +159,5 @@ setInterval(()=>{if(!data)return;const isClosed=closed();if(isClosed&&!wasClosed
 await load();
 
 const autoRefresh=setInterval(()=>{if(!demo&&!document.hidden&&!busy&&!dirty&&data&&!data.tournament)void load()},60000);window.addEventListener('pagehide',()=>clearInterval(autoRefresh),{once:true});
+
+window.addEventListener('pagehide',()=>cleanupBracket(),{once:true});

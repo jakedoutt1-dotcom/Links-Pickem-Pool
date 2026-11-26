@@ -21,6 +21,7 @@ try{
   await page.goto(base+'/new-build/march-madness.html?demo=1');
   await page.getByRole('heading',{name:'Your road to the title'}).waitFor();
   assert.equal(await page.locator('.round-column').count(),4);
+  assert.equal(await page.locator('.round-title').evaluateAll(nodes=>new Set(nodes.map(n=>getComputedStyle(n).color)).size),4);await page.waitForFunction(()=>document.querySelectorAll('.march-connections path').length===14);const y=await page.locator('[data-match]').evaluateAll(nodes=>Object.fromEntries(nodes.map(n=>[n.dataset.match,n.getBoundingClientRect().top+n.getBoundingClientRect().height/2])));assert.ok(Math.abs(y['East-2-0']-(y['East-1-0']+y['East-1-1'])/2)<3,'Next round centers between its feeder games');
   assert.equal(await page.locator('[data-game="East-2-0"]:enabled').count(),0);
   await page.locator('[data-game="East-1-0"]').first().click();
   await page.locator('[data-game="East-1-1"]').first().click();
@@ -53,13 +54,13 @@ try{
   phone.on('pageerror',e=>errors.push(e.message));
   await phone.goto(base+'/new-build/march-madness.html?demo=1');
   await phone.getByRole('heading',{name:'Your road to the title'}).waitFor();
-  assert.equal(await phone.locator('.round-column:visible').count(),1);
+  assert.equal(await phone.locator('.round-column:visible').count(),4);await phone.waitForFunction(()=>document.querySelectorAll('.march-connections path').length===14);await phone.getByRole('button',{name:'Round by round',exact:true}).click();assert.equal(await phone.locator('.round-column:visible').count(),1);
   assert.ok(await phone.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await phone.locator('[data-game="East-1-0"]').first().click();
   await phone.locator('[data-game="East-1-1"]').first().click();
   await phone.locator('#roundSelect').selectOption('2');
   await phone.locator('[data-game="East-2-0"]').first().click();
-  await phone.screenshot({path:resolve(output,'march-mobile.png'),fullPage:true});
+  await phone.getByRole('button',{name:'Bracket view',exact:true}).click();assert.equal(await phone.locator('[data-game="East-2-0"][aria-pressed=true]').count(),1);await phone.screenshot({path:resolve(output,'march-mobile.png'),fullPage:true});
   // Pool screens use mocked server responses; never write to production.
   const t=demoTournament();t.season=new Date().getFullYear()+1;t.lockAt=new Date(Date.now()+86400000).toISOString();t.checkedAt=new Date().toISOString();
   const response={pool:{id:1,name:'Links Test Pool'},player:'Jake',role:'admin',tournament:t,revision:1,entry:null,rows:[],submittedCount:2,serverNow:new Date().toISOString(),closed:false};
