@@ -1,4 +1,4 @@
-import {mountCfpContenders} from './cfp-contenders.mjs';
+import {mountCfpContenders} from './cfp-contenders.mjs?v=standings1';
 import {cfpSeason,pickClosed,CFP_RULES,gradePlayoff} from './cfp-core.mjs';
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const q=new URLSearchParams(location.search),demo=q.get('demo')==='1';let selected={};try{selected=JSON.parse(localStorage.getItem('links-current-pool')||'{}')}catch{}
