@@ -1,6 +1,6 @@
 import {mountCfpContenders} from './cfp-contenders.mjs?v=standings2';
-import {mountBracket} from './cfp-bracket-ui.mjs?v=bracket1';
-import {SLOTS,participants,BRACKET_RULES,bracketStandings} from './cfp-bracket-core.mjs?v=bracket1';
+import {mountBracket} from './cfp-bracket-ui.mjs?v=autofield1';
+import {SLOTS,participants,BRACKET_RULES,bracketStandings} from './cfp-bracket-core.mjs?v=autofield1';
 import {cfpSeason} from './cfp-core.mjs';
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const q=new URLSearchParams(location.search),demo=q.get('demo')==='1';let selected={};try{selected=JSON.parse(localStorage.getItem('links-current-pool')||'{}')}catch{}
@@ -19,7 +19,7 @@ async function api(body){
 }
 function render(){
  $('identity').textContent=(demo?'Demo playoff pool — illustrative teams and seeds':selected.name||'College playoff pool')+' — '+data.player;
- const views={picks:'Full bracket',scores:'Live scores',standings:'Standings',...(data.admin?{admin:'Admin'}:{})};$('tabs').innerHTML=Object.entries(views).map(([key,label])=>'<button data-view="'+key+'" class="'+(view===key?'active':'')+'">'+label+'</button>').join('');$('tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{if(busy)return;view=b.dataset.view;render()});
+ const views={picks:'Full bracket',scores:'Live scores',standings:'Standings'};$('tabs').innerHTML=Object.entries(views).map(([key,label])=>'<button data-view="'+key+'" class="'+(view===key?'active':'')+'">'+label+'</button>').join('');$('tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{if(busy)return;view=b.dataset.view;render()});
  if(mountBracket({root:$('content'),data,view,api,reload:load,demo}))return;
  $('content').innerHTML='<h2>Official playoff results</h2>'+(data.games.length?data.games.map(g=>'<article class="cfp-entry"><h3>'+esc(g.title)+'</h3><p>'+esc(g.away.name)+' '+esc(g.away.score??'')+' vs. '+esc(g.home.name)+' '+esc(g.home.score??'')+'</p><p>'+esc(g.status)+' · '+esc(new Date(g.start).toLocaleString())+'</p></article>').join(''):'<p>No playoff schedule is posted yet.</p>')+(demo?'<button id="demoResults">'+(demoFinal?'Reset demo results':'Simulate final results')+'</button>':'');
  if($('demoResults'))$('demoResults').onclick=()=>{demoFinal=!demoFinal;void load()};
@@ -28,4 +28,4 @@ async function load(){if(busy)return;busy=true;$('message').textContent='Loading
 $('refresh').onclick=()=>void load();$('season').onchange=()=>{if(busy){$('season').value=season;return}season=Number($('season').value);demoEntry=null;demoFinal=false;void load()};
 if(demo||(pool&&token()))void load();else $('message').innerHTML='Sign in through <a href="./control-center.html">your Locker Room</a>, or <a href="./cfp.html?demo=1">try the demo</a>.';
 const timer=setInterval(()=>{if(data?.bracket?.config&&Date.now()>=Date.parse(data.bracket.config.deadline)){data.bracket.locked=true;$('content').querySelectorAll('#bracketSave button,#bracketSave input,[data-slot] button,[data-slot] select').forEach(b=>b.disabled=true);const note=$('bracketStatus');if(note)note.textContent='The entire bracket is locked. No more edits can be saved.';}},1000);
-const refreshTimer=setInterval(()=>{if(!document.hidden&&!busy&&['scores','standings'].includes(view))void load()},60000);window.addEventListener('pagehide',()=>{clearInterval(timer);clearInterval(refreshTimer)},{once:true});
+const refreshTimer=setInterval(()=>{if(!document.hidden&&!busy&&(['scores','standings'].includes(view)||!data?.bracket?.config))void load()},60000);window.addEventListener('pagehide',()=>{clearInterval(timer);clearInterval(refreshTimer)},{once:true});

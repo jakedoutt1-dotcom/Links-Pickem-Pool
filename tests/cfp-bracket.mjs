@@ -5,15 +5,16 @@ import {playoffFixture} from './helpers/cfp-bracket-fixture.mjs';
 import {onRequest} from '../functions/new-build/api/cfp.js';
 import {cfpSeason,normalizePlayoff} from '../public/new-build/cfp-core.mjs';
 import {SLOTS,cleanBracket,validateBracket,bracketStandings,bracketResults} from '../public/new-build/cfp-bracket-core.mjs';
+import {officialField} from '../functions/lib/cfp-auto-field.js';
 test('Full CFP bracket: official seeds, atomic entry, privacy, stale saves, full lock and tiebreaker',async()=>{
- const {db}=fixture(),old=globalThis.fetch,year=cfpSeason()+1,f=playoffFixture(year);db.raw.exec("INSERT INTO pool_active_games VALUES(1,'cfp',0,1,'2026-01-01')");globalThis.fetch=async()=>Response.json({events:f.events});
+ let ready=false;const {db}=fixture(),old=globalThis.fetch,year=cfpSeason()+1,f=playoffFixture(year);db.raw.exec("INSERT INTO pool_active_games VALUES(1,'cfp',0,1,'2026-01-01')");globalThis.fetch=async()=>Response.json({events:ready?f.events:[]});
  const call=async(body=null,token='alice')=>{const r=await onRequest({env:{DB:db},request:new Request('https://test/new-build/api/cfp?pool=1&season='+year,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token,Origin:'https://test'},...(body?{body:JSON.stringify({pool:1,season:year,...body})}:{})})});return {status:r.status,...await r.json()}};
  const setup={action:'bracketSetup',official:true,teams:f.teams},save={action:'bracketSave',picks:f.picks,guess:50,submit:true,version:0,revision:1};
  try{
-  assert.equal((await call()).bracket.config,null);assert.equal((await call(setup)).status,403);
-  assert.equal((await call({...setup,official:false},'admin')).status,400);
-  const wrong=structuredClone(f.teams);[wrong[4].id,wrong[5].id]=[wrong[5].id,wrong[4].id];assert.equal((await call({...setup,teams:wrong},'admin')).status,409);
-  assert.equal((await call(setup,'admin')).status,200);assert.equal((await call()).bracket.config.deadline,f.events[0].date);assert.equal((await call({action:'pick',eventId:'r8',team:'8',bonus:0,revision:0})).status,409,'Old per-game page cannot silently save a different contest');
+  assert.equal((await call()).bracket.config,null);ready=true;
+  let automatic=await call();assert.equal(automatic.bracket.config.teams.length,12,'A player visit opens the official bracket automatically');assert.equal(automatic.bracket.config.deadline,f.events[0].date);
+  assert.equal((await call(setup)).status,409);assert.equal((await call(setup,'admin')).status,409,'Commissioners cannot change official seeds');
+  assert.equal((await call({action:'pick',eventId:'r8',team:'8',bonus:0,revision:0})).status,409,'Old per-game page cannot silently save a different contest');
   assert.equal((await call({...save,picks:{r8:f.picks.r8},submit:false})).status,200);
   assert.equal((await call()).bracket.entry.submitted,0);assert.equal((await call()).bracket.standings.rows.find(r=>r.player==='Alice').submitted,false);
   assert.equal((await call(setup,'admin')).status,409,'Setup cannot invalidate a saved draft');assert.equal((await call(save)).status,409,'Old tab cannot overwrite draft');
@@ -36,4 +37,26 @@ test('Bracket paths, eliminated teams, shared ties, private guesses and no prema
  const before=bracketStandings(['A','B'],entries,f.teams,[],false);assert.equal(before.rows[0].guess,null);assert.equal(before.rows[1].rank,1);assert.equal(before.resolved,false);
  const losing=structuredClone(f.picks);losing.final.team='2';assert.equal(bracketStandings(['A'],[{...entries[0],picks:losing}],f.teams,games,true).rows[0].points,55);
  const rematch=structuredClone(games);rematch[0].title='Regular Bowl';assert.equal(bracketResults(f.teams,rematch).r8,undefined,'No guessing results from a different round');
+});
+test('Automatic field rejects weekly projections, missing teams, duplicate seeds, and mismatched first-round games',()=>{
+ const f=playoffFixture(2026),now=Date.parse('2026-12-07T20:00Z'),games=f.events.map(normalizePlayoff);
+ assert.equal(officialField(games,2026,null,now).teams.length,12,'Explicit schedule seeds open automatically');
+ const missing=structuredClone(games);missing[0].home.id='0';missing[0].tbd=true;assert.equal(officialField(missing,2026,null,now),null);
+ const conflicted=structuredClone(games);conflicted[4].home.seed=8;assert.equal(officialField(conflicted,2026,null,now),null);
+ const unseeded=structuredClone(games);for(const g of unseeded)for(const t of [g.home,g.away])t.seed=null;
+ const poll={type:'cfp',season:{year:2026},date:'2026-12-06T20:00Z',ranks:f.teams.map(t=>({current:t.seed===12?20:t.seed,team:{id:t.id,displayName:t.name},recordSummary:t.record}))};
+ assert.equal(officialField(unseeded,2026,{...poll,date:'2026-11-24T08:00Z'},now),null,'Weekly top 12 never become the official field');
+ assert.equal(officialField(unseeded,2026,{...poll,season:{year:2025}},now),null,'A stale season cannot open this bracket');
+ assert.equal(officialField(unseeded,2026,poll,Date.parse('2026-12-01')),null,'Future-dated rankings cannot open early');
+ const field=officialField(unseeded,2026,poll,now);assert.equal(field.teams.length,12);assert.equal(field.teams[11].id,'12');assert.equal(field.teams[11].rank,20,'A qualifying team outside the ranked top 12 retains its official seed');
+ const mismatch=structuredClone(unseeded);[mismatch[0].home,mismatch[0].away]=[mismatch[0].away,mismatch[0].home];assert.equal(officialField(mismatch,2026,poll,now),null,'Published host/visitor pairings must corroborate seeds');
+ const duplicate=structuredClone(poll);duplicate.ranks[1].current=1;assert.equal(officialField(unseeded,2026,duplicate,now),null);
+});
+test('A regular player opens an unseeded schedule from the final CFP poll with no admin action',async()=>{
+ const {db}=fixture(),old=globalThis.fetch,oldNow=Date.now,f=playoffFixture(2026);for(const e of f.events)for(const t of e.competitions[0].competitors)delete t.seed;
+ const poll={type:'cfp',season:{year:2026},date:'2026-12-06T20:00Z',ranks:f.teams.map(t=>({current:t.seed,team:{id:t.id,displayName:t.name},recordSummary:t.record}))};
+ db.raw.exec("INSERT INTO pool_active_games VALUES(1,'cfp',0,1,'2026-01-01')");Date.now=()=>Date.parse('2026-12-07T20:00Z');let pollCalls=0;
+ globalThis.fetch=async url=>{if(String(url).includes('/rankings')){pollCalls++;return Response.json({rankings:[poll]})}assert.equal(new URL(url).searchParams.get('week'),'999');return Response.json({events:f.events})};
+ const get=async()=>{const r=await onRequest({env:{DB:db},request:new Request('https://test/new-build/api/cfp?pool=1&season=2026',{headers:{Authorization:'Bearer alice'}})});assert.equal(r.status,200);return r.json()};
+ try{const state=await get();assert.equal(state.bracket.config.teams.length,12);assert.equal(state.bracket.locked,false);await get();assert.equal(pollCalls,1,'Published field persists without repeated ranking fetches');}finally{Date.now=oldNow;globalThis.fetch=old;db.raw.close()}
 });

@@ -4,7 +4,7 @@ import {poolGameKeys} from '../../lib/pool-games.js';
 import {cfpSeason,isPlayoff,normalizePlayoff,gradePlayoff,pickClosed} from '../../../public/new-build/cfp-core.mjs';
 const json=(v,status=200)=>Response.json(v,{status,headers:{'Cache-Control':'no-store'}}),fail=(message,status=400)=>Object.assign(Error(message),{status});
 export async function fetchPlayoffs(season){
- const url='https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?'+new URLSearchParams({groups:80,seasontype:3,dates:season+'1201-'+(season+1)+'0131',limit:1000});
+ const url='https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?'+new URLSearchParams({groups:80,seasontype:3,dates:String(season),week:999,limit:1000});
  const r=await fetch(url,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(12000)});if(!r.ok)throw fail('College playoff schedule is unavailable. Saved picks are unchanged.',503);
  const data=await r.json();if(!Array.isArray(data.events))throw fail('College playoff schedule is unavailable.',503);
  return data.events.filter(e=>Number(e.season?.type)===3&&isPlayoff(e)).map(normalizePlayoff).filter(g=>Number.isFinite(Date.parse(g.start))&&g.start.slice(0,10)>=season+'-12-01'&&g.start.slice(0,10)<=(season+1)+'-01-31');
@@ -18,12 +18,6 @@ export async function onRequest({request,env}){try{
  const actor=await sessionFor(request,db,pool);if(!actor)throw fail('Sign in to this pool.',401);
  if(!(await poolGameKeys(db,pool)).includes('cfp'))throw fail('College Playoff Pick\'em is not enabled in this pool.',403);
  const member=await db.prepare('SELECT name FROM pool_players WHERE pool_id=? AND lower(name)=lower(?)').bind(pool,actor.player_name).first();if(!member)throw fail('Player membership not found.',403);
- if(post&&b.action==='bracketTeams'){
-  if(actor.role!=='admin')throw fail('Commissioner access required.',403);
-  const r=await fetch('https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams?limit=1000',{signal:AbortSignal.timeout(12000)});if(!r.ok)throw fail('Team list unavailable. Try again.',503);
-  const j=await r.json(),teams=(j.sports||[]).flatMap(s=>(s.leagues||[]).flatMap(l=>(l.teams||[]).map(x=>x.team))).filter(t=>t&&/^[1-9]\d*$/.test(String(t.id))).map(t=>({id:String(t.id),name:t.displayName,record:t.record?.items?.find(r=>r.type==='total')?.summary||'',logo:'https://a.espncdn.com/i/teamlogos/ncaa/500/'+t.id+'.png'}));
-  if(!teams.length)throw fail('Team list unavailable. Try again.',503);return json({teams});
- }
  await db.batch([
   db.prepare('CREATE TABLE IF NOT EXISTS links_cfp_games(season INTEGER,event_id TEXT,data TEXT NOT NULL,locked INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(season,event_id))'),
   db.prepare('CREATE TABLE IF NOT EXISTS links_cfp_picks(pool_id INTEGER,player TEXT,season INTEGER,event_id TEXT,team TEXT,bonus INTEGER NOT NULL DEFAULT 0,total_side TEXT,total_line REAL,saved_at TEXT,PRIMARY KEY(pool_id,player,season,event_id))'),
