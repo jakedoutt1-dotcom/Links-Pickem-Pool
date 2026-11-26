@@ -1852,12 +1852,14 @@ async function squareLiveScore(eventId){
     period:Number(comp?.status?.period||0),status:comp?.status?.type?.shortDetail||comp?.status?.type?.detail||""
   };
 }
-function squareWinner(claims,awayNums,homeNums,awayScore,homeScore){
+function squareLayout(size=100){const count=[25,50,100].includes(Number(size))?Number(size):100,columns=count===25?5:10;return {size:count,columns,rows:count/columns};}
+async function squareConfig(DB,pid,id){const row=await DB.prepare("SELECT value FROM pool_settings WHERE pool_id=? AND key=?").bind(pid,'squares_split_'+id).first();let value;try{value=JSON.parse(row?.value||'null')}catch{}return {...squareLayout(value?.size),split:Array.isArray(value)?value:value?.payoutPercentages||null};}
+function squareWinner(claims,awayNums,homeNums,awayScore,homeScore,size=100){
   if(awayScore==null||homeScore==null||awayNums.length!==10||homeNums.length!==10)return null;
   const a=Number(awayScore)%10,h=Number(homeScore)%10;
-  const col=awayNums.indexOf(a),row=homeNums.indexOf(h);
+  const layout=squareLayout(size),col=Math.floor(awayNums.indexOf(a)/(10/layout.columns)),row=Math.floor(homeNums.indexOf(h)/(10/layout.rows));
   if(col<0||row<0)return null;
-  const idx=row*10+col,claim=claims.find(c=>Number(c.square_index)===idx);
+  const idx=row*layout.columns+col,claim=claims.find(c=>Number(c.square_index)===idx);
   return {squareIndex:idx,awayDigit:a,homeDigit:h,player:claim?.player_name||"UNCLAIMED"};
 }
 function squaresSplit(price,count,percentages){
@@ -1871,14 +1873,15 @@ async function squaresState(DB,pid,viewer,role){
   const players=role==="admin"?((await DB.prepare("SELECT name FROM pool_players WHERE pool_id=? ORDER BY lower(name)").bind(pid).all()).results||[]).map(x=>x.name):[];
   const out=[];
   for(const b of boards){
+    const config=await squareConfig(DB,pid,b.id);
     const claims=(await DB.prepare("SELECT square_index,player_name,paid,claimed_at FROM squares_claims WHERE board_id=? ORDER BY square_index").bind(b.id).all()).results||[];
     const awayNums=numArray(b.numbers_away),homeNums=numArray(b.numbers_home);
     let live=null;try{live=await squareLiveScore(b.event_id)}catch(e){}
     let winners=live?{
-      q1:squareWinner(claims,awayNums,homeNums,live.q1Away,live.q1Home),
-      half:squareWinner(claims,awayNums,homeNums,live.halfAway,live.halfHome),
-      q3:squareWinner(claims,awayNums,homeNums,live.q3Away,live.q3Home),
-      final:squareWinner(claims,awayNums,homeNums,live.finalAway,live.finalHome)
+      q1:squareWinner(claims,awayNums,homeNums,live.q1Away,live.q1Home,config.size),
+      half:squareWinner(claims,awayNums,homeNums,live.halfAway,live.halfHome,config.size),
+      q3:squareWinner(claims,awayNums,homeNums,live.q3Away,live.q3Home,config.size),
+      final:squareWinner(claims,awayNums,homeNums,live.finalAway,live.finalHome,config.size)
     }:{q1:null,half:null,q3:null,final:null};
     if(live){
       await DB.prepare("INSERT INTO squares_results(board_id,q1_away,q1_home,half_away,half_home,q3_away,q3_home,final_away,final_home,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(board_id) DO UPDATE SET q1_away=COALESCE(excluded.q1_away,q1_away),q1_home=COALESCE(excluded.q1_home,q1_home),half_away=COALESCE(excluded.half_away,half_away),half_home=COALESCE(excluded.half_home,half_home),q3_away=COALESCE(excluded.q3_away,q3_away),q3_home=COALESCE(excluded.q3_home,q3_home),final_away=CASE WHEN ? THEN excluded.final_away ELSE final_away END,final_home=CASE WHEN ? THEN excluded.final_home ELSE final_home END,updated_at=excluded.updated_at")
@@ -1889,11 +1892,11 @@ async function squaresState(DB,pid,viewer,role){
     if(snap){
       const stable={q1Away:snap.q1_away,q1Home:snap.q1_home,halfAway:snap.half_away,halfHome:snap.half_home,q3Away:snap.q3_away,q3Home:snap.q3_home,finalAway:snap.final_away,finalHome:snap.final_home,completed:String(b.status)==="FINAL"||!!live?.completed,status:live?.status||((String(b.status)==="FINAL")?"FINAL":"")};
       live={...(live||{}),...Object.fromEntries(Object.entries(stable).filter(([,v])=>v!==null&&v!==undefined))};
-      winners={q1:squareWinner(claims,awayNums,homeNums,live.q1Away,live.q1Home),half:squareWinner(claims,awayNums,homeNums,live.halfAway,live.halfHome),q3:squareWinner(claims,awayNums,homeNums,live.q3Away,live.q3Home),final:squareWinner(claims,awayNums,homeNums,live.finalAway,live.finalHome)};
+      winners={q1:squareWinner(claims,awayNums,homeNums,live.q1Away,live.q1Home,config.size),half:squareWinner(claims,awayNums,homeNums,live.halfAway,live.halfHome,config.size),q3:squareWinner(claims,awayNums,homeNums,live.q3Away,live.q3Home,config.size),final:squareWinner(claims,awayNums,homeNums,live.finalAway,live.finalHome,config.size)};
     }
-    const payoutRow=await DB.prepare("SELECT value FROM pool_settings WHERE pool_id=? AND key=?").bind(pid,'squares_split_'+b.id).first();let split=null;try{split=JSON.parse(payoutRow?.value||'null')}catch{}
+    const split=config.split;
     const auto=Array.isArray(split)&&split.length===4?squaresSplit(b.price,claims.length,split):{};
-    out.push({...b,status:live?.completed?"FINAL":b.status,price:Number(b.price||0),payout_q1:Number(b.payout_q1||0),payout_half:Number(b.payout_half||0),payout_q3:Number(b.payout_q3||0),payout_final:Number(b.payout_final||0),awayNums,homeNums,claims,live,winners,payoutPercentages:split,...auto});
+    out.push({...b,size:config.size,columns:config.columns,rows:config.rows,status:live?.completed?"FINAL":b.status,price:Number(b.price||0),payout_q1:Number(b.payout_q1||0),payout_half:Number(b.payout_half||0),payout_q3:Number(b.payout_q3||0),payout_final:Number(b.payout_final||0),awayNums,homeNums,claims,live,winners,payoutPercentages:split,...auto});
   }
   return {boards:out,players,viewer,role};
 }
@@ -2636,6 +2639,7 @@ export async function onRequest(context){
       const games=await fetchNFLWeek(sw),g=games.find(x=>String(x.id||x.eventId||"")===eventId);
       if(!g)return json({error:"Choose a valid NFL game."},400);
       if(!Number.isFinite(Date.parse(g.kickoff))||Date.now()>=Date.parse(g.kickoff))return json({error:"Create the board before kickoff."},409);
+      const size=body.size===undefined?100:Number(body.size);if(![25,50,100].includes(size))return json({error:"Choose a 25, 50 or 100-square board."},400);
       const split=body.payoutPercentages;
       if(split!==undefined&&(!Array.isArray(split)||split.length!==4||split.some(x=>typeof x!=='number'||!Number.isFinite(x)||x<0||x>100)||Math.abs(split.reduce((a,b)=>a+b,0)-100)>0.000001))return json({error:"Payout percentages must total 100%."},400);
       if(!Number.isFinite(Number(body.price))||Number(body.price)<0||Number(body.price)>100000)return json({error:"Enter a valid price per square."},400);
@@ -2643,7 +2647,7 @@ export async function onRequest(context){
       const title=String(body.title||`${g.awayName||g.away} vs ${g.homeName||g.home} Squares`).trim().slice(0,100);
       const insert=DB.prepare("INSERT INTO squares_boards(pool_id,title,event_id,week,away,home,away_name,home_name,kickoff,price,payout_q1,payout_half,payout_q3,payout_final,status,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,\'OPEN\',?)")
         .bind(pid,title,eventId,sw,g.away,g.home,g.awayName||g.away,g.homeName||g.home,g.kickoff||null,price,q1,half,q3,fin,new Date().toISOString());
-      const results=await DB.batch([insert,...(split?[DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,'squares_split_' || last_insert_rowid(),?)").bind(pid,JSON.stringify(split))]:[])]);
+      const results=await DB.batch([insert,DB.prepare("INSERT INTO pool_settings(pool_id,key,value) VALUES(?,'squares_split_' || last_insert_rowid(),?)").bind(pid,JSON.stringify({size,payoutPercentages:split||null}))]);
       return json({ok:true,id:results[0].meta?.last_row_id||null});
     }
     if(path==="squares/claim"&&method==="POST"){
@@ -2651,6 +2655,7 @@ export async function onRequest(context){
       const boardId=Number(body.boardId),indices=body.squareIndices;
       if(!Array.isArray(indices)||!indices.length||indices.length>100||new Set(indices).size!==indices.length||indices.some(i=>!Number.isInteger(i)||i<0||i>99))return json({error:"Choose valid available squares."},400);
       const b=await DB.prepare("SELECT * FROM squares_boards WHERE id=? AND pool_id=?").bind(boardId,pid).first();if(!b)return json({error:"Board not found."},404);
+      const layout=await squareConfig(DB,pid,b.id);if(indices.some(i=>i>=layout.size))return json({error:"Choose squares within this "+layout.size+"-square board."},400);
       if(String(b.status)!=="OPEN"||numArray(b.numbers_away).length||!Number.isFinite(Date.parse(b.kickoff))||Date.now()>=Date.parse(b.kickoff))return json({error:"Square selections are locked."},409);
       const player=s.player_name;
       const ex=await DB.prepare("SELECT 1 ok FROM pool_players WHERE pool_id=? AND name=?").bind(pid,player).first();if(!ex)return json({error:"Sign in as a player in this pool."},403);

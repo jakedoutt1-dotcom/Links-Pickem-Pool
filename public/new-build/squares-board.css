@@ -6,3 +6,5 @@
 .square-save-bar{position:sticky;top:8px;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:12px;background:#121610!important;border:1px solid #d5ae55!important;box-shadow:0 8px 24px #0008;padding:12px!important}.square-save-bar p{margin:0;font-size:14px}.square-save-bar button{flex-shrink:0;min-height:48px}.square-save-bar button:disabled{opacity:.6}
 
 .square-save-bar #saveSquares:not(:disabled){background:linear-gradient(135deg,#ffe397,#e8b847)!important;color:#171207!important;border:2px solid #ffe39b!important;font-weight:800;box-shadow:0 3px 12px #efc36640}.square-save-bar #saveSquares:disabled{background:#292a27!important;color:#d1cec4!important;border:1px solid #777366!important;opacity:1}@media(max-width:480px){.square-save-bar{flex-direction:column;align-items:stretch}.square-save-bar #saveSquares{width:100%;font-size:16px}}
+
+.squares-labeled-board.squares-compact{grid-template-columns:38px minmax(0,1fr);min-width:305px}.squares-compact>.square-grid{grid-template-columns:26px repeat(5,minmax(44px,1fr));min-width:261px;gap:3px}.squares-compact .squares-home-label img{width:28px;height:28px}

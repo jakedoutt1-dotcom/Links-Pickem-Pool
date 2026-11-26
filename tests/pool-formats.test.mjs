@@ -1,6 +1,31 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import vm from 'node:vm';
 import {fixture} from './helpers/pool-format-fixture.mjs';
+
+for(const size of [25,50,100])test('Squares '+size+': persisted layout, bounded claims, all score pairs, final winner and payout',async()=>{
+ const {db,runtime,call}=fixture();try{
+  const made=await call('squares','boards',{week:1,eventId:'one',size,price:10.01,payoutPercentages:[25,25,25,25]},'admin');assert.equal(made.status,200);const id=made.id;
+  let board=(await call('squares')).boards.find(b=>b.id===id);assert.equal(board.size,size);assert.equal(board.columns,size===25?5:10);assert.equal(board.rows,size/board.columns);
+  assert.equal((await call('squares','claim',{boardId:id,squareIndices:[0,size],confirmed:true})).status,400);assert.equal(db.raw.prepare('SELECT COUNT(*) n FROM squares_claims WHERE board_id=?').get(id).n,0,'Invalid multi-claim saves nothing');
+  assert.equal((await call('squares','claim',{boardId:id,squareIndices:[size-1],confirmed:true})).status,200);
+  const drawn=await call('squares','draw',{boardId:id},'admin');assert.equal(drawn.status,200);assert.equal(new Set(drawn.awayNums).size,10);assert.equal(new Set(drawn.homeNums).size,10);
+  vm.runInContext('globalThis.matchSquare=squareWinner',runtime);const hits=new Map();
+  for(let away=0;away<10;away++)for(let home=0;home<10;home++){const result=runtime.matchSquare([],drawn.awayNums,drawn.homeNums,away,home,size);assert(result.squareIndex>=0&&result.squareIndex<size);hits.set(result.squareIndex,(hits.get(result.squareIndex)||0)+1)}
+  assert.equal(hits.size,size);assert([...hits.values()].every(n=>n===100/size),'Every square covers the same number of score pairs');
+  const away=drawn.awayNums[9],home=drawn.homeNums[9];runtime.summary={header:{competitions:[{status:{period:5,type:{completed:true}},competitors:[{homeAway:'away',score:away,linescores:[away,0,0,0].map(value=>({value}))},{homeAway:'home',score:home,linescores:[home,0,0,0].map(value=>({value}))}]}]}};
+  board=(await call('squares')).boards.find(b=>b.id===id);assert.equal(board.winners.final.squareIndex,size-1);assert.equal(board.winners.final.player,'Alice');assert.equal(board.status,'FINAL');assert.equal(board.claimedPot,10.01);assert.deepEqual([board.payout_q1,board.payout_half,board.payout_q3,board.payout_final],[2.51,2.5,2.5,2.5]);
+ }finally{db.raw.close()}
+});
+test('Squares rejects unsupported sizes and reads legacy 100-square layouts/splits',async()=>{
+ const {db,call}=fixture();try{
+  for(const size of [0,30,250,'bad'])assert.equal((await call('squares','boards',{week:1,eventId:'one',size},'admin')).status,400);
+  const made=await call('squares','boards',{week:1,eventId:'one',price:1},'admin');
+  await db.prepare('UPDATE pool_settings SET value=? WHERE pool_id=1 AND key=?').bind('[25,25,25,25]','squares_split_'+made.id).run();
+  let board=(await call('squares')).boards[0];assert.equal(board.size,100);assert.equal(board.columns,10);assert.deepEqual(board.payoutPercentages,[25,25,25,25]);
+  await db.prepare('DELETE FROM pool_settings WHERE key=?').bind('squares_split_'+made.id).run();board=(await call('squares')).boards[0];assert.equal(board.size,100);assert.equal(board.payoutPercentages,null);
+ }finally{db.raw.close()}
+});
 test('Squares complete lifecycle: create, save/immutable claims, duplicate, draw, final winner and pool ownership',async()=>{
  const {db,runtime,call}=fixture();try{
  assert.equal((await call('squares','state',null,'outsider')).status,401);
