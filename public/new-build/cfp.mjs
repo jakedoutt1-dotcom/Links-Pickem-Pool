@@ -1,5 +1,5 @@
 import {mountCfpContenders} from './cfp-contenders.mjs?v=standings2';
-import {mountBracket} from './cfp-bracket-ui.mjs?v=picker1';
+import {mountBracket} from './cfp-bracket-ui.mjs?v=rounds1';
 import {SLOTS,participants,BRACKET_RULES,bracketStandings,cleanBracket} from './cfp-bracket-core.mjs?v=autofield1';
 import {cfpSeason} from './cfp-core.mjs';
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
