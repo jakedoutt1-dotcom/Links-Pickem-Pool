@@ -1,4 +1,4 @@
-import {hostedMode,hostedAdmin,eventHeaders,mountHostedEvent,shareHostedEvent} from './hosted-cfp.mjs?v=prizes-sponsors1';
+import {hostedMode,hostedAdmin,eventHeaders,mountHostedEvent,shareHostedEvent} from './hosted-cfp.mjs?v=presented-by1';
 import {mountBracket} from './cfp-bracket-ui.mjs?v=practice-next1';
 import {SLOTS,participants,BRACKET_RULES,bracketStandings,cleanBracket} from './cfp-bracket-core.mjs?v=plain-rules1';
 import {cfpSeason} from './cfp-core.mjs';

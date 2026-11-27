@@ -14,6 +14,13 @@ export function shareHostedEvent(){
 }
 export async function mountHostedEvent(root,onReady){
  const workspace=document.querySelector('.workspace');workspace.hidden=true;
+ const hero=document.querySelector('.cfp-hero');
+ if(hero&&!hero.querySelector('.cfp-presenting-sponsor')){
+  const sponsor=document.createElement('div');sponsor.className='cfp-presenting-sponsor';sponsor.setAttribute('aria-label','Presenting sponsor');
+  sponsor.innerHTML='<div class="cfp-presenting-logo" aria-label="Space reserved for presenting sponsor logo"><span>Sponsor logo</span></div><div><span class="cfp-presented-by">Presented by</span><strong>Will be announced soon</strong></div>';
+  hero.append(sponsor);
+ }
+
  let recognition=document.getElementById('hostedEventRecognition');
  if(!recognition){
   recognition=document.createElement('section');recognition.id='hostedEventRecognition';recognition.className='cfp-event-recognition';recognition.setAttribute('aria-label','Challenge prizes and sponsors');
