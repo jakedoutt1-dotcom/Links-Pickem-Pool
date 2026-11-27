@@ -5,7 +5,7 @@ import {tournamentFeed,createTournament,mapResults,ensureSchema} from '../../lib
 import {cleanPicks,validTie,rankEntries,scoreBracket} from '../../../public/new-build/march-core.mjs';
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
 const fail=(message,status=400)=>Object.assign(Error(message),{status});
-const entryOf=row=>row?{player:row.player_name,picks:JSON.parse(row.picks_json),tie:row.tie,submitted:!!row.submitted,version:row.version,savedAt:row.updated_at}:null;
+const entryOf=row=>row?{player:row.player_name,picks:JSON.parse(row.picks_json),tie:row.tie,winningTie:row.winning_tie??null,submitted:!!row.submitted,version:row.version,savedAt:row.updated_at}:null;
 export async function onRequest({request,env}) {
   if(!['GET','POST'].includes(request.method))return json({error:'Method not allowed.'},405);
   const db=env.DB;if(!db)return json({error:'Pool service unavailable.'},503);
@@ -53,12 +53,14 @@ export async function onRequest({request,env}) {
     const picks=cleanPicks(tournament.games,b.picks);
     if(Object.keys(picks).length!==Object.keys(b.picks).length)throw fail('A selection does not follow the tournament bracket. Refresh and try again.');
     const tie=b.tie===null?null:b.tie;
+    const winningTie=b.winningTie??null;
+    if(winningTie!==null&&(!validTie(winningTie)||tie===null||winningTie>tie))throw fail('Enter a winning-team score no greater than the combined score.');
     if(tie!==null&&!validTie(tie))throw fail('Enter a whole-number championship combined score from 0 to 400.');
     if(typeof b.submitted!=='boolean')throw fail('Choose draft or submit.');
-    if(b.submitted&&(Object.keys(picks).length!==63||!validTie(tie)))throw fail('Complete all 63 picks and the tiebreaker before submitting.');
+    if(b.submitted&&(Object.keys(picks).length!==63||!validTie(tie)||!validTie(winningTie)))throw fail('Complete all 63 picks and both championship score predictions before submitting.');
     if(!Number.isInteger(b.version)||b.version<0||b.revision!==stored.revision)throw fail('Your bracket changed in another tab. Reload before saving.',409);
     const now=new Date().toISOString();
-    const result=await db.prepare("INSERT INTO links_march_entries(pool_id,season,player_name,picks_json,tie,submitted,version,updated_at) SELECT ?,?,?,?,?,?,1,? WHERE EXISTS(SELECT 1 FROM links_march_tournaments WHERE pool_id=? AND season=? AND revision=? AND julianday(lock_at)>julianday('now')) AND (?=0 OR EXISTS(SELECT 1 FROM links_march_entries WHERE pool_id=? AND season=? AND player_name=?)) ON CONFLICT(pool_id,season,player_name) DO UPDATE SET picks_json=excluded.picks_json,tie=excluded.tie,submitted=excluded.submitted,version=links_march_entries.version+1,updated_at=excluded.updated_at WHERE links_march_entries.version=?").bind(pool.id,season,member.name,JSON.stringify(picks),tie,b.submitted?1:0,now,pool.id,season,stored.revision,b.version,pool.id,season,member.name,b.version).run();
+    const result=await db.prepare("INSERT INTO links_march_entries(pool_id,season,player_name,picks_json,tie,winning_tie,submitted,version,updated_at) SELECT ?,?,?,?,?,?,?,1,? WHERE EXISTS(SELECT 1 FROM links_march_tournaments WHERE pool_id=? AND season=? AND revision=? AND julianday(lock_at)>julianday('now')) AND (?=0 OR EXISTS(SELECT 1 FROM links_march_entries WHERE pool_id=? AND season=? AND player_name=?)) ON CONFLICT(pool_id,season,player_name) DO UPDATE SET picks_json=excluded.picks_json,tie=excluded.tie,winning_tie=excluded.winning_tie,submitted=excluded.submitted,version=links_march_entries.version+1,updated_at=excluded.updated_at WHERE links_march_entries.version=?").bind(pool.id,season,member.name,JSON.stringify(picks),tie,winningTie,b.submitted?1:0,now,pool.id,season,stored.revision,b.version,pool.id,season,member.name,b.version).run();
     if(!result.meta?.changes)throw fail('The deadline passed or another tab saved newer picks. Reload; your saved bracket was not overwritten.',409);
     return json({success:true,version:b.version+1,submitted:b.submitted,savedAt:now});
   }catch(e){return json({error:e.status?e.message:'March Madness data is unavailable. Please try again; saved brackets are unchanged.'},e.status||503)}

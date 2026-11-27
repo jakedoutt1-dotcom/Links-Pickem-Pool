@@ -63,4 +63,9 @@ export async function ensureSchema(db) {
     db.prepare('CREATE TABLE IF NOT EXISTS links_march_tournaments (pool_id INTEGER NOT NULL, season INTEGER NOT NULL, definition TEXT NOT NULL, lock_at TEXT NOT NULL, revision INTEGER NOT NULL DEFAULT 1, PRIMARY KEY(pool_id,season))'),
     db.prepare('CREATE TABLE IF NOT EXISTS links_march_entries (pool_id INTEGER NOT NULL, season INTEGER NOT NULL, player_name TEXT NOT NULL COLLATE NOCASE, picks_json TEXT NOT NULL, tie INTEGER, submitted INTEGER NOT NULL DEFAULT 0, version INTEGER NOT NULL DEFAULT 1, updated_at TEXT NOT NULL, PRIMARY KEY(pool_id,season,player_name))')
   ]);
+  const columns=await db.prepare('PRAGMA table_info(links_march_entries)').all();
+  if(!columns.results.some(c=>c.name==='winning_tie')){
+    try{await db.prepare('ALTER TABLE links_march_entries ADD COLUMN winning_tie INTEGER').run();}
+    catch(error){const check=await db.prepare('PRAGMA table_info(links_march_entries)').all();if(!check.results.some(c=>c.name==='winning_tie'))throw error;}
+  }
 }

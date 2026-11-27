@@ -39,6 +39,7 @@ try{
       for(const game of games)await page.locator('[data-game="'+game.id+'"]').first().click();
     }
   }
+  await page.locator('#winningTie').fill('75');
   await page.locator('#tie').fill('148');
   await page.getByRole('button',{name:'Submit bracket',exact:true}).click();
   await page.getByRole('heading',{name:'Bracket submitted',exact:true}).waitFor();

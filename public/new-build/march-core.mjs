@@ -68,9 +68,13 @@ export function scoreBracket(games, picks, results={}) {
 export function validTie(value) { return typeof value==='number'&&Number.isInteger(value)&&value>=0&&value<=400; }
 export function rankEntries(entries,games,results) {
   const final=results['national-6-0'], total=final?.completed&&final.winner&&final.teams.every(t=>Number.isFinite(t.score))?final.teams.reduce((s,t)=>s+t.score,0):null;
-  const rows=entries.filter(e=>e.submitted).map(e=>({...e,...scoreBracket(games,e.picks,results),tieDistance:total===null?null:Math.abs(e.tie-total)}));
-  rows.sort((a,b)=>b.points-a.points || (total===null?0:a.tieDistance-b.tieDistance) || a.player.localeCompare(b.player));
-  rows.forEach((row,i)=>{row.rank=i&&row.points===rows[i-1].points&&row.tieDistance===rows[i-1].tieDistance?rows[i-1].rank:i+1;});
+  const finished=total!==null&&games.every(g=>results[g.id]?.completed&&results[g.id]?.winner);
+  const winningScore=finished?Math.max(...final.teams.map(t=>t.score)):null;
+  const rows=entries.filter(e=>e.submitted).map(e=>({...e,...scoreBracket(games,e.picks,results),tieDistance:finished&&validTie(e.tie)?Math.abs(e.tie-total):null,winningDistance:finished&&validTie(e.winningTie)?Math.abs(e.winningTie-winningScore):null}));
+  const distance=v=>v===null?Infinity:v;
+  const compare=(a,b)=>b.points-a.points || (finished?(distance(a.tieDistance)-distance(b.tieDistance)||distance(a.winningDistance)-distance(b.winningDistance)||b.correct-a.correct):0);
+  rows.sort((a,b)=>compare(a,b)||a.player.localeCompare(b.player));
+  rows.forEach((row,i)=>{row.rank=i&&!compare(row,rows[i-1])?rows[i-1].rank:i+1;});
   return rows;
 }
 export function demoTournament() {

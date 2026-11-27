@@ -37,6 +37,8 @@ test('tiebreakers apply after the final; equal point totals share a rank beforeh
   const entries=[{player:'A',picks:full,tie:140,submitted:true},{player:'B',picks:full,tie:150,submitted:true},{player:'C',picks:full,tie:152,submitted:true},{player:'Draft',picks:full,tie:151,submitted:false}];
   assert.deepEqual(rankEntries(entries,demo.games,{}).map(x=>x.rank),[1,1,1]);
   const final={'national-6-0':{completed:true,winner:full['national-6-0'],teams:entrants(demo.games.at(-1),full).map((id,i)=>({id,score:i?71:80}))}};
+  assert.deepEqual(rankEntries(entries,demo.games,final).map(x=>x.rank),[1,1,1]);
+  for(const g of demo.games)if(!final[g.id])final[g.id]={completed:true,winner:full[g.id],teams:entrants(g,full).map(id=>({id,score:80}))};
   const rows=rankEntries(entries,demo.games,final);assert.deepEqual(rows.map(x=>x.player),['B','C','A']);assert.deepEqual(rows.map(x=>x.rank),[1,1,3]);
   for(const value of ['',null,NaN,-1,401,1.5,'100'])assert.equal(validTie(value),false);
 });
@@ -57,7 +59,7 @@ test('real results attach to bracket paths rather than feed array order',()=>{
 });
 class D1 {
   constructor(){this.raw=new DatabaseSync(':memory:');}
-  prepare(sql){const raw=this.raw;return {bind(...args){return {first:async()=>raw.prepare(sql).get(...args)||null,all:async()=>({results:raw.prepare(sql).all(...args)}),run:async()=>({meta:raw.prepare(sql).run(...args)})};},run:async()=>({meta:raw.prepare(sql).run()})};}
+  prepare(sql){const raw=this.raw;return {all:async()=>({results:raw.prepare(sql).all()}),bind(...args){return {first:async()=>raw.prepare(sql).get(...args)||null,all:async()=>({results:raw.prepare(sql).all(...args)}),run:async()=>({meta:raw.prepare(sql).run(...args)})};},run:async()=>({meta:raw.prepare(sql).run()})};}
   async batch(stmts){this.raw.exec('BEGIN');try{const out=[];for(const s of stmts)out.push(await s.run());this.raw.exec('COMMIT');return out;}catch(e){this.raw.exec('ROLLBACK');throw e;}}
 }
 test('authenticated API: complete entry lifecycle, privacy, revisions, field freeze and global deadline',async()=>{
@@ -78,8 +80,8 @@ test('authenticated API: complete entry lifecycle, privacy, revisions, field fre
     assert.equal((await call('player',{action:'save',picks:{},tie:140,submitted:true,version:0,revision:1})).status,400);
     const draft=await call('player',{action:'save',picks:{[games[0].id]:picks[games[0].id]},tie:null,submitted:false,version:0,revision:1});assert.equal(draft.status,200);
     assert.equal((await call('admin',{action:'publish',pairing:PAIRINGS[1],revision:1})).status,409);
-    const saved=await call('player',{action:'save',player:'Someone else',picks,tie:145,submitted:true,version:1,revision:1});assert.equal(saved.status,200,JSON.stringify(saved.data));
-    const stale=await call('player',{action:'save',picks,tie:146,submitted:true,version:1,revision:1});assert.equal(stale.status,409);
+    const saved=await call('player',{action:'save',player:'Someone else',picks,tie:145,winningTie:75,submitted:true,version:1,revision:1});assert.equal(saved.status,200,JSON.stringify(saved.data));
+    const stale=await call('player',{action:'save',picks,tie:146,winningTie:75,submitted:true,version:1,revision:1});assert.equal(stale.status,409);
     const before=await call('player');assert.equal(before.data.entry.player,'Jake');assert.equal(before.data.submittedCount,1);assert.deepEqual(before.data.rows,[]);
     assert.equal(before.data.entry.version,2);assert.equal(Object.keys(before.data.entry.picks).length,63);
     db.raw.exec("UPDATE links_march_tournaments SET lock_at='2020-01-01T00:00:00.000Z'");
@@ -102,3 +104,12 @@ test('Official NCAA regional paths are read from bracket links, never commission
  const missing=structuredClone(officialFixture);missing.data.championships[0].regions=missing.data.championships[0].regions.filter(r=>r.title.trim()!=='EAST');assert.equal(officialPairing(missing,2026),null);
  const shuffled=structuredClone(officialFixture);shuffled.data.championships[0].games.reverse();shuffled.data.championships[0].regions.reverse();assert.deepEqual(officialPairing(shuffled,2026),['East','South','West','Midwest']);
 });
+
+ test('second and third tiebreakers resolve equal points, preserving exact shared ranks and old entries',()=>{
+ const results=Object.fromEntries(demo.games.map(g=>[g.id,{completed:true,winner:full[g.id],teams:entrants(g,full).map((id,i)=>({id,score:i?71:80}))}]));
+ const entries=[{player:'A',picks:full,tie:151,winningTie:77,submitted:true},{player:'B',picks:full,tie:151,winningTie:80,submitted:true},{player:'C',picks:full,tie:151,winningTie:80,submitted:true},{player:'Legacy',picks:full,tie:151,submitted:true}];
+ assert.deepEqual(rankEntries(entries,demo.games,results).map(r=>[r.player,r.rank]),[['B',1],['C',1],['A',3],['Legacy',4]]);
+ const fewer={...full},more={...full};delete more[demo.games.find(g=>g.round===2).id];for(const g of demo.games.filter(g=>g.round===1).slice(0,2))delete fewer[g.id];
+ const rows=rankEntries([{...entries[0],player:'Fewer',picks:fewer},{...entries[0],player:'More',picks:more}],demo.games,results);
+ assert.equal(rows[0].points,rows[1].points);assert.equal(rows[0].player,'More');assert.equal(rows[0].correct,rows[1].correct+1);assert.equal(rows[1].rank,2);
+ });
