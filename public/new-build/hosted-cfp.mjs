@@ -9,12 +9,18 @@ export function shareHostedEvent(){
  d.innerHTML='<h2>Share the LINKS playoff challenge</h2><div data-qr></div><input aria-label="Event link" readonly><div><button data-copy>Copy link</button> <button data-share>Share event</button> <button data-close>Close</button></div><p role="status"></p>';
  d.querySelector('input').value=url;const qr=qrcode(0,'M');qr.addData(url);qr.make();d.querySelector('[data-qr]').innerHTML=qr.createSvgTag({scalable:true,cellSize:5,margin:20});d.querySelector('svg').setAttribute('aria-label','Scan to join the LINKS playoff challenge');
  d.querySelector('[data-copy]').onclick=async()=>{try{await navigator.clipboard.writeText(url);d.querySelector('[role=status]').textContent='Event link copied.'}catch{d.querySelector('input').select();d.querySelector('[role=status]').textContent='Copy the selected link.'}};
- d.querySelector('[data-share]').onclick=async()=>{try{if(navigator.share)await navigator.share({title:'LINKS College Playoff Challenge',url});else await d.querySelector('[data-copy]').onclick()}catch(e){if(e.name!=='AbortError')d.querySelector('[role=status]').textContent='Use Copy link to share.'}};
+ d.querySelector('[data-share]').onclick=async()=>{try{if(navigator.share)await navigator.share({title:'LINKS College Playoff Challenge',text:'Join the free LINKS College Playoff Challenge. Create your account and pick your bracket!',url});else await d.querySelector('[data-copy]').onclick()}catch(e){if(e.name!=='AbortError')d.querySelector('[role=status]').textContent='Use Copy link to share.'}};
  d.querySelector('[data-close]').onclick=()=>d.close();d.onclose=()=>d.remove();document.body.append(d);d.showModal();
 }
 export async function mountHostedEvent(root,onReady){
  const workspace=document.querySelector('.workspace');workspace.hidden=true;
  const hero=document.querySelector('.cfp-hero');
+ if(hero&&!document.getElementById('shareChallengeTop')){
+  const bar=document.createElement('div');bar.className='cfp-challenge-share';
+  const button=document.createElement('button');button.id='shareChallengeTop';button.type='button';button.textContent='Share the LINKS challenge';button.onclick=shareHostedEvent;
+  bar.append(button);hero.after(bar);
+ }
+
  if(hero&&!hero.querySelector('.cfp-presenting-sponsor')){
   const sponsor=document.createElement('div');sponsor.className='cfp-presenting-sponsor';sponsor.setAttribute('aria-label','Presenting sponsor');
   sponsor.innerHTML='<div class="cfp-presenting-logo" aria-label="Space reserved for presenting sponsor logo"><span>Sponsor logo</span></div><div><span class="cfp-presented-by">Presented by</span><strong>Will be announced soon</strong></div>';
