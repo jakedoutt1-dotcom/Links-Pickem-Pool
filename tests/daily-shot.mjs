@@ -1,3 +1,4 @@
+import {pullbackInput} from '../public/new-build/daily-shot-controls.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {dailyShots,launch,step,simulate,centralDay,weekStart,streaks,validInput} from '../public/new-build/daily-shot-core.mjs';
@@ -41,4 +42,14 @@ test('Pool logins, venue standings and simultaneous starts preserve one active r
   assert.equal((await call()).leaderboard[0].name,'Alice');const venue=await call(null,'scope=venue&venue=v1','');assert.equal(venue.leaderboard[0].score,100);assert.equal(venue.pool,null);assert(!JSON.stringify(venue).includes('Private address'));assert.equal((await call(null,'pool=1&scope=pool','outsider')).status,403);
   db.raw.exec("DELETE FROM pool_players WHERE pool_id=1 AND name='Alice'");assert.equal((await call(null,'pool=1')).signedIn,false,'A removed member cannot keep posting through an old pool session');
  }finally{db.raw.close()}
+});
+
+test('Pulling back adds enough lift on phones and desktops',()=>{
+ for(const [w,h] of [[390,410],[1280,650]]){
+  const short=pullbackInput(0,25,w,h),medium=pullbackInput(0,65,w,h),full=pullbackInput(0,160,w,h);
+  assert(short.power<medium.power);assert(medium.power<full.power);assert.equal(full.power,1);
+  assert.equal(pullbackInput(0,-60,w,h).power,0);
+  const shot=dailyShots('pullback')[0],low=simulate(shot,short,{trace:true}),high=simulate(shot,full,{trace:true});
+  assert(Math.max(...high.frames.map(f=>f.y))>5);assert(Math.max(...high.frames.map(f=>f.y))>Math.max(...low.frames.map(f=>f.y)));
+ }
 });

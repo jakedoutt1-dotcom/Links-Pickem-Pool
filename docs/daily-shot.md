@@ -4,7 +4,7 @@ Play at `/new-build/daily-shot.html`. Entries are linked from the Game Room shel
 
 ## Playing
 
-Drag upward on the court to set power, move left/right to adjust direction, and release to shoot. A tap does not waste a shot. Sliders and arrow keys provide the same aim/power controls; Space or Shoot releases the ball. The court, ball, glass backboard, rim, net and rebounds are real Three.js geometry. The arena panorama is scenery, not a static game-screen screenshot. Animation follows a fixed-step simulation and the camera follows high/wide shots. Sound is optional and off initially.
+Pull downward on the court to set power (farther pull = higher arc, full power within 80–140 screen pixels), move left/right to adjust direction, and release to shoot. A tap does not waste a shot. Sliders and arrow keys provide the same aim/power controls; Space or Shoot releases the ball. The court, ball, glass backboard, rim, net and rebounds are real Three.js geometry. The arena panorama is scenery, not a static game-screen screenshot. Animation follows a fixed-step simulation and the camera follows high/wide shots. Sound is optional and off initially.
 
 Five shots make a run. A clean swish earns 20, a made rim/bank shot earns 10, and a miss earns zero. Maximum score is 100. Only downward hoop crossings count. Rim, backboard and floor collisions are simulated; there is no random make/miss decision.
 
