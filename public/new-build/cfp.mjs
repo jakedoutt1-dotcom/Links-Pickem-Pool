@@ -1,11 +1,13 @@
 import {hostedMode,hostedAdmin,eventHeaders,mountHostedEvent,shareHostedEvent} from './hosted-cfp.mjs?v=1';
-import {mountBracket} from './cfp-bracket-ui.mjs?v=team-choice1';
+import {mountBracket} from './cfp-bracket-ui.mjs?v=compact-intro1';
 import {SLOTS,participants,BRACKET_RULES,bracketStandings,cleanBracket} from './cfp-bracket-core.mjs?v=plain-rules1';
 import {cfpSeason} from './cfp-core.mjs';
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const q=new URLSearchParams(location.search),demo=q.get('demo')==='1';let selected={};try{selected=JSON.parse(localStorage.getItem('links-current-pool')||'{}')}catch{}
 let pool=q.get('pool')||selected.id;const token=()=>localStorage.getItem('links-legacy-token')||localStorage.getItem('links-token');let season=cfpSeason(),view='picks',data,busy=false,demoEntry=null,demoFinal=false,demoSnapshot=null;const practiceKey='links-cfp-practice-v3';
 
+$('cfpContenders').closest('main').querySelector('.workspace').after($('cfpContenders'));
+if(demo||(pool&&!hostedMode))$('hostedEvent').hidden=true;
 $('rules').textContent=BRACKET_RULES;$('demoNotice').hidden=!demo;
 for(let y=season-2;y<=season+1;y++)$('season').add(new Option(y+'-'+String(y+1).slice(-2),y));$('season').value=season;
 function fixture(){
@@ -47,9 +49,9 @@ async function load(){
   if(demo&&!demoSnapshot){
    demoSnapshot={date:'seed-preview-v1',teams:[['Georgia',61],['Utah',254],['Texas',251],['Notre Dame',87],['Tennessee',2633],['Alabama',333],['Miami',2390],['Wake Forest',154],['UCLA',26],['BYU',252],['Texas Tech',2641],['Oregon',248]].map(([name,logoId],i)=>({id:'practice-seed-'+(i+1),seed:i+1,name,record:'Practice',logo:'./assets/cfp-practice/'+logoId+'.png'}))};
    try{const saved=JSON.parse(localStorage.getItem(practiceKey)||'null');if(saved?.date===demoSnapshot.date&&saved.entry)demoEntry={...saved.entry,picks:cleanBracket(saved.entry.picks,demoSnapshot.teams)};}catch{}
-   $('demoNotice').textContent='PRACTICE ONLY — example teams and seeds, not the official field. Live pools fill with official teams automatically when confirmed. Saves stay on this device; simulated results are fictional.';$('season').disabled=true;
+   $('demoNotice').textContent='PRACTICE ONLY — example teams. Saves stay on this device.';$('season').disabled=true;
   }
-  data=demo?fixture():await api();render();$('message').textContent=data.warning||(demo?'Practice only: save on this device, submit all 11 picks, then use Sample results to test scoring.':'Choose every round, then select Lock in my picks before the first playoff kickoff. Save a draft while you work.');
+  data=demo?fixture():await api();render();$('message').textContent=data.warning||'';
  }catch(error){$('message').textContent=error.message;$('content').querySelectorAll('button,select,input').forEach(b=>b.disabled=true)}finally{busy=false}
 }
 $('refresh').onclick=()=>void load();$('season').onchange=()=>{if(busy){$('season').value=season;return}season=Number($('season').value);demoEntry=null;demoFinal=false;void load()};
