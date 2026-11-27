@@ -14,6 +14,13 @@ export function shareHostedEvent(){
 }
 export async function mountHostedEvent(root,onReady){
  const workspace=document.querySelector('.workspace');workspace.hidden=true;
+ let recognition=document.getElementById('hostedEventRecognition');
+ if(!recognition){
+  recognition=document.createElement('section');recognition.id='hostedEventRecognition';recognition.className='cfp-event-recognition';recognition.setAttribute('aria-label','Challenge prizes and sponsors');
+  recognition.innerHTML='<section aria-labelledby="challengePrizesTitle"><h2 id="challengePrizesTitle">Top 3 prizes</h2><p>Prizes will be announced soon.</p><ol class="cfp-prize-grid"><li><span class="cfp-prize-place">1st place</span><strong>Will be announced soon</strong></li><li><span class="cfp-prize-place">2nd place</span><strong>Will be announced soon</strong></li><li><span class="cfp-prize-place">3rd place</span><strong>Will be announced soon</strong></li></ol></section><section aria-labelledby="challengeSponsorsTitle"><h2 id="challengeSponsorsTitle">Challenge sponsors</h2><div class="cfp-sponsor-placeholder"><strong>Sponsors will be announced soon</strong><p></p></div></section>';
+  workspace.after(recognition);
+ }
+
  async function refresh(body){
   const j=await eventApi(body);
   root.innerHTML='<h2>LINKS College Playoff Challenge</h2><p>One LINKS-hosted pool. Your own bracket. One shared leaderboard.</p><p>Free to join. A LINKS account is required. Joining unlocks your picks automatically.</p><p>'+'<span data-event-count>'+j.participants+'</span> joined'+(j.event?' · '+j.season+'–'+String(j.season+1).slice(-2):' · Opening soon')+'</p><div class="hosted-event-actions">'+
