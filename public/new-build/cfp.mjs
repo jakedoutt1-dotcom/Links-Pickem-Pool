@@ -1,13 +1,15 @@
+import {playoffNavigation} from './cfp-navigation.mjs?v=1';
 import {hostedMode,hostedAdmin,eventHeaders,mountHostedEvent,shareHostedEvent} from './hosted-cfp.mjs?v=challenge-share2';
-import {mountBracket} from './cfp-bracket-ui.mjs?v=compact-header1';
-import {SLOTS,participants,BRACKET_RULES,bracketStandings,cleanBracket} from './cfp-bracket-core.mjs?v=compact-header1';
+import {mountBracket} from './cfp-bracket-ui.mjs?v=pool-return1';
+import {SLOTS,participants,BRACKET_RULES,bracketStandings,cleanBracket} from './cfp-bracket-core.mjs?v=pool-return1';
 import {cfpSeason} from './cfp-core.mjs';
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const q=new URLSearchParams(location.search),demo=q.get('demo')==='1';let selected={};try{selected=JSON.parse(localStorage.getItem('links-current-pool')||'{}')}catch{}
-let pool=q.get('pool')||selected.id;const token=()=>localStorage.getItem('links-legacy-token')||localStorage.getItem('links-token');let season=cfpSeason(),view='picks',data,busy=false,demoEntry=null,demoFinal=false,demoSnapshot=null;const practiceKey='links-cfp-practice-v3';
+let pool=q.get('pool')||selected.id;const token=()=>localStorage.getItem('links-legacy-token')||localStorage.getItem('links-token');let season=Number(q.get('season')||q.get('returnSeason'))||cfpSeason(),view='picks',data,busy=false,demoEntry=null,demoFinal=false,demoSnapshot=null;const practiceKey='links-cfp-practice-v3';
 
 $('cfpContenders').closest('main').querySelector('.workspace').after($('cfpContenders'));
 if(demo||(pool&&!hostedMode))$('hostedEvent').hidden=true;
+if(demo){const back=$('cfpBack'),nav=playoffNavigation(q,{season});back.href=nav.returnHref;back.textContent=nav.returnLabel;}
 $('rules').textContent=BRACKET_RULES;$('demoNotice').hidden=!demo;
 for(let y=season-2;y<=season+1;y++)$('season').add(new Option(y+'-'+String(y+1).slice(-2),y));$('season').value=season;
 function fixture(){
@@ -39,7 +41,7 @@ function render(){
    catch(error){accessPanel.querySelector('#accessStatus').textContent=error.message;accessPanel.querySelectorAll('button').forEach(b=>b.disabled=false);}
   });
  }
- if(mountBracket({root:$('content'),data,view,api,reload:load,demo}))return;
+ if(mountBracket({root:$('content'),data,view,api,reload:load,demo,navigation:playoffNavigation(q,{pool,season})}))return;
  if(!demo&&!data.bracket?.config){$('content').innerHTML='<h2>Waiting for the official lineup</h2><p>The confirmed teams and schedule will appear automatically.</p>';return;}
  $('content').innerHTML='<h2>'+(demo?'Simulated playoff results':'Official playoff results')+'</h2>'+(data.games.length?data.games.map(g=>'<article class="cfp-entry"><h3>'+esc(g.title)+'</h3><p>'+esc(g.away.name)+' '+esc(g.away.score??'')+' vs. '+esc(g.home.name)+' '+esc(g.home.score??'')+'</p><p>'+esc(g.status)+' · '+(demo?'Practice matchup':esc(new Date(g.start).toLocaleString()))+'</p></article>').join(''):'<p>No playoff schedule is posted yet.</p>')+(demo?'<button id="demoResults">'+(demoFinal?'Reset demo results':'Simulate final results')+'</button>':'');
  if($('demoResults'))$('demoResults').onclick=()=>{demoFinal=!demoFinal;void load()};
@@ -56,7 +58,7 @@ async function load(){
  }catch(error){$('message').textContent=error.message;$('content').querySelectorAll('button,select,input').forEach(b=>b.disabled=true)}finally{busy=false}
 }
 $('refresh').onclick=()=>void load();$('season').onchange=()=>{if(busy){$('season').value=season;return}season=Number($('season').value);demoEntry=null;demoFinal=false;void load()};
-if(hostedMode)void mountHostedEvent($('hostedEvent'),async event=>{pool=event.id;season=event.season;selected={name:event.name};$('season').value=season;$('season').disabled=true;await load()});else if(demo||(pool&&token()))void load();else $('message').innerHTML='Sign in through <a href="./control-center.html">your Locker Room</a>, or <a href="./cfp.html?demo=1">try the demo</a>.';
+if(hostedMode)void mountHostedEvent($('hostedEvent'),async event=>{pool=event.id;season=event.season;selected={name:event.name};$('season').value=season;$('season').disabled=true;await load()});else if(demo||(pool&&token()))void load();else $('message').innerHTML='Sign in through <a href="./control-center.html">your Locker Room</a>, or <a href="'+esc(playoffNavigation(q,{pool,season}).practiceHref)+'">try the demo</a>.';
 const timer=setInterval(()=>{if(!demo&&data?.bracket?.config&&Date.now()>=Date.parse(data.bracket.config.deadline)){data.bracket.locked=true;$('content').querySelectorAll('#bracketSave button,#bracketSave input,#championshipGuess,#championshipWinnerGuess,[data-slot] button,[data-slot] select').forEach(b=>b.disabled=true);const note=$('bracketStatus');if(note)note.textContent='The entire bracket is locked. No more edits can be saved.';}},1000);
 const countTimer=setInterval(()=>{if(!demo&&data&&!busy&&!document.hidden)void api(null,true).then(renderCounts).catch(()=>{})},30000);window.addEventListener('pagehide',e=>{if(!e.persisted)clearInterval(countTimer)},{once:true});
 const refreshTimer=setInterval(()=>{if(!document.hidden&&!busy&&data&&(['scores','standings'].includes(view)||!data?.bracket?.config||data?.access?.unlocked===false))void load()},60000);window.addEventListener('pagehide',e=>{if(!e.persisted){clearInterval(timer);clearInterval(refreshTimer)}},{once:true});
