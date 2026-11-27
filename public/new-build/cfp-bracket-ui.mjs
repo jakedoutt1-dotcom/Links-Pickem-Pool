@@ -1,4 +1,4 @@
-import {SLOTS,ROUNDS,ROUND_POINTS,participants,cleanBracket,validateBracket,BRACKET_RULES} from './cfp-bracket-core.mjs?v=rounds1';
+import {SLOTS,ROUNDS,ROUND_POINTS,participants,cleanBracket,validateBracket,BRACKET_RULES} from './cfp-bracket-core.mjs?v=plain-rules1';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export function mountBracket({root,data,view,api,reload,demo}){
  root._bracketCleanup?.();
