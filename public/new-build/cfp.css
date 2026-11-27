@@ -77,3 +77,19 @@
 .cfp-challenge-share{display:flex;justify-content:flex-end;margin:10px 0}.cfp-challenge-share button{min-height:44px;padding:10px 16px;border:1px solid #dfbd6e;border-radius:10px;background:#e4c16f;color:#091923;font-size:14px;font-weight:700;cursor:pointer}
 
 .cfp-tiebreaker label+label{margin-top:10px}.cfp-board-viewport[data-layout="bracket"] .cfp-tiebreaker input{padding:8px;font-size:14px;min-height:40px}.cfp-board-viewport[data-layout="bracket"] .cfp-tiebreaker p{font-size:10px;line-height:1.4}
+
+/* Compact entry header: prioritize the bracket, keep details below it. */
+.workspace #identity{margin:0 0 4px;font-size:12px;line-height:1.4;overflow-wrap:anywhere}
+.workspace .cfp-counts{gap:12px;margin:4px 0 10px}
+.workspace .cfp-counts span{padding:0;border:0;border-radius:0;background:none;font-size:12px;gap:5px}
+.workspace .cfp-counts strong{font-size:15px}
+.workspace #tabs{gap:6px;margin:8px 0 12px}
+.workspace #tabs button{min-height:44px;padding:8px 12px;font-size:13px}
+.cfp-preview-note{padding:8px 10px;margin:0 0 10px;font-size:12px;line-height:1.5}
+.cfp-bracket-heading{font-size:20px;line-height:1.25;margin:10px 0}
+.cfp-budget:empty{display:none}
+.cfp-layout-nav{display:flex;gap:6px;margin:8px 0 4px}
+.cfp-layout-nav button{min-height:44px;padding:8px 12px;font-size:12px}
+.cfp-swipe-hint{font-size:11px;line-height:1.4;margin:4px 0 8px}
+.workspace .cfp-schedule-options{margin:16px 0 0}
+@media(max-width:600px){.workspace{padding:14px}.workspace #tabs{display:flex;flex-wrap:wrap}.workspace #tabs button{flex:1 1 auto}.cfp-layout-nav button{flex:1}.cfp-bracket-heading{font-size:19px}}

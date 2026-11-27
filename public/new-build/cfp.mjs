@@ -1,6 +1,6 @@
 import {hostedMode,hostedAdmin,eventHeaders,mountHostedEvent,shareHostedEvent} from './hosted-cfp.mjs?v=challenge-share2';
-import {mountBracket} from './cfp-bracket-ui.mjs?v=tie-example1';
-import {SLOTS,participants,BRACKET_RULES,bracketStandings,cleanBracket} from './cfp-bracket-core.mjs?v=tie-example1';
+import {mountBracket} from './cfp-bracket-ui.mjs?v=compact-header1';
+import {SLOTS,participants,BRACKET_RULES,bracketStandings,cleanBracket} from './cfp-bracket-core.mjs?v=compact-header1';
 import {cfpSeason} from './cfp-core.mjs';
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const q=new URLSearchParams(location.search),demo=q.get('demo')==='1';let selected={};try{selected=JSON.parse(localStorage.getItem('links-current-pool')||'{}')}catch{}
@@ -19,12 +19,13 @@ async function api(body,counts=false){
  if(demo){if(body?.action==='bracketSave'){demoEntry={player:'You',picks:structuredClone(body.picks),guess:body.guess,winningGuess:body.winningGuess,submitted:body.submit,version:(demoEntry?.version||0)+1};try{localStorage.setItem(practiceKey,JSON.stringify({date:demoSnapshot.date,entry:demoEntry}))}catch{throw Error('Your browser could not save this practice bracket. Check its storage settings.')}return {ok:true}}throw Error('Setup changes are disabled in the demo.');}
  const r=await fetch('./api/cfp?'+new URLSearchParams({pool,season,...(counts?{counts:1}:{})}),{method:body?'POST':'GET',headers:hostedMode?eventHeaders():{Authorization:'Bearer '+token(),'Content-Type':'application/json'},cache:'no-store',signal:AbortSignal.timeout(20000),...(body?{body:JSON.stringify({pool,season,...body})}:{})}),j=await r.json();if(!r.ok)throw Error(j.error||'Unable to complete this request.');return j;
 }
-function renderCounts(data){$('cfpCounts').innerHTML='<span><strong>'+Number(data.playerCount??data.bracket?.standings?.rows.length??0)+'</strong> Players joined</span><span><strong>'+Number(data.entryCount??data.bracket?.standings?.rows.filter(r=>r.submitted).length??0)+'</strong> Brackets entered</span>';}
+function renderCounts(data){$('cfpCounts').innerHTML='<span><strong>'+Number(data.playerCount??data.bracket?.standings?.rows.length??0)+'</strong> joined</span><span><strong>'+Number(data.entryCount??data.bracket?.standings?.rows.filter(r=>r.submitted).length??0)+'</strong> entered</span>';}
 
 function render(){
  const field=$('cfpContenders'),confirmed=!demo&&data.bracket?.config?.teams;field.hidden=!confirmed;
  if(confirmed){field.innerHTML='<div class="contender-title"><h2>OFFICIAL PLAYOFF LINEUP</h2><p>The confirmed tournament seeds.</p></div><ol class="cfp-team-standings">'+confirmed.map(t=>'<li><span class="cfp-team-rank">#'+t.seed+'</span><img src="'+esc(t.logo)+'" alt="" width="28" height="28"><span class="cfp-team-full">'+esc(t.name)+'</span><abbr class="cfp-team-short" title="'+esc(t.name)+'">'+esc(t.name.slice(0,4).toUpperCase())+'</abbr><span class="cfp-team-record">'+esc(t.record||'')+'</span></li>').join('')+'</ol>';}else field.replaceChildren();
- $('identity').textContent=(demo?'Practice bracket — example teams, not the official field':selected.name||'College playoff pool')+' — '+data.player;
+ $('identity').textContent=(demo?'Practice bracket — example teams, not the official field':selected.name||'College playoff pool')+(hostedMode?'': ' — '+data.player);
+ if(hostedMode){$('identity').textContent='Your bracket · '+data.player;$('identity').title=selected.name||'LINKS College Playoff Challenge';}
  renderCounts(data);
  const views={picks:'Full bracket',scores:demo?'Sample results':'Live scores',standings:'Standings'};$('tabs').innerHTML=Object.entries(views).map(([key,label])=>'<button data-view="'+key+'" class="'+(view===key?'active':'')+'">'+label+'</button>').join('');$('tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{if(busy)return;view=b.dataset.view;render()});
  if(!demo&&data.admin&&!hostedMode){const share=document.createElement('button');share.type='button';share.textContent='Share pool';share.onclick=async()=>{share.disabled=true;try{await (await import('./invite-qr.mjs')).openInviteQR(pool)}catch(error){$('message').textContent=error.message}finally{share.disabled=false}};$('tabs').append(share);}
