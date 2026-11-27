@@ -28,7 +28,7 @@ test('LINKS hosted pool requires an account, stays separate, and only the site o
   assert.equal((await call({action:'join'},{account:'alice-account'})).participants,1,'Repeat clicks do not create duplicate entries');
   await call({action:'join'},{account:'bob-account'});
   let state=await call(null,{pool,account:'alice-account'});assert.equal(state.status,200);assert.equal(state.access.unlocked,true);assert.equal(state.admin,false);assert.equal(state.playerCount,2);assert.equal(state.entryCount,0);assert.equal(state.bracket.standings.rows.length,2,'Only joined accounts appear, not the host placeholder');
-  const save={action:'bracketSave',picks:f.picks,guess:52,submit:true,version:0,revision:1};
+  const save={action:'bracketSave',picks:f.picks,guess:52,winningGuess:28,submit:true,version:0,revision:1};
   assert.equal((await call(save,{pool,account:'alice-account'})).status,200);
   assert.equal((await call(null,{pool,token:'admin'})).status,401,'An unrelated commissioner cannot manage this pool');
   const admin=await call(null,{pool,token:'site-owner'});assert.equal(admin.admin,true);assert.equal(admin.access.players.length,2);

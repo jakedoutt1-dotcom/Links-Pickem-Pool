@@ -4,12 +4,12 @@ import {fixture} from './helpers/pool-format-fixture.mjs';
 import {playoffFixture} from './helpers/cfp-bracket-fixture.mjs';
 import {onRequest} from '../functions/new-build/api/cfp.js';
 import {cfpSeason,normalizePlayoff} from '../public/new-build/cfp-core.mjs';
-import {SLOTS,cleanBracket,validateBracket,bracketStandings,bracketResults} from '../public/new-build/cfp-bracket-core.mjs';
+import {SLOTS,cleanBracket,validateBracket,bracketStandings,bracketResults,participants} from '../public/new-build/cfp-bracket-core.mjs';
 import {officialField} from '../functions/lib/cfp-auto-field.js';
 test('Full CFP bracket: official seeds, atomic entry, privacy, stale saves, full lock and tiebreaker',async()=>{
  let ready=false;const {db}=fixture(),old=globalThis.fetch,year=cfpSeason()+1,f=playoffFixture(year);db.raw.exec("INSERT INTO pool_active_games VALUES(1,'cfp',0,1,'2026-01-01')");globalThis.fetch=async()=>Response.json({events:ready?f.events:[]});
  const call=async(body=null,token='alice')=>{const r=await onRequest({env:{DB:db},request:new Request('https://test/new-build/api/cfp?pool=1&season='+year,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token,Origin:'https://test'},...(body?{body:JSON.stringify({pool:1,season:year,...body})}:{})})});return {status:r.status,...await r.json()}};
- const setup={action:'bracketSetup',official:true,teams:f.teams},save={action:'bracketSave',picks:f.picks,guess:50,submit:true,version:0,revision:1};
+ const setup={action:'bracketSetup',official:true,teams:f.teams},save={action:'bracketSave',picks:f.picks,guess:50,winningGuess:28,submit:true,version:0,revision:1};
  try{
   for(const player of ['Alice','Bob'])assert.equal((await call({action:'playerAccess',player,unlocked:true},'admin')).status,200);
   assert.equal((await call()).bracket.config,null);ready=true;
@@ -31,7 +31,7 @@ test('Full CFP bracket: official seeds, atomic entry, privacy, stale saves, full
  }finally{globalThis.fetch=old;db.raw.close()}
 });
 test('Bracket paths, eliminated teams, shared ties, private guesses and no premature tiebreaking',()=>{
- const f=playoffFixture(cfpSeason()+1);validateBracket(f.picks,f.teams,52);assert.deepEqual(SLOTS.find(s=>s.id==='q1').from,[1,'r8']);assert.deepEqual(SLOTS.find(s=>s.id==='s1').from,['q1','q4']);
+ const f=playoffFixture(cfpSeason()+1);validateBracket(f.picks,f.teams,52,true,28);assert.deepEqual(SLOTS.find(s=>s.id==='q1').from,[1,'r8']);assert.deepEqual(SLOTS.find(s=>s.id==='s1').from,['q1','q4']);
  const changed=structuredClone(f.picks);changed.r8.team='9';const cleaned=cleanBracket(changed,f.teams);assert.ok(cleaned.q1,'A bye winner remains valid after changing its opponent');changed.q1.team='8';assert.equal(cleanBracket(changed,f.teams).q1,undefined);
  assert.throws(()=>validateBracket(changed,f.teams,52),/previous game/);assert.throws(()=>validateBracket(f.picks,f.teams,''),/combined score/);
  f.finish();const games=f.events.map(normalizePlayoff),entries=[{player:'A',picks:f.picks,submitted:1,guess:50},{player:'B',picks:f.picks,submitted:1,guess:54}];let state=bracketStandings(['A','B'],entries,f.teams,games,true);assert.equal(state.rows[0].rank,1);assert.equal(state.rows[1].rank,1);
@@ -67,7 +67,7 @@ test('Commissioner unlock is isolated by pool and season and enforced on every b
  db.raw.exec("INSERT INTO pool_active_games VALUES(1,'cfp',0,1,'2026-01-01')");
  globalThis.fetch=async()=>Response.json({events:f.events});
  const call=async(body=null,token='alice',season=year)=>{const r=await onRequest({env:{DB:db},request:new Request('https://test/new-build/api/cfp?pool=1&season='+season,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token,Origin:'https://test'},...(body?{body:JSON.stringify({pool:1,season,...body})}:{})})});return {status:r.status,...await r.json()}};
- const access={action:'playerAccess',player:'Alice',unlocked:true},save={action:'bracketSave',picks:f.picks,guess:50,submit:true,version:0,revision:1};
+ const access={action:'playerAccess',player:'Alice',unlocked:true},save={action:'bracketSave',picks:f.picks,guess:50,winningGuess:28,submit:true,version:0,revision:1};
  try{
   let state=await call();assert.equal(state.access.unlocked,false);assert.equal(state.access.players,undefined);
   assert.equal((await call(save)).status,403);assert.equal((await call({...save,submit:false})).status,403);
@@ -103,5 +103,37 @@ test('Round scoring grows 40, 120, 200, 280 and ignores client-supplied point va
   const finals=games.filter(g=>rounds.slice(0,index+1).some(r=>g.title.toLowerCase().includes(r)));
   assert.equal(bracketStandings(['Alice'],[entry],f.teams,finals,true).rows[0].points,total);
  }
- const normalized=validateBracket(hostile,f.teams,52,true);assert(Object.values(normalized).every(p=>Object.keys(p).join()==='team'));
+ const normalized=validateBracket(hostile,f.teams,52,true,28);assert(Object.values(normalized).every(p=>Object.keys(p).join()==='team'));
+});
+
+
+test('All three tiebreakers resolve in sequence, remain private before lock, and preserve exact shared ties',()=>{
+ const f=playoffFixture(2026);f.finish();const games=f.events.map(normalizePlayoff);
+ const a={player:'A',picks:f.picks,submitted:1,guess:50,winningGuess:28},b={...a,player:'B',guess:54,winningGuess:35};
+ let result=bracketStandings(['A','B'],[b,a],f.teams,games,true);
+ assert.equal(result.actualWinningScore,28);assert.deepEqual(result.rows.map(r=>[r.player,r.rank]),[['A',1],['B',2]]);
+ result=bracketStandings(['A','B'],[{...a,guess:52,winningGuess:35},{...b,guess:50,winningGuess:28}],f.teams,games,true);
+ assert.equal(result.rows[0].player,'A','Combined total takes priority over winning-team score');
+ result=bracketStandings(['A','B'],[a,{...b,winningGuess:28}],f.teams,games,true);assert.equal(result.rows[1].rank,1,'Equally close predictions share rank if correct picks also match');
+ const pending=bracketStandings(['A','B'],[a,b],f.teams,games.slice(0,10),false);assert.equal(pending.rows[0].winningGuess,null);assert.equal(pending.rows[0].winningDifference,null);assert.equal(pending.rows[1].rank,1,'No final tiebreaking before all games finish');
+ const byPoints=new Map();let pair;
+ for(let mask=0;mask<2048&&!pair;mask++){
+  const picks={};SLOTS.forEach((slot,i)=>picks[slot.id]={team:participants(slot,picks,f.teams)[(mask>>i)&1]});
+  const row=bracketStandings(['X'],[{...a,player:'X',picks}],f.teams,games,true).rows[0],old=byPoints.get(row.points);
+  if(old&&old.wins!==row.wins)pair=[old,{...row,picks}];else byPoints.set(row.points,{...row,picks});
+ }
+ assert(pair,'There are valid equal-point brackets with different correct-pick counts');
+ const entries=pair.map((r,i)=>({...a,player:String(i),picks:r.picks}));result=bracketStandings(['0','1'],entries,f.teams,games,true);
+ assert(result.rows[0].wins>result.rows[1].wins,'Correct-pick count breaks ties only after both prediction distances match');assert.equal(result.rows[1].rank,2);
+ assert.throws(()=>validateBracket(f.picks,f.teams,52,true,null),/winning-team score/);
+ assert.throws(()=>validateBracket(f.picks,f.teams,52,true,53),/exceed/);
+ for(const invalid of [-1,201,3.5,'28',NaN])assert.throws(()=>validateBracket(f.picks,f.teams,52,true,invalid),/winning-team score/);
+});
+
+test('Existing bracket rows gain the second prediction column without losing picks, versions or submission state',async()=>{
+ const {db}=fixture(),old=globalThis.fetch,year=cfpSeason()+1,f=playoffFixture(year);
+ db.raw.exec("INSERT INTO pool_active_games VALUES(1,'cfp',0,1,'2026-01-01');CREATE TABLE links_cfp_brackets(pool_id INTEGER,season INTEGER,player TEXT,picks TEXT NOT NULL,guess INTEGER,submitted INTEGER NOT NULL DEFAULT 0,version INTEGER NOT NULL DEFAULT 1,saved_at TEXT NOT NULL,PRIMARY KEY(pool_id,season,player))");
+ db.raw.prepare('INSERT INTO links_cfp_brackets VALUES(?,?,?,?,?,?,?,?)').run(1,year,'Alice',JSON.stringify(f.picks),52,1,7,'2026-11-27');
+ globalThis.fetch=async()=>Response.json({events:f.events});
+ try{const r=await onRequest({env:{DB:db},request:new Request('https://test/new-build/api/cfp?pool=1&season='+year,{headers:{Authorization:'Bearer alice'}})});assert.equal(r.status,200);const j=await r.json();assert.deepEqual(j.bracket.entry.picks,f.picks);assert.equal(j.bracket.entry.version,7);assert.equal(j.bracket.entry.submitted,1);assert.equal(j.bracket.entry.winning_guess,null);}finally{globalThis.fetch=old;db.raw.close()}
 });

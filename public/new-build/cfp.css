@@ -75,3 +75,5 @@
 .hosted-event.hosted-event-compact{padding:12px 14px;margin:14px 0}.hosted-event-compact h2{font-size:17px;margin:0 0 6px}.hosted-event-compact p{font-size:12px;margin:5px 0;line-height:1.4}.hosted-event-compact .hosted-event-actions{gap:8px;font-size:12px}.hosted-event-compact button{font-size:13px;padding:9px 12px;min-height:44px}.hosted-event-compact [data-event-status]:empty{display:none}
 
 .cfp-challenge-share{display:flex;justify-content:flex-end;margin:10px 0}.cfp-challenge-share button{min-height:44px;padding:10px 16px;border:1px solid #dfbd6e;border-radius:10px;background:#e4c16f;color:#091923;font-size:14px;font-weight:700;cursor:pointer}
+
+.cfp-tiebreaker label+label{margin-top:10px}.cfp-board-viewport[data-layout="bracket"] .cfp-tiebreaker input{padding:8px;font-size:14px;min-height:40px}.cfp-board-viewport[data-layout="bracket"] .cfp-tiebreaker p{font-size:10px;line-height:1.4}
