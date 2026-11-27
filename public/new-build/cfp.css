@@ -51,3 +51,7 @@
 .cfp-board-viewport[data-layout="bracket"] .teams button small{display:none;}
 
 .cfp-tiebreaker{margin-top:12px;padding-top:12px;border-top:1px solid #c8a85e}.cfp-tiebreaker h3{font-size:15px;color:#ffda80;margin:0 0 8px}.cfp-tiebreaker label{display:block;font-size:12px;line-height:1.4}.cfp-tiebreaker input{width:100%;margin-top:8px}.cfp-tiebreaker p{font-size:11px;line-height:1.5;margin-bottom:0}
+
+.hosted-event{padding:20px;margin:20px 0;border:1px solid #ad9154;border-radius:14px;background:linear-gradient(120deg,#193143,#0a1721)}.hosted-event h2{font-size:22px;margin-top:0}.hosted-event p{font-size:14px;line-height:1.6;color:#d6e0e6}.hosted-event-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.hosted-event a.action{display:inline-flex;align-items:center;text-decoration:none}.hosted-event-share{max-width:440px;width:calc(100% - 24px);padding:20px;border:1px solid #c2a15c;border-radius:14px;background:#0e2330;color:#fff}.hosted-event-share::backdrop{background:#000b}.hosted-event-share svg{display:block;width:100%;max-width:290px;margin:16px auto;background:#fff}.hosted-event-share input{width:100%;margin:14px 0}
+
+.cfp-counts{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0 18px}.cfp-counts span{display:flex;gap:9px;align-items:center;border:1px solid #8a754a;border-radius:10px;padding:12px 15px;background:#10232f;font-size:13px;color:#d5e1e8}.cfp-counts strong{font-size:25px;color:#ffe0a0}

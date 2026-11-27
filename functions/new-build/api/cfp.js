@@ -1,3 +1,4 @@
+import {hostedActor} from '../../lib/hosted-cfp.js';
 import {bracketState} from '../../lib/cfp-bracket.js';
 import {sessionFor} from '../../lib/college.js';
 import {poolGameKeys} from '../../lib/pool-games.js';
@@ -15,7 +16,7 @@ export async function onRequest({request,env}){try{
  const db=env.DB;if(!db)throw fail('Pool service unavailable.',503);
  const post=request.method==='POST',b=post?await request.json():Object.fromEntries(new URL(request.url).searchParams),pool=Number(b.pool),season=Number(b.season||cfpSeason());
  if(!Number.isInteger(pool)||pool<1||!Number.isInteger(season)||season<2024||season>cfpSeason()+1)throw fail('Choose a valid pool and college season.');
- const actor=await sessionFor(request,db,pool);if(!actor)throw fail('Sign in to this pool.',401);
+ const hosted=await hostedActor(request,db,pool),actor=hosted.hosted?hosted.actor:await sessionFor(request,db,pool);if(!actor)throw fail('Sign in to this pool.',401);if(hosted.hosted&&Number(hosted.season)!==season)throw fail('Choose the current LINKS event season.',400);
  if(!(await poolGameKeys(db,pool)).includes('cfp'))throw fail('College Playoff Pick\'em is not enabled in this pool.',403);
  const member=await db.prepare('SELECT name FROM pool_players WHERE pool_id=? AND lower(name)=lower(?)').bind(pool,actor.player_name).first();if(!member)throw fail('Player membership not found.',403);
  await db.batch([
@@ -35,6 +36,7 @@ export async function onRequest({request,env}){try{
  // Player access is separate for every pool and playoff season.
  await db.prepare('CREATE TABLE IF NOT EXISTS links_cfp_access(pool_id INTEGER,season INTEGER,player TEXT,unlocked INTEGER NOT NULL DEFAULT 0,updated_at TEXT NOT NULL,PRIMARY KEY(pool_id,season,player))').run();
  if(post&&b.action==='playerAccess'){
+  if(hosted.hosted)throw fail('Players join the LINKS challenge with automatic access.',409);
   if(actor.role!=='admin')throw fail('Commissioner access required.',403);
   if(typeof b.unlocked!=='boolean'||typeof b.player!=='string')throw fail('Choose a player and access status.');
   const target=await db.prepare('SELECT name FROM pool_players WHERE pool_id=? AND lower(name)=lower(?)').bind(pool,b.player).first();
@@ -42,8 +44,15 @@ export async function onRequest({request,env}){try{
   await db.prepare('INSERT INTO links_cfp_access VALUES(?,?,?,?,?) ON CONFLICT(pool_id,season,player) DO UPDATE SET unlocked=excluded.unlocked,updated_at=excluded.updated_at').bind(pool,season,target.name,b.unlocked?1:0,new Date().toISOString()).run();
   return json({ok:true});
  }
+ if(hosted.hosted&&!actor.viewOnly)await db.prepare('INSERT INTO links_cfp_access VALUES(?,?,?,1,?) ON CONFLICT(pool_id,season,player) DO UPDATE SET unlocked=1,updated_at=excluded.updated_at').bind(pool,season,member.name,new Date().toISOString()).run();
  const accessRow=await db.prepare('SELECT unlocked FROM links_cfp_access WHERE pool_id=? AND season=? AND player=?').bind(pool,season,member.name).first(),unlocked=accessRow?.unlocked===1;
+ if(post&&['pick','bracketSave'].includes(b.action)&&actor.viewOnly)throw fail('Join with your LINKS account to enter your own bracket.',403);
  if(post&&['pick','bracketSave'].includes(b.action)&&!unlocked)throw fail('Your commissioner needs to unlock your playoff picks.',403);
+ if(!post&&b.counts==='1'){
+  const players=await db.prepare('SELECT COUNT(*) n FROM pool_players p WHERE pool_id=? AND (?=0 OR EXISTS(SELECT 1 FROM links_hosted_cfp_members m WHERE m.pool_id=p.pool_id AND m.player=p.name))').bind(pool,hosted.hosted?1:0).first();
+  let entries={n:0};try{entries=await db.prepare('SELECT COUNT(*) n FROM links_cfp_brackets WHERE pool_id=? AND season=? AND submitted=1').bind(pool,season).first()}catch(e){if(!/no such table/i.test(String(e)))throw e}
+  return json({playerCount:players.n,entryCount:entries.n});
+ }
  const previous=(await db.prepare('SELECT * FROM links_cfp_games WHERE season=?').bind(season).all()).results||[];let fresh=[],warning='';
  try{fresh=await fetchPlayoffs(season)}catch(error){if(post)throw error;warning='The schedule could not refresh. Showing saved results; picking is paused until it reconnects.'}
  for(let g of fresh){const prior=previous.find(r=>r.event_id===g.id),old=prior?JSON.parse(prior.data):null;if(old?.final&&old.winner&&(!g.final||!g.winner))g=old;
@@ -53,7 +62,7 @@ export async function onRequest({request,env}){try{
  }
  const stored=(await db.prepare('SELECT * FROM links_cfp_games WHERE season=?').bind(season).all()).results||[],lines=(await db.prepare('SELECT * FROM links_cfp_lines WHERE pool_id=? AND season=?').bind(pool,season).all()).results||[];
  const games=stored.map(row=>{const g=JSON.parse(row.data),line=lines.find(l=>l.event_id===g.id);return {...g,locked:!!row.locked,totalLine:line?.total_line??g.totalLine,lineFixed:!!line}}).sort((a,b)=>Date.parse(a.start)-Date.parse(b.start));
- const bracket=await bracketState({db,pool,season,member,actor,games,b,post:post&&['bracketSetup','bracketSave'].includes(b.action),available:!warning});
+ const bracket=await bracketState({db,pool,season,member,actor,games,b,post:post&&['bracketSetup','bracketSave'].includes(b.action),available:!warning,hosted:hosted.hosted});
  if(post&&['bracketSetup','bracketSave'].includes(b.action))return json(bracket);
  if(post){
   if(b.action!=='pick')throw fail('Unknown action.');
@@ -70,8 +79,8 @@ export async function onRequest({request,env}){try{
   statements.push(db.prepare('INSERT INTO links_cfp_picks SELECT ?,?,?,?,?,?,?,(SELECT total_line FROM links_cfp_lines WHERE pool_id=? AND season=? AND event_id=?),? WHERE '+guard+' ON CONFLICT(pool_id,player,season,event_id) DO UPDATE SET team=excluded.team,bonus=excluded.bonus,total_side=excluded.total_side,total_line=excluded.total_line,saved_at=excluded.saved_at').bind(pool,member.name,season,g.id,String(b.team),bonus,total,pool,season,g.id,new Date().toISOString(),...args));
   const results=await db.batch(statements);if(!results.at(-1)?.meta?.changes)throw fail('This game locked, the rules changed, or your confidence points were used. Refresh and review your picks.',409);return json({ok:true});
  }
- const roster=((await db.prepare('SELECT name FROM pool_players WHERE pool_id=? ORDER BY name').bind(pool).all()).results||[]).map(r=>r.name),picks=(await db.prepare('SELECT * FROM links_cfp_picks WHERE pool_id=? AND season=?').bind(pool,season).all()).results||[];
+ const roster=((await db.prepare('SELECT p.name FROM pool_players p WHERE pool_id=? AND (?=0 OR EXISTS(SELECT 1 FROM links_hosted_cfp_members m WHERE m.pool_id=p.pool_id AND m.player=p.name)) ORDER BY p.name').bind(pool,hosted.hosted?1:0).all()).results||[]).map(r=>r.name),picks=(await db.prepare('SELECT * FROM links_cfp_picks WHERE pool_id=? AND season=?').bind(pool,season).all()).results||[];
  const access={unlocked};
- if(actor.role==='admin')access.players=(await db.prepare('SELECT p.name,COALESCE(a.unlocked,0) AS unlocked FROM pool_players p LEFT JOIN links_cfp_access a ON a.pool_id=p.pool_id AND a.season=? AND a.player=p.name WHERE p.pool_id=? ORDER BY p.name').bind(season,pool).all()).results.map(p=>({name:p.name,unlocked:!!p.unlocked}));
- return json({access,bracket,pool,season,player:member.name,admin:actor.role==='admin',settings:{bonus:!!settings.bonus,totals:!!settings.totals,revision:settings.revision,locked:picks.length>0},games,picks:Object.fromEntries(picks.filter(p=>p.player===member.name).map(p=>[p.event_id,p])),shared:picks.filter(p=>games.some(g=>g.id===p.event_id&&pickClosed(g)&&!g.tbd)),standings:gradePlayoff(roster,picks,games),bonusUsed:picks.filter(p=>p.player===member.name).reduce((n,p)=>n+p.bonus,0),warning,available:!warning});
+ if(actor.role==='admin')access.players=(await db.prepare('SELECT p.name,COALESCE(a.unlocked,0) AS unlocked FROM pool_players p LEFT JOIN links_cfp_access a ON a.pool_id=p.pool_id AND a.season=? AND a.player=p.name WHERE p.pool_id=? AND (?=0 OR EXISTS(SELECT 1 FROM links_hosted_cfp_members m WHERE m.pool_id=p.pool_id AND m.player=p.name)) ORDER BY p.name').bind(season,pool,hosted.hosted?1:0).all()).results.map(p=>({name:p.name,unlocked:!!p.unlocked}));
+ return json({playerCount:roster.length,entryCount:bracket.standings.rows.filter(r=>r.submitted).length,hostView:!!actor.viewOnly,access,bracket,pool,season,player:member.name,admin:actor.role==='admin',settings:{bonus:!!settings.bonus,totals:!!settings.totals,revision:settings.revision,locked:picks.length>0},games,picks:Object.fromEntries(picks.filter(p=>p.player===member.name).map(p=>[p.event_id,p])),shared:picks.filter(p=>games.some(g=>g.id===p.event_id&&pickClosed(g)&&!g.tbd)),standings:gradePlayoff(roster,picks,games),bonusUsed:picks.filter(p=>p.player===member.name).reduce((n,p)=>n+p.bonus,0),warning,available:!warning});
  }catch(error){return json({error:error.status?error.message:'College playoff service is unavailable. Saved picks are unchanged.'},error.status||503)}}

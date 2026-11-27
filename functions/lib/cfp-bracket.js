@@ -1,7 +1,7 @@
 import {loadOfficialField} from './cfp-auto-field.js';
 import {validateBracket,bracketClosed,bracketStandings} from '../../public/new-build/cfp-bracket-core.mjs';
 const fail=(message,status=400)=>Object.assign(Error(message),{status});
-export async function bracketState({db,pool,season,member,actor,games,b,post,available}){
+export async function bracketState({db,pool,season,member,actor,games,b,post,available,hosted=false}){
  await db.batch([
   db.prepare('CREATE TABLE IF NOT EXISTS links_cfp_bracket_config(pool_id INTEGER,season INTEGER,teams TEXT NOT NULL,deadline TEXT NOT NULL,locked INTEGER NOT NULL DEFAULT 0,revision INTEGER NOT NULL DEFAULT 1,PRIMARY KEY(pool_id,season))'),
   db.prepare('CREATE TABLE IF NOT EXISTS links_cfp_brackets(pool_id INTEGER,season INTEGER,player TEXT,picks TEXT NOT NULL,guess INTEGER,submitted INTEGER NOT NULL DEFAULT 0,version INTEGER NOT NULL DEFAULT 1,saved_at TEXT NOT NULL,PRIMARY KEY(pool_id,season,player))')
@@ -24,7 +24,7 @@ export async function bracketState({db,pool,season,member,actor,games,b,post,ava
   if(!r.meta?.changes)throw fail('The bracket locked or changed in another tab. Refresh before saving.',409);return {ok:true};
  }
  const entries=((await db.prepare('SELECT * FROM links_cfp_brackets WHERE pool_id=? AND season=?').bind(pool,season).all()).results||[]).map(e=>({...e,picks:JSON.parse(e.picks)}));
- const roster=((await db.prepare('SELECT name FROM pool_players WHERE pool_id=? ORDER BY name').bind(pool).all()).results||[]).map(r=>r.name);
+ const roster=((await db.prepare('SELECT p.name FROM pool_players p WHERE pool_id=? AND (?=0 OR EXISTS(SELECT 1 FROM links_hosted_cfp_members m WHERE m.pool_id=p.pool_id AND m.player=p.name)) ORDER BY p.name').bind(pool,hosted?1:0).all()).results||[]).map(r=>r.name);
  const standings=bracketStandings(roster,entries,config?.teams||[],games,closed);
  return {config,locked:closed,setupLocked:entries.length>0||!!config?.locked,entry:entries.find(e=>e.player===member.name)||null,shared:closed?entries.filter(e=>e.submitted):[],standings};
 }
