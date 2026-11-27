@@ -1,4 +1,4 @@
-import {mountBracket} from './cfp-bracket-ui.mjs?v=compact1';
+import {mountBracket} from './cfp-bracket-ui.mjs?v=tiebreak1';
 import {SLOTS,participants,BRACKET_RULES,bracketStandings,cleanBracket} from './cfp-bracket-core.mjs?v=rounds1';
 import {cfpSeason} from './cfp-core.mjs';
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -50,5 +50,5 @@ async function load(){
 }
 $('refresh').onclick=()=>void load();$('season').onchange=()=>{if(busy){$('season').value=season;return}season=Number($('season').value);demoEntry=null;demoFinal=false;void load()};
 if(demo||(pool&&token()))void load();else $('message').innerHTML='Sign in through <a href="./control-center.html">your Locker Room</a>, or <a href="./cfp.html?demo=1">try the demo</a>.';
-const timer=setInterval(()=>{if(!demo&&data?.bracket?.config&&Date.now()>=Date.parse(data.bracket.config.deadline)){data.bracket.locked=true;$('content').querySelectorAll('#bracketSave button,#bracketSave input,[data-slot] button,[data-slot] select').forEach(b=>b.disabled=true);const note=$('bracketStatus');if(note)note.textContent='The entire bracket is locked. No more edits can be saved.';}},1000);
+const timer=setInterval(()=>{if(!demo&&data?.bracket?.config&&Date.now()>=Date.parse(data.bracket.config.deadline)){data.bracket.locked=true;$('content').querySelectorAll('#bracketSave button,#bracketSave input,#championshipGuess,[data-slot] button,[data-slot] select').forEach(b=>b.disabled=true);const note=$('bracketStatus');if(note)note.textContent='The entire bracket is locked. No more edits can be saved.';}},1000);
 const refreshTimer=setInterval(()=>{if(!document.hidden&&!busy&&(['scores','standings'].includes(view)||!data?.bracket?.config||data?.access?.unlocked===false))void load()},60000);window.addEventListener('pagehide',()=>{clearInterval(timer);clearInterval(refreshTimer)},{once:true});
