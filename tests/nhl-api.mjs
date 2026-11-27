@@ -2,8 +2,13 @@ import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {onRequest} from '../functions/new-build/api/nhl.js';
 import {nhlDay,pickClosed,validDay,seasonRange} from '../public/new-build/nhl-core.mjs';
+// Keep the feed, JavaScript locks and SQLite guard on one fixed midday clock.
+// Relative fixtures otherwise cross Eastern midnight during late-night CI.
+const originalNow=Date.now;
+const fixtureNow=Date.parse('2026-11-26T18:00:00Z');
+Date.now=()=>fixtureNow;
 const sql=new DatabaseSync(':memory:');sql.exec(`CREATE TABLE pool_sessions(token TEXT,pool_id INTEGER,player_name TEXT,role TEXT,expires_at TEXT);CREATE TABLE pool_players(pool_id INTEGER,name TEXT);CREATE TABLE links_pool_slots(pool_id INTEGER,game_type TEXT,active INTEGER);INSERT INTO pool_sessions VALUES('alice',1,'Alice','player','2099-01-01'),('admin',1,'Owner','admin','2099-01-01'),('other',2,'Other','player','2099-01-01');INSERT INTO pool_players VALUES(1,'Alice'),(1,'Owner'),(1,'Bob');INSERT INTO links_pool_slots VALUES(1,'nhl',1);`);
-const db={prepare(q){let args=[];return{bind(...v){args=v;return this},async first(){return sql.prepare(q).get(...args)||null},async all(){return{results:sql.prepare(q).all(...args)}},async run(){return{meta:{changes:Number(sql.prepare(q).run(...args).changes)}}}}},async batch(stmts){const results=[];for(const s of stmts)results.push(await s.run());return results}};
+const db={prepare(q){q=q.replaceAll("julianday('now')", "julianday('2026-11-26T18:00:00Z')");let args=[];return{bind(...v){args=v;return this},async first(){return sql.prepare(q).get(...args)||null},async all(){return{results:sql.prepare(q).all(...args)}},async run(){return{meta:{changes:Number(sql.prepare(q).run(...args).changes)}}}}},async batch(stmts){const results=[];for(const s of stmts)results.push(await s.run());return results}};
 const date=nhlDay(),later=new Date(Date.now()+3600000).toISOString();
 const game=id=>({id:String(id),date:later,season:{year:2027,type:2},competitions:[{date:later,timeValid:true,status:{type:{state:'pre',completed:false,description:'Scheduled'}},competitors:[{homeAway:'away',team:{id:147,displayName:'Predators'},records:[{type:'total',summary:'1-0'}]},{homeAway:'home',team:{id:111,displayName:'Bruins'},records:[{type:'total',summary:'0-1'}]}]}]});
 const games=[game(1),game(2)];const original=fetch;global.fetch=async()=>Response.json({events:games});
@@ -41,4 +46,4 @@ try{
  assert.equal(pickClosed({...r.data.games[0],start:'2099-01-01',final:false,live:true}),true);assert.equal(validDay('2026-02-31'),false);
  assert.deepEqual(seasonRange('2027-01-15'),['2026-07-01','2027-06-30']);assert.deepEqual(seasonRange('2026-10-15'),['2026-07-01','2027-06-30']);
  console.log('PASS NHL auth, pool isolation, independent games, puck drop and sticky locks, privacy, activation, scoring, voids, feed failure and roster standings');
-}finally{global.fetch=original;sql.close()}
+}finally{global.fetch=original;Date.now=originalNow;sql.close()}
