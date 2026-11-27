@@ -1,6 +1,6 @@
-import {pullbackInput} from './daily-shot-controls.mjs?v=2';
+import {pullbackInput,shotInput} from './daily-shot-controls.mjs?v=3';
 import {dailyShots,centralDay,launch,step,DT,simulate} from './daily-shot-core.mjs?v=1';
-import {createCourt} from './daily-shot-scene.mjs?v=1';
+import {createCourt} from './daily-shot-scene.mjs?v=3';
 import qrcode from './vendor/qrcode.mjs';
 const $=id=>document.getElementById(id),query=new URLSearchParams(location.search),read=(key)=>{try{return localStorage.getItem(key)}catch{return null}};
 let pool=null;try{pool=JSON.parse(read('links-current-pool')||'null')?.id||null}catch{}
@@ -36,8 +36,9 @@ function renderGame(){
 function readyShot(){
  if(!game||game.results.length>=5)return;game.awaitingNext=false;const shot=game.shots[game.results.length];court.setShot(shot);$('aim').value='0';$('power').value='35';$('feedback').textContent='';$('next').hidden=true;$('dragHint').hidden=false;$('dragHint').textContent='PULL BACK FOR POWER · RELEASE TO SHOOT';$('shotLabel').textContent=shot.label+' · Shot '+(game.results.length+1);preview();renderGame();controls();
 }
-function input(){return {aim:Math.round(Number($('aim').value)/100*100000)/100000,power:Math.round(Number($('power').value)/100*100000)/100000}}
-function preview(){const v=input();$('aimValue').textContent=v.aim===0?'Center':Math.abs(Math.round(v.aim*100))+'% '+(v.aim<0?'left':'right');$('powerValue').textContent=Math.round(v.power*100)+'%';if(game&&!flight&&!game.awaitingNext)court?.preview(v)}
+function input(){const v=shotInput(Number($('aim').value)/100,Number($('power').value)/100,game?.shots[game.results.length]);return {aim:Math.round(v.aim*100000)/100000,power:Math.round(v.power*100000)/100000}}
+function preview(){const v=input(),aim=Number($('aim').value);$('aimValue').textContent=aim===0?'Center':Math.abs(aim)+'% '+(aim<0?'left':'right');$('powerValue').textContent=Math.round(v.power*100)+'%';if(game&&!flight&&!game.awaitingNext){const prediction=simulate(game.shots[game.results.length],v);court?.preview(v,prediction.made);$('dragHint').textContent='POWER '+Math.round(v.power*100)+'% · '+(prediction.made?'ON TARGET — RELEASE!':prediction.feedback+' · KEEP AIMING');}}
+
 async function start(ranked){
  if(busy||!court)return;if(game&&game.ranked&&game.results.length<5&&!confirm('Leave this run? Your saved shots remain and the attempt still counts.'))return;
  busy=true;controls();try{
@@ -75,7 +76,7 @@ $('finishMenu').onclick=()=>{game=null;$('finish').hidden=true;$('setup').hidden
 $('start').onclick=()=>start(true);$('practice').onclick=$('practiceAgain').onclick=()=>start(false);$('again').onclick=()=>start(true);$('shoot').onclick=shoot;$('next').onclick=()=>{if(!busy)readyShot()};$('leave').onclick=leave;$('share').onclick=share;$('refresh').onclick=refresh;$('period').onchange=$('scope').onchange=refresh;$('venue').onchange=()=>{try{localStorage.setItem('links-daily-venue',$('venue').value)}catch{}showVenue();if($('scope').value==='venue')void refresh()};$('aim').oninput=$('power').oninput=preview;
 $('sound').onclick=()=>{soundOn=!soundOn;$('sound').textContent=soundOn?'Sound on':'Sound off';$('sound').setAttribute('aria-pressed',String(soundOn));sound(440)};
 $('court').addEventListener('pointerdown',e=>{if($('shoot').disabled||e.button!==0&&e.pointerType==='mouse')return;const r=$('court').getBoundingClientRect();drag={id:e.pointerId,x:e.clientX,y:e.clientY,w:r.width,h:r.height,moved:false};$('court').setPointerCapture(e.pointerId);e.preventDefault()});
-$('court').addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.id)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.moved||=Math.hypot(dx,dy)>15;const v=pullbackInput(dx,dy,drag.w,drag.h);$('aim').value=String(Math.round(v.aim*100));$('power').value=String(Math.round(v.power*100));$('dragHint').textContent='POWER '+Math.round(v.power*100)+'% · RELEASE TO SHOOT';preview()});
+$('court').addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.id)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.moved||=Math.hypot(dx,dy)>15;const v=pullbackInput(dx,dy,drag.w,drag.h,game.shots[game.results.length]);$('aim').value=String(Math.round(v.aim*100));$('power').value=String(Number((v.power*100).toFixed(3)));$('dragHint').textContent='POWER '+Math.round(v.power*100)+'% · RELEASE TO SHOOT';preview()});
 $('court').addEventListener('pointerup',e=>{if(!drag||e.pointerId!==drag.id)return;const moved=drag.moved;drag=null;if(moved)void shoot();else message('Pull downward to add power, then release to shoot.');});$('court').addEventListener('pointercancel',()=>{drag=null});
 $('court').addEventListener('keydown',e=>{if($('shoot').disabled)return;if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(e.key)){e.preventDefault();if(e.key===' ')void shoot();else{const slider=e.key==='ArrowLeft'||e.key==='ArrowRight'?$('aim'):$('power'),dir=e.key==='ArrowLeft'||e.key==='ArrowDown'?-1:1;slider.value=String(Number(slider.value)+dir);preview()}}});
 try{court=createCourt($('court'),delta=>{if(flight){acc+=delta;let scored=false;while(acc>=DT&&!flight.done){const was=flight.points;step(flight);acc-=DT;if(flight.points&&!was)scored=true;}court.renderBall(flight);if(scored){$('feedback').textContent=flight.feedback;sound(1000,.2)}if(flight.done)void shotFinished(flight);}if(game?.ranked&&!flight&&!busy)controls();});$('loadingCourt').hidden=true;}catch(e){$('loadingCourt').textContent='3D graphics could not start. Enable hardware acceleration or try a newer browser.';$('setupStatus').textContent='This device could not start the 3D court.';message('The 3D court could not initialize. Please try Safari, Chrome, or Edge with WebGL enabled.');}

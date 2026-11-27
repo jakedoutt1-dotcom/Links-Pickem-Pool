@@ -11,11 +11,22 @@ export function createCourt(canvas,onFrame){
  const wood=canvasTexture(1024,2048,(c,w,h)=>{
   let seed=56;const r=()=>((seed=Math.imul(seed,1664525)+1013904223>>>0)/4294967296);
   for(let y=0;y<h;y+=128)for(let x=0;x<w;x+=32){const tint=Math.floor(r()*30);c.fillStyle=`rgb(${159+tint},${103+tint},${54+tint})`;c.fillRect(x,y,32,128);c.strokeStyle='#51301044';c.strokeRect(x,y,32,128);for(let k=0;k<28;k++){c.strokeStyle=k%2?'#eabd7920':'#57371d20';const a=x+r()*32;c.beginPath();c.moveTo(a,y);c.bezierCurveTo(a+3,y+30,a-2,y+80,a,y+128);c.stroke();}}
-  c.strokeStyle='#fff0d6';c.lineWidth=5;c.strokeRect(80,70,w-160,h-140);c.strokeRect(w/2-133,70,266,490);c.beginPath();c.arc(w/2,560,133,0,Math.PI);c.stroke();c.beginPath();c.arc(w/2,560,133,Math.PI,Math.PI*2);c.setLineDash([12,12]);c.stroke();c.setLineDash([]);c.beginPath();c.moveTo(80,1024);c.lineTo(w-80,1024);c.stroke();c.beginPath();c.arc(w/2,1024,120,0,Math.PI*2);c.stroke();c.beginPath();c.ellipse(w/2,70,390,850,0,0,Math.PI);c.stroke();c.fillStyle='#10273b';c.fillRect(82,75,862,45);c.fillStyle='#f6d18c';c.font='bold 26px Arial';c.textAlign='center';c.fillText('LINKS • DAILY SHOT',w/2,108);
+  // Draw in court meters: rim at z=0, baseline 1.575m behind it.
+  const px=x=>(x+9.5)/19*w,pz=z=>(z+3.575)/32*h;
+  c.strokeStyle='#fff0d6';c.lineWidth=4;
+  const line=(x1,z1,x2,z2)=>{c.beginPath();c.moveTo(px(x1),pz(z1));c.lineTo(px(x2),pz(z2));c.stroke()};
+  const arc=(x,z,r,a,b)=>{c.beginPath();c.ellipse(px(x),pz(z),r/19*w,r/32*h,0,a,b);c.stroke()};
+  c.strokeRect(px(-7.5),pz(-1.575),15/19*w,28/32*h);
+  c.strokeRect(px(-2.45),pz(-1.575),4.9/19*w,5.8/32*h);
+  arc(0,4.225,1.8,0,Math.PI);c.setLineDash([12,12]);arc(0,4.225,1.8,Math.PI,2*Math.PI);c.setLineDash([]);
+  line(-7.5,12.425,7.5,12.425);arc(0,12.425,1.8,0,2*Math.PI);
+  arc(0,0,6.75,0,Math.PI);arc(0,0,1.25,0,Math.PI);
+  c.fillStyle='#10273b';c.fillRect(px(-7.5),pz(-3.4),15/19*w,1.5/32*h);
+  c.fillStyle='#f6d18c';c.font='bold 26px Arial';c.textAlign='center';c.fillText('LINKS • DAILY SHOT',px(0),pz(-2.3));
  });
- const floor=new T.Mesh(new T.PlaneGeometry(15,28),new T.MeshStandardMaterial({map:wood,roughness:.3,metalness:.13}));floor.rotation.x=-Math.PI/2;floor.position.z=8;floor.receiveShadow=true;scene.add(floor);
+ const floor=new T.Mesh(new T.PlaneGeometry(19,32),new T.MeshStandardMaterial({map:wood,roughness:.3,metalness:.13}));floor.rotation.x=-Math.PI/2;floor.position.z=12.425;floor.receiveShadow=true;scene.add(floor);
  function box(w,h,d,color,x,y,z,metal=.2){const m=new T.Mesh(new T.BoxGeometry(w,h,d),new T.MeshStandardMaterial({color,roughness:.35,metalness:metal}));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);return m;}
- box(.42,3.7,.42,'#091e34',0,1.85,-1.5);box(.18,.2,1.0,'#34475d',0,3.6,-1.0);box(1.0,.35,1.2,'#0b2034',0,.2,-1.8);
+ box(.42,3.7,.42,'#091e34',0,1.85,-2.7);box(.18,.2,2.15,'#34475d',0,3.6,-1.65);box(1.0,.35,1.2,'#0b2034',0,.2,-2.9);
  const glass=new T.Mesh(new T.BoxGeometry(1.83,1.07,.055),new T.MeshPhysicalMaterial({color:'#c9e9ff',roughness:.08,metalness:.1,transparent:true,opacity:.24,side:T.DoubleSide}));glass.position.set(0,3.615,-.57);scene.add(glass);
  const trim=new T.LineSegments(new T.EdgesGeometry(new T.BoxGeometry(1.86,1.1,.06)),new T.LineBasicMaterial({color:'#f2cf83'}));trim.position.copy(glass.position);scene.add(trim);
  const square=new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(-.3,3.16,-.53),new T.Vector3(-.3,3.61,-.53),new T.Vector3(.3,3.61,-.53),new T.Vector3(.3,3.16,-.53),new T.Vector3(-.3,3.16,-.53)]),new T.LineBasicMaterial({color:'#fff7e5'}));scene.add(square);
@@ -27,10 +38,10 @@ export function createCourt(canvas,onFrame){
  const shadowTx=canvasTexture(128,128,c=>{const g=c.createRadialGradient(64,64,1,64,64,62);g.addColorStop(0,'#000000aa');g.addColorStop(1,'#00000000');c.fillStyle=g;c.fillRect(0,0,128,128)}),shadow=new T.Mesh(new T.PlaneGeometry(.55,.55),new T.MeshBasicMaterial({map:shadowTx,transparent:true,depthWrite:false}));shadow.rotation.x=-Math.PI/2;shadow.position.y=.012;scene.add(shadow);
  const dots=[];for(let i=0;i<17;i++){const dot=new T.Mesh(new T.SphereGeometry(.018+i*.0006,16,10),new T.MeshBasicMaterial({color:'#ffdc87',transparent:true,opacity:1-i*.035}));scene.add(dot);dots.push(dot)}
  const halo=new T.Mesh(new T.TorusGeometry(.185,.003,6,70),new T.MeshBasicMaterial({color:'#eac56a',transparent:true,opacity:.85}));scene.add(halo);
- for(const side of [-1,1]){box(.15,.3,27,'#10273e',side*7.3,.16,8);const strip=new T.Mesh(new T.BoxGeometry(.035,.03,26),new T.MeshBasicMaterial({color:side===1?'#62aafa':'#ffd17b'}));strip.position.set(side*7.2,.34,8);scene.add(strip);}
+ for(const side of [-1,1]){box(.15,.3,27,'#10273e',side*9.3,.16,12.425);const strip=new T.Mesh(new T.BoxGeometry(.035,.03,26),new T.MeshBasicMaterial({color:side===1?'#62aafa':'#ffd17b'}));strip.position.set(side*9.2,.34,12.425);scene.add(strip);}
  let shot=null,flight=false,netAt=-100,clock=0,last=0,followTilt=0,followYaw=0;
  function setShot(next){shot=next;flight=false;followTilt=0;ball.position.set(next.x,1.5,next.z);ball.rotation.set(0,0,0);const d=Math.hypot(next.x,next.z);camera.position.set(next.x+next.x/d*.9,1.72,next.z+next.z/d*.9);camera.lookAt(0,1.72,0);followYaw=Math.atan2(-camera.position.x,-camera.position.z);halo.position.copy(ball.position);halo.quaternion.copy(camera.quaternion);dots.forEach(d=>d.visible=true);}
- function preview(input){if(!shot||flight)return;const s=launch(shot,input);for(let i=0;i<17;i++){for(let k=0;k<5;k++)step(s);dots[i].position.set(s.x,s.y,s.z);dots[i].visible=i<14;}halo.visible=true;}
+ function preview(input,onTarget=false){if(!shot||flight)return;const s=launch(shot,input);for(let i=0;i<17;i++){for(let k=0;k<10;k++)step(s);dots[i].position.set(s.x,s.y,s.z);dots[i].visible=!s.done;dots[i].material.color.set(onTarget?'#8bffa9':'#ffdc87');}halo.visible=true;}
  function renderBall(s){flight=true;ball.position.set(s.x,s.y,s.z);const hx=s.x-camera.position.x,hz=s.z-camera.position.z,dy=s.y-camera.position.y,d=Math.hypot(hx,hz),base=Math.atan2(-camera.position.x,-camera.position.z),raw=Math.atan2(hx,hz);let difference=raw-base;while(difference>Math.PI)difference-=Math.PI*2;while(difference< -Math.PI)difference+=Math.PI*2;const half=Math.atan(Math.tan(camera.fov*Math.PI/360)*camera.aspect),yaw=base+Math.sign(difference)*Math.max(0,Math.abs(difference)-half*.68),tilt=Math.max(0,Math.atan2(dy,d)-.36);followYaw+=(yaw-followYaw)*.35;followTilt+=(tilt-followTilt)*.35;camera.lookAt(camera.position.x+Math.sin(followYaw)*10,camera.position.y+Math.tan(followTilt)*10,camera.position.z+Math.cos(followYaw)*10);ball.rotation.x=-s.time*8;ball.rotation.z=s.vx*s.time*.7;halo.visible=false;dots.forEach(d=>d.visible=false);if(s.madeAt!==null&&netAt<clock-3)netAt=clock;}
  function resize(){const r=canvas.getBoundingClientRect();if(r.width<1||r.height<1)return;renderer.setSize(r.width,r.height,false);camera.aspect=r.width/Math.max(1,r.height);camera.updateProjectionMatrix()}
  const observer=new ResizeObserver(resize);observer.observe(canvas);resize();

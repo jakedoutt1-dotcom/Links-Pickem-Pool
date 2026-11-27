@@ -1,4 +1,4 @@
-import {pullbackInput} from '../public/new-build/daily-shot-controls.mjs';
+import {pullbackInput,shotInput,precisionPower} from '../public/new-build/daily-shot-controls.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {dailyShots,launch,step,simulate,centralDay,weekStart,streaks,validInput} from '../public/new-build/daily-shot-core.mjs';
@@ -52,4 +52,12 @@ test('Pulling back adds enough lift on phones and desktops',()=>{
   const shot=dailyShots('pullback')[0],low=simulate(shot,short,{trace:true}),high=simulate(shot,full,{trace:true});
   assert(Math.max(...high.frames.map(f=>f.y))>5);assert(Math.max(...high.frames.map(f=>f.y))>Math.max(...low.frames.map(f=>f.y)));
  }
+});
+
+test('Centered controls target the visible hoop and allow small aim corrections',()=>{
+ for(const shot of dailyShots('daily-shot-v1:2026-11-26')){
+  assert(Math.abs(precisionPower(.55,shot)-precisionPower(.45,shot))<.009,'Useful power has a forgiving finger travel range');
+  const input=shotInput(0,precisionPower(.5,shot),shot);assert.equal(simulate(shot,input).points,20);
+ }
+ assert(Math.abs(pullbackInput(10,65,390,410).aim)<.03);
 });

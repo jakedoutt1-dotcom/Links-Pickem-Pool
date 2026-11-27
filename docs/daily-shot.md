@@ -35,3 +35,7 @@ After a run, Share challenge & QR opens a scannable QR code, native share option
 - Existing Game Room, login, account and game regression suites verify integration.
 
 The artwork was created with built-in image generation and copied into `public/new-build/assets/daily-shot-card-v2.png` and `daily-shot-arena-v1.png`; corresponding `.prompt.json` files retain the prompts. Three.js and the QR encoder reuse the project's existing licensed vendor modules. Future scoring/physics changes must version the rules and seed and preserve in-progress attempts rather than silently changing a live day's rules.
+
+## Court and aiming refinement
+
+Court markings use meters with the rim at z=0 and the baseline 1.575 meters behind the rim. The support and base sit outside the end line. Neutral aim compensates for the seeded lateral offset, and horizontal control is gentler. Pullback power has a precision band around the useful arc, with fine slider values rather than whole-percent rounding. The full trajectory preview turns green when the shared simulator predicts a basket; text gives short/strong/wide feedback while adjusting power. Authoritative scoring physics and saved runs remain unchanged.
