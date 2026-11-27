@@ -1,6 +1,6 @@
 import {hostedMode,hostedAdmin,eventHeaders,mountHostedEvent,shareHostedEvent} from './hosted-cfp.mjs?v=challenge-share2';
-import {mountBracket} from './cfp-bracket-ui.mjs?v=three-ties1';
-import {SLOTS,participants,BRACKET_RULES,bracketStandings,cleanBracket} from './cfp-bracket-core.mjs?v=three-ties1';
+import {mountBracket} from './cfp-bracket-ui.mjs?v=tie-example1';
+import {SLOTS,participants,BRACKET_RULES,bracketStandings,cleanBracket} from './cfp-bracket-core.mjs?v=tie-example1';
 import {cfpSeason} from './cfp-core.mjs';
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const q=new URLSearchParams(location.search),demo=q.get('demo')==='1';let selected={};try{selected=JSON.parse(localStorage.getItem('links-current-pool')||'{}')}catch{}
