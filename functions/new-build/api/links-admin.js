@@ -1,3 +1,4 @@
+import {ownerCoadmin} from '../../lib/owner-coadmin.js';
 import {grantPackage} from '../../lib/owner-package-grant.js';
 import {ownerPoolDelete} from '../../lib/owner-pool-delete.js';
 import {ensureOwner,ownerHash,ownerPasswordOk,ownerAttempt,ownerSession} from '../../lib/owner-auth.js';
@@ -7,6 +8,7 @@ const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control
 export async function onRequest({request,env}){const db=env.DB;if(!db)return json({error:'Database unavailable.'},503);await ensureOwner(db);
  if(request.method==='POST'){
  let b;try{b=await request.json()}catch{return json({error:'Invalid request.'},400)}
+ if(['coadmin-preview','coadmin-add'].includes(b.action))return ownerCoadmin(request,db,b);
  if(b.action==='grant-package')return grantPackage(request,db,b);
  if(['delete-preview','delete-pool'].includes(b.action)){try{return await ownerPoolDelete(request,db,b)}catch(error){console.error('Owner pool deletion failed',error);return json({error:'Pool deletion could not be completed. Refresh LINKS Admin and try again. If this continues, the server needs attention.'},503)}}
  if(b.action==='logout'){const s=await ownerSession(request,db);if(s)await db.prepare('DELETE FROM links_admin_sessions WHERE token=?').bind(s.token).run();return json({ok:true})}
