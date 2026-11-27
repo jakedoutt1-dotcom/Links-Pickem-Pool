@@ -31,7 +31,7 @@ export async function welcomeDeliveryStatus(env,account){
  const cfg=emailConfig(env);if(!cfg.key)return accepted;
  try{
   const r=await fetch('https://api.resend.com/emails/'+encodeURIComponent(row.message_id),{headers:{Authorization:'Bearer '+cfg.key},signal:AbortSignal.timeout(10000)});
-  if(!r.ok)return {...accepted,reason:r.status===403?'delivery_lookup_not_permitted':'provider_lookup_unavailable'};
+  if(!r.ok){let error={};try{error=await r.json()}catch{}return {...accepted,providerHttpStatus:r.status,providerError:String(error.message||error.name||'').slice(0,200),reason:r.status===403?'delivery_lookup_not_permitted':'provider_lookup_unavailable'};}
   const email=await r.json();if(!(email.to||[]).some(to=>String(to).toLowerCase()===String(account.email).toLowerCase()))return {...accepted,reason:'recipient_mismatch'};
   return {state:email.last_event||'accepted',providerStatusAvailable:true,from:email.from||'',createdAt:email.created_at||''};
  }catch{return {...accepted,reason:'provider_lookup_unavailable'}}
