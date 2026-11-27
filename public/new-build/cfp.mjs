@@ -22,7 +22,7 @@ function renderCounts(data){$('cfpCounts').innerHTML='<span><strong>'+Number(dat
 function render(){
  const field=$('cfpContenders'),confirmed=!demo&&data.bracket?.config?.teams;field.hidden=!confirmed;
  if(confirmed){field.innerHTML='<div class="contender-title"><h2>OFFICIAL PLAYOFF LINEUP</h2><p>The confirmed tournament seeds.</p></div><ol class="cfp-team-standings">'+confirmed.map(t=>'<li><span class="cfp-team-rank">#'+t.seed+'</span><img src="'+esc(t.logo)+'" alt="" width="28" height="28"><span class="cfp-team-full">'+esc(t.name)+'</span><abbr class="cfp-team-short" title="'+esc(t.name)+'">'+esc(t.name.slice(0,4).toUpperCase())+'</abbr><span class="cfp-team-record">'+esc(t.record||'')+'</span></li>').join('')+'</ol>';}else field.replaceChildren();
- $('identity').textContent=(demo?'Practice bracket — seed placeholders until the official lineup':selected.name||'College playoff pool')+' — '+data.player;
+ $('identity').textContent=(demo?'Practice bracket — example teams, not the official field':selected.name||'College playoff pool')+' — '+data.player;
  renderCounts(data);
  const views={picks:'Full bracket',scores:demo?'Sample results':'Live scores',standings:'Standings'};$('tabs').innerHTML=Object.entries(views).map(([key,label])=>'<button data-view="'+key+'" class="'+(view===key?'active':'')+'">'+label+'</button>').join('');$('tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{if(busy)return;view=b.dataset.view;render()});
  if(!demo&&data.admin&&!hostedMode){const share=document.createElement('button');share.type='button';share.textContent='Share pool';share.onclick=async()=>{share.disabled=true;try{await (await import('./invite-qr.mjs')).openInviteQR(pool)}catch(error){$('message').textContent=error.message}finally{share.disabled=false}};$('tabs').append(share);}
@@ -45,9 +45,9 @@ async function load(){
  if(busy)return;busy=true;$('message').textContent='Loading playoff bracket…';
  try{
   if(demo&&!demoSnapshot){
-   demoSnapshot={date:'seed-preview-v1',teams:Array.from({length:12},(_,i)=>({id:'practice-seed-'+(i+1),seed:i+1,rank:i+1,name:'Seed '+(i+1),placeholder:true,logo:''}))};
-   try{const saved=JSON.parse(localStorage.getItem(practiceKey)||'null');if(saved?.date===demoSnapshot.date&&saved.entry)demoEntry={...saved.entry,picks:cleanBracket(saved.entry.picks,demoSnapshot.teams.map(t=>({...t,seed:t.rank})))};}catch{}
-   $('demoNotice').textContent='PRACTICE ONLY — seed placeholders, no school teams. Live pools fill with official teams automatically when confirmed. Saves stay on this device; simulated results are fictional.';$('season').disabled=true;
+   demoSnapshot={date:'seed-preview-v1',teams:[['Georgia',61],['Utah',254],['Texas',251],['Notre Dame',87],['Tennessee',2633],['Alabama',333],['Miami',2390],['Wake Forest',154],['UCLA',26],['BYU',252],['Texas Tech',2641],['Oregon',248]].map(([name,logoId],i)=>({id:'practice-seed-'+(i+1),seed:i+1,name,record:'Practice',logo:'./assets/cfp-practice/'+logoId+'.png'}))};
+   try{const saved=JSON.parse(localStorage.getItem(practiceKey)||'null');if(saved?.date===demoSnapshot.date&&saved.entry)demoEntry={...saved.entry,picks:cleanBracket(saved.entry.picks,demoSnapshot.teams)};}catch{}
+   $('demoNotice').textContent='PRACTICE ONLY — example teams and seeds, not the official field. Live pools fill with official teams automatically when confirmed. Saves stay on this device; simulated results are fictional.';$('season').disabled=true;
   }
   data=demo?fixture():await api();render();$('message').textContent=data.warning||(demo?'Practice only: save on this device, submit all 11 picks, then use Sample results to test scoring.':'Choose every round, then select Lock in my picks before the first playoff kickoff. Save a draft while you work.');
  }catch(error){$('message').textContent=error.message;$('content').querySelectorAll('button,select,input').forEach(b=>b.disabled=true)}finally{busy=false}
@@ -57,3 +57,15 @@ if(hostedMode)void mountHostedEvent($('hostedEvent'),async event=>{pool=event.id
 const timer=setInterval(()=>{if(!demo&&data?.bracket?.config&&Date.now()>=Date.parse(data.bracket.config.deadline)){data.bracket.locked=true;$('content').querySelectorAll('#bracketSave button,#bracketSave input,#championshipGuess,[data-slot] button,[data-slot] select').forEach(b=>b.disabled=true);const note=$('bracketStatus');if(note)note.textContent='The entire bracket is locked. No more edits can be saved.';}},1000);
 const countTimer=setInterval(()=>{if(!demo&&data&&!busy&&!document.hidden)void api(null,true).then(renderCounts).catch(()=>{})},30000);window.addEventListener('pagehide',e=>{if(!e.persisted)clearInterval(countTimer)},{once:true});
 const refreshTimer=setInterval(()=>{if(!document.hidden&&!busy&&data&&(['scores','standings'].includes(view)||!data?.bracket?.config||data?.access?.unlocked===false))void load()},60000);window.addEventListener('pagehide',e=>{if(!e.persisted){clearInterval(timer);clearInterval(refreshTimer)}},{once:true});
+
+// Official Selection Day broadcast start; this is not the bracket entry deadline.
+function updateFieldCountdown(){
+ const el=$('fieldCountdown');if(!el)return;
+ el.hidden=season!==2026||(!demo&&!!data?.bracket?.config);if(el.hidden)return;
+ const left=Date.parse('2026-12-06T12:00:00-05:00')-Date.now();
+ const label=$('fieldCountdownClock');if(left<=0){label.textContent=left>-10800000?'Selection show is underway — awaiting the official field':'Awaiting the confirmed official field';return;}
+ const seconds=Math.floor(left/1000),days=Math.floor(seconds/86400),hours=Math.floor(seconds%86400/3600),minutes=Math.floor(seconds%3600/60);
+ label.textContent=days+'d '+hours+'h '+minutes+'m '+seconds%60+'s';
+}
+updateFieldCountdown();const fieldCountdownTimer=setInterval(updateFieldCountdown,1000);
+window.addEventListener('pagehide',e=>{if(!e.persisted)clearInterval(fieldCountdownTimer)},{once:true});
