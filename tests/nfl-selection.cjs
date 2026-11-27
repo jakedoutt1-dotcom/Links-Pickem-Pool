@@ -50,7 +50,7 @@ function scoreboard(week) {
       await page.goto(origin+'/new-build/nfl.html?pool=test-pool&week=4');
       await page.waitForFunction(()=>document.querySelectorAll('#slate [data-g]').length===2&&document.querySelector('.links-nfl-shared-nav'));
       assert.equal(await page.locator('#legacySlate,#linksRealSlate').count(),0);
-      await page.clock.runFor(1600);assert.equal(await page.locator('#slate button:disabled').count(),2,'Pending blocks selection');assert.equal(await page.locator('#tieTotal').isDisabled(),true);assert.ok((await page.locator('#weeklyAccessNotice').textContent()).includes('Contact your commissioner'));assert.equal(await page.locator('#savePicksBtn').isEnabled(),true);assert.equal(await page.locator('#weeklyAccessNotice').isVisible(),true);assert.equal(await page.locator('#pendingAccessPopup').isVisible(),true,'Pending popup appears without pressing Lock or Unlock');
+      await page.clock.runFor(1600);assert.equal(await page.locator('#slate button:disabled').count(),2,'Pending blocks selection');assert.equal(await page.locator('#tieTotal').isDisabled(),true);assert.equal(await page.locator('#winningGuess').isDisabled(),true);assert.ok((await page.locator('#weeklyAccessNotice').textContent()).includes('Contact your commissioner'));assert.equal(await page.locator('#savePicksBtn').isEnabled(),true);assert.equal(await page.locator('#weeklyAccessNotice').isVisible(),true);assert.equal(await page.locator('#pendingAccessPopup').isVisible(),true,'Pending popup appears without pressing Lock or Unlock');
       await page.waitForSelector('#pendingAccessPopup[open]');assert.equal(await page.locator('#pendingAccessPopup img').getAttribute('alt'),'LINKS');assert.ok((await page.locator('#pendingAccessText').textContent()).includes('will not count toward weekly or season standings')); await page.locator('#pendingAccessPopup button').click();await page.clock.runFor(16000);assert.equal(await page.locator('#pendingAccessPopup').isVisible(),false,'Dismissed warning does not repeat on polling');
       accessActive=true;await page.clock.runFor(16000);await page.waitForFunction(()=>document.querySelectorAll('#slate button:enabled').length===2);assert.equal(await page.locator('#weeklyAccessNotice').isVisible(),false,'Activation clears warning without login');
       accessActive=false;await page.clock.runFor(16000);await page.waitForFunction(()=>document.querySelectorAll('#slate button:disabled').length===2);assert.equal(posts.length,0);assert.equal(await page.locator('#pendingAccessPopup').isVisible(),true,'Returning to Pending shows popup again');
@@ -79,12 +79,12 @@ function scoreboard(week) {
       await choose('1');
       await page.waitForFunction(()=>document.querySelector('#slate [data-t="1"]').classList.contains('primary'));
       assert.equal(posts.length,2);
-      await page.locator('#tieTotal').fill('42');
+      await page.locator('#tieTotal').fill('42');await page.locator('#winningGuess').fill('27');
       await page.locator('#savePicksBtn').click();
       assert.equal(await page.locator('#savedPickModal').count(),0,'Locking picks does not open Playmaker');assert.match(await page.locator('#slate [data-t="1"]').innerText(),/2-1 · ML -148/);assert.match(await page.locator('#slate [data-t="2"]').innerText(),/1-2 · ML \+124/);
       await page.clock.runFor(1600);
       assert.equal(await page.locator('#slate button:disabled').count(),2,'Voluntary lock survives both background controllers');
-      assert.equal(await page.locator('#tieTotal').isDisabled(),true);
+      assert.equal(await page.locator('#tieTotal').isDisabled(),true);assert.equal(await page.locator('#winningGuess').isDisabled(),true);
       assert.equal(await page.locator('#savePicksBtn').isEnabled(),true,'Unlock remains available before kickoff');
       // Linked switching uses the numeric ID; normal login uses the pool code.
       await page.goto(origin+'/new-build/nfl.html?pool=123&week=4');

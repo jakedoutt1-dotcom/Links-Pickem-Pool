@@ -1,3 +1,4 @@
+import {seasonWinningScores} from '../../lib/weekly-tiebreak.js';
 import {feedbackCredits,creditNotice} from '../../lib/nfl-feedback-credit.js';
 import {resolvePool,nflWeek,gradeWeek} from './standings-v649.js';
 const schedules=new Map();
@@ -15,12 +16,13 @@ export async function onRequestGet({request,env}){
  const token=(request.headers.get('authorization')||'').replace(/^Bearer /,'');
  const session=await db.prepare('SELECT pool_id,player_name,expires_at FROM pool_sessions WHERE token=?').bind(token).first();
  if(!session||String(session.pool_id)!==String(pool.id)||!Number.isFinite(Date.parse(session.expires_at))||Date.parse(session.expires_at)<=Date.now())return json({error:'Sign in to this pool to view standings.'},401);
- const [players,picks,ties,manual,access]=await Promise.all([
+ const [players,picks,ties,manual,access,winningByWeek]=await Promise.all([
  db.prepare('SELECT name FROM pool_players WHERE pool_id=? ORDER BY rowid').bind(pool.id).all(),
  db.prepare("SELECT week,player_name,game_index,team FROM pool_picks WHERE pool_id=? AND sport='nfl' ORDER BY week,player_name,game_index").bind(pool.id).all(),
  db.prepare("SELECT week,player_name,guess FROM pool_ties WHERE pool_id=? AND sport='nfl'").bind(pool.id).all(),
  db.prepare("SELECT week,game_index,winner FROM pool_results WHERE pool_id=? AND sport='nfl'").bind(pool.id).all(),
  db.prepare("SELECT week,player_name FROM pool_payments WHERE pool_id=? AND sport='nfl' AND paid=1").bind(pool.id).all()
+,seasonWinningScores(db,pool.id,'nfl')
  ]);
  const credits=await feedbackCredits(db,pool);
  const activeWeeks=new Set((access.results||[]).map(r=>Number(r.week)));
@@ -31,7 +33,7 @@ export async function onRequestGet({request,env}){
  async function worker(){while(cursor<weeks.length){const week=weeks[cursor++];try{
  const games=(await schedule(week)).map(g=>({...g})),first=Math.min(...games.map(g=>Date.parse(g.kickoff)).filter(Number.isFinite));
  if(!Number.isFinite(first)||Date.now()<first)continue;
- const result=gradeWeek(pool,week,games,{players,picks:slice(picks,week),ties:slice(ties,week),manual:slice(manual,week),access:slice(access,week),credits});
+ const result=gradeWeek(pool,week,games,{players,picks:slice(picks,week),ties:slice(ties,week),manual:slice(manual,week),access:slice(access,week),credits,winning:winningByWeek.get(week)||new Map()});
  if(!result.rows.length||!result.finalGames)continue;
  history.push({period:String(week).padStart(2,'0'),label:'Week '+week,complete:result.allFinal,winners:result.allFinal?result.finalizedWinners:[],rows:result.rows.map(r=>({player:r.player,wins:r.wins,losses:r.losses}))});
  gradedWeeks.push(week);finalGames+=result.finalGames;const winners=new Set(result.allFinal?result.finalizedWinners:[]);

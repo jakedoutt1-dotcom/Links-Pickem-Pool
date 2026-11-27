@@ -1,3 +1,4 @@
+import {winningScores,compareWeekly,weeklyRanks} from '../../lib/weekly-tiebreak.js';
 import {feedbackCredits,creditPicks,creditNotice} from '../../lib/nfl-feedback-credit.js';
 const json=(d,s=200)=>Response.json(d,{status:s,headers:{'Cache-Control':'no-store'}});
 export async function resolvePool(db,value){const raw=String(value||'').trim();if(/^\d+$/.test(raw)){const p=await db.prepare('SELECT id,code,name FROM pools WHERE id=? LIMIT 1').bind(Number(raw)).first();if(p)return p}return raw?await db.prepare('SELECT id,code,name FROM pools WHERE upper(code)=upper(?) OR lower(trim(name))=lower(trim(?)) LIMIT 1').bind(raw,raw).first():null}
@@ -22,7 +23,7 @@ export async function nflWeek(week){
   const scores=teams.map(t=>t.score==null||t.score===''?NaN:Number(t.score));
   let winner=teams.find(t=>t.winner)?.team?.abbreviation||'';
   if(completed&&!winner&&teams.length===2&&scores.every(Number.isFinite)&&scores[0]!==scores[1])winner=teams[scores[0]>scores[1]?0:1].team?.abbreviation||'';
-  return {i,id:e.id,teams:teams.map(t=>norm(t.team?.abbreviation)),completed,winner:completed?(norm(winner)||(scores.length===2&&scores.every(Number.isFinite)&&scores[0]===scores[1]?'TIE':'')):'',total:completed&&scores.length===2&&scores.every(Number.isFinite)?scores[0]+scores[1]:null,kickoff:e.date||c.date||null};
+  return {i,id:e.id,teams:teams.map(t=>norm(t.team?.abbreviation)),completed,winner:completed?(norm(winner)||(scores.length===2&&scores.every(Number.isFinite)&&scores[0]===scores[1]?'TIE':'')):'',total:completed&&scores.length===2&&scores.every(Number.isFinite)?scores[0]+scores[1]:null,winningScore:completed&&winner&&scores.length===2&&scores.every(Number.isFinite)?Math.max(...scores):null,kickoff:e.date||c.date||null};
  });
 }
 export async function onRequestGet({request,env}){
@@ -34,17 +35,18 @@ export async function onRequestGet({request,env}){
  if(q.get('default')==='1'){while(week>1&&!games.some(g=>Number.isFinite(Date.parse(g.kickoff))&&Date.now()>=Date.parse(g.kickoff))){week--;try{games=await nflWeek(week)}catch{return json({success:false,error:'NFL schedule unavailable. Standings have not been recalculated.'},502)}}}
  const first=Math.min(...games.map(g=>Date.parse(g.kickoff)).filter(Number.isFinite));
  if(!Number.isFinite(first)||Date.now()<first)return json({success:true,week,locked:false,rows:[],finalGames:0,expectedGames:games.length,allFinal:false,finalizedWinners:[]});
- const [players,picks,ties,manual,access]=await Promise.all([
+ const [players,picks,ties,manual,access,winning]=await Promise.all([
   db.prepare('SELECT name FROM pool_players WHERE pool_id=? ORDER BY rowid').bind(p.id).all(),
   db.prepare("SELECT player_name,game_index,team FROM pool_picks WHERE pool_id=? AND sport='nfl' AND week=? ORDER BY player_name,game_index").bind(p.id,week).all(),
   db.prepare("SELECT player_name,guess FROM pool_ties WHERE pool_id=? AND sport='nfl' AND week=?").bind(p.id,week).all(),
   db.prepare("SELECT game_index,winner FROM pool_results WHERE pool_id=? AND sport='nfl' AND week=?").bind(p.id,week).all(),
   db.prepare("SELECT player_name FROM pool_payments WHERE pool_id=? AND sport='nfl' AND week=? AND paid=1").bind(p.id,week).all()
+,winningScores(db,p.id,'nfl',week)
  ]);
  const credits=Number(week)===4?await feedbackCredits(db,p):[];
- return json({...gradeWeek(p,week,games,{players,picks,ties,manual,access,credits}),courtesy:creditNotice(credits,week)});
+ return json({...gradeWeek(p,week,games,{players,picks,ties,manual,access,credits,winning}),courtesy:creditNotice(credits,week)});
 }
-export function gradeWeek(p,week,games,{players,picks,ties,manual,access,credits=[]}){
+export function gradeWeek(p,week,games,{players,picks,ties,manual,access,credits=[],winning=new Map()}){
  const roster=(players.results||[]).map(x=>String(x.name||''));
  const canonical=raw=>roster.find(x=>exactKey(x)===exactKey(raw))||roster.find(x=>nameKey(x)===nameKey(raw))||String(raw||'');
  const eligible=new Set((access.results||[]).map(x=>exactKey(canonical(x.player_name))));
@@ -70,8 +72,9 @@ export function gradeWeek(p,week,games,{players,picks,ties,manual,access,credits
   let wins=0,losses=0;const seen=new Set();
   for(const pick of by.get(player)||[]){const team=norm(pick.team),g=byTeam.get(team);if(!g?.completed||!g.winner||g.winner==='TIE'||seen.has(g.id))continue;seen.add(g.id);if(team===g.winner)wins++;else losses++;}
   const tiePick=tieLocked?(tieMap[player]??null):null,tieDiff=actualTie!=null&&tiePick!=null?Math.abs(Number(tiePick)-actualTie):null;
-  return {player,wins,losses,correct:wins,tiePick,tieDiff,...(credited.has(exactKey(player))?{courtesyCredit:true}:{})};
- }).filter(x=>by.get(x.player)?.length||tieMap[x.player]!=null).sort((a,b)=>b.wins-a.wins||(a.tieDiff??Infinity)-(b.tieDiff??Infinity)||a.player.localeCompare(b.player));
- const top=rows[0],finalizedWinners=allFinal&&top?rows.filter(x=>x.wins===top.wins&&(actualTie==null||(x.tieDiff??Infinity)===(top.tieDiff??Infinity))).map(x=>x.player):[];
+  const winningGuess=tieLocked?(winning.get(player.trim().toLowerCase())??null):null,winningDiff=allFinal&&actualTie!=null&&last.winningScore!=null&&winningGuess!=null?Math.abs(winningGuess-last.winningScore):null;
+  return {player,wins,losses,correct:wins,tiePick,tieDiff,winningGuess,winningDiff,...(credited.has(exactKey(player))?{courtesyCredit:true}:{})};
+ }).filter(x=>by.get(x.player)?.length||tieMap[x.player]!=null).sort((a,b)=>compareWeekly(a,b)||a.player.localeCompare(b.player));weeklyRanks(rows);
+ const top=rows[0],finalizedWinners=allFinal&&top?rows.filter(x=>!compareWeekly(x,top)).map(x=>x.player):[];
  return {success:true,week,locked:true,tieLocked,rows,actualTie,lastKickoff:last?.kickoff??null,finalizedWinner:finalizedWinners[0]||null,finalizedWinners,allFinal,finalGames,expectedGames,pool:{id:String(p.id),name:p.name,code:p.code}};
 }

@@ -14,7 +14,7 @@ const assert=require('node:assert/strict'),{DatabaseSync}=require('node:sqlite')
  INSERT INTO pool_sessions VALUES('admin',1,'Owner','admin','2099-01-01'),('alice',1,'Alice','player','2099-01-01'),('other',2,'Other','admin','2099-01-01');
  INSERT INTO pool_players VALUES(1,'Owner'),(1,'Alice'),(1,'Bob');
  `);
- const db={prepare(text){let args=[];return{bind(...v){args=v;return this},async first(){return sql.prepare(text).get(...args)||null},async all(){return{results:sql.prepare(text).all(...args)}},async run(){const r=sql.prepare(text).run(...args);return{meta:{changes:Number(r.changes)}}}}}};
+ const db={async batch(stmts){sql.exec('BEGIN');try{const out=[];for(const stmt of stmts)out.push(await stmt.run());sql.exec('COMMIT');return out}catch(e){sql.exec('ROLLBACK');throw e}},prepare(text){let args=[];return{bind(...v){args=v;return this},async first(){return sql.prepare(text).get(...args)||null},async all(){return{results:sql.prepare(text).all(...args)}},async run(){const r=sql.prepare(text).run(...args);return{meta:{changes:Number(r.changes)}}}}}};
  let now=Date.parse('2026-09-29T12:00:00Z'),final=false,reverse=false,ap=true;const oldNow=Date.now,oldFetch=fetch;Date.now=()=>now;
  const kickoff='2026-10-01T18:00:00Z';
  const event=(id,away,home)=>({id,date:id==='g2'?'2026-10-02T18:00:00Z':kickoff,status:{type:{completed:final}},competitions:[{competitors:[{homeAway:'away',team:{id:away,abbreviation:away,displayName:away},score:final?'17':null},{homeAway:'home',team:{id:home,abbreviation:home,displayName:home},score:final?'20':null}]}]});
@@ -39,7 +39,7 @@ const assert=require('node:assert/strict'),{DatabaseSync}=require('node:sqlite')
   assert.equal((await call('alice',{action:'pick',eventId:'g1',team:'B',player:'Bob'})).status,200);
   assert.equal(sql.prepare("SELECT team FROM pool_picks WHERE player_name='Alice' AND game_index=9").get().team,'B');assert.equal(sql.prepare("SELECT COUNT(*) n FROM pool_picks WHERE player_name='Bob'").get().n,0,'Cannot impersonate another player');
   assert.equal((await call('alice',{action:'pick',eventId:'g2',team:'D'})).status,200);
-  assert.equal((await call('alice',{action:'tie',guess:37})).status,200);
+  assert.equal((await call('alice',{action:'tie',guess:37,winningGuess:20})).status,200);
   assert.equal((await call('alice',{action:'lock',locked:true})).status,200);assert.equal((await call('alice')).data.cardLocked,true);
   assert.equal((await call('alice',{action:'pick',eventId:'g1',team:'A'})).status,403);
   assert.equal((await call('alice',{action:'lock',locked:false})).status,200);
@@ -48,13 +48,13 @@ const assert=require('node:assert/strict'),{DatabaseSync}=require('node:sqlite')
   now=Date.parse(kickoff);
   assert.equal((await call('alice',{action:'pick',eventId:'g1',team:'A'})).status,403);
   assert.equal((await call('alice',{action:'pick',eventId:'g2',team:'C'})).status,200,'Later game stays editable');
-  assert.equal((await call('alice',{action:'tie',guess:37})).status,200);
-  const shared=(await call('alice',null,'week=5&view=compare')).data.players[0];assert.equal(shared.picks.g2,undefined,'Future picks remain private');
+  assert.equal((await call('alice',{action:'tie',guess:37,winningGuess:20})).status,200);
+  const shared=(await call('alice',null,'week=5&view=compare')).data.players[0];assert.equal(shared.winningGuess,null,'Winning score stays private');assert.equal(shared.picks.g2,undefined,'Future picks remain private');
   await call('alice',{action:'pick',eventId:'g2',team:'D'});
   now=Date.parse('2026-10-02T18:00:00Z');final=true;
   assert.equal((await call('alice',{action:'pick',eventId:'g1',team:'A'})).status,403);
   assert.equal((await call('alice',{action:'lock',locked:false})).status,403);
-  d=await call('alice',null,'week=5&view=standings');assert.equal(d.data.rows[0].wins,2);assert.deepEqual(d.data.finalizedWinners,['Alice']);
+  d=await call('alice',null,'week=5&view=standings');assert.equal(d.data.rows[0].wins,2);assert.equal(d.data.rows[0].winningGuess,20);assert.equal(d.data.rows[0].winningDiff,0);assert.deepEqual(d.data.finalizedWinners,['Alice']);
   await call('admin',{action:'access',player:'Alice',active:false});assert.equal((await call('alice',null,'week=5&view=compare')).data.players.length,0);assert.equal((await call('alice',null,'week=5&view=standings')).data.rows.length,0);
   assert.equal(sql.prepare('SELECT COUNT(*) n FROM pool_picks').get().n,2,'Pending preserves saved picks');
   now+=61000;ap=false;d=await call('admin',null,'week=6&view=admin');assert.equal(d.data.candidates.length,0);assert.ok(d.data.rankingError.includes('AP Top 25'));

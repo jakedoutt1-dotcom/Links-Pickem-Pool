@@ -1,3 +1,4 @@
+import {winningScores,compareWeekly,weeklyRanks} from './weekly-tiebreak.js';
 import {teamMoneyline} from '../../public/new-build/football-core.mjs';
 const feedCache=new Map();
 const BASE='https://site.api.espn.com/apis/site/v2/sports/football/college-football/';
@@ -34,15 +35,18 @@ export async function storedSlate(db,pool,week,live){
  return rows.map(r=>{const current=live.find(g=>g.eventId===String(r.event_id)||g.away===r.away&&g.home===r.home);return {...(current||{eventId:String(r.event_id),away:r.away,home:r.home,awayName:r.away_name,homeName:r.home_name,kickoff:r.kickoff,completed:false,winner:''}),gameIndex:Number(r.game_index)}});
 }
 export const deadline=games=>{const times=games.map(g=>Date.parse(g.kickoff));return games.length&&times.every(Number.isFinite)?Math.min(...times):null};
-export async function rowsFor(db,pool,week){const [picks,ties,access,results]=await Promise.all([
+export async function rowsFor(db,pool,week){const [picks,ties,access,results,winning]=await Promise.all([
  db.prepare("SELECT player_name,game_index,team FROM pool_picks WHERE pool_id=? AND sport='college' AND week=?").bind(pool,week).all(),
  db.prepare("SELECT player_name,guess FROM pool_ties WHERE pool_id=? AND sport='college' AND week=?").bind(pool,week).all(),
  db.prepare("SELECT player_name,paid FROM pool_payments WHERE pool_id=? AND sport='college' AND week=?").bind(pool,week).all(),
  db.prepare("SELECT game_index,winner FROM pool_results WHERE pool_id=? AND sport='college' AND week=?").bind(pool,week).all()
- ]);return {picks:picks.results||[],ties:ties.results||[],access:access.results||[],results:results.results||[]}}
+ ,winningScores(db,pool,'college',week)
+ ]);return {winning,picks:picks.results||[],ties:ties.results||[],access:access.results||[],results:results.results||[]}}
 export const sameName=(a,b)=>String(a||'').trim().toLowerCase()===String(b||'').trim().toLowerCase();
-export function playerCard(rows,games,player){const picks={};for(const p of rows.picks.filter(p=>sameName(p.player_name,player))){const match=games.filter(g=>[g.away,g.home].includes(code(p.team)));if(match.length===1)picks[match[0].eventId]=code(p.team)}return {player,picks,tie:rows.ties.find(t=>sameName(t.player_name,player))?.guess??null,active:rows.access.some(a=>sameName(a.player_name,player)&&Number(a.paid)===1)}}
-export function standings(players,games){const allFinal=games.length>0&&games.every(g=>g.completed&&g.winner&&g.total!=null),last=[...games].sort((a,b)=>Date.parse(b.kickoff)-Date.parse(a.kickoff)||b.gameIndex-a.gameIndex)[0],actualTie=allFinal?last.total:null;
- const rows=players.filter(p=>p.active&&(Object.keys(p.picks).length||p.tie!=null)).map(p=>{let wins=0,losses=0;for(const g of games){const pick=p.picks[g.eventId];if(pick&&g.completed&&g.winner&&g.winner!=='TIE'){if(pick===g.winner)wins++;else losses++}}return {player:p.player,wins,losses,tie:p.tie,tieDiff:actualTie!=null&&p.tie!=null?Math.abs(p.tie-actualTie):null}}).sort((a,b)=>b.wins-a.wins||(a.tieDiff??Infinity)-(b.tieDiff??Infinity)||a.player.localeCompare(b.player));
- const top=rows[0];return {rows,allFinal,actualTie,finalizedWinners:allFinal&&top?rows.filter(r=>r.wins===top.wins&&(r.tieDiff??Infinity)===(top.tieDiff??Infinity)).map(r=>r.player):[]};
+export function playerCard(rows,games,player){const picks={};for(const p of rows.picks.filter(p=>sameName(p.player_name,player))){const match=games.filter(g=>[g.away,g.home].includes(code(p.team)));if(match.length===1)picks[match[0].eventId]=code(p.team)}return {player,picks,winningGuess:rows.winning?.get(String(player).trim().toLowerCase())??null,tie:rows.ties.find(t=>sameName(t.player_name,player))?.guess??null,active:rows.access.some(a=>sameName(a.player_name,player)&&Number(a.paid)===1)}}
+export function standings(players,games){const allFinal=games.length>0&&games.every(g=>g.completed&&g.winner&&g.total!=null),last=[...games].sort((a,b)=>Date.parse(b.kickoff)-Date.parse(a.kickoff)||b.gameIndex-a.gameIndex)[0],actualTie=allFinal?last.total:null,actualWinning=allFinal&&last.winner!=='TIE'&&validFinalScores(last)?Math.max(Number(last.awayScore),Number(last.homeScore)):null;
+ const rows=players.filter(p=>p.active&&(Object.keys(p.picks).length||p.tie!=null)).map(p=>{let wins=0,losses=0;for(const g of games){const pick=p.picks[g.eventId];if(pick&&g.completed&&g.winner&&g.winner!=='TIE'){if(pick===g.winner)wins++;else losses++}}return {player:p.player,wins,losses,tie:p.tie,winningGuess:p.winningGuess??null,winningDiff:actualWinning!=null&&p.winningGuess!=null?Math.abs(p.winningGuess-actualWinning):null,tieDiff:actualTie!=null&&p.tie!=null?Math.abs(p.tie-actualTie):null}}).sort((a,b)=>compareWeekly(a,b)||a.player.localeCompare(b.player));weeklyRanks(rows);
+ const top=rows[0];return {rows,allFinal,actualTie,finalizedWinners:allFinal&&top?rows.filter(r=>!compareWeekly(r,top)).map(r=>r.player):[]};
 }
+
+const validFinalScores=g=>g.awayScore!==null&&g.awayScore!==undefined&&g.awayScore!==''&&g.homeScore!==null&&g.homeScore!==undefined&&g.homeScore!==''&&Number.isFinite(Number(g.awayScore))&&Number.isFinite(Number(g.homeScore));

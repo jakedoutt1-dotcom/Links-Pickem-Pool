@@ -1,3 +1,4 @@
+import {validScore,winningStatement} from '../../lib/weekly-tiebreak.js';
 import {submitCorrection} from '../../lib/pick-corrections.js';
 import {collegeContext,schedule,apCandidates,poolFor,sessionFor,storedSlate,deadline,rowsFor,playerCard,standings,settingKey,lockKey,sameName,code} from '../../lib/college.js';
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
@@ -21,14 +22,14 @@ export async function onRequest({request,env}){
     let candidates=[],rankingError='';try{candidates=await apCandidates(live,week,context)}catch(e){rankingError=e.message}
     return json({...response,candidates,rankingError,slateFrozen:rows.picks.length>0||rows.ties.length>0||(games.length>0&&closed),members:roster.map(r=>({name:r.name,active:rows.access.some(a=>sameName(a.player_name,r.name)&&Number(a.paid)===1)}))});
    }
-   if(view==='picks')return json({...response,picks:me.picks,tie:me.tie});
+   if(view==='picks')return json({...response,picks:me.picks,tie:me.tie,winningGuess:me.winningGuess});
    if(view==='scores')return json(response);
    if(!games.length||!closed)return json({...response,players:[],rows:[],finalizedWinners:[],allFinal:false});
    // No shared pick data is read out before the selected slate's first kickoff.
    const players=rows.access.filter(a=>Number(a.paid)===1).map(a=>playerCard(rows,games,a.player_name));
    // Result corrections are matched by team, never by a reordered feed index.
    for(const r of rows.results){const g=games.find(g=>[g.away,g.home].includes(code(r.winner)));if(g&&g.completed)g.winner=code(r.winner)}
-   for(const p of players){p.picks=Object.fromEntries(Object.entries(p.picks).filter(([id])=>{const g=games.find(g=>g.eventId===id);return g&&Date.now()>=Date.parse(g.kickoff)}));if(games.some(g=>Date.now()<Date.parse(g.kickoff)))p.tie=null;}
+   for(const p of players){p.picks=Object.fromEntries(Object.entries(p.picks).filter(([id])=>{const g=games.find(g=>g.eventId===id);return g&&Date.now()>=Date.parse(g.kickoff)}));if(games.some(g=>Date.now()<Date.parse(g.kickoff))){p.tie=null;p.winningGuess=null;}}
    return json({...response,players:players.filter(p=>Object.keys(p.picks).length||p.tie!=null),...standings(players,games)});
   }
   if(b.action==='correction'){if(session.role!=='admin')throw fail('Commissioner access required.',403);return submitCorrection(db,session,'college',week,games,{...b,action:b.kind})}
@@ -53,14 +54,15 @@ export async function onRequest({request,env}){
   if(!games.some(g=>Number.isFinite(Date.parse(g.kickoff))&&Date.now()<Date.parse(g.kickoff)&&!g.completed))throw fail('All games have kicked off. Picks are locked.',403);
   if(b.action==='lock'){
    if(typeof b.locked!=='boolean')throw fail('Choose lock or unlock.');
-   if(b.locked&&(games.some(g=>Date.now()<Date.parse(g.kickoff)&&!me.picks[g.eventId])||me.tie==null))throw fail('Complete every pick and your tiebreaker first.');
+   if(b.locked&&(games.some(g=>Date.now()<Date.parse(g.kickoff)&&!me.picks[g.eventId])||me.tie==null||me.winningGuess==null))throw fail('Complete every pick and both score predictions first.');
    await db.prepare('INSERT INTO pool_settings(pool_id,key,value) VALUES(?,?,?) ON CONFLICT(pool_id,key) DO UPDATE SET value=excluded.value').bind(pool.id,lockKey(week,session.player_name),b.locked?'1':'0').run();return json({success:true,cardLocked:b.locked});
   }
   if(cardLocked)throw fail('Unlock your picks before making changes.',403);
   if(b.action==='tie'){
-   const last=[...games].sort((a,b)=>Date.parse(a.kickoff)-Date.parse(b.kickoff)).at(-1);if(!last||!Number.isFinite(Date.parse(last.kickoff))||Date.now()>=Date.parse(last.kickoff)||last.completed)throw fail('The tiebreaker game has kicked off.',403);
+   const last=[...games].sort((a,b)=>Date.parse(a.kickoff)-Date.parse(b.kickoff)||a.gameIndex-b.gameIndex).at(-1);if(!last||!Number.isFinite(Date.parse(last.kickoff))||Date.now()>=Date.parse(last.kickoff)||last.completed)throw fail('The tiebreaker game has kicked off.',403);
    const guess=Number(b.guess);if(b.guess==null||b.guess===''||!Number.isInteger(guess)||guess<0||guess>200)throw fail('Enter a whole-number combined score from 0 to 200.');
-   await db.prepare("INSERT INTO pool_ties(pool_id,sport,player_name,week,guess) VALUES(?,'college',?,?,?) ON CONFLICT(pool_id,sport,player_name,week) DO UPDATE SET guess=excluded.guess").bind(pool.id,session.player_name,week,guess).run();return json({success:true});
+   if(!validScore(b.winningGuess)||Number(b.winningGuess)>guess)throw fail('Enter a winning-team score from 0 to the combined score.');
+   await db.batch([db.prepare("INSERT INTO pool_ties(pool_id,sport,player_name,week,guess) VALUES(?,'college',?,?,?) ON CONFLICT(pool_id,sport,player_name,week) DO UPDATE SET guess=excluded.guess").bind(pool.id,session.player_name,week,guess),winningStatement(db,pool.id,'college',week,session.player_name,Number(b.winningGuess))]);return json({success:true});
   }
   if(b.action==='pick'){
    const g=games.find(g=>g.eventId===String(b.eventId)),team=code(b.team);if(!g||![g.away,g.home].includes(team))throw fail('Choose a team from this week’s selected slate.');

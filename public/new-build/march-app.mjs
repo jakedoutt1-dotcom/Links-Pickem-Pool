@@ -1,3 +1,4 @@
+import {renderReveal} from './march-reveal.mjs?v=1';
 import {mountBracketLines} from './march-bracket-view.mjs?v=three-ties1';
 import {REGIONS,POINTS,ROUNDS,teamMap,entrants,cleanPicks,selectTeam,scoreBracket,rankEntries,validTie,demoTournament} from './march-core.mjs?v=three-ties1';
 const $=id=>document.getElementById(id), escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -58,6 +59,7 @@ function navigation() {
 }
 function empty(title,description,action='') {return '<section class="empty-panel"><span class="eyebrow">THE ROAD TO THE FINAL FOUR</span><h2>'+title+'</h2><p>'+description+'</p>'+action+'</section>';}
 function render() {
+  renderReveal($('marchReveal'),season,!demo&&!!data?.tournament);
   cleanupBracket();navigation();
   if(view==='rules')return renderRules();
   if(!data.tournament&&view==='bracket')return renderBracket();
@@ -142,7 +144,7 @@ function renderStandings() {
   if(!demo&&!closed()){$('content').innerHTML=empty('The standings tip off with the tournament.',data.submittedCount+' bracket(s) submitted. Everyone’s picks stay private until '+dateText(data.tournament.lockAt)+'.');return;}
   const rows=data.rows||[],teams=teamMap(data.tournament.games);
   if(!rows.length){$('content').innerHTML=empty('No submitted brackets yet.',demo?'Complete and submit your practice bracket to try the standings.':'Only complete brackets submitted before the deadline count in the standings.');return;}
-  $('content').innerHTML='<div class="bracket-toolbar"><div><h2>Pool standings</h2><p>'+(demo?'Your practice bracket · sample results':'Ranked by points, then championship tiebreaker after the final')+'</p></div><span class="badge">'+rows.length+' BRACKET'+(rows.length===1?'':'S')+'</span></div><div class="panel table-scroll"><table><thead><tr><th scope="col">Rank</th><th scope="col">Player</th><th scope="col">Points</th><th scope="col">Max possible</th><th scope="col">Champion</th><th scope="col">Tiebreaker</th><th scope="col">Winning score</th><th scope="col">Correct picks</th><th scope="col">Bracket</th></tr></thead><tbody>'+rows.map((row,i)=>'<tr><td class="rank">'+row.rank+'</td><td>'+escape(row.player)+'</td><td><b>'+row.points+'</b></td><td>'+row.max+'</td><td>'+escape(teams[row.picks['national-6-0']]?.name||'—')+'</td><td>'+row.tie+(row.tieDistance!==null?' · '+row.tieDistance+' off':'')+'</td><td>'+escape(row.winningTie??'�')+(row.winningDistance!=null?' � '+row.winningDistance+' off':'')+'</td><td>'+row.correct+'</td><td><button class="row-button" data-entry="'+i+'">View bracket</button></td></tr>').join('')+'</tbody></table></div>';
+  $('content').innerHTML='<div class="bracket-toolbar"><div><h2>Pool standings</h2><p>'+(demo?'Your practice bracket · sample results':'Ranked by points, then championship tiebreaker after the final')+'</p></div><span class="badge">'+rows.length+' BRACKET'+(rows.length===1?'':'S')+'</span></div><div class="panel table-scroll"><table><thead><tr><th scope="col">Rank</th><th scope="col">Player</th><th scope="col">Points</th><th scope="col">Max possible</th><th scope="col">Champion</th><th scope="col">Tiebreaker</th><th scope="col">Winning score</th><th scope="col">Correct picks</th><th scope="col">Bracket</th></tr></thead><tbody>'+rows.map((row,i)=>'<tr><td class="rank">'+row.rank+'</td><td>'+escape(row.player)+'</td><td><b>'+row.points+'</b></td><td>'+row.max+'</td><td>'+escape(teams[row.picks['national-6-0']]?.name||'—')+'</td><td>'+row.tie+(row.tieDistance!==null?' · '+row.tieDistance+' off':'')+'</td><td>'+escape(row.winningTie??'—')+(row.winningDistance!=null?' · '+row.winningDistance+' off':'')+'</td><td>'+row.correct+'</td><td><button class="row-button" data-entry="'+i+'">View bracket</button></td></tr>').join('')+'</tbody></table></div>';
   $('content').querySelectorAll('[data-entry]').forEach(b=>b.onclick=()=>{viewing=rows[Number(b.dataset.entry)];view='bracket';render();});
 }
 function renderRules() {
@@ -158,7 +160,7 @@ if(pool){$('poolLink').href='./control-center.html?pool='+encodeURIComponent(poo
 $('signOut').onclick=async()=>{if(dirty&&!confirm('Sign out and discard your unsaved changes?'))return;const token=localStorage.getItem('links-legacy-token')||localStorage.getItem('links-token')||'';const account=localStorage.getItem('links-account-token');await Promise.allSettled([fetch('/api/logout',{method:'POST',headers:{Authorization:'Bearer '+token}}),fetch('./api/home-session?pool='+encodeURIComponent(pool),{method:'DELETE'}),...(account?[fetch('./api/account',{method:'POST',headers:{'Content-Type':'application/json','x-links-account':account},body:JSON.stringify({action:'logout'})})]:[])]);for(const key of ['links-legacy-token','links-token','links-account-token','links-current-pool','links-player-id','links-player-name','links-player-role','links-current-role','links-session-v1'])localStorage.removeItem(key);try{sessionStorage.setItem('links-signed-out','1');sessionStorage.removeItem('links-playmaker-import');}catch{}dirty=false;location.href='./index.html';};
 window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
 let wasClosed=false;
-setInterval(()=>{if(!data)return;const isClosed=closed();if(isClosed&&!wasClosed){wasClosed=true;render();showMessage('The tournament has tipped off. Brackets are locked.');}wasClosed=isClosed;},1000);
+setInterval(()=>{if(!data)return;renderReveal($('marchReveal'),season,!demo&&!!data?.tournament);const isClosed=closed();if(isClosed&&!wasClosed){wasClosed=true;render();showMessage('The tournament has tipped off. Brackets are locked.');}wasClosed=isClosed;},1000);
 await load();
 
 const autoRefresh=setInterval(()=>{if(!demo&&!document.hidden&&!busy&&!dirty&&data&&!data.tournament)void load()},60000);window.addEventListener('pagehide',()=>clearInterval(autoRefresh),{once:true});

@@ -20,6 +20,7 @@ try{
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base+'/new-build/march-madness.html?demo=1');
   await page.getByRole('heading',{name:'Your road to the title'}).waitFor();
+  await page.locator('#marchReveal:not([hidden])').waitFor();assert.match(await page.locator('#marchReveal').innerText(),/March 14, 2027/);
   assert.equal(await page.locator('.round-column').count(),4);
   assert.equal(await page.locator('.round-title').evaluateAll(nodes=>new Set(nodes.map(n=>getComputedStyle(n).color)).size),4);await page.waitForFunction(()=>document.querySelectorAll('.march-connections path').length===14);const y=await page.locator('[data-match]').evaluateAll(nodes=>Object.fromEntries(nodes.map(n=>[n.dataset.match,n.getBoundingClientRect().top+n.getBoundingClientRect().height/2])));assert.ok(Math.abs(y['East-2-0']-(y['East-1-0']+y['East-1-1'])/2)<3,'Next round centers between its feeder games');
   assert.equal(await page.locator('[data-game="East-2-0"]:enabled').count(),0);
