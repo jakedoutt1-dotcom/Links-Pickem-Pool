@@ -6,3 +6,11 @@
 @media(max-width:700px){.daily-promo{margin:22px 16px;padding:28px 22px;min-height:410px;align-items:flex-end;border-radius:18px}.daily-promo__art{object-position:62% center;opacity:.78}.daily-promo:after{background:linear-gradient(0deg,#05101aff 0%,#05101af0 22%,#05101aa6 60%,#05101a00 100%)}.daily-promo__copy{max-width:100%}.daily-promo h2{font-size:35px;letter-spacing:-1px}.daily-promo p{font-size:15px}.daily-promo__action{width:100%}}
 
 .daily-promo__board{display:block;width:fit-content;margin-top:16px;color:#f1d181;font:700 14px/1.5 system-ui;text-decoration:underline;text-underline-offset:4px}.daily-promo__board:focus-visible{outline:3px solid #84ddf6;outline-offset:5px}
+
+/* Keep Daily Shot key art readable instead of placing more text over its title. */
+#dailyShotPromo{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);padding:0;min-height:0}
+#dailyShotPromo:after{display:none}
+#dailyShotPromo .daily-promo__art{position:static;width:100%;height:auto;object-fit:contain;z-index:auto;opacity:1}
+#dailyShotPromo .daily-promo__copy{padding:28px}
+#dailyShotPromo h2{font-size:clamp(27px,3vw,39px)}
+@media(max-width:800px){#dailyShotPromo{grid-template-columns:1fr}#dailyShotPromo .daily-promo__copy{padding:24px}#dailyShotPromo .daily-promo__action{box-sizing:border-box;width:100%}}
