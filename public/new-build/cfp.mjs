@@ -1,5 +1,5 @@
-import {mountBracket} from './cfp-bracket-ui.mjs?v=lineup1';
-import {SLOTS,participants,BRACKET_RULES,bracketStandings,cleanBracket} from './cfp-bracket-core.mjs?v=autofield1';
+import {mountBracket} from './cfp-bracket-ui.mjs?v=rounds1';
+import {SLOTS,participants,BRACKET_RULES,bracketStandings,cleanBracket} from './cfp-bracket-core.mjs?v=rounds1';
 import {cfpSeason} from './cfp-core.mjs';
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const q=new URLSearchParams(location.search),demo=q.get('demo')==='1';let selected={};try{selected=JSON.parse(localStorage.getItem('links-current-pool')||'{}')}catch{}
@@ -22,6 +22,16 @@ function render(){
  $('identity').textContent=(demo?'Practice bracket — seed placeholders until the official lineup':selected.name||'College playoff pool')+' — '+data.player;
  const views={picks:'Full bracket',scores:demo?'Sample results':'Live scores',standings:'Standings'};$('tabs').innerHTML=Object.entries(views).map(([key,label])=>'<button data-view="'+key+'" class="'+(view===key?'active':'')+'">'+label+'</button>').join('');$('tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{if(busy)return;view=b.dataset.view;render()});
  if(!demo&&data.admin){const share=document.createElement('button');share.type='button';share.textContent='Share pool';share.onclick=async()=>{share.disabled=true;try{await (await import('./invite-qr.mjs')).openInviteQR(pool)}catch(error){$('message').textContent=error.message}finally{share.disabled=false}};$('tabs').append(share);}
+ const accessPanel=$('playerAccess');accessPanel.hidden=demo||!data.admin;
+ if(!accessPanel.hidden){
+  accessPanel.innerHTML='<details><summary>Manage player access</summary><p>Unlock each player when they are ready to enter this playoff pool. Access applies to this season only. Unlocking does not extend the first-kickoff deadline.</p><div class="table-wrap"><table><thead><tr><th>Player</th><th>Access</th><th>Action</th></tr></thead><tbody>'+(data.access?.players||[]).map((p,i)=>'<tr><td>'+esc(p.name)+'</td><td>'+(p.unlocked?'Unlocked':'Waiting for commissioner')+'</td><td><button type="button" data-access-index="'+i+'">'+(p.unlocked?'Lock picks':'Unlock picks')+'</button></td></tr>').join('')+'</tbody></table></div><p id="accessStatus" role="status"></p></details>';
+  accessPanel.querySelectorAll('[data-access-index]').forEach(button=>button.onclick=async()=>{
+   const player=data.access.players[Number(button.dataset.accessIndex)];
+   accessPanel.querySelectorAll('button').forEach(b=>b.disabled=true);
+   try{await api({action:'playerAccess',player:player.name,unlocked:!player.unlocked});await load();accessPanel.querySelector('details').open=true;accessPanel.querySelector('#accessStatus').textContent=player.name+' — picks '+(player.unlocked?'locked.':'unlocked.');}
+   catch(error){accessPanel.querySelector('#accessStatus').textContent=error.message;accessPanel.querySelectorAll('button').forEach(b=>b.disabled=false);}
+  });
+ }
  if(mountBracket({root:$('content'),data,view,api,reload:load,demo}))return;
  if(!demo&&!data.bracket?.config){$('content').innerHTML='<h2>Waiting for the official lineup</h2><p>The confirmed teams and schedule will appear automatically.</p>';return;}
  $('content').innerHTML='<h2>'+(demo?'Simulated playoff results':'Official playoff results')+'</h2>'+(data.games.length?data.games.map(g=>'<article class="cfp-entry"><h3>'+esc(g.title)+'</h3><p>'+esc(g.away.name)+' '+esc(g.away.score??'')+' vs. '+esc(g.home.name)+' '+esc(g.home.score??'')+'</p><p>'+esc(g.status)+' · '+(demo?'Practice matchup':esc(new Date(g.start).toLocaleString()))+'</p></article>').join(''):'<p>No playoff schedule is posted yet.</p>')+(demo?'<button id="demoResults">'+(demoFinal?'Reset demo results':'Simulate final results')+'</button>':'');
@@ -35,10 +45,10 @@ async function load(){
    try{const saved=JSON.parse(localStorage.getItem(practiceKey)||'null');if(saved?.date===demoSnapshot.date&&saved.entry)demoEntry={...saved.entry,picks:cleanBracket(saved.entry.picks,demoSnapshot.teams.map(t=>({...t,seed:t.rank})))};}catch{}
    $('demoNotice').textContent='PRACTICE ONLY — seed placeholders, no school teams. Live pools fill with official teams automatically when confirmed. Saves stay on this device; simulated results are fictional.';$('season').disabled=true;
   }
-  data=demo?fixture():await api();render();$('message').textContent=data.warning||(demo?'Practice only: save on this device, submit all 11 picks, then use Sample results to test scoring.':'Submit every round before the first playoff kickoff. Save a draft while you work.');
+  data=demo?fixture():await api();render();$('message').textContent=data.warning||(demo?'Practice only: save on this device, submit all 11 picks, then use Sample results to test scoring.':'Choose every round, then select Lock in my picks before the first playoff kickoff. Save a draft while you work.');
  }catch(error){$('message').textContent=error.message;$('content').querySelectorAll('button,select,input').forEach(b=>b.disabled=true)}finally{busy=false}
 }
 $('refresh').onclick=()=>void load();$('season').onchange=()=>{if(busy){$('season').value=season;return}season=Number($('season').value);demoEntry=null;demoFinal=false;void load()};
 if(demo||(pool&&token()))void load();else $('message').innerHTML='Sign in through <a href="./control-center.html">your Locker Room</a>, or <a href="./cfp.html?demo=1">try the demo</a>.';
 const timer=setInterval(()=>{if(!demo&&data?.bracket?.config&&Date.now()>=Date.parse(data.bracket.config.deadline)){data.bracket.locked=true;$('content').querySelectorAll('#bracketSave button,#bracketSave input,[data-slot] button,[data-slot] select').forEach(b=>b.disabled=true);const note=$('bracketStatus');if(note)note.textContent='The entire bracket is locked. No more edits can be saved.';}},1000);
-const refreshTimer=setInterval(()=>{if(!document.hidden&&!busy&&(['scores','standings'].includes(view)||!data?.bracket?.config))void load()},60000);window.addEventListener('pagehide',()=>{clearInterval(timer);clearInterval(refreshTimer)},{once:true});
+const refreshTimer=setInterval(()=>{if(!document.hidden&&!busy&&(['scores','standings'].includes(view)||!data?.bracket?.config||data?.access?.unlocked===false))void load()},60000);window.addEventListener('pagehide',()=>{clearInterval(timer);clearInterval(refreshTimer)},{once:true});

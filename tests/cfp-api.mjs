@@ -11,6 +11,7 @@ test('CFP full lifecycle: only playoff games, rules, bonus budget, frozen totals
  globalThis.fetch=async url=>{assert.match(String(url),/seasontype=3/);return Response.json({events})};
  const call=async(body=null,token='alice')=>{const request=new Request('https://test/new-build/api/cfp?pool=1&season='+year,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token,Origin:'https://test'},...(body?{body:JSON.stringify({pool:1,season:year,...body})}:{})});const r=await onRequest({request,env:{DB:db}});return {status:r.status,...await r.json()}};
  try{
+  for(const player of ['Alice','Bob'])assert.equal((await call({action:'playerAccess',player,unlocked:true},'admin')).status,200);
   assert.equal((await call(null,'outsider')).status,401);let state=await call();assert.equal(state.status,200);assert.equal(state.games.length,3);assert.equal(state.games[0].away.record,'11-1');assert.equal(state.games[0].away.rank,5);assert.match(state.games[0].away.logo,/ncaa\/500\/333/);
   assert.equal((await call({action:'settings',bonus:false,totals:false,revision:0})).status,403);
   assert.equal((await call({action:'settings',bonus:false,totals:false,revision:0},'admin')).status,200);
