@@ -1,0 +1,34 @@
+import {createRequire} from 'node:module';
+import {readFileSync,existsSync,mkdirSync} from 'node:fs';
+import {resolve,extname} from 'node:path';
+import assert from 'node:assert/strict';
+import {fixture} from './helpers/pool-format-fixture.mjs';
+import {dailyShotRequest} from '../functions/new-build/api/daily-shot.js';
+import {dailyShots} from '../public/new-build/daily-shot-core.mjs';
+const {chromium}=createRequire(import.meta.url)('playwright'),root=resolve('public'),origin='https://daily-shot.test';
+const browser=await chromium.launch({channel:'msedge',headless:true,args:['--enable-unsafe-swiftshader']});
+function perfect(shot){const d=Math.hypot(shot.x,shot.z),t=1.2+(d-4)*.025;return {aim:-shot.offset/.65,power:((3.05-1.5+9.81*t*t/2)/t-4+9.81/240)/6};}
+try{for(const width of [390,1280]){
+ const {db}=fixture(),errors=[];let signed=true,writes=0,slow=false;
+ const context=await browser.newContext({viewport:{width,height:950}});await context.addInitScript(()=>{Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{window.__copied=text}}});Object.defineProperty(navigator,'share',{configurable:true,value:async value=>{window.__shared=value}})});
+ await context.route('**/*',async route=>{const r=route.request(),u=new URL(r.url());if(u.origin!==origin)return route.abort();
+  if(u.pathname.endsWith('/api/daily-shot')){if(r.method()==='POST')writes++;if(slow)return route.fulfill({status:503,json:{error:'Connection unavailable. Practice is still free.'}});const response=await dailyShotRequest({env:{DB:db},request:new Request(u,{method:r.method(),headers:r.headers(),...(r.method()==='POST'?{body:r.postData()}:{})})},{session:async()=>signed?{email:'browser@example.com',displayName:'Court Tester'}:null});return route.fulfill({status:response.status,body:await response.text(),contentType:'application/json'});}
+  if(u.pathname.includes('/api/'))return route.fulfill({json:{}});const file=resolve(root,'.'+decodeURIComponent(u.pathname));if(!file.startsWith(root)||!existsSync(file))return route.fulfill({status:404,body:''});return route.fulfill({body:readFileSync(file),contentType:({'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.png':'image/png','.svg':'image/svg+xml'}[extname(file)]||'application/octet-stream')});
+ });
+ const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(origin+'/new-build/daily-shot.html');await page.waitForFunction(()=>!document.querySelector('#start').disabled);assert.equal(await page.locator('#remaining').innerText(),'3');
+ await page.locator('#start').click();await page.waitForFunction(()=>!document.querySelector('#shoot').disabled);assert.match(await page.locator('#mode').innerText(),/RANKED/);assert.equal(await page.locator('#shotDots span').count(),5);
+ await page.locator('#controls').evaluate(e=>e.open=true);
+ const seed='daily-shot-v1:'+new Intl.DateTimeFormat('en-CA',{timeZone:'America/Chicago',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()),shots=dailyShots(seed);
+ const set=async v=>{await page.evaluate(v=>{for(const [id,value] of Object.entries({aim:v.aim*100,power:v.power*100})){const el=document.getElementById(id);el.step='any';el.value=String(value);el.dispatchEvent(new Event('input',{bubbles:true}))}},v)};
+ await set(perfect(shots[0]));mkdirSync('output/daily-shot',{recursive:true});await page.locator('#game').screenshot({path:'output/daily-shot/game-'+width+'.png'});
+ for(let i=0;i<5;i++){
+  await set(perfect(shots[i]));await page.locator('#shoot').click();assert.equal(await page.locator('#shoot').isDisabled(),true);
+  if(i<4){await page.locator('#next').waitFor({state:'visible',timeout:20000});assert.equal(await page.locator('#score').innerText(),String((i+1)*20));if(i===1){await page.reload();await page.waitForFunction(()=>!document.querySelector('#start').disabled);assert.match(await page.locator('#start').innerText(),/Resume/);await page.locator('#start').click();await page.waitForFunction(()=>!document.querySelector('#shoot').disabled);assert.equal(await page.locator('#score').innerText(),'40');await page.locator('#controls').evaluate(e=>e.open=true);}else await page.locator('#next').click();}
+ }
+ await page.locator('#finish').waitFor({state:'visible',timeout:20000});assert.equal(await page.locator('#finalScore').innerText(),'100 / 100');assert.match(await page.locator('#finishMode').innerText(),/VERIFIED/);assert.equal(await page.locator('#remaining').innerText(),'2');assert.match(await page.locator('#leaders').innerText(),/Court Tester.*100/s);
+ await page.locator('#share').click();await page.locator('dialog svg').waitFor();await page.getByRole('button',{name:'Copy link',exact:true}).click();assert.match(await page.evaluate(()=>window.__copied),/daily-shot.html\?day=/);assert(!String(await page.evaluate(()=>window.__copied)).includes('browser@example.com'));await page.getByRole('button',{name:'Share challenge',exact:true}).click();assert.equal((await page.evaluate(()=>window.__shared)).title,'LINKS Daily Shot');await page.getByRole('button',{name:'Close',exact:true}).click();
+ const before=writes;await page.locator('#practiceAgain').click();await page.waitForFunction(()=>!document.querySelector('#shoot').disabled);assert.match(await page.locator('#mode').innerText(),/UNRANKED/);
+ const canvas=page.locator('#court');await canvas.scrollIntoViewIfNeeded();const bounds=await canvas.boundingBox();await page.mouse.move(bounds.x+bounds.width/2,bounds.y+bounds.height*.8);await page.mouse.down();await page.mouse.move(bounds.x+bounds.width*.52,bounds.y+bounds.height*.58,{steps:12});await page.mouse.up();await page.locator('#next').waitFor({state:'visible',timeout:20000});assert.equal(writes,before,'Practice never writes ranked scores');
+ await page.locator('#leave').click();signed=false;slow=true;await page.locator('#refresh').click();await page.locator('#practice').click();await page.waitForFunction(()=>!document.querySelector('#shoot').disabled);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);assert.deepEqual(errors,[]);
+ await page.screenshot({path:'output/daily-shot/page-'+width+'.png',fullPage:true});await context.close();db.raw.close();console.log('PASS Daily Shot '+width+'px: actual 3D court, five verified shots, 100-point score, reload/resume, daily attempt count, QR/copy/share, pointer shooting, offline practice and mobile fit');
+}}finally{await browser.close()}

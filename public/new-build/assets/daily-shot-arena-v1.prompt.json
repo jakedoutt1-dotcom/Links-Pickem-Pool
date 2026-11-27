@@ -1,0 +1,5 @@
+{
+  "generator": "built-in image_gen",
+  "prompt": "Create a seamless 360 degree equirectangular panorama background texture, 2:1 wide landscape, of a premium indoor basketball arena viewed from the center of the court at eye height. This is a 3D game's distant environment panorama, not a poster. Grandstands on all sides full of soft detailed anonymous spectators, navy upholstered stands, warm gold suite lights, bright cool white overhead floodlights, structural roof trusses and dark navy ceiling. Lower third shows only a narrow softly lit distant perimeter of hardwood and arena walls; keep all the usable foreground empty because the game will render its real court and hoop in 3D. No hoops, no backboards, no basketballs, no players, no text, no logos, no UI, no advertising, no scoreboards with numbers. Seamless left/right matching lighting, realistic high-end video game arena environment, cinematic premium navy and gold mood. Center horizon level, no tilted camera, strong photographic realism.",
+  "asset": "daily-shot-arena-v1.png"
+}
