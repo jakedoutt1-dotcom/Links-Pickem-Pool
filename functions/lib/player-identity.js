@@ -1,4 +1,4 @@
-import {sendAccountWelcome,queueAccountWelcome} from './account-welcome.js';
+import {sendAccountWelcome,queueAccountWelcome,welcomeDeliveryStatus} from './account-welcome.js';
 import {ensureAccounts,emailKey} from './commissioner-account.js';
 import {loginPhase} from './login-transition.js';
 import {sendPoolEmail} from './pool-email.js';
@@ -60,7 +60,8 @@ export async function identityRequest(context){const {request,env}=context;
  const a=await identitySession(request,db);
  if(request.method==='GET'){if(!a)return reply({error:'Please sign in.'},401);const pools=await availablePools(db,a);const bearer=(request.headers.get('authorization')||'').replace(/^Bearer /,'');const current=await db.prepare('SELECT pool_id,player_name FROM pool_sessions WHERE token=? AND expires_at>?').bind(bearer,new Date().toISOString()).first();const currentPool=pools.find(p=>p.id===String(current?.pool_id)&&p.playerName===current?.player_name)?.id||pools[0]?.id||'';return reply({account:publicAccount(a),pools,currentPool,verified:true,commissioner:pools.some(p=>p.role==='admin')})}
  const text=await request.text();if(text.length>8192)fail('Request too large.');const b=JSON.parse(text),action=String(b.action||'');
- if(['login','register','confirm','recover','reset','resend','connect','connection-choices','connect-selected','profile','welcome'].includes(action))await rate(request,db,action);
+ if(['login','register','confirm','recover','reset','resend','connect','connection-choices','connect-selected','profile','welcome','welcome-status'].includes(action))await rate(request,db,action);
+ if(action==='welcome-status'){if(!a)fail('Sign in to your LINKS account first.',401);return reply({delivery:await welcomeDeliveryStatus(env,a)})}
  if(action==='welcome'){if(!a)fail('Sign in to your LINKS account first.',401);return reply({delivery:await sendAccountWelcome(env,a)})}
  if(action==='login'){const who=String(b.login||'').trim().toLowerCase().slice(0,254);const found=await db.prepare('SELECT * FROM links_id_accounts WHERE username=? OR email=?').bind(who,who).first();const digest=await passwordHash(String(b.password||'').slice(0,256),found?.salt||'links-dummy-salt');if(!found||!equal(digest,found.password_hash))fail('Username/email or password is incorrect.',401);return issue(db,found,b.remember!==false)}
  if(action==='membership-status'){const token=(request.headers.get('authorization')||'').replace(/^Bearer /,'');const m=await db.prepare('SELECT m.account_id FROM pool_sessions s LEFT JOIN links_id_members m ON m.pool_id=s.pool_id AND m.player_name=s.player_name WHERE s.token=? AND s.expires_at>?').bind(token,new Date().toISOString()).first();if(!m)fail('Use your current pool login first.',401);return reply({connected:!!m.account_id,sameAccount:!!a&&m.account_id===a.id})}

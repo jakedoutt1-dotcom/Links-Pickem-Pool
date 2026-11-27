@@ -1,4 +1,4 @@
-import {sendPoolEmail,escapeEmail} from './pool-email.js';
+import {sendPoolEmail,escapeEmail,emailConfig} from './pool-email.js';
 export function accountWelcome(account){
  const base='https://linkspickempools.com/new-build/',name=String(account.display_name||account.displayName||'there'),username=String(account.username||'');
  const sections=[
@@ -23,3 +23,16 @@ export async function sendAccountWelcome(env,account){try{
  return {sent:delivery.sent};
  }catch{return {sent:false,pending:true}}}
 export async function queueAccountWelcome(context,account){const job=sendAccountWelcome(context.env,account);if(context.waitUntil)context.waitUntil(job);else await job;}
+export async function welcomeDeliveryStatus(env,account){
+ const row=await env.DB.prepare('SELECT status,message_id,updated_at FROM links_account_welcome WHERE account_id=?').bind(account.id).first();
+ if(!row)return {state:'not_sent',providerStatusAvailable:false};
+ const accepted={state:row.status==='SENT'?'accepted':row.status.toLowerCase(),providerStatusAvailable:false};
+ if(!row.message_id)return accepted;
+ const cfg=emailConfig(env);if(!cfg.key)return accepted;
+ try{
+  const r=await fetch('https://api.resend.com/emails/'+encodeURIComponent(row.message_id),{headers:{Authorization:'Bearer '+cfg.key},signal:AbortSignal.timeout(10000)});
+  if(!r.ok)return {...accepted,reason:r.status===403?'delivery_lookup_not_permitted':'provider_lookup_unavailable'};
+  const email=await r.json();if(!(email.to||[]).some(to=>String(to).toLowerCase()===String(account.email).toLowerCase()))return {...accepted,reason:'recipient_mismatch'};
+  return {state:email.last_event||'accepted',providerStatusAvailable:true,from:email.from||'',createdAt:email.created_at||''};
+ }catch{return {...accepted,reason:'provider_lookup_unavailable'}}
+}

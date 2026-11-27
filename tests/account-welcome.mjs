@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {fixture} from './helpers/pool-format-fixture.mjs';
 import {identityRequest} from '../functions/lib/player-identity.js';
 import {ensureTransition} from '../functions/lib/login-transition.js';
-import {accountWelcome,sendAccountWelcome} from '../functions/lib/account-welcome.js';
+import {accountWelcome,sendAccountWelcome,welcomeDeliveryStatus} from '../functions/lib/account-welcome.js';
 test('Verified signup sends a useful welcome once; email failure never blocks the account',async()=>{
  const {db}=fixture(),old=fetch,mail=[],jobs=[],env={DB:db,RESEND_API_KEY:'mock-only'},origin='https://welcome.invalid';let rejectWelcome=false,cookie='';
  global.fetch=async(url,options)=>{assert.equal(url,'https://api.resend.com/emails');const b=JSON.parse(options.body);assert(b.to[0].endsWith('@example.invalid'));mail.push(b);if(rejectWelcome&&b.subject.startsWith('Welcome'))return Response.json({message:'Simulated provider failure'},{status:503});return Response.json({id:'mock-'+mail.length})};
@@ -22,6 +22,7 @@ test('Verified signup sends a useful welcome once; email failure never blocks th
   rejectWelcome=true;const second=await call({...signup,username:'welcome_second',email:'second@example.invalid'});const secondCode=mail.find(m=>m.to[0]==='second@example.invalid'&&m.subject==='Your LINKS verification code').text.match(/code is (\d{6})/)[1];
   const created=await call({action:'confirm',challenge:second.challenge,code:secondCode});assert.equal(created.status,200);await Promise.all(jobs);assert.equal(db.raw.prepare('SELECT status FROM links_account_welcome WHERE account_id=?').get(created.account.id).status,'PENDING');
   rejectWelcome=false;assert.equal((await call({action:'welcome'},true)).delivery.sent,true);
+  const storedFetch=global.fetch;global.fetch=async()=>Response.json({to:[racing.email],last_event:'delivered',from:'LINKS <noreply@example.invalid>'});assert.equal((await welcomeDeliveryStatus(env,racing)).state,'delivered');global.fetch=async()=>Response.json({error:'restricted'},{status:403});assert.equal((await welcomeDeliveryStatus(env,racing)).reason,'delivery_lookup_not_permitted');global.fetch=storedFetch;
   assert.match(accountWelcome({display_name:'X',username:'x'}).html,/https:\/\/linkspickempools.com\/new-build\/control-center.html/);
  }finally{global.fetch=old;db.raw.close()}
 });
