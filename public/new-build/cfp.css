@@ -10,3 +10,42 @@
 .cfp-saved-confirmation{padding:16px;border:1px solid #79bb89;border-radius:10px;background:#163429;color:#d5f8dd;font-weight:700;line-height:1.6}
 .cfp-round-points{font-weight:700;color:var(--round-color,#f1cb78)}
 #playerAccess{margin:20px 0;padding:16px;border:1px solid #aa925b;border-radius:12px;background:#10242d}#playerAccess summary{cursor:pointer;font-weight:700;min-height:30px}
+
+/* Compact, mirrored tournament bracket matching the blue/green/purple/gold card. */
+.cfp-round[data-round="0"]{--round-color:#69b9ff;--round-bg:#10283e;--round-border:#3e92d4}
+.cfp-round[data-round="1"]{--round-color:#8cf48d;--round-bg:#112d20;--round-border:#4dba68}
+.cfp-round[data-round="2"]{--round-color:#d18bff;--round-bg:#29133d;--round-border:#a359d0}
+.cfp-round[data-round="3"]{--round-color:#ffd56b;--round-bg:#35270c;--round-border:#d2a442}
+.cfp-board-viewport[data-layout="bracket"]{background:radial-gradient(ellipse at 50% 55%,#b08a2620,transparent 42%),linear-gradient(#08131e,#0b1d28);border:1px solid #8f79453d;padding:16px 10px;}
+.cfp-board-viewport[data-layout="bracket"] .cfp-bracket{min-width:1040px;grid-template-columns:repeat(7,minmax(0,1fr));gap:18px;align-items:stretch;}
+.cfp-board-viewport[data-layout="bracket"] .cfp-round{display:grid;grid-template-rows:54px repeat(4,140px);gap:12px;}
+.cfp-board-viewport[data-layout="bracket"] .cfp-round>h3{font-size:14px;line-height:1.25;text-align:center;padding:8px 3px;border:0;background:transparent;align-self:center;margin:0;}
+.cfp-round>h3 small{display:block;font-size:11px;color:var(--round-color);font-weight:400;}
+.cfp-board-viewport[data-layout="bracket"] .cfp-entry{padding:8px;border:1px solid var(--round-border);border-radius:12px;background:linear-gradient(145deg,var(--round-bg),#07121ee8);box-shadow:0 0 14px color-mix(in srgb,var(--round-color) 15%,transparent);align-self:center;}
+.cfp-board-viewport[data-layout="bracket"] .cfp-round .cfp-entry:nth-of-type(1){grid-row:2/span 2;}
+.cfp-board-viewport[data-layout="bracket"] .cfp-round .cfp-entry:nth-of-type(2){grid-row:4/span 2;}
+.cfp-board-viewport[data-layout="bracket"] .cfp-round[data-round="2"] .cfp-entry,.cfp-board-viewport[data-layout="bracket"] .cfp-round[data-round="3"] .cfp-entry{grid-row:2/span 4;}
+.cfp-board-viewport[data-layout="bracket"] .cfp-game-label{font-size:11px;line-height:1.3;margin:0 0 6px;}
+.cfp-board-viewport[data-layout="bracket"] .cfp-entry h4{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
+.cfp-board-viewport[data-layout="bracket"] .teams{gap:6px;}
+.cfp-board-viewport[data-layout="bracket"] .teams button{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:3px 5px;min-height:48px;height:auto;padding:7px 6px;border:1px solid var(--round-border);border-radius:8px;background:linear-gradient(180deg,var(--round-bg),#06121c);color:#f4f6fb;box-shadow:inset 0 0 8px color-mix(in srgb,var(--round-color) 12%,transparent);text-align:left;font-size:12px;line-height:1.3;}
+.cfp-board-viewport[data-layout="bracket"] .teams button b{font-size:12px;flex:1;overflow-wrap:anywhere;}
+.cfp-board-viewport[data-layout="bracket"] .teams button img{width:22px;height:22px;flex:none;}
+.cfp-board-viewport[data-layout="bracket"] .teams button small{font-size:9px;line-height:1.25;flex-basis:100%;}
+.cfp-board-viewport[data-layout="bracket"] .teams button .cfp-source{display:none;}
+.cfp-board-viewport[data-layout="bracket"] .teams button[aria-pressed="true"]{outline:1px solid var(--round-color);background:var(--round-bg);box-shadow:0 0 12px color-mix(in srgb,var(--round-color) 45%,transparent),inset 0 0 14px color-mix(in srgb,var(--round-color) 25%,transparent);}
+.cfp-board-viewport[data-layout="bracket"] .cfp-feeder{border-style:dashed!important;min-height:48px;}
+.cfp-board-viewport[data-layout="bracket"] .cfp-feeder small,.cfp-board-viewport[data-layout="bracket"] .cfp-feeder b{display:none;}
+.cfp-board-viewport[data-layout="bracket"] .cfp-feeder span{font-size:11px;font-weight:400;}
+.cfp-board-viewport[data-layout="bracket"] .cfp-round-points{font-size:10px;line-height:1.3;margin:7px 0;}
+.cfp-board-viewport[data-layout="bracket"] .cfp-advancement{font-size:10px;line-height:1.3;gap:5px;padding-top:6px;margin-top:6px;}
+.cfp-board-viewport[data-layout="bracket"] .cfp-advancement p{margin:0;font-size:10px;}
+.cfp-board-viewport[data-layout="bracket"] .cfp-path-link{font-size:10px;min-height:44px;padding:5px;color:var(--round-color);border-color:var(--round-border);}
+.cfp-board-viewport[data-layout="bracket"] [data-round="3"] .cfp-entry{box-shadow:0 0 25px #ffd56b40;border-width:2px;}
+.cfp-board-viewport[data-layout="bracket"] .cfp-connections path{stroke:#d8bf82;stroke-width:1.5;}
+.cfp-board-viewport[data-layout="bracket"] .cfp-connections .selected-path{stroke:#ffe6a0;stroke-width:2.5;filter:drop-shadow(0 0 3px #f6ce68);}
+
+.cfp-board-viewport[data-layout="bracket"] .teams{margin-top:0;}
+.cfp-board-viewport[data-layout="bracket"] .teams button{flex-direction:row;flex-wrap:nowrap;}
+.cfp-board-viewport[data-layout="bracket"] .teams button b{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cfp-board-viewport[data-layout="bracket"] .teams button small{display:none;}

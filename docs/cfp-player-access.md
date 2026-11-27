@@ -11,3 +11,5 @@ Isolated storage: `links_cfp_access`, keyed by pool, season and canonical roster
 Checks: `node --test tests/cfp-api.mjs tests/cfp-bracket.mjs`, `node tests/cfp-browser.mjs`, `node tests/delete-player.mjs`, and the pool regression group.
 
 Players choose **Lock in my picks** to submit their complete bracket and receive **Your picks are saved and entered.** They may update and lock in edits before first kickoff. **Save draft** keeps an incomplete entry and does not enter it into standings. Scoring uses 10 / 20 / 40 / 80 by round, 280 maximum, with the combined championship score breaking final points ties. Confidence dropdowns are removed; existing saved winners and guesses are retained, and any old confidence fields are ignored.
+
+The default bracket is a compact mirrored seven-column tournament layout: blue first-round teams at both ends, green quarterfinals, purple semifinals and a gold championship in the center. Connectors follow advancement inward on both sides. Phone users pan within the bracket; desktop fits the full diagram. Team buttons retain a 48px minimum height. The Round by round view retains larger team logos, records and rankings.
