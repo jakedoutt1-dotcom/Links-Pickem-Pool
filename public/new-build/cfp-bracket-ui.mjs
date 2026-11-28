@@ -1,12 +1,11 @@
+import {mountPoolResults} from './cfp-pool-results.mjs?v=1';
 import {SLOTS,ROUNDS,ROUND_POINTS,participants,cleanBracket,validateBracket,BRACKET_RULES} from './cfp-bracket-core.mjs?v=compact-header1';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-export function mountBracket({root,data,view,api,reload,demo,navigation}){
+export function mountBracket({root,data,view,api,reload,demo,navigation,showPicks}){
  root._bracketCleanup?.();
  const state=data.bracket;if(!state)return false;
  const pending=!state.config,cfg=state.config||{teams:Array.from({length:12},(_,i)=>({id:'pending-seed-'+(i+1),seed:i+1,name:'Seed '+(i+1),placeholder:true})),deadline:null},accessLocked=!demo&&data.access?.unlocked===false,disabled=accessLocked||pending||state.locked||!data.available,deadline=pending?'Not announced':new Date(cfg.deadline).toLocaleString();
- if(view==='standings'){
-  root.innerHTML='<h2>Full-bracket standings</h2><p>Only submitted brackets count. Round points: 10 / 20 / 40 / 80. Maximum: 280. After all 11 results are final, ties use closest championship total, closest winning-team score, then most correct picks. Equal results share rank.</p><div class="table-wrap"><table><thead><tr><th>Place</th><th>Player</th><th>Points</th><th>Correct</th><th>Championship guess</th><th>Total difference</th><th>Winner score guess</th><th>Winner difference</th></tr></thead><tbody>'+state.standings.rows.map(r=>'<tr><td>'+r.rank+'</td><td>'+esc(r.player)+(r.submitted?'':' (not submitted)')+'</td><td>'+r.points+'</td><td>'+r.wins+'/11</td><td>'+(r.guess??'—')+'</td><td>'+(r.difference??'—')+'</td><td>'+(r.winningGuess??'—')+'</td><td>'+(r.winningDifference??'—')+'</td></tr>').join('')+'</tbody></table></div>'+(state.locked?'<h3>Submitted brackets</h3>'+state.shared.map(e=>'<details><summary>'+esc(e.player)+'</summary>'+SLOTS.map(s=>'<p>'+ROUNDS[s.round]+': '+esc(cfg.teams.find(t=>t.id===e.picks[s.id]?.team)?.name)+' · '+ROUND_POINTS[s.round]+' points</p>').join('')+'</details>').join(''):'<p>Everyone’s picks stay private until the first playoff kickoff.</p>');return true;
- }
+ if(['standings','compare'].includes(view)){mountPoolResults({root,state,teams:cfg.teams,view,showPicks});return true;}
  if(view!=='picks')return false;
  let draft=structuredClone(state.entry?.picks||{}),guess=state.entry?.guess??'',winningGuess=state.entry?.winningGuess??state.entry?.winning_guess??'',dirty=false,layout='bracket';
  const gameNumber=id=>SLOTS.findIndex(s=>s.id===id)+1;
