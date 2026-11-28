@@ -1,3 +1,4 @@
+import {playoffTiebreak} from '../../lib/playoff-tiebreak.js';
 import {poolFor,sessionFor} from '../../lib/college.js';
 import {poolGameKeys} from '../../lib/pool-games.js';
 import {onRequest as legacy} from '../../api/[[path]].js';
@@ -48,7 +49,9 @@ export async function formatRequest(context,dispatch=legacy){
   const slateResponse=await call('special/nfl-week',null,{gameType:game,week}),slate=await slateResponse.json();if(!slateResponse.ok)return json(slate,slateResponse.status);
   const history=(state.history||[]).filter(r=>r.playerName===session.player_name),entry=history.find(r=>Number(r.periodKey)===week)?.entry||{},submittedAt=history.find(r=>Number(r.periodKey)===week)?.submittedAt||null;
   const first=Math.min(...(slate.games||[]).map(g=>Date.parse(g.kickoff))),locked=!slate.games?.length||!Number.isFinite(first)||Date.now()>=first||(slate.games||[]).some(g=>g.completed);
-  return json({...state,game,role:session.role,viewer:session.player_name,active,week,games:slate.games||[],myEntry:entry,mySubmittedAt:submittedAt,locked,version});
+  const slates=new Map([[week,slate.games||[]]]);await Promise.all([19,20,21,22].filter(w=>w!==week).map(async w=>{try{const response=await call('special/nfl-week',null,{gameType:game,week:w}),data=await response.json();slates.set(w,response.ok?data.games||[]:[])}catch{slates.set(w,[])}}));
+  const tiebreak=await playoffTiebreak({db,pool:pool.id,player:session.player_name,slates,state});
+  return json({...state,game,role:session.role,viewer:session.player_name,active,week,games:slate.games||[],myEntry:entry,mySubmittedAt:submittedAt,locked,version,scores:tiebreak.scores,tiebreak:{...tiebreak,scores:undefined}});
  }
  if(action==='settings'||action==='grade'){
   if(!admin)return json({error:'Commissioner only.'},403);

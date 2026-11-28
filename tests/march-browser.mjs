@@ -25,6 +25,7 @@ try{
   assert.equal(await page.locator('.round-title').evaluateAll(nodes=>new Set(nodes.map(n=>getComputedStyle(n).color)).size),4);await page.waitForFunction(()=>document.querySelectorAll('.march-connections path').length===14);const y=await page.locator('[data-match]').evaluateAll(nodes=>Object.fromEntries(nodes.map(n=>[n.dataset.match,n.getBoundingClientRect().top+n.getBoundingClientRect().height/2])));assert.ok(Math.abs(y['East-2-0']-(y['East-1-0']+y['East-1-1'])/2)<3,'Next round centers between its feeder games');
   assert.equal(await page.locator('[data-game="East-2-0"]:enabled').count(),0);
   await page.locator('[data-game="East-1-0"]').first().click();
+  assert.equal(await page.locator('[data-game="East-1-0"][aria-pressed=true]').evaluate(n=>getComputedStyle(n).outlineColor),'rgb(105, 185, 255)','Selected team highlights in the round color');
   await page.locator('[data-game="East-1-1"]').first().click();
   assert.equal(await page.locator('[data-game="East-2-0"]:enabled').count(),2);
   await page.getByRole('button',{name:'Save draft',exact:true}).click();
@@ -40,6 +41,7 @@ try{
       for(const game of games)await page.locator('[data-game="'+game.id+'"]').first().click();
     }
   }
+  assert.equal(await page.locator('.bracket-board.national .round-column').count(),3,'Semifinals flank the championship');assert.equal(await page.locator('[data-match="national-6-0"] #tie').count(),1,'Tiebreaker sits inside the championship');const nationalCenters=await page.locator('.national [data-match]').evaluateAll(nodes=>Object.fromEntries(nodes.map(n=>[n.dataset.match,n.getBoundingClientRect().left+n.offsetWidth/2])));assert(nationalCenters['national-5-0']<nationalCenters['national-6-0']&&nationalCenters['national-6-0']<nationalCenters['national-5-1']);
   await page.locator('#winningTie').fill('75');
   await page.locator('#tie').fill('148');
   await page.getByRole('button',{name:'Submit bracket',exact:true}).click();
@@ -76,7 +78,7 @@ try{
   assert.equal(await poolPage.getByRole('button',{name:'ADMIN',exact:true}).count(),0);
   await poolPage.addInitScript(()=>{Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{window.__copied=text}}});Object.defineProperty(navigator,'share',{configurable:true,value:async value=>{window.__shared=value}})});
   await poolPage.route('**/api/qr-invite',route=>route.fulfill({json:{poolName:'Links Test Pool',poolCode:'LINKS',expiresAt:new Date(Date.now()+86400000).toISOString(),url:base+'/new-build/join.html?qr=test-invite'}}));
-  response.tournament=null;await poolPage.reload();await poolPage.getByRole('heading',{name:'Tournament lineup coming soon'}).waitFor();assert.equal(await poolPage.locator('[data-game]:enabled').count(),0);assert.equal(await poolPage.locator('.team img').count(),0);assert.equal(await poolPage.locator('[data-match]').count(),15);assert.doesNotMatch(await poolPage.locator('.bracket-board').innerText(),/Duke|Alabama|Florida|UConn/);assert.match(await poolPage.locator('#content').innerText(),/no commissioner setup is needed/i);
+  response.tournament=null;await poolPage.reload();await poolPage.getByRole('heading',{name:'Tournament lineup coming soon'}).waitFor();assert.equal(await poolPage.locator('[data-game]:enabled').count(),0);assert.equal(await poolPage.locator('.team img').count(),0);assert.equal(await poolPage.locator('[data-match]').count(),15);assert.doesNotMatch(await poolPage.locator('.bracket-board').innerText(),/Duke|Alabama|Florida|UConn/);assert.match(await poolPage.locator('#content').innerText(),/appear automatically when confirmed/i);
   await poolPage.getByRole('button',{name:'Share pool',exact:true}).click();await poolPage.locator('dialog svg').waitFor();await poolPage.getByRole('button',{name:'Copy Invite',exact:true}).click();assert.match(await poolPage.evaluate(()=>window.__copied),/join.html\?qr=test-invite/);
   await poolPage.getByRole('button',{name:'Share Invite',exact:true}).click();assert.equal((await poolPage.evaluate(()=>window.__shared)).url,base+'/new-build/join.html?qr=test-invite');await poolPage.getByRole('button',{name:'Close',exact:true}).click();
   response.tournament=t;await poolPage.reload();await poolPage.getByRole('heading',{name:'Your road to the title'}).waitFor();

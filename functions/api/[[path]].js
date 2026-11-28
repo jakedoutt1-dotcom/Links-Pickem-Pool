@@ -2554,7 +2554,8 @@ export async function onRequest(context){
           if(vals.some(x=>!Number.isInteger(x)||x<1||x>picks.length)||new Set(vals).size!==vals.length)return json({error:`Use each confidence number 1 through ${picks.length} exactly once.`},400);
         }
         if(gt==='playoff'){
-          const payload=JSON.stringify({week:wk,picks:entry.picks}),savedAt=new Date().toISOString();
+          if(wk===22&&(!Number.isInteger(entry.championshipTotal)||entry.championshipTotal<0||entry.championshipTotal>200||!Number.isInteger(entry.championshipWinner)||entry.championshipWinner<0||entry.championshipWinner>entry.championshipTotal))return json({error:'Enter both Super Bowl score predictions: whole numbers from 0 to 200; winning-team score cannot exceed the combined total.'},400);
+          const payload=JSON.stringify({week:wk,picks:entry.picks,...(wk===22?{championshipTotal:entry.championshipTotal,championshipWinner:entry.championshipWinner}:{})}),savedAt=new Date().toISOString();
           if(Date.now()>=first)return json({error:'This round locked at its first kickoff.'},409);
           // A settings change during the schedule fetch cannot silently change a card.
           const guard="COALESCE((SELECT value FROM pool_settings WHERE pool_id=? AND key='game_settings_playoff'),'{}')=?";
