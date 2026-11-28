@@ -28,6 +28,7 @@ try{
   assert.equal(await page.locator('[data-game="East-1-0"][aria-pressed=true]').evaluate(n=>getComputedStyle(n).outlineColor),'rgb(105, 185, 255)','Selected team highlights in the round color');
   await page.locator('[data-game="East-1-1"]').first().click();
   assert.equal(await page.locator('[data-game="East-2-0"]:enabled').count(),2);
+  assert.match(await page.locator('[data-match="East-1-0"] .march-advancement').innerText(),/advances/);await page.waitForFunction(()=>document.querySelector('.march-connections .selected-path'));assert.equal(await page.locator('.march-connections .selected-path').first().evaluate(n=>getComputedStyle(n).strokeWidth),'2.5px');
   await page.getByRole('button',{name:'Save draft',exact:true}).click();
   await page.getByText('Draft saved',{exact:true}).waitFor();
   await page.reload();
@@ -40,11 +41,12 @@ try{
       const games=demoTournament().games.filter(g=>g.region===region&&g.round===round);
       for(const game of games)await page.locator('[data-game="'+game.id+'"]').first().click();
     }
+    if(region!=='Final Four'){await page.getByRole('button',{name:'Continue to Final Four →',exact:true}).click();assert.equal(await page.locator('.bracket-board.national').count(),1);}
   }
   assert.equal(await page.locator('.bracket-board.national .round-column').count(),3,'Semifinals flank the championship');assert.equal(await page.locator('[data-match="national-6-0"] #tie').count(),1,'Tiebreaker sits inside the championship');const nationalCenters=await page.locator('.national [data-match]').evaluateAll(nodes=>Object.fromEntries(nodes.map(n=>[n.dataset.match,n.getBoundingClientRect().left+n.offsetWidth/2])));assert(nationalCenters['national-5-0']<nationalCenters['national-6-0']&&nationalCenters['national-6-0']<nationalCenters['national-5-1']);
   await page.locator('#winningTie').fill('75');
   await page.locator('#tie').fill('148');
-  await page.getByRole('button',{name:'Submit bracket',exact:true}).click();
+  await page.getByRole('button',{name:'Lock in my picks',exact:true}).click();
   await page.getByRole('heading',{name:'Bracket submitted',exact:true}).waitFor();
   await page.getByRole('button',{name:'Preview sample results',exact:true}).click();
   await page.getByRole('button',{name:'Pool standings',exact:true}).click();

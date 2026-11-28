@@ -33,3 +33,9 @@
 .round-column .team.result-winner{background:#164b35;border:2px solid #65df9b;color:#fff;opacity:1}.round-column .team.result-loser,.round-column .team.result-eliminated{background:#581f2a;border:2px solid #ff8292;color:#fff;opacity:1}
 
 .round-column .round-title{display:block}.round-column[data-round="1"]{--round-color:#69b9ff;--round-border:#4d8cba;--round-bg:#102637}.round-column[data-round="2"]{--round-color:#80dd99;--round-border:#539a69;--round-bg:#102b21}.round-column[data-round="3"]{--round-color:#c37bed;--round-border:#9857ba;--round-bg:#21132e}
+
+/* Same flow outline and advancement cues as the College Playoff bracket. */
+.march-game-label{color:var(--round-color);font-size:11px;line-height:1.3;font-weight:700;margin:0 0 7px}
+.march-advancement{color:var(--round-color);font-size:10px;line-height:1.4;margin:8px 0 0;padding-top:6px;border-top:1px solid var(--round-border)}
+.march-connections path{stroke:#d8bf82;stroke-width:1.5}.march-connections .selected-path{stroke:#ffe6a0;stroke-width:2.5;filter:drop-shadow(0 0 3px #f6ce68)}
+.march-flow-next{display:flex;justify-content:flex-end;margin:8px 0}.march-flow-next button{font-size:12px;color:#ffe0a0;border-color:#b99a4e;min-height:44px}
